@@ -57,6 +57,14 @@ CREATE TABLE IF NOT EXISTS species_stats (
     cached_at          TEXT
 );
 
+CREATE TABLE IF NOT EXISTS moth_taxa (
+    taxon_id    INTEGER PRIMARY KEY,
+    taxon_name  TEXT,
+    common_name TEXT,
+    obs_count   INTEGER,
+    photo_url   TEXT
+);
+
 CREATE TABLE IF NOT EXISTS sync_log (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     source              TEXT,

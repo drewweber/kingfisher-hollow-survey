@@ -17,6 +17,10 @@ COUNTY_PLACE_ID = 653
 STATE_PLACE_ID = 48
 MY_USERNAME = "drewweber"
 
+# iNat taxa for the moth section: moths = Lepidoptera minus the butterflies.
+LEPIDOPTERA_TAXON_ID = 47157
+BUTTERFLY_TAXON_ID = 47224
+
 # --- Paths -------------------------------------------------------------------
 # Resolve everything relative to the repo root (parent of this src/ dir) so the
 # scripts work the same whether launched by hand or by launchd.

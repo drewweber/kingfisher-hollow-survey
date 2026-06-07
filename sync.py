@@ -23,11 +23,13 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--property", action="store_true", help="sync property project")
     ap.add_argument("--county", action="store_true", help="sync Tioga County")
+    ap.add_argument("--moths", action="store_true", help="refresh moth roster")
     ap.add_argument("--stats", action="store_true", help="refresh uniqueness stats")
-    ap.add_argument("--all", action="store_true", help="property + county + stats")
+    ap.add_argument("--all", action="store_true",
+                    help="property + county + moths + stats")
     args = ap.parse_args()
 
-    if not any([args.property, args.county, args.stats, args.all]):
+    if not any([args.property, args.county, args.moths, args.stats, args.all]):
         ap.print_help()
         return
 
@@ -36,6 +38,8 @@ def main():
         fetch.sync_property()
     if args.all or args.county:
         fetch.sync_county()
+    if args.all or args.moths:
+        fetch.sync_moths()
     if args.all or args.stats:
         stats.refresh_stats()
 

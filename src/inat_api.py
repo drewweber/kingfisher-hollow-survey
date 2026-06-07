@@ -59,6 +59,28 @@ def first_observed_date(**params):
     return results[0].get("observed_on") if results else None
 
 
+def iter_species_counts(**params):
+    """Yield taxa from /observations/species_counts (page-based pagination).
+
+    Each result is {count, taxon{...}} — the taxon carries names and a
+    representative default_photo, so one sweep gives a full species roster.
+    """
+    page = 1
+    seen = 0
+    while True:
+        data = _get("observations/species_counts",
+                    per_page=PER_PAGE, page=page, **params)
+        results = data["results"]
+        if not results:
+            return
+        for row in results:
+            yield row
+        seen += len(results)
+        if seen >= data["total_results"] or len(results) < PER_PAGE:
+            return
+        page += 1
+
+
 def iter_all(id_above=0, **params):
     """Yield every observation matching `params`, ascending by id.
 

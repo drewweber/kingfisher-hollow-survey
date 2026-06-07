@@ -1,7 +1,8 @@
 """Incremental sync of property and county observations into SQLite."""
 
 import inat_api
-from config import COUNTY_PLACE_ID, PROPERTY_PROJECT_ID
+from config import (BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID, LEPIDOPTERA_TAXON_ID,
+                    PROPERTY_PROJECT_ID)
 from db import connect, max_id, record_sync
 
 
@@ -140,3 +141,27 @@ def sync_county():
         record_sync(conn, "county", None, added, 0)
     print(f"[county] total {after_count} obs (+{added})")
     return added, 0
+
+
+def sync_moths():
+    """Refresh the moth roster (Lepidoptera minus butterflies) for the project,
+    storing each species' representative photo for the 'After Dark' section."""
+    rows = []
+    for row in inat_api.iter_species_counts(
+        project_id=PROPERTY_PROJECT_ID,
+        taxon_id=LEPIDOPTERA_TAXON_ID,
+        without_taxon_id=BUTTERFLY_TAXON_ID,
+        rank="species",
+    ):
+        t = row.get("taxon") or {}
+        photo = (t.get("default_photo") or {}).get("medium_url")
+        rows.append((t.get("id"), t.get("name"),
+                     t.get("preferred_common_name"), row.get("count"), photo))
+    with connect() as conn:
+        conn.execute("DELETE FROM moth_taxa")
+        conn.executemany(
+            "INSERT OR REPLACE INTO moth_taxa "
+            "(taxon_id, taxon_name, common_name, obs_count, photo_url) "
+            "VALUES (?,?,?,?,?)", rows)
+    print(f"[moths] {len(rows)} moth species")
+    return len(rows), 0

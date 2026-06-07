@@ -292,6 +292,57 @@ def gallery_body(photos):
             + "".join(cells) + "</div>")
 
 
+# ── moths ("After Dark") ─────────────────────────────────────────────────────
+def moth_body(msum, cascade_html, highlights):
+    def stat(num, label):
+        return (f'<div class="text-center"><div class="font-serif text-4xl '
+                f'font-bold text-hollow-300">{num}</div>'
+                f'<div class="text-white/45 text-[0.7rem] mt-1 uppercase '
+                f'tracking-[0.18em]">{label}</div></div>')
+    stats_line = (
+        '<div class="flex flex-wrap items-center justify-center gap-8 md:gap-12 mb-12">'
+        + stat(f"{msum['species']:,}", "Moth species")
+        + '<div class="w-px h-10 bg-white/15"></div>'
+        + stat(f"{msum['records']:,}", "Records")
+        + ('<div class="w-px h-10 bg-white/15"></div>'
+           + stat(esc(msum["top_month"]), "Peak month") if msum["top_month"] else "")
+        + '</div>')
+
+    chart = ('<div class="bg-white rounded-2xl p-5 md:p-7 shadow-2xl '
+             'shadow-black/30 mb-14">' + cascade_html
+             + '<p class="text-stone-400 text-xs mt-4 italic">Each row a species, '
+             'ordered by when it flies. Faint line: full span seen · bar: middle '
+             '50% of records · dot: typical night.</p></div>')
+
+    cards = []
+    for _, r in highlights.iterrows():
+        name = esc(r["label"])
+        sci = esc(r.get("taxon_name"))
+        photo = r.get("photo_url")
+        state_n = r.get("state_obs_count")
+        if state_n == state_n and state_n is not None:
+            tag = f'<span class="badge badge-accent">{int(state_n)} in NY</span>'
+        else:
+            tag = (f'<span class="badge badge-green">seen {int(r["obs_count"])}×</span>'
+                   if r.get("obs_count") == r.get("obs_count") else "")
+        img = (f'<img src="{esc(photo)}" class="photo-img w-full h-full object-cover" alt="{name}" loading="lazy">'
+               if photo == photo and photo else
+               '<div class="w-full h-full bg-hollow-800 flex items-center justify-center text-3xl">🦋</div>')
+        cards.append(f"""
+        <div class="photo-card relative rounded-2xl overflow-hidden ring-1 ring-white/10" style="height:240px;">
+          <div class="absolute inset-0 overflow-hidden">{img}</div>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent"></div>
+          <div class="absolute top-3 left-3">{tag}</div>
+          <div class="absolute bottom-0 inset-x-0 p-4">
+            <div class="font-serif text-base font-bold text-white leading-snug">{name}</div>
+            <div class="text-white/55 text-xs italic">{sci}</div>
+          </div>
+        </div>""")
+    grid = ('<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">'
+            + "".join(cards) + "</div>") if cards else ""
+    return stats_line + chart + grid
+
+
 # ── head / nav / footer ──────────────────────────────────────────────────────
 def head():
     return f"""<!DOCTYPE html><html lang="en"><head>
@@ -336,8 +387,8 @@ tailwind.config = {{ theme: {{ extend: {{
 
 def nav():
     links = [("#whats-new", "What's New"), ("#discovery", "Discovery"),
-             ("#unique", "Unique Finds"), ("#life-list", "Life List"),
-             ("#seasons", "Seasons"), ("#gallery", "Gallery")]
+             ("#unique", "Unique Finds"), ("#moths", "Moths"),
+             ("#life-list", "Life List"), ("#gallery", "Gallery")]
     link_html = "".join(
         f'<a href="{h}" class="nav-link text-white/80 hover:text-white text-sm font-medium transition-colors">{t}</a>'
         for h, t in links)
@@ -468,6 +519,21 @@ def build():
         chart_card(viz.seasonal_cascade(analyze.seasonal_timing(df, "Insecta")),
                    note="Faint line: full span observed. Bar: middle 50% of records. Dot: typical date. Insects only."),
         intro="When each insect species tends to be on the wing, ordered as a wave from early-season to late."))
+
+    moths = analyze.load_moths()
+    if not moths.empty:
+        msum = analyze.moth_summary(df, moths)
+        mbody = moth_body(
+            msum,
+            viz.seasonal_cascade(analyze.moth_seasonal(df, moths)),
+            analyze.moth_highlights(moths, stats))
+        parts.append(section(
+            "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
+            mbody,
+            intro="Most of the survey’s life turns up on summer nights at the "
+                  "lights — a parade of moths, from giant silkmoths to the "
+                  "smallest leaf-miners. Here are the standouts and when they fly.",
+            dark=True))
 
     two_up = (
         '<div class="grid lg:grid-cols-2 gap-6">'

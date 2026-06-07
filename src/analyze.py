@@ -244,11 +244,9 @@ def firsts_timeline(df):
 
 
 # --- seasonal / migration timing -------------------------------------------
-def seasonal_timing(df, iconic_taxon="Aves", min_obs=4, max_species=28):
-    """Per-species day-of-year distribution for a taxon group, for a dot/range
-    plot of when each species appears through the year."""
-    sub = df.dropna(subset=["observed_on", "taxon_id"])
-    sub = sub[sub["iconic_taxon"] == iconic_taxon].copy()
+def _seasonal_agg(sub, min_obs, max_species):
+    """Day-of-year distribution per species for a (pre-filtered) sub-frame."""
+    sub = sub.dropna(subset=["observed_on", "taxon_id"]).copy()
     if sub.empty:
         return pd.DataFrame()
     sub["doy"] = sub["observed_on"].dt.dayofyear
@@ -263,8 +261,13 @@ def seasonal_timing(df, iconic_taxon="Aves", min_obs=4, max_species=28):
     ).reset_index()
     agg = agg[agg["n"] >= min_obs]
     # Order by median appearance so the chart reads as a seasonal cascade.
-    agg = agg.sort_values("median_doy").head(max_species)
-    return agg
+    return agg.sort_values("median_doy").head(max_species)
+
+
+def seasonal_timing(df, iconic_taxon="Aves", min_obs=4, max_species=28):
+    """Per-species day-of-year distribution for an iconic taxon group."""
+    return _seasonal_agg(df[df["iconic_taxon"] == iconic_taxon],
+                         min_obs, max_species)
 
 
 # --- photo highlights -------------------------------------------------------
@@ -277,3 +280,59 @@ def photo_highlights(df, n=18):
     sub = research if not research.empty else sub
     sub["label"] = sub["common_name"].fillna(sub["taxon_name"])
     return sub.sort_values("observed_on", ascending=False).head(n)
+
+
+# --- moths ("After Dark") ---------------------------------------------------
+def load_moths():
+    """Moth roster (Lepidoptera minus butterflies) with representative photos."""
+    with connect() as conn:
+        return pd.read_sql_query("SELECT * FROM moth_taxa", conn)
+
+
+def moth_summary(df, moths):
+    ids = set(moths["taxon_id"].dropna())
+    sub = df[df["taxon_id"].isin(ids)]
+    return {
+        "species": int(moths["taxon_id"].nunique()),
+        "records": int(len(sub)),
+        "top_month": _peak_month(sub),
+    }
+
+
+def _peak_month(sub):
+    if sub.empty or sub["observed_on"].isna().all():
+        return ""
+    m = sub["observed_on"].dt.month.value_counts().idxmax()
+    import calendar
+    return calendar.month_name[int(m)]
+
+
+def moth_seasonal(df, moths, min_obs=3, max_species=42):
+    """Flight-season cascade for moths: when each species is on the wing."""
+    ids = set(moths["taxon_id"].dropna())
+    return _seasonal_agg(df[df["taxon_id"].isin(ids)], min_obs, max_species)
+
+
+def moth_highlights(moths, stats, n=12):
+    """A showcase of standout moths: rarest in New York where we know it, topped
+    up with the most-recorded species so the gallery is always full. Each keeps
+    its representative photo."""
+    if moths.empty:
+        return moths
+    m = moths.copy()
+    m["label"] = m["common_name"].fillna(m["taxon_name"])
+    if not stats.empty:
+        m = m.merge(
+            stats[["taxon_id", "state_obs_count", "county_obs_count",
+                   "is_county_first"]],
+            on="taxon_id", how="left")
+    else:
+        m["state_obs_count"] = float("nan")
+    rare = m[m["state_obs_count"].notna()].sort_values("state_obs_count")
+    chosen = rare.head(n)
+    if len(chosen) < n:                       # backfill with most-recorded
+        extra = (m[~m["taxon_id"].isin(chosen["taxon_id"])]
+                 .sort_values("obs_count", ascending=False)
+                 .head(n - len(chosen)))
+        chosen = pd.concat([chosen, extra], ignore_index=True)
+    return chosen.head(n)
