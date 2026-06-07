@@ -23,13 +23,18 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--property", action="store_true", help="sync property project")
     ap.add_argument("--county", action="store_true", help="sync Tioga County")
-    ap.add_argument("--moths", action="store_true", help="refresh moth roster")
+    ap.add_argument("--moths", action="store_true",
+                    help="refresh moth + butterfly rosters")
     ap.add_argument("--stats", action="store_true", help="refresh uniqueness stats")
+    ap.add_argument("--taxonomy", action="store_true",
+                    help="enrich order/family for new species")
     ap.add_argument("--all", action="store_true",
-                    help="property + county + moths + stats")
+                    help="property + county + moths/butterflies + taxonomy + stats")
     args = ap.parse_args()
 
-    if not any([args.property, args.county, args.moths, args.stats, args.all]):
+    flags = [args.property, args.county, args.moths, args.taxonomy,
+             args.stats, args.all]
+    if not any(flags):
         ap.print_help()
         return
 
@@ -38,8 +43,12 @@ def main():
         fetch.sync_property()
     if args.all or args.county:
         fetch.sync_county()
+        fetch.sync_county_moths()
     if args.all or args.moths:
         fetch.sync_moths()
+        fetch.sync_butterflies()
+    if args.all or args.taxonomy:
+        fetch.sync_taxonomy()
     if args.all or args.stats:
         stats.refresh_stats()
 

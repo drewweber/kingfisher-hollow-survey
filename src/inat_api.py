@@ -41,6 +41,15 @@ def _get(path, **params):
     resp.raise_for_status()
 
 
+def fetch_taxa(ids):
+    """Fetch full taxon records (incl. ancestry with common names) for up to ~30
+    ids at once via /v1/taxa/{comma_ids}. Returns the results list."""
+    if not ids:
+        return []
+    path = "taxa/" + ",".join(str(i) for i in ids)
+    return _get(path, per_page=len(ids)).get("results", [])
+
+
 def count(**params):
     """total_results for a query, fetched with per_page=0 (no rows returned)."""
     return _get("observations", per_page=0, **params)["total_results"]

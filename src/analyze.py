@@ -12,9 +12,11 @@ def load_property(species_only=True):
 
     By default restricted to species-level records (rank 'species' or finer);
     coarser IDs like genus/family are observations not resolved to a species.
+    Birds (Aves) are excluded entirely — they're tracked on eBird instead.
     """
     with connect() as conn:
         df = pd.read_sql_query("SELECT * FROM property_obs", conn)
+    df = df[df["iconic_taxon"] != "Aves"].copy()
     if species_only:
         df = df[df["rank"].isin(SPECIES_RANKS)].copy()
     df["observed_on"] = pd.to_datetime(df["observed_on"], errors="coerce")
@@ -33,6 +35,69 @@ def species_taxon_ids():
 def load_stats():
     with connect() as conn:
         return pd.read_sql_query("SELECT * FROM species_stats", conn)
+
+
+def _load_table(name):
+    with connect() as conn:
+        return pd.read_sql_query(f"SELECT * FROM {name}", conn)
+
+
+# --- group labels (readable higher taxon) -----------------------------------
+# Non-arthropod iconic taxa map straight to a friendly label; arthropods get
+# their order's common name (so people can tell a harvestman from a moth).
+ICONIC_LABELS = {
+    "Plantae": "Plants", "Fungi": "Fungi", "Mammalia": "Mammals",
+    "Amphibia": "Amphibians", "Reptilia": "Reptiles",
+    "Actinopterygii": "Fish", "Mollusca": "Molluscs", "Animalia": "Other animals",
+    "Protozoa": "Protozoans", "Chromista": "Chromists",
+}
+
+
+def group_labeler(moth_ids, butterfly_ids, order_common_by_taxon):
+    """Build a function mapping a (taxon_id, iconic_taxon) to a readable group:
+    Moths / Butterflies split out of Lepidoptera; other arthropods by order
+    common name; everything else by a friendly iconic-taxon label."""
+    def label(taxon_id, iconic):
+        if taxon_id in moth_ids:
+            return "Moths"
+        if taxon_id in butterfly_ids:
+            return "Butterflies"
+        if iconic in ("Insecta", "Arachnida"):
+            oc = order_common_by_taxon.get(taxon_id)
+            # Lepidoptera not caught by the (verifiable) moth/butterfly rosters
+            # are stragglers — almost always moths; butterflies handled above.
+            if oc == "Butterflies and Moths":
+                return "Moths"
+            if oc:
+                return oc
+            return "Insects" if iconic == "Insecta" else "Arachnids"
+        return ICONIC_LABELS.get(iconic, iconic or "Other")
+    return label
+
+
+def _group_inputs():
+    """Load the membership sets + order-common map used for group labels."""
+    moth_ids = set(_load_table("moth_taxa")["taxon_id"].dropna().astype(int))
+    bf = _load_table("butterfly_taxa")
+    butterfly_ids = set(bf["taxon_id"].dropna().astype(int)) if not bf.empty else set()
+    meta = _load_table("taxon_meta")
+    order_common = {}
+    if not meta.empty:
+        for _, r in meta.iterrows():
+            oc = r.get("order_common") or r.get("order_name")
+            if oc:
+                order_common[int(r["taxon_id"])] = oc
+    return moth_ids, butterfly_ids, order_common
+
+
+def add_group_column(df):
+    """Return df with a `group` column (readable higher taxon)."""
+    moth_ids, butterfly_ids, order_common = _group_inputs()
+    label = group_labeler(moth_ids, butterfly_ids, order_common)
+    out = df.copy()
+    out["group"] = [label(t, i) for t, i in
+                    zip(out["taxon_id"], out.get("iconic_taxon"))]
+    return out
 
 
 # --- summary ----------------------------------------------------------------
@@ -190,7 +255,8 @@ def life_list(df):
     ).reset_index()
     g["label"] = g["common_name"].fillna(g["taxon_name"])
     g["iconic_taxon"] = g["iconic_taxon"].fillna("Other")
-    return g.sort_values(["iconic_taxon", "label"])
+    g = add_group_column(g)
+    return g.sort_values(["group", "label"])
 
 
 # --- rarest finds (fewest NY records) --------------------------------------
@@ -336,3 +402,121 @@ def moth_highlights(moths, stats, n=12):
                  .head(n - len(chosen)))
         chosen = pd.concat([chosen, extra], ignore_index=True)
     return chosen.head(n)
+
+
+# --- moth-scoped scientific analyses ----------------------------------------
+def moth_obs(df, moths):
+    """Property observations that are moths (species-level, Aves already gone)."""
+    return df[df["taxon_id"].isin(set(moths["taxon_id"].dropna()))]
+
+
+def _species_counts(sub):
+    """Per-species observation counts (abundance proxy) for a sub-frame."""
+    return sub.dropna(subset=["taxon_id"]).groupby("taxon_id").size()
+
+
+def moth_completeness(df, moths):
+    """Chao1 richness estimate for the moth inventory.
+
+    Abundance-based Chao1 from per-species observation counts: how many moth
+    species likely occur on the property vs. how many we've recorded. Obs counts
+    stand in for abundance — a standard but imperfect proxy, so it's an estimate.
+    """
+    counts = _species_counts(moth_obs(df, moths))
+    s_obs = int((counts > 0).sum())
+    f1 = int((counts == 1).sum())          # singletons
+    f2 = int((counts == 2).sum())          # doubletons
+    import math
+    if f2 > 0:
+        chao1 = s_obs + f1 * f1 / (2 * f2)
+    else:                                   # bias-corrected form when no doubletons
+        chao1 = s_obs + f1 * (f1 - 1) / 2
+    chao1 = max(chao1, s_obs)
+    # Chao (1987) log-normal 95% CI on the *estimated missing* species.
+    t = chao1 - s_obs
+    low = high = int(round(chao1))
+    if t > 0 and f1 > 0 and f2 > 0:
+        r = f1 / f2
+        var = f2 * (0.5 * r ** 2 + r ** 3 + 0.25 * r ** 4)
+        if var > 0:
+            c = math.exp(1.96 * math.sqrt(math.log(1 + var / (t * t))))
+            low = int(round(s_obs + t / c))
+            high = int(round(s_obs + t * c))
+    pct = round(100 * s_obs / chao1) if chao1 else 100
+    return {
+        "observed": s_obs,
+        "estimated": int(round(chao1)),
+        "remaining": int(round(chao1)) - s_obs,
+        "pct_complete": int(pct),
+        "low": low,
+        "high": high,
+        "singletons": f1,
+        "doubletons": f2,
+    }
+
+
+def moth_survey_nights(df, moths):
+    """Distinct dates with a moth record + the date range — survey effort, for
+    the Methods panel and effort-aware caveats."""
+    sub = moth_obs(df, moths).dropna(subset=["observed_on"])
+    if sub.empty:
+        return {"nights": 0, "first": None, "last": None}
+    dates = sub["observed_on"].dt.date
+    return {"nights": int(dates.nunique()),
+            "first": sub["observed_on"].min(), "last": sub["observed_on"].max()}
+
+
+def moth_effort(df, moths):
+    """Cumulative moth species vs. cumulative observations (the discovery/effort
+    curve), for seeing how fast new species are still turning up."""
+    sub = moth_obs(df, moths).dropna(subset=["observed_on", "taxon_id"])
+    sub = sub.sort_values("observed_on")
+    seen, cum_species, cum_obs = set(), [], []
+    for i, t in enumerate(sub["taxon_id"], start=1):
+        seen.add(t)
+        cum_obs.append(i)
+        cum_species.append(len(seen))
+    return pd.DataFrame({"cum_obs": cum_obs, "cum_species": cum_species})
+
+
+def moth_county_gap(moths, n=15):
+    """Tioga County moths not yet recorded on the property, ranked by how common
+    they are in the county (most-recorded-nearby first = likeliest to find)."""
+    county = _load_table("county_moth_taxa")
+    have = set(moths["taxon_id"].dropna().astype(int))
+    if county.empty:
+        return {"county_total": 0, "have": len(have), "pct": 0,
+                "missing_count": 0, "missing": county}
+    county_total = int(county["taxon_id"].nunique())
+    recorded = int(county["taxon_id"].isin(have).sum())
+    missing = county[~county["taxon_id"].isin(have)].copy()
+    missing["label"] = missing["common_name"].fillna(missing["taxon_name"])
+    missing = missing.sort_values("county_count", ascending=False)
+    return {
+        "county_total": county_total,
+        "have": recorded,
+        "pct": round(100 * recorded / county_total) if county_total else 0,
+        "missing_count": int(len(missing)),
+        "missing": missing.head(n),
+    }
+
+
+def moth_diversity(df, moths):
+    """Shannon H', Gini-Simpson, Pielou evenness, and a rank-abundance series."""
+    import math
+    counts = _species_counts(moth_obs(df, moths)).sort_values(ascending=False)
+    total = int(counts.sum())
+    s = int(len(counts))
+    if total == 0 or s == 0:
+        return {"shannon": 0, "simpson": 0, "evenness": 0, "rank_abundance": []}
+    p = counts / total
+    shannon = float(-(p * p.map(math.log)).sum())
+    simpson = float(1 - (p * p).sum())
+    evenness = float(shannon / math.log(s)) if s > 1 else 1.0
+    return {
+        "shannon": round(shannon, 2),
+        "simpson": round(simpson, 3),
+        "evenness": round(evenness, 3),
+        "species": s,
+        "rank_abundance": counts.tolist(),
+    }

@@ -22,27 +22,49 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 MONTH_STARTS = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 
+# Dark-mode equivalents for the moth view (charts sit on bg-hollow-950).
+DARK_INK = "#e8f0ec"
+DARK_MUTED = "#9bb3a8"
+DARK_GRID = "rgba(255,255,255,0.10)"
+# On dark, line/marker colors need to be light tints to read.
+DARK_LINE = "#8ec8b1"       # hollow-300
+DARK_LINE2 = "#5eab8d"      # hollow-400
+DARK_GREEN_SCALE = [[0.0, "#13322a"], [0.5, "#3d8f72"], [1.0, "#bbdfd0"]]
 
-def _style(fig, height=420, showlegend=False):
-    """Apply the shared editorial treatment to a figure."""
+
+def _palette(dark):
+    """Text / grid / line colors for the active theme."""
+    if dark:
+        return dict(ink=DARK_INK, muted=DARK_MUTED, grid=DARK_GRID,
+                    line=DARK_LINE, line2=DARK_LINE2, hover_bg="#1d3d33",
+                    green_scale=DARK_GREEN_SCALE)
+    return dict(ink=INK, muted=MUTED, grid=GRID,
+                line=HOLLOW[0], line2=HOLLOW[3], hover_bg="white",
+                green_scale=GREEN_SCALE)
+
+
+def _style(fig, height=420, showlegend=False, dark=False):
+    """Apply the shared editorial treatment to a figure (light or dark)."""
+    c = _palette(dark)
     fig.update_layout(
         height=height,
         showlegend=showlegend,
-        font=dict(family=FONT, size=13, color=INK),
+        font=dict(family=FONT, size=13, color=c["ink"]),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=12, r=18, t=14, b=12),
         hoverlabel=dict(font=dict(family=FONT, size=12),
-                        bgcolor="white", bordercolor=GRID),
+                        bgcolor=c["hover_bg"], bordercolor=c["grid"]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02,
-                    x=0, font=dict(size=12), bgcolor="rgba(0,0,0,0)"),
+                    x=0, font=dict(size=12, color=c["ink"]),
+                    bgcolor="rgba(0,0,0,0)"),
         title=None,
     )
     fig.update_xaxes(showgrid=False, zeroline=False,
-                     linecolor=GRID, ticks="outside", tickcolor=GRID,
-                     tickfont=dict(color=MUTED, size=11))
-    fig.update_yaxes(showgrid=True, gridcolor=GRID, zeroline=False,
-                     tickfont=dict(color=MUTED, size=11))
+                     linecolor=c["grid"], ticks="outside", tickcolor=c["grid"],
+                     tickfont=dict(color=c["muted"], size=11))
+    fig.update_yaxes(showgrid=True, gridcolor=c["grid"], zeroline=False,
+                     tickfont=dict(color=c["muted"], size=11))
     return fig
 
 
@@ -121,55 +143,58 @@ def taxa_bar(life):
 
 
 # --- phenology heatmap ------------------------------------------------------
-def phenology(matrix):
+def phenology(matrix, dark=False):
     if matrix.empty:
         return "<p class='chart-empty'>No phenology data.</p>"
     fig = go.Figure(go.Heatmap(
         z=matrix.values, x=MONTHS, y=matrix.index.tolist(),
-        colorscale=GREEN_SCALE, showscale=True,
+        colorscale=_palette(dark)["green_scale"], showscale=True,
         colorbar=dict(title="", thickness=10, len=0.6, outlinewidth=0),
         hovertemplate="%{y}<br>%{x}: %{z} obs<extra></extra>",
         xgap=2, ygap=2,
     ))
     fig.update_yaxes(autorange="reversed", showgrid=False)
     fig.update_xaxes(side="top")
-    return _html(_style(fig, height=max(420, 19 * len(matrix))))
+    return _html(_style(fig, height=max(420, 19 * len(matrix)), dark=dark))
 
 
 # --- seasonal cascade (when each species appears) ---------------------------
-def seasonal_cascade(agg, group_label="Birds"):
+def seasonal_cascade(agg, group_label="Birds", dark=False):
     """Horizontal range plot: faint first→last line, q1–q3 bar, median dot —
     species ordered by median appearance so it reads as a seasonal wave."""
     if agg.empty:
         return "<p class='chart-empty'>Not enough data for a seasonal view.</p>"
+    c = _palette(dark)
+    span = ("rgba(142,200,177,0.30)" if dark else "rgba(94,171,141,0.35)")
+    dot = "#bbdfd0" if dark else HOLLOW[3]
     fig = go.Figure()
     y = agg["label"].tolist()
     # full span (faint)
     for _, r in agg.iterrows():
         fig.add_scatter(
             x=[r["first_doy"], r["last_doy"]], y=[r["label"], r["label"]],
-            mode="lines", line=dict(color="rgba(94,171,141,0.35)", width=2),
+            mode="lines", line=dict(color=span, width=2),
             hoverinfo="skip", showlegend=False,
         )
     # interquartile band
     for _, r in agg.iterrows():
         fig.add_scatter(
             x=[r["q1"], r["q3"]], y=[r["label"], r["label"]],
-            mode="lines", line=dict(color=HOLLOW[1], width=7),
+            mode="lines", line=dict(color=c["line2"], width=7),
             hoverinfo="skip", showlegend=False,
         )
     # median marker
     fig.add_scatter(
         x=agg["median_doy"], y=y, mode="markers",
-        marker=dict(color=HOLLOW[3], size=9,
-                    line=dict(color="white", width=1.5)),
+        marker=dict(color=dot, size=9,
+                    line=dict(color=c["hover_bg"], width=1.5)),
         hovertemplate="<b>%{y}</b><br>typically around day %{x:.0f}<extra></extra>",
         showlegend=False,
     )
     fig.update_xaxes(tickvals=MONTH_STARTS, ticktext=MONTHS,
-                     range=[1, 366], showgrid=True, gridcolor=GRID)
+                     range=[1, 366], showgrid=True, gridcolor=c["grid"])
     fig.update_yaxes(showgrid=False, autorange="reversed")
-    return _html(_style(fig, height=max(360, 22 * len(agg))))
+    return _html(_style(fig, height=max(360, 22 * len(agg)), dark=dark))
 
 
 # --- uniqueness scatter -----------------------------------------------------
@@ -222,7 +247,7 @@ def leaderboard(board):
 
 
 # --- map --------------------------------------------------------------------
-def obs_map(df):
+def obs_map(df, dark=False):
     pts = df.dropna(subset=["latitude", "longitude"])
     if pts.empty:
         return "<p class='chart-empty'>No mappable (un-obscured) observations.</p>"
@@ -232,21 +257,95 @@ def obs_map(df):
     fig = go.Figure()
     for g in groups:
         sub = pts[pts["iconic_taxon"].fillna("Other") == g]
-        fig.add_scattermap(
+        # scattermapbox/mapbox (Plotly.js 2.x) — the page pins plotly 2.35.2,
+        # which doesn't understand the newer scattermap/map (MapLibre) trace.
+        fig.add_scattermapbox(
             lat=sub["latitude"], lon=sub["longitude"], mode="markers",
             marker=dict(size=7, color=palette[g]), name=g,
             text=sub["common_name"].fillna(sub["taxon_name"]),
             hovertemplate="<b>%{text}</b><extra>" + g + "</extra>",
         )
+    legend_bg = "rgba(13,34,28,0.85)" if dark else "rgba(255,255,255,0.85)"
     fig.update_layout(
-        map=dict(style="carto-positron",
-                 center=dict(lat=pts["latitude"].mean(),
-                             lon=pts["longitude"].mean()),
-                 zoom=13.5),
+        mapbox=dict(style="carto-darkmatter" if dark else "carto-positron",
+                    center=dict(lat=pts["latitude"].mean(),
+                                lon=pts["longitude"].mean()),
+                    zoom=13.5),
         height=560, margin=dict(l=0, r=0, t=0, b=0),
-        showlegend=True, font=dict(family=FONT, color=INK),
-        legend=dict(bgcolor="rgba(255,255,255,0.85)", x=0.01, y=0.99,
-                    bordercolor=GRID, borderwidth=1),
+        showlegend=True,
+        font=dict(family=FONT, color=DARK_INK if dark else INK),
+        legend=dict(bgcolor=legend_bg, x=0.01, y=0.99,
+                    bordercolor=DARK_GRID if dark else GRID, borderwidth=1),
         paper_bgcolor="rgba(0,0,0,0)",
     )
     return _html(fig)
+
+
+# === moth-view charts (dark by default) =====================================
+def completeness_curve(effort, comp, dark=True):
+    """Cumulative species vs. observations, with the Chao1 asymptote drawn as a
+    horizontal target line — visualizes how close the moth inventory is to done."""
+    if effort.empty:
+        return "<p class='chart-empty'>Not enough data.</p>"
+    c = _palette(dark)
+    est = comp["estimated"]
+    low, high = comp.get("low", est), comp.get("high", est)
+    xmax = effort["cum_obs"].max()
+    fig = go.Figure()
+    # Chao1 95% CI as a shaded band — the estimate is a range, not a point.
+    if high > low:
+        fig.add_shape(type="rect", x0=0, x1=xmax, y0=low, y1=high,
+                      fillcolor="rgba(194,112,61,0.14)", line=dict(width=0),
+                      layer="below")
+    fig.add_scatter(
+        x=effort["cum_obs"], y=effort["cum_species"], mode="lines",
+        line=dict(color=c["line"], width=3), fill="tozeroy",
+        fillcolor="rgba(142,200,177,0.12)",
+        hovertemplate="%{x} obs → %{y} species<extra></extra>", name="Recorded",
+    )
+    fig.add_hline(y=est, line=dict(color=ACCENT, width=1.5, dash="dot"))
+    band = f" (likely {low}–{high})" if high > low else ""
+    fig.add_annotation(
+        x=xmax, y=high if high > low else est, xanchor="right", yanchor="bottom",
+        text=f"Chao1 estimate ≈ <b>{est}</b>{band}", showarrow=False,
+        font=dict(size=12, color=ACCENT))
+    fig.update_xaxes(title=dict(text="Cumulative moth observations →",
+                                font=dict(size=11, color=c["muted"])))
+    fig.update_yaxes(title=dict(text="Moth species",
+                                font=dict(size=11, color=c["muted"])))
+    return _html(_style(fig, height=400, dark=dark))
+
+
+def rank_abundance(counts, singletons=0, doubletons=0, dark=True):
+    """Whittaker rank-abundance: species ranked by detections (log y). The
+    single/twice-seen tail is highlighted — that long flat tail is the
+    'unfinished edge' that drives the completeness estimate."""
+    if not counts:
+        return "<p class='chart-empty'>Not enough data.</p>"
+    c = _palette(dark)
+    n = len(counts)
+    x = list(range(1, n + 1))
+    body = [v if v > 2 else None for v in counts]
+    tail = [v if v <= 2 else None for v in counts]
+    fig = go.Figure()
+    fig.add_scatter(x=x, y=body, mode="lines+markers",
+                    line=dict(color=c["line"], width=2),
+                    marker=dict(color=c["line2"], size=4),
+                    hovertemplate="rank %{x}: %{y} observations<extra></extra>",
+                    name="seen 3+ times")
+    fig.add_scatter(x=x, y=tail, mode="markers",
+                    marker=dict(color=ACCENT, size=5),
+                    hovertemplate="rank %{x}: %{y} observation(s)<extra></extra>",
+                    name="seen once/twice")
+    fig.add_hline(y=1, line=dict(color=c["grid"], width=1))
+    if singletons:
+        fig.add_annotation(
+            x=n, y=1, xanchor="right", yanchor="bottom",
+            text=f"<b>{singletons}</b> seen once · <b>{doubletons}</b> twice — "
+                 "the unfinished edge", showarrow=False,
+            font=dict(size=11, color=ACCENT))
+    fig.update_yaxes(type="log", title=dict(text="Observations (log) →",
+                     font=dict(size=11, color=c["muted"])))
+    fig.update_xaxes(title=dict(text="Species rank (most → least recorded)",
+                     font=dict(size=11, color=c["muted"])))
+    return _html(_style(fig, height=360, dark=dark))

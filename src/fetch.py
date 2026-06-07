@@ -143,25 +143,86 @@ def sync_county():
     return added, 0
 
 
-def sync_moths():
-    """Refresh the moth roster (Lepidoptera minus butterflies) for the project,
-    storing each species' representative photo for the 'After Dark' section."""
+def _sync_roster(table, count_col, **params):
+    """Refresh a species roster table from /observations/species_counts.
+
+    Stores (taxon_id, taxon_name, common_name, <count_col>, photo_url) for every
+    species matching `params`. Used for moths, butterflies, and the county moth
+    checklist — each is just a different species_counts filter.
+    """
     rows = []
-    for row in inat_api.iter_species_counts(
-        project_id=PROPERTY_PROJECT_ID,
-        taxon_id=LEPIDOPTERA_TAXON_ID,
-        without_taxon_id=BUTTERFLY_TAXON_ID,
-        rank="species",
-    ):
+    for row in inat_api.iter_species_counts(rank="species", **params):
         t = row.get("taxon") or {}
         photo = (t.get("default_photo") or {}).get("medium_url")
         rows.append((t.get("id"), t.get("name"),
                      t.get("preferred_common_name"), row.get("count"), photo))
     with connect() as conn:
-        conn.execute("DELETE FROM moth_taxa")
+        conn.execute(f"DELETE FROM {table}")
         conn.executemany(
-            "INSERT OR REPLACE INTO moth_taxa "
-            "(taxon_id, taxon_name, common_name, obs_count, photo_url) "
+            f"INSERT OR REPLACE INTO {table} "
+            f"(taxon_id, taxon_name, common_name, {count_col}, photo_url) "
             "VALUES (?,?,?,?,?)", rows)
-    print(f"[moths] {len(rows)} moth species")
-    return len(rows), 0
+    return len(rows)
+
+
+def sync_moths():
+    """Moth roster (Lepidoptera minus butterflies) for the project."""
+    n = _sync_roster("moth_taxa", "obs_count",
+                     project_id=PROPERTY_PROJECT_ID,
+                     taxon_id=LEPIDOPTERA_TAXON_ID,
+                     without_taxon_id=BUTTERFLY_TAXON_ID)
+    print(f"[moths] {n} moth species")
+    return n, 0
+
+
+def sync_butterflies():
+    """Butterfly roster (Papilionoidea) for the project — for the Lepidoptera
+    split in life-list groups."""
+    n = _sync_roster("butterfly_taxa", "obs_count",
+                     project_id=PROPERTY_PROJECT_ID,
+                     taxon_id=BUTTERFLY_TAXON_ID)
+    print(f"[butterflies] {n} butterfly species")
+    return n, 0
+
+
+def sync_county_moths():
+    """Tioga County moth checklist — for the 'moths you haven't found yet' gap."""
+    n = _sync_roster("county_moth_taxa", "county_count",
+                     place_id=COUNTY_PLACE_ID,
+                     taxon_id=LEPIDOPTERA_TAXON_ID,
+                     without_taxon_id=BUTTERFLY_TAXON_ID)
+    print(f"[county-moths] {n} county moth species")
+    return n, 0
+
+
+def sync_taxonomy(batch_size=30):
+    """Fill taxon_meta (order/family names) for property species missing it.
+
+    Incremental: only fetches taxa not already cached, so nightly runs touch the
+    API only for newly recorded species.
+    """
+    with connect() as conn:
+        todo = [r["taxon_id"] for r in conn.execute(
+            "SELECT DISTINCT p.taxon_id FROM property_obs p "
+            "LEFT JOIN taxon_meta m ON m.taxon_id = p.taxon_id "
+            "WHERE p.taxon_id IS NOT NULL AND m.taxon_id IS NULL"
+        ).fetchall()]
+    added = 0
+    for i in range(0, len(todo), batch_size):
+        batch = todo[i:i + batch_size]
+        rows = []
+        for t in inat_api.fetch_taxa(batch):
+            ranks = {a.get("rank"): a for a in (t.get("ancestors") or [])}
+            order = ranks.get("order") or {}
+            family = ranks.get("family") or {}
+            rows.append((t.get("id"),
+                         order.get("name"), order.get("preferred_common_name"),
+                         family.get("name"), family.get("preferred_common_name")))
+        with connect() as conn:
+            conn.executemany(
+                "INSERT OR REPLACE INTO taxon_meta "
+                "(taxon_id, order_name, order_common, family_name, family_common) "
+                "VALUES (?,?,?,?,?)", rows)
+        added += len(rows)
+    print(f"[taxonomy] enriched {added} taxa ({len(todo)} were missing)")
+    return added, 0
