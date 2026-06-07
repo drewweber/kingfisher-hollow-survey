@@ -367,8 +367,8 @@ def moth_stats(msum, comp):
     tiles = [_dark_stat(f"{msum['species']:,}", "Moth species"),
              _dark_stat(f"{msum['records']:,}", "Records")]
     if comp:
-        ci = (f"Chao1 estimate; 95% CI {comp['low']}–{comp['high']}"
-              if comp.get("high", 0) > comp.get("low", 0) else "Chao1 estimate")
+        ci = (f"Chao2 estimate; 95% CI {comp['low']}–{comp['high']}"
+              if comp.get("high", 0) > comp.get("low", 0) else "Chao2 estimate")
         tiles.append(_dark_stat(f"{comp['pct_complete']}%", "Est. complete",
                                 "of the likely total, found so far"))
         tiles.append(_dark_stat(f"~{comp['estimated']:,}", "Likely total", ci))
@@ -521,9 +521,9 @@ def nav():
     all_links = [("#whats-new", "What's New"), ("#discovery", "Discovery"),
                  ("#unique", "Unique Finds"), ("#life-list", "Life List"),
                  ("#gallery", "Gallery")]
-    moth_links = [("#moth-completeness", "Completeness"), ("#moth-seasons", "Flight Seasons"),
-                  ("#moth-gap", "Gap List"), ("#moth-diversity", "Diversity"),
-                  ("#moth-standouts", "Standouts")]
+    moth_links = [("#moth-completeness", "Completeness"), ("#moth-families", "Families"),
+                  ("#moth-seasons", "Flight Seasons"), ("#moth-gap", "Gap List"),
+                  ("#moth-diversity", "Diversity"), ("#moth-standouts", "Standouts")]
 
     def links_html(links, item_cls):
         return "".join(f'<a href="{h}" class="{item_cls}">{t}</a>' for h, t in links)
@@ -728,6 +728,22 @@ def moth_view(df, stats):
             f"night still turns up moths never seen before.", dark=True),
         intro="How many moth species really live here, and how close the survey is to "
               "finding them all.",
+        dark=True))
+    out.append(section(
+        "moth-families", "By Family",
+        'Where the <em class="text-hollow-300">Gaps</em> Are',
+        chart_card(viz.family_breakdown(analyze.moth_family_breakdown(moths)),
+                   note="Solid bar: species recorded here. Faint bar: species known from "
+                        "Tioga County. Bar labels show recorded / county.",
+                   dark=True)
+        + takeaway(
+            "The single \"70% complete\" figure hides a sharp split by family. The big, "
+            "showy macro-moths — owlets, geometers, tigers — are well covered, but the "
+            "tiny, hard-to-identify micro-moth families are barely scratched. That's where "
+            "most of the ~190 missing species are hiding, and where extra effort would pay off.",
+            dark=True),
+        intro="Completeness isn't even across the moths — some families are nearly done, "
+              "others wide open.",
         dark=True))
     out.append(section(
         "moth-seasons", "Flight Seasons",

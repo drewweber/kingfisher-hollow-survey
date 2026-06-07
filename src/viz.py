@@ -312,7 +312,7 @@ def obs_map(df, dark=False):
 
 # === moth-view charts (dark by default) =====================================
 def completeness_curve(effort, comp, dark=True):
-    """Cumulative species vs. observations, with the Chao1 asymptote drawn as a
+    """Cumulative species vs. observations, with the Chao2 asymptote drawn as a
     horizontal target line — visualizes how close the moth inventory is to done."""
     if effort.empty:
         return "<p class='chart-empty'>Not enough data.</p>"
@@ -321,7 +321,7 @@ def completeness_curve(effort, comp, dark=True):
     low, high = comp.get("low", est), comp.get("high", est)
     xmax = effort["cum_obs"].max()
     fig = go.Figure()
-    # Chao1 95% CI as a shaded band — the estimate is a range, not a point.
+    # Chao2 95% CI as a shaded band — the estimate is a range, not a point.
     if high > low:
         fig.add_shape(type="rect", x0=0, x1=xmax, y0=low, y1=high,
                       fillcolor="rgba(194,112,61,0.14)", line=dict(width=0),
@@ -336,13 +336,36 @@ def completeness_curve(effort, comp, dark=True):
     band = f" (likely {low}–{high})" if high > low else ""
     fig.add_annotation(
         x=xmax, y=high if high > low else est, xanchor="right", yanchor="bottom",
-        text=f"Chao1 estimate ≈ <b>{est}</b>{band}", showarrow=False,
+        text=f"Chao2 estimate ≈ <b>{est}</b>{band}", showarrow=False,
         font=dict(size=12, color=ACCENT))
     fig.update_xaxes(title=dict(text="Cumulative moth observations →",
                                 font=dict(size=11, color=c["muted"])))
     fig.update_yaxes(title=dict(text="Moth species",
                                 font=dict(size=11, color=c["muted"])))
     return _html(_style(fig, height=400, dark=dark))
+
+
+def family_breakdown(fam, dark=True):
+    """Per-family progress: a faint full bar = species known from the county, a
+    solid bar = species recorded here. Shows which moth families are near-complete
+    and which (the micros) are barely sampled."""
+    if fam.empty:
+        return "<p class='chart-empty'>Not enough family data yet.</p>"
+    c = _palette(dark)
+    f = fam.iloc[::-1]   # largest family on top
+    labels = [f"{lbl} ({r}/{t})" for lbl, r, t in
+              zip(f["label"], f["recorded"], f["county_total"])]
+    fig = go.Figure()
+    fig.add_bar(y=labels, x=f["county_total"], orientation="h",
+                marker_color="rgba(142,200,177,0.20)", name="Known in county",
+                hovertemplate="%{y}<br>%{x} county species<extra></extra>")
+    fig.add_bar(y=labels, x=f["recorded"], orientation="h",
+                marker_color=c["line2"], name="Recorded here",
+                hovertemplate="%{y}<br>%{x} recorded here<extra></extra>")
+    fig.update_layout(barmode="overlay", bargap=0.35)
+    fig.update_xaxes(title=dict(text="Species →", font=dict(size=11, color=c["muted"])))
+    fig.update_yaxes(showgrid=False, tickfont=dict(size=11, color=c["ink"]))
+    return _html(_style(fig, height=max(380, 32 * len(f)), showlegend=True, dark=dark))
 
 
 def rank_abundance(counts, dark=True):

@@ -462,6 +462,29 @@ def moth_completeness(df, moths):
     }
 
 
+def moth_family_breakdown(moths, n=14):
+    """Per-family: moth species recorded here vs. species known from the county.
+    Reframes overall completeness — typically near-complete on the big macro-moth
+    families, barely scratching the species-rich micro families."""
+    meta = _load_table("taxon_meta")
+    county = _load_table("county_moth_taxa")
+    if meta.empty or moths.empty:
+        return pd.DataFrame()
+    meta = meta[["taxon_id", "family_name", "family_common"]]
+    fam_common = (meta.dropna(subset=["family_name"]).drop_duplicates("family_name")
+                  .set_index("family_name")["family_common"].to_dict())
+    prop = moths[["taxon_id"]].merge(meta, on="taxon_id", how="left")
+    cty = county[["taxon_id"]].merge(meta, on="taxon_id", how="left")
+    rec = prop.dropna(subset=["family_name"]).groupby("family_name")["taxon_id"].nunique()
+    ctot = cty.dropna(subset=["family_name"]).groupby("family_name")["taxon_id"].nunique()
+    out = pd.DataFrame({"recorded": rec, "county_total": ctot}).fillna(0).astype(int)
+    # County tally is a floor; never let it read below what we've recorded.
+    out["county_total"] = out[["county_total", "recorded"]].max(axis=1)
+    out["gap"] = out["county_total"] - out["recorded"]
+    out["label"] = [fam_common.get(f) or f for f in out.index]
+    return out.sort_values("county_total", ascending=False).head(n).reset_index(drop=True)
+
+
 def moth_survey_nights(df, moths):
     """Distinct dates with a moth record + the date range — survey effort, for
     the Methods panel and effort-aware caveats."""

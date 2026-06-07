@@ -201,11 +201,14 @@ def sync_taxonomy(batch_size=30):
     Incremental: only fetches taxa not already cached, so nightly runs touch the
     API only for newly recorded species.
     """
+    # Enrich every taxon we display family/order for: property species *and* the
+    # county moth checklist (needed for the per-family recorded-vs-county chart).
     with connect() as conn:
         todo = [r["taxon_id"] for r in conn.execute(
-            "SELECT DISTINCT p.taxon_id FROM property_obs p "
-            "LEFT JOIN taxon_meta m ON m.taxon_id = p.taxon_id "
-            "WHERE p.taxon_id IS NOT NULL AND m.taxon_id IS NULL"
+            "SELECT taxon_id FROM ("
+            "  SELECT taxon_id FROM property_obs WHERE taxon_id IS NOT NULL"
+            "  UNION SELECT taxon_id FROM county_moth_taxa WHERE taxon_id IS NOT NULL"
+            ") t LEFT JOIN taxon_meta m USING (taxon_id) WHERE m.taxon_id IS NULL"
         ).fetchall()]
     added = 0
     for i in range(0, len(todo), batch_size):
