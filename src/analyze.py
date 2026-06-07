@@ -163,7 +163,7 @@ def obs_per_day(df):
 
 
 # --- phenology --------------------------------------------------------------
-def phenology(df, iconic_taxon=None):
+def phenology(df, iconic_taxon=None, top=40):
     """Species x month observation-count matrix (optionally one taxon group)."""
     sub = df.dropna(subset=["observed_on", "taxon_id"])
     if iconic_taxon:
@@ -180,7 +180,7 @@ def phenology(df, iconic_taxon=None):
     )
     # Keep the chart legible: most-observed species first.
     matrix = matrix.loc[matrix.sum(axis=1).sort_values(ascending=False).index]
-    return matrix.head(40)
+    return matrix.head(top)
 
 
 # --- observer leaderboard (crediting contributors) --------------------------
@@ -416,42 +416,49 @@ def _species_counts(sub):
 
 
 def moth_completeness(df, moths):
-    """Chao1 richness estimate for the moth inventory.
+    """Incidence-based Chao2 richness estimate for the moth inventory.
 
-    Abundance-based Chao1 from per-species observation counts: how many moth
-    species likely occur on the property vs. how many we've recorded. Obs counts
-    stand in for abundance — a standard but imperfect proxy, so it's an estimate.
+    Each survey night is a sampling unit; a species is "detected" on a night if
+    it was recorded that night. This avoids the abundance trap (repeat photos of
+    one moth at a sheet inflate observation counts), so it's the right estimator
+    for a single-site inventory. Q1/Q2 = species detected on exactly one / two
+    nights; m = number of survey nights.
     """
-    counts = _species_counts(moth_obs(df, moths))
-    s_obs = int((counts > 0).sum())
-    f1 = int((counts == 1).sum())          # singletons
-    f2 = int((counts == 2).sum())          # doubletons
     import math
-    if f2 > 0:
-        chao1 = s_obs + f1 * f1 / (2 * f2)
-    else:                                   # bias-corrected form when no doubletons
-        chao1 = s_obs + f1 * (f1 - 1) / 2
-    chao1 = max(chao1, s_obs)
-    # Chao (1987) log-normal 95% CI on the *estimated missing* species.
-    t = chao1 - s_obs
-    low = high = int(round(chao1))
-    if t > 0 and f1 > 0 and f2 > 0:
-        r = f1 / f2
-        var = f2 * (0.5 * r ** 2 + r ** 3 + 0.25 * r ** 4)
+    sub = moth_obs(df, moths).dropna(subset=["taxon_id", "observed_on"]).copy()
+    sub["night"] = sub["observed_on"].dt.date
+    nights_per_species = sub.groupby("taxon_id")["night"].nunique()
+    s_obs = int(len(nights_per_species))
+    q1 = int((nights_per_species == 1).sum())
+    q2 = int((nights_per_species == 2).sum())
+    m = int(sub["night"].nunique())
+    corr = (m - 1) / m if m > 1 else 1.0
+    if q2 > 0:
+        chao2 = s_obs + corr * q1 * q1 / (2 * q2)
+    else:
+        chao2 = s_obs + corr * q1 * (q1 - 1) / 2
+    chao2 = max(chao2, s_obs)
+    # Log-normal 95% CI on the estimated missing species (Chao 1987 form).
+    t = chao2 - s_obs
+    low = high = int(round(chao2))
+    if t > 0 and q1 > 0 and q2 > 0:
+        r = q1 / q2
+        var = q2 * (0.5 * r ** 2 + r ** 3 + 0.25 * r ** 4)
         if var > 0:
             c = math.exp(1.96 * math.sqrt(math.log(1 + var / (t * t))))
             low = int(round(s_obs + t / c))
             high = int(round(s_obs + t * c))
-    pct = round(100 * s_obs / chao1) if chao1 else 100
+    pct = round(100 * s_obs / chao2) if chao2 else 100
     return {
         "observed": s_obs,
-        "estimated": int(round(chao1)),
-        "remaining": int(round(chao1)) - s_obs,
+        "estimated": int(round(chao2)),
+        "remaining": int(round(chao2)) - s_obs,
         "pct_complete": int(pct),
         "low": low,
         "high": high,
-        "singletons": f1,
-        "doubletons": f2,
+        "q1": q1,           # species detected on a single night
+        "q2": q2,           # ... on exactly two nights
+        "nights": m,
     }
 
 

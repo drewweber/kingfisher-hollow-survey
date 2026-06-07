@@ -143,14 +143,27 @@ def taxa_bar(life):
 
 
 # --- phenology heatmap ------------------------------------------------------
-def phenology(matrix, dark=False):
+def phenology(matrix, dark=False, normalize=False):
+    """Species × month heatmap. With normalize=True each row is scaled to its own
+    peak month, so a rare species' timing reads as clearly as a common one's
+    (raw counts stay in the hover)."""
     if matrix.empty:
         return "<p class='chart-empty'>No phenology data.</p>"
+    raw = matrix.values
+    if normalize:
+        row_max = matrix.max(axis=1).replace(0, 1)
+        z = matrix.div(row_max, axis=0).values
+        cbar_title = "share of<br>peak month"
+    else:
+        z = raw
+        cbar_title = ""
     fig = go.Figure(go.Heatmap(
-        z=matrix.values, x=MONTHS, y=matrix.index.tolist(),
+        z=z, x=MONTHS, y=matrix.index.tolist(),
+        customdata=raw,
         colorscale=_palette(dark)["green_scale"], showscale=True,
-        colorbar=dict(title="", thickness=10, len=0.6, outlinewidth=0),
-        hovertemplate="%{y}<br>%{x}: %{z} obs<extra></extra>",
+        colorbar=dict(title=dict(text=cbar_title, font=dict(size=10)),
+                      thickness=10, len=0.6, outlinewidth=0),
+        hovertemplate="%{y}<br>%{x}: %{customdata} obs<extra></extra>",
         xgap=2, ygap=2,
     ))
     fig.update_yaxes(autorange="reversed", showgrid=False)
@@ -219,6 +232,22 @@ def uniqueness_scatter(stats):
         text=firsts["label"], name="County-first record",
         hovertemplate="<b>%{text}</b> · county first<br>%{x} in NY<extra></extra>",
     )
+    # Mark the "rare in NY" zone (matches the ≤25 badge threshold) and label the
+    # standout species there directly — hover is dead on mobile / static export.
+    ymax = s["property_obs_count"].max() if not s.empty else 1
+    fig.add_shape(type="rect", x0=0.5, x1=25, y0=0, y1=ymax * 1.08,
+                  fillcolor="rgba(194,112,61,0.07)", line=dict(width=0), layer="below")
+    fig.add_vline(x=25, line=dict(color=ACCENT, width=1, dash="dot"))
+    fig.add_annotation(x=25, y=ymax * 1.08, text="← rarer in New York",
+                       showarrow=False, xanchor="left", yanchor="top",
+                       font=dict(size=11, color=ACCENT))
+    standouts = (s[s["state_obs_count"] <= 25]
+                 .sort_values("property_obs_count", ascending=False).head(4))
+    if not standouts.empty:
+        fig.add_scatter(
+            x=standouts["state_obs_count"], y=standouts["property_obs_count"],
+            mode="text", text=standouts["label"], textposition="middle right",
+            textfont=dict(size=10, color=INK), hoverinfo="skip", showlegend=False)
     fig.update_xaxes(type="log", title=dict(
         text="Observations in New York (log scale) →", font=dict(size=11, color=MUTED)))
     fig.update_yaxes(title=dict(
@@ -316,13 +345,15 @@ def completeness_curve(effort, comp, dark=True):
     return _html(_style(fig, height=400, dark=dark))
 
 
-def rank_abundance(counts, singletons=0, doubletons=0, dark=True):
-    """Whittaker rank-abundance: species ranked by detections (log y). The
-    single/twice-seen tail is highlighted — that long flat tail is the
-    'unfinished edge' that drives the completeness estimate."""
+def rank_abundance(counts, dark=True):
+    """Whittaker rank-abundance: species ranked by observation count (log y).
+    The once/twice-seen tail is highlighted — the long flat tail of barely-
+    recorded species is the 'unfinished edge' of the inventory."""
     if not counts:
         return "<p class='chart-empty'>Not enough data.</p>"
     c = _palette(dark)
+    singletons = sum(1 for v in counts if v == 1)
+    doubletons = sum(1 for v in counts if v == 2)
     n = len(counts)
     x = list(range(1, n + 1))
     body = [v if v > 2 else None for v in counts]
@@ -341,9 +372,8 @@ def rank_abundance(counts, singletons=0, doubletons=0, dark=True):
     if singletons:
         fig.add_annotation(
             x=n, y=1, xanchor="right", yanchor="bottom",
-            text=f"<b>{singletons}</b> seen once · <b>{doubletons}</b> twice — "
-                 "the unfinished edge", showarrow=False,
-            font=dict(size=11, color=ACCENT))
+            text=f"<b>{singletons}</b> recorded once · <b>{doubletons}</b> twice",
+            showarrow=False, font=dict(size=11, color=ACCENT))
     fig.update_yaxes(type="log", title=dict(text="Observations (log) →",
                      font=dict(size=11, color=c["muted"])))
     fig.update_xaxes(title=dict(text="Species rank (most → least recorded)",

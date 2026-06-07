@@ -4,6 +4,7 @@
 editorial infographic. Charts come from viz.py; this module owns the page shell,
 typography, and the photo/table/showcase sections."""
 
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 import analyze  # noqa: E402
 import viz  # noqa: E402
 from config import PUBLIC_DIR  # noqa: E402
-from db import init_db  # noqa: E402
+from db import connect, init_db  # noqa: E402
 
 PLOTLY_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
 SITE = "https://www.kingfisher-hollow.com"
@@ -113,6 +114,21 @@ def chart_card(html, note="", dark=False):
     note_html = (f'<p class="{note_cls} text-xs mt-4 italic">{note}</p>'
                  if note else "")
     return f'<div class="{wrap}">{html}{note_html}</div>'
+
+
+def takeaway(text, dark=False):
+    """A plain-language 'what this shows' callout under a chart — sci-comm
+    interpretation so a curious non-scientist gets the point without decoding."""
+    if dark:
+        border, badge, body = "border-hollow-400", "text-hollow-300", "text-white/70"
+        bg = "bg-white/[0.04]"
+    else:
+        border, badge, body = "border-hollow-500", "text-hollow-600", "text-stone-600"
+        bg = "bg-hollow-50"
+    return (f'<div class="mt-6 max-w-2xl mx-auto border-l-2 {border} {bg} rounded-r-lg px-5 py-4">'
+            f'<span class="{badge} text-[0.62rem] font-semibold tracking-[0.18em] uppercase">'
+            f'What this shows</span>'
+            f'<p class="{body} text-[0.97rem] leading-relaxed mt-1.5">{text}</p></div>')
 
 
 # ── hero ─────────────────────────────────────────────────────────────────────
@@ -260,11 +276,26 @@ def rarest_body(rare):
 def life_list_body(life):
     if life.empty:
         return '<p class="text-center text-stone-500">No species yet.</p>'
-    # Filter buttons ordered by group size (biggest groups first), "All" leads.
-    order = life["group"].value_counts().index.tolist()
-    btns = ['<button class="ll-filter ll-active" data-group="all">All</button>']
-    btns += [f'<button class="ll-filter" data-group="{esc(g)}">{esc(g)}</button>'
-             for g in order]
+    # Pin the biggest groups as pills; the long tail goes in a dropdown so the
+    # filter bar stays scannable instead of a 28-button wall. Counts aid the eye.
+    counts = life["group"].value_counts()
+    total = int(len(life))
+    pinned = counts.index[:6].tolist()
+    rest = counts.index[6:].tolist()
+
+    def short(label):
+        return label if len(label) <= 22 else label[:20].rstrip(" ,&") + "…"
+
+    btns = [f'<button class="ll-filter ll-active" data-group="all">All <span class="ll-n">{total}</span></button>']
+    btns += [f'<button class="ll-filter" data-group="{esc(g)}">{esc(short(g))} '
+             f'<span class="ll-n">{int(counts[g])}</span></button>' for g in pinned]
+    select = ""
+    if rest:
+        opts = "".join(f'<option value="{esc(g)}">{esc(g)} ({int(counts[g])})</option>'
+                       for g in rest)
+        select = (f'<select id="ll-select" class="ll-select px-3 py-1.5 rounded-full '
+                  f'border border-stone-200 text-sm text-stone-600 bg-white">'
+                  f'<option value="">More groups…</option>{opts}</select>')
     rows = []
     for _, r in life.iterrows():
         name = r["label"]
@@ -284,7 +315,7 @@ def life_list_body(life):
       <div class="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-between">
         <input id="ll-search" type="search" placeholder="Search species…"
           class="w-full sm:w-72 px-4 py-2.5 rounded-full border border-stone-200 focus:border-hollow-400 focus:ring-2 focus:ring-hollow-100 outline-none text-sm">
-        <div class="flex flex-wrap gap-2 justify-center">{''.join(btns)}</div>
+        <div class="flex flex-wrap gap-2 justify-center items-center" role="group" aria-label="Filter by group">{''.join(btns)}{select}</div>
       </div>
       <div class="bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm max-h-[560px] overflow-y-auto">
         <table class="w-full text-[0.95rem]"><thead class="text-stone-400 text-xs uppercase tracking-wider border-b-2 border-stone-100">
@@ -407,32 +438,6 @@ def moth_gap_body(gap):
             'rounded-2xl p-6 md:p-8">' + "".join(rows) + "</div>")
 
 
-def methods_body(msum, nights):
-    """A short, honest 'how this survey works' panel — effort context that every
-    downstream metric depends on. Survey-night count is data-derived."""
-    rng = ""
-    if nights.get("first") is not None:
-        rng = f"{fdate(nights['first'], '%b %Y')} – {fdate(nights['last'], '%b %Y')}"
-    facts = [
-        ("Where", "A single ~30-acre property along Michigan Creek, Tioga County, NY."),
-        ("Effort", f"Moths recorded on <strong class='text-hollow-300'>{nights['nights']}</strong> "
-                   f"separate days{(' (' + rng + ')') if rng else ''} — opportunistic, "
-                   "many on summer nights drawn to lights."),
-        ("Records", f"<strong class='text-hollow-300'>{msum['records']:,}</strong> moth "
-                    f"observations of <strong class='text-hollow-300'>{msum['species']:,}</strong> "
-                    "species, posted to iNaturalist (research-grade where the community has confirmed an ID)."),
-        ("Caveat", "Effort is uneven across the year, so counts reflect when someone was "
-                   "looking as much as what was flying. Birds are tracked separately on eBird."),
-    ]
-    items = "".join(
-        f'<div class="py-3 border-b border-white/10 last:border-0">'
-        f'<div class="text-hollow-400 text-[0.65rem] font-semibold tracking-[0.18em] uppercase mb-1">{k}</div>'
-        f'<div class="text-white/70 text-[0.95rem] leading-relaxed">{v}</div></div>'
-        for k, v in facts)
-    return (f'<div class="max-w-2xl mx-auto bg-white/[0.04] border border-white/10 '
-            f'rounded-2xl p-6 md:p-8">{items}</div>')
-
-
 def moth_diversity_body(div):
     simp_pct = round(float(div["simpson"]) * 100, 1)
     tiles = [
@@ -495,6 +500,8 @@ tailwind.config = {{ theme: {{ extend: {{
   .ll-filter {{ font-size:.8rem; padding:.35rem .85rem; border-radius:9999px; border:1px solid #e7e5e4; color:#57534e; background:white; transition: all .2s; cursor:pointer; }}
   .ll-filter:hover {{ border-color:#8ec8b1; }}
   .ll-active {{ background:#2e735c; color:white; border-color:#2e735c; }}
+  .ll-n {{ opacity:.55; font-variant-numeric:tabular-nums; margin-left:.15rem; }}
+  .ll-select {{ cursor:pointer; outline:none; }} .ll-select:focus {{ border-color:#8ec8b1; }}
   .chart-empty {{ text-align:center; color:#a8a29e; padding:2rem; font-style:italic; }}
   .reveal {{ opacity:0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }}
   .reveal.in {{ opacity:1; transform:none; }}
@@ -555,7 +562,34 @@ def nav():
 </nav>"""
 
 
-def footer(generated):
+def _git_date():
+    """Last commit date of the repo (when the code last changed), MM/DD/YYYY."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(Path(__file__).resolve().parent), "log", "-1", "--format=%cI"],
+            capture_output=True, text=True, timeout=10)
+        iso = (out.stdout or "").strip()
+        if iso:
+            return datetime.fromisoformat(iso).strftime("%m/%d/%Y")
+    except (subprocess.SubprocessError, ValueError, OSError):
+        pass
+    # Fallback: this file's modification time.
+    return datetime.fromtimestamp(Path(__file__).stat().st_mtime).strftime("%m/%d/%Y")
+
+
+def data_updated_date():
+    """When the data was last refreshed — the most recent sync, MM/DD/YYYY UTC."""
+    try:
+        with connect() as conn:
+            row = conn.execute("SELECT MAX(synced_at) AS t FROM sync_log").fetchone()
+        if row and row["t"]:
+            return datetime.fromisoformat(row["t"].replace(" ", "T")).strftime("%m/%d/%Y")
+    except Exception:
+        pass
+    return datetime.now(timezone.utc).strftime("%m/%d/%Y")
+
+
+def footer(code_updated, data_updated):
     return f"""
 <footer class="bg-hollow-950 py-12 px-6">
   <div class="max-w-6xl mx-auto">
@@ -568,7 +602,12 @@ def footer(generated):
         <a href="{PROJECT_URL}" target="_blank" rel="noopener" class="hover:text-white/75 transition-colors">iNaturalist project ↗</a>
       </nav>
     </div>
-    <p class="text-center text-white/25 text-xs tracking-wide">Data from iNaturalist · Updated {generated} · Photos © their respective observers</p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-1 text-white/40 text-xs tracking-wide mb-2">
+      <span>Data last updated <strong class="text-white/60">{data_updated}</strong></span>
+      <span class="hidden sm:inline text-white/20">·</span>
+      <span>Code last updated <strong class="text-white/60">{code_updated}</strong></span>
+    </div>
+    <p class="text-center text-white/25 text-xs tracking-wide">Data from iNaturalist · Photos © their respective observers</p>
   </div>
 </footer>"""
 
@@ -583,18 +622,23 @@ SCRIPTS = """
   window.addEventListener('scroll',updateNav,{passive:true});updateNav();
   document.querySelectorAll('#mob a').forEach(a=>a.addEventListener('click',()=>document.getElementById('mob').classList.add('hidden')));
 
-  // Life-list filter + search
+  // Life-list filter + search (pinned pills + a dropdown for the long tail)
   (function(){
     const rows=[...document.querySelectorAll('.ll-row')],search=document.getElementById('ll-search'),
-          count=document.getElementById('ll-count');let group='all';
+          count=document.getElementById('ll-count'),sel=document.getElementById('ll-select');let group='all';
     function apply(){const q=(search.value||'').toLowerCase();let n=0;
       rows.forEach(r=>{const okG=group==='all'||r.dataset.group===group,
         okQ=!q||r.dataset.name.includes(q);const show=okG&&okQ;
         r.style.display=show?'':'none';if(show)n++;});
       count.textContent=n+' species shown';}
-    document.querySelectorAll('.ll-filter').forEach(b=>b.addEventListener('click',()=>{
-      document.querySelectorAll('.ll-filter').forEach(x=>x.classList.remove('ll-active'));
-      b.classList.add('ll-active');group=b.dataset.group;apply();}));
+    function activate(g,fromSelect){group=g;
+      document.querySelectorAll('.ll-filter').forEach(x=>{const on=(x.dataset.group===g);
+        x.classList.toggle('ll-active',on);x.setAttribute('aria-pressed',on?'true':'false');});
+      if(sel&&!fromSelect)sel.value='';apply();}
+    document.querySelectorAll('.ll-filter').forEach(b=>b.addEventListener('click',()=>activate(b.dataset.group)));
+    if(sel)sel.addEventListener('change',()=>{if(sel.value){
+      document.querySelectorAll('.ll-filter').forEach(x=>{x.classList.remove('ll-active');x.setAttribute('aria-pressed','false');});
+      activate(sel.value,true);}});
     if(search)search.addEventListener('input',apply);apply();
   })();
 
@@ -646,7 +690,6 @@ def moth_view(df, stats):
     gap = analyze.moth_county_gap(moths)
     div = analyze.moth_diversity(df, moths)
     eff = analyze.moth_effort(df, moths)
-    nights = analyze.moth_survey_nights(df, moths)
     moth_sub = analyze.moth_obs(df, moths)
 
     out = []
@@ -657,73 +700,96 @@ def moth_view(df, stats):
               "a parade of moths, from giant silkmoths to the smallest leaf-miners. "
               "This is the moth survey in full.",
         dark=True))
-    out.append(section(
-        "moth-methods", "How This Works",
-        'A Note on <em class="text-hollow-300">Method</em>',
-        methods_body(msum, nights),
-        dark=True))
-    # Singleton/doubleton headline — the diagnostic behind "still climbing".
+
+    # Headline diagnostic: species detected on only one or two nights.
     once_band = (
-        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-10">'
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
         + _dark_divider().join([
-            _dark_stat(f"{comp['singletons']}", "Seen just once"),
-            _dark_stat(f"{comp['doubletons']}", "Seen twice"),
-        ]) + '</div>'
-        + '<p class="text-center text-white/55 max-w-2xl mx-auto -mt-4 mb-10">Nearly a '
-          'third of the list has been recorded a single time — the signature of a young, '
-          'still-growing inventory, and why the estimate sits well above what\'s been found.</p>')
+            _dark_stat(f"{comp['q1']}", "On one night only"),
+            _dark_stat(f"{comp['q2']}", "On just two nights"),
+            _dark_stat(f"{comp['nights']}", "Survey nights"),
+        ]) + '</div>')
     out.append(section(
         "moth-completeness", "How Complete?",
         'The Inventory, <em class="text-hollow-300">Estimated</em>',
         once_band
         + chart_card(viz.completeness_curve(eff, comp),
-                     note="Chao1 estimates the true total from how many moths have been "
-                          "seen just once or twice; the band is its 95% confidence range. "
-                          "Observation counts stand in for abundance, so treat it as a guide.",
-                     dark=True),
-        intro=f"We've recorded <strong>{comp['observed']}</strong> moth species; "
-              f"Chao1 projects roughly <strong>{comp['estimated']}</strong> "
-              f"(95% CI {comp['low']}–{comp['high']}) occur here — about "
-              f"<strong>{comp['pct_complete']}%</strong> found, ~{comp['remaining']} still out there.",
+                     note=f"Chao2 (incidence-based) projects the true total from how many "
+                          f"moths turned up on only one or two of the {comp['nights']} survey "
+                          f"nights; the shaded band is the 95% confidence range.",
+                     dark=True)
+        + takeaway(
+            f"We've recorded <strong>{comp['observed']}</strong> moth species. Because "
+            f"<strong>{comp['q1']}</strong> of them have shown up on just a single night, "
+            f"the statistics say many more are out there: Chao2 estimates roughly "
+            f"<strong>{comp['estimated']}</strong> species live here (likely "
+            f"{comp['low']}–{comp['high']}). So the inventory is about "
+            f"<strong>{comp['pct_complete']}%</strong> complete — strong, but every new "
+            f"night still turns up moths never seen before.", dark=True),
+        intro="How many moth species really live here, and how close the survey is to "
+              "finding them all.",
         dark=True))
     out.append(section(
         "moth-seasons", "Flight Seasons",
         'On the <em class="text-hollow-300">Wing</em>',
         chart_card(viz.seasonal_cascade(analyze.moth_seasonal(df, moths), dark=True),
                    note="Faint line: full span seen · bar: middle 50% of records · "
-                        "dot: typical night.", dark=True),
+                        "dot: typical date. Only species with several records are drawn.",
+                   dark=True)
+        + takeaway(
+            "Each row is a moth species, stacked by when in the year it flies — so the "
+            "chart reads top-to-bottom as the season unfolding, from early-spring species "
+            "down to late-summer and fall fliers. The bar marks its core flight window; "
+            "the faint line shows the full range of dates it's been seen. With one season "
+            "of data these are first sketches that will sharpen each year.", dark=True),
         intro="When each moth species flies, ordered as a wave from early-season to late.",
         dark=True))
     out.append(section(
         "moth-phenology", "By Month",
         'Moth <em class="text-hollow-300">Phenology</em>',
-        chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True), dark=True),
-        intro="The most-recorded moths and the months they appear.",
+        chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
+                   note="Each row is normalized to its own peak month, so a rare moth's "
+                        "timing is as visible as a common one's. Hover for raw counts.",
+                   dark=True)
+        + takeaway(
+            "Reading across a row shows a single species' season; reading down a column "
+            "shows which moths share a month. Brighter cells are that species' peak. "
+            "Sparse winter columns reflect cold nights with little flying — and little "
+            "surveying — rather than a true moth-free season.", dark=True),
+        intro="Each species' seasonal signature, month by month.",
         dark=True))
     out.append(section(
         "moth-gap", "Yet to Find",
         'The <em class="text-hollow-300">Gap List</em>',
-        moth_gap_body(gap),
+        moth_gap_body(gap)
+        + takeaway(
+            "These are moths recorded elsewhere in Tioga County but not yet on the "
+            "property, ranked by how often they turn up nearby — so the top of the list "
+            "is where to point the light next. The county total is itself just a running "
+            "iNaturalist tally, so it's a floor: some property moths may even be county firsts.",
+            dark=True),
         intro="Tioga County moths recorded nearby but not yet on the property.",
         dark=True))
     out.append(section(
         "moth-diversity", "Diversity",
         'A <em class="text-hollow-300">Balanced</em> Community',
         moth_diversity_body(div)
-        + chart_card(viz.rank_abundance(div.get("rank_abundance", []),
-                                        singletons=comp["singletons"],
-                                        doubletons=comp["doubletons"]),
-                     note="Each species ranked by how often it's recorded. A gentle "
-                          "slope means high evenness — no single moth dominates. The "
-                          "terracotta tail is species seen only once or twice.",
-                     dark=True),
+        + chart_card(viz.rank_abundance(div.get("rank_abundance", [])),
+                     note="Each species ranked by how often it's recorded (log scale). "
+                          "The terracotta tail is species seen only once or twice.",
+                     dark=True)
+        + takeaway(
+            "A steep drop would mean a few moths dominate; this gentle slope means the "
+            "community is remarkably even — no single species swamps the rest, which is "
+            "the hallmark of a rich, intact habitat. The long flat tail of once-or-twice "
+            "seen moths is the frontier of the inventory.", dark=True),
         intro="How even the moth community is — diversity and dominance at a glance.",
         dark=True))
     out.append(section(
         "moth-standouts", "Standouts",
         'Rare &amp; <em class="text-hollow-300">Remarkable</em>',
         moth_showcase(analyze.moth_highlights(moths, stats)),
-        intro="The rarest-in-New-York moths recorded here, with their state tallies.",
+        intro="The rarest-in-New-York moths recorded here, with their statewide tallies.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
@@ -751,7 +817,6 @@ def build():
     life = analyze.life_list(df)
     firsts = analyze.firsts_timeline(df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
-    generated = datetime.now(timezone.utc).strftime("%B %-d, %Y")
 
     parts = [head(), nav(), hero(s, county_firsts)]
 
@@ -766,26 +831,49 @@ def build():
         "discovery", "The Story So Far",
         'A Growing <em class="text-hollow-600">Life List</em>',
         chart_card(viz.discovery_curve(firsts),
-                   note="Each step marks the first time a species was recorded on the property."),
+                   note="Each step marks the first time a species was recorded on the property.")
+        + takeaway(
+            "Every step up is a species recorded here for the first time. The line is "
+            "still climbing steeply, not levelling off — a sign the survey is young and "
+            "the property keeps yielding species nobody had logged here before."),
         intro="Every species, the day it was first found here — a cumulative portrait of the survey."))
+
+    # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
     parts.append(section(
         "unique", "How Unique",
         'County <em class="text-hollow-300">Firsts</em>',
-        showcase_body(analyze.county_first_showcase(df, stats)),
+        showcase_body(analyze.county_first_showcase(df, stats))
+        + takeaway(
+            "For each of these species, the earliest record anywhere in Tioga County "
+            "is the one made here — the property isn't just cataloguing local life, "
+            "it's adding to what the county knows it has.", dark=True),
         intro="Species for which Kingfisher Hollow holds the earliest record in all of Tioga County.",
         dark=True))
+    rarity_body = (
+        chart_card(viz.uniqueness_scatter(stats),
+                   note="Each point is a species: left = rarer in New York, higher = more "
+                        "often found here. Terracotta = a county-first record.")
+        + takeaway(
+            "Species drifting to the upper-left are the property's signature: scarce across "
+            "New York yet reliably found here. Those are the records that matter most to "
+            "the wider picture — and the ranked list below pulls out the very rarest.")
+        + '<h3 class="font-serif text-2xl font-bold text-stone-900 text-center mt-14 mb-6">'
+          'The rarest of them</h3>'
+        + rarest_body(analyze.rarest_finds(df, stats)))
     parts.append(section(
-        "rarest", "Rarities",
-        'Rarest in <em class="text-hollow-600">New York</em>',
-        rarest_body(analyze.rarest_finds(df, stats)),
-        intro="Your finds ranked by how few times they’ve been recorded anywhere in the state."))
+        "uniqueness", "The Big Picture",
+        'Common Here, <em class="text-hollow-600">Rare There</em>',
+        rarity_body,
+        intro="How the property's species sit against the whole state — and which are the "
+              "genuine rarities.",
+        tint="bg-stone-100"))
+
     parts.append(section(
         "life-list", "The Full Roll",
         'The <em class="text-hollow-600">Life List</em>',
         life_list_body(life),
         intro="Every species recorded on the property. Search or filter by group. "
-              "(Birds are tracked on eBird, not here.)",
-        tint="bg-stone-100"))
+              "(Birds are tracked on eBird, not here.)"))
     two_up = (
         '<div class="grid lg:grid-cols-2 gap-6">'
         + chart_card(viz.per_day(analyze.obs_per_day(df)))
@@ -793,24 +881,36 @@ def build():
         + '</div>')
     parts.append(section(
         "activity", "Effort & Breadth",
-        'Activity &amp; <em class="text-hollow-600">Taxa</em>', two_up,
-        intro="Observation effort over time, and the breadth of life recorded across taxonomic groups."))
+        'Activity &amp; <em class="text-hollow-600">Taxa</em>',
+        two_up
+        + takeaway(
+            "Left: how much looking happens day to day — the tall spikes are big survey "
+            "days and warm summer nights. Right: the sheer breadth of life found, across "
+            "the tree of life. It's an unusually diverse single property, though insects "
+            "— moths above all — dominate both the effort and the count.",),
+        intro="Observation effort over time, and the breadth of life recorded across taxonomic groups.",
+        tint="bg-stone-100"))
     parts.append(section(
         "phenology", "Phenology",
         'When Things <em class="text-hollow-600">Appear</em>',
-        chart_card(viz.phenology(analyze.phenology(df))),
-        intro="The 40 most-recorded species and the months they show up."))
-    parts.append(section(
-        "uniqueness", "The Big Picture",
-        'Common Here, <em class="text-hollow-600">Rare There</em>',
-        chart_card(viz.uniqueness_scatter(stats),
-                   note="Each point is a species. Further left = rarer in New York. Terracotta = county-first record."),
-        tint="bg-stone-100"))
+        chart_card(viz.phenology(analyze.phenology(df, top=24), normalize=True),
+                   note="Each row is normalized to its own peak month, so a rare species' "
+                        "timing reads as clearly as a common one's. Hover for raw counts.")
+        + takeaway(
+            "Each row is one of the 24 most-recorded species; brighter cells are the months "
+            "it shows up most. Read across for a species' season, or down a column to see "
+            "what's active in a given month — the green wave sweeping left-to-right is the "
+            "year turning over."),
+        intro="The most-recorded species and the months they show up."))
     parts.append(section(
         "observers", "Credit Where Due",
         'The <em class="text-hollow-600">Observers</em>',
-        chart_card(viz.leaderboard(analyze.observer_leaderboard(df))),
-        intro="Everyone who has contributed observations to the survey."))
+        chart_card(viz.leaderboard(analyze.observer_leaderboard(df)))
+        + takeaway(
+            "Every record is credited. Bars show each person's observations; hover for their "
+            "species total and the species only they have found here — a survey built by many eyes."),
+        intro="Everyone who has contributed observations to the survey.",
+        tint="bg-stone-100"))
     parts.append(section(
         "gallery", "In Pictures",
         'Recent <em class="text-hollow-600">Sightings</em>',
@@ -818,7 +918,11 @@ def build():
         intro="The latest research-grade photographs from the property."))
     parts.append(section(
         "map", "Where", 'On the <em class="text-hollow-600">Land</em>',
-        chart_card(viz.obs_map(df)),
+        chart_card(viz.obs_map(df))
+        + takeaway(
+            "Where life turns up on the 30 acres. Clusters trace the trails, the pond, and "
+            "the spots where lights are run on summer nights. Locations for sensitive species "
+            "are deliberately blurred by iNaturalist."),
         intro="Every mapped observation. Coordinates for sensitive species are obscured by iNaturalist."))
     parts.append('</div>')  # /view-all
 
@@ -827,7 +931,7 @@ def build():
     parts.append(moth_view(df, stats))
     parts.append('</div>')  # /view-moths
 
-    parts.append(footer(generated))
+    parts.append(footer(_git_date(), data_updated_date()))
     parts.append(SCRIPTS)
 
     html = "".join(parts)
