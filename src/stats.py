@@ -3,7 +3,8 @@ county and across New York State? Cached in species_stats with a TTL so
 nightly runs only hit the API for new or stale taxa."""
 
 import inat_api
-from config import COUNTY_PLACE_ID, STATE_PLACE_ID, STATS_TTL_DAYS
+from config import (COUNTY_PLACE_ID, SPECIES_RANKS, STATE_PLACE_ID,
+                    STATS_TTL_DAYS)
 from db import connect
 
 
@@ -23,11 +24,12 @@ def _stale_or_missing(conn):
         FROM property_obs p
         LEFT JOIN species_stats s ON s.taxon_id = p.taxon_id
         WHERE p.taxon_id IS NOT NULL
+          AND p.rank IN ({placeholders})
           AND (s.taxon_id IS NULL
                OR s.cached_at < datetime('now', ?))
         GROUP BY p.taxon_id
-        """,
-        (f"-{STATS_TTL_DAYS} days",),
+        """.format(placeholders=",".join("?" * len(SPECIES_RANKS))),
+        (*SPECIES_RANKS, f"-{STATS_TTL_DAYS} days"),
     ).fetchall()
 
 

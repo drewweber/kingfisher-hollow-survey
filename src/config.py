@@ -27,6 +27,12 @@ LOGS_DIR = ROOT / "logs"
 DB_PATH = DATA_DIR / "inat.db"
 
 # --- Behaviour ---------------------------------------------------------------
+# Ranks counted as "species level" — species and anything finer. Coarser IDs
+# (genus, family, …) represent observations not resolved to a species and are
+# excluded from all counts, lists, and uniqueness stats.
+SPECIES_RANKS = ("species", "subspecies", "variety", "form", "hybrid",
+                 "subvariety", "subform")
+
 STATS_TTL_DAYS = 30         # refresh cached uniqueness stats older than this
                             # (counts drift slowly; keeps nightly churn small —
                             #  new property species are always refreshed

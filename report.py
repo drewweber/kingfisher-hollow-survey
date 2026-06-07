@@ -416,6 +416,11 @@ def build():
         print("No property observations yet — run sync.py --property first.")
         return None
 
+    # Keep uniqueness stats species-level too (they're cached per-taxon and may
+    # include coarser IDs cached before this filter existed).
+    if not stats.empty:
+        stats = stats[stats["taxon_id"].isin(set(df["taxon_id"].dropna()))]
+
     s = analyze.summary(df)
     life = analyze.life_list(df)
     firsts = analyze.firsts_timeline(df)

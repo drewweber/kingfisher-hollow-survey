@@ -3,18 +3,31 @@
 
 import pandas as pd
 
+from config import SPECIES_RANKS
 from db import connect
 
 
-def load_property():
-    """Property observations as a DataFrame with parsed date columns."""
+def load_property(species_only=True):
+    """Property observations as a DataFrame with parsed date columns.
+
+    By default restricted to species-level records (rank 'species' or finer);
+    coarser IDs like genus/family are observations not resolved to a species.
+    """
     with connect() as conn:
         df = pd.read_sql_query("SELECT * FROM property_obs", conn)
+    if species_only:
+        df = df[df["rank"].isin(SPECIES_RANKS)].copy()
     df["observed_on"] = pd.to_datetime(df["observed_on"], errors="coerce")
     df["created_at"] = pd.to_datetime(
         df["created_at"], errors="coerce", utc=True
     )
     return df
+
+
+def species_taxon_ids():
+    """Set of species-level taxon_ids on the property — used to keep the
+    uniqueness stats (which are cached per-taxon) species-level too."""
+    return set(load_property()["taxon_id"].dropna().astype(int))
 
 
 def load_stats():
