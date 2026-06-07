@@ -28,12 +28,14 @@ python3 -m venv .venv
 ## Usage
 ```sh
 .venv/bin/python sync.py --all      # property + county + uniqueness stats
-.venv/bin/python report.py          # build reports/report.html
-open reports/report.html
+.venv/bin/python report.py          # build public/index.html
+open public/index.html
 ```
-The first county sync downloads all ~25k observations (a few minutes); later
-runs only fetch newer ones. Uniqueness stats are cached for 7 days, so nightly
-runs only hit the API for new or stale species.
+The first sync downloads all ~25k county observations plus uniqueness stats for
+every property species (~90 min, one time). Later runs are incremental: only new
+observations are fetched, and uniqueness stats refresh on a 30-day TTL (new
+property species are always refreshed immediately), so nightly runs take a few
+minutes.
 
 Granular commands: `sync.py --property`, `--county`, `--stats`.
 
@@ -48,13 +50,37 @@ Runs `run.sh` daily at 05:10 (logs in `logs/`). To stop:
 
 **cron alternative:** `10 5 * * * /…/inat-data/run.sh`
 
+## Hosting on the web (Cloudflare Pages + GitHub Actions)
+The report is published to **survey.kingfisher-hollow.com** by a nightly GitHub
+Actions workflow (`.github/workflows/update.yml`) — independent of the existing
+homepage on `www`. The job runs `sync.py --all` + `report.py`, then deploys the
+`public/` directory to a dedicated Cloudflare Pages project (`kingfisher-survey`).
+The SQLite DB is persisted between runs via Actions cache (a cache miss just
+re-pulls from the API, since sync is idempotent), so nothing binary is committed.
+
+One-time setup (the only steps that need your credentials):
+1. **Push to GitHub** (a repo is initialised here):
+   ```sh
+   git remote add origin git@github.com:<you>/kingfisher-hollow-survey.git
+   git push -u origin main
+   ```
+2. **Create the Pages project** (in the Cloudflare dashboard → Workers & Pages →
+   Create → Pages → "Direct Upload", name it `kingfisher-survey`), then add the
+   custom domain `survey.kingfisher-hollow.com` under its **Custom domains** tab.
+3. **Add two GitHub repo secrets** (Settings → Secrets and variables → Actions):
+   - `CLOUDFLARE_API_TOKEN` — a token with the *Cloudflare Pages: Edit* permission
+   - `CLOUDFLARE_ACCOUNT_ID` — from the Cloudflare dashboard URL / overview
+
+Then trigger the workflow once from the Actions tab (**Run workflow**) to verify.
+The GitHub cron is in UTC; `09:10 UTC` ≈ `05:10 ET`.
+
 ## Layout
 ```
-src/config.py   IDs and paths        sync.py     fetch CLI
-src/inat_api.py API client           report.py   report builder
-src/db.py       SQLite schema        run.sh      nightly wrapper
-src/fetch.py    property/county sync  data/inat.db
-src/stats.py    uniqueness lookups    reports/report.html
-src/analyze.py  pandas analyses
+src/config.py   IDs and paths         sync.py     fetch CLI
+src/inat_api.py API client            report.py   report builder
+src/db.py       SQLite schema         run.sh      nightly wrapper (local launchd)
+src/fetch.py    property/county sync  data/inat.db (gitignored; cached in CI)
+src/stats.py    uniqueness lookups    public/index.html (generated report)
+src/analyze.py  pandas analyses       .github/workflows/update.yml (cron + deploy)
 src/viz.py      Plotly charts
 ```

@@ -27,7 +27,10 @@ LOGS_DIR = ROOT / "logs"
 DB_PATH = DATA_DIR / "inat.db"
 
 # --- Behaviour ---------------------------------------------------------------
-STATS_TTL_DAYS = 7          # refresh cached uniqueness stats older than this
+STATS_TTL_DAYS = 30         # refresh cached uniqueness stats older than this
+                            # (counts drift slowly; keeps nightly churn small —
+                            #  new property species are always refreshed
+                            #  immediately regardless of this TTL)
 PER_PAGE = 200              # iNat max page size
 REQUEST_PAUSE = 1.0         # seconds between cursor requests (be polite)
 USER_AGENT = "kingfisher-hollow-pipeline (https://www.inaturalist.org/projects/kingfisher-hollow-biodiversity-survey)"
