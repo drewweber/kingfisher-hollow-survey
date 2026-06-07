@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Local runtime artifacts
+logs/
+
+# Generated report; deployed via wrangler, not committed.
+public/
+
+# SQLite database — persisted between cloud runs via GitHub Actions cache,
+# rebuilt from the iNat API on a cache miss (idempotent). Not stored in git.
+data/inat.db
+data/inat.db-wal
+data/inat.db-shm
+
+# Original CSV exports — superseded by the live API; kept locally as an archive.
+*.csv

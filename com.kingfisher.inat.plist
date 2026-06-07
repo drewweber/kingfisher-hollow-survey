@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.kingfisher.inat</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data/run.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data</string>
+
+    <!-- Run daily at 05:10 local time. launchd will run a missed job once
+         the Mac next wakes, so overnight discoveries are still picked up. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>5</integer>
+        <key>Minute</key><integer>10</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data/logs/run.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data/logs/run.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,49 @@
+name: Update biodiversity report
+
+# Nightly sync of iNaturalist data + deploy of the report to Cloudflare Pages.
+on:
+  schedule:
+    - cron: "10 9 * * *"      # 09:10 UTC ≈ 05:10 ET; GitHub cron is UTC only
+  workflow_dispatch: {}        # allow manual runs from the Actions tab
+
+# Avoid overlapping runs if one is slow.
+concurrency:
+  group: update-report
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Persist the SQLite DB across runs. On a cache miss the pipeline simply
+      # re-pulls from the API (idempotent), so this is an optimisation, not a
+      # correctness requirement. Unique save key + prefix restore = "latest".
+      - name: Restore database cache
+        uses: actions/cache@v4
+        with:
+          path: data/inat.db
+          key: inat-db-${{ github.run_id }}
+          restore-keys: |
+            inat-db-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Sync observations and uniqueness stats
+        run: python sync.py --all
+
+      - name: Build report
+        run: python report.py
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy public --project-name=kingfisher-survey --commit-dirty=true

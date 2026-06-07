@@ -1,0 +1,36 @@
+"""Central configuration for the Kingfisher Hollow iNaturalist pipeline.
+
+All iNat identifiers below were verified against the live API (not the CSV
+export-job IDs, which were never valid place_ids):
+
+    Property : project_id 249580  (collection project, place 218351
+               "Michigan Hollow - silo house")
+    County   : place_id 653       (Tioga County, NY)
+    State    : place_id 48        (New York)
+"""
+
+from pathlib import Path
+
+# --- iNaturalist identifiers -------------------------------------------------
+PROPERTY_PROJECT_ID = 249580
+COUNTY_PLACE_ID = 653
+STATE_PLACE_ID = 48
+MY_USERNAME = "drewweber"
+
+# --- Paths -------------------------------------------------------------------
+# Resolve everything relative to the repo root (parent of this src/ dir) so the
+# scripts work the same whether launched by hand or by launchd.
+ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT / "data"
+PUBLIC_DIR = ROOT / "public"   # Cloudflare Pages publish dir (index.html)
+LOGS_DIR = ROOT / "logs"
+DB_PATH = DATA_DIR / "inat.db"
+
+# --- Behaviour ---------------------------------------------------------------
+STATS_TTL_DAYS = 7          # refresh cached uniqueness stats older than this
+PER_PAGE = 200              # iNat max page size
+REQUEST_PAUSE = 1.0         # seconds between cursor requests (be polite)
+USER_AGENT = "kingfisher-hollow-pipeline (https://www.inaturalist.org/projects/kingfisher-hollow-biodiversity-survey)"
+
+for _d in (DATA_DIR, PUBLIC_DIR, LOGS_DIR):
+    _d.mkdir(exist_ok=True)
