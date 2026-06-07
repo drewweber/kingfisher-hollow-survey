@@ -36,10 +36,12 @@ def _palette(dark):
     """Text / grid / line colors for the active theme."""
     if dark:
         return dict(ink=DARK_INK, muted=DARK_MUTED, grid=DARK_GRID,
-                    line=DARK_LINE, line2=DARK_LINE2, hover_bg="#1d3d33",
+                    line=DARK_LINE, line2=DARK_LINE2,
+                    hover_bg="#214a3d", hover_fg="#f0f7f4", hover_border="#5eab8d",
                     green_scale=DARK_GREEN_SCALE)
     return dict(ink=INK, muted=MUTED, grid=GRID,
-                line=HOLLOW[0], line2=HOLLOW[3], hover_bg="white",
+                line=HOLLOW[0], line2=HOLLOW[3],
+                hover_bg="white", hover_fg=INK, hover_border=GRID,
                 green_scale=GREEN_SCALE)
 
 
@@ -53,8 +55,8 @@ def _style(fig, height=420, showlegend=False, dark=False):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=12, r=18, t=14, b=12),
-        hoverlabel=dict(font=dict(family=FONT, size=12),
-                        bgcolor=c["hover_bg"], bordercolor=c["grid"]),
+        hoverlabel=dict(font=dict(family=FONT, size=12, color=c["hover_fg"]),
+                        bgcolor=c["hover_bg"], bordercolor=c["hover_border"]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02,
                     x=0, font=dict(size=12, color=c["ink"]),
                     bgcolor="rgba(0,0,0,0)"),
