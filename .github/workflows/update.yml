@@ -3,7 +3,10 @@ name: Update biodiversity report
 # Nightly sync of iNaturalist data + deploy of the report to Cloudflare Pages.
 on:
   schedule:
-    - cron: "10 9 * * *"      # 09:10 UTC ≈ 05:10 ET; GitHub cron is UTC only
+    # 13:30 UTC = 9:30 AM Eastern during daylight time (moth season) — late enough
+    # to capture the morning's mothing uploads. GitHub cron is UTC only (no DST),
+    # so it drifts to 8:30 AM ET in winter. GitHub may also delay scheduled runs.
+    - cron: "30 13 * * *"
   workflow_dispatch: {}        # allow manual runs from the Actions tab
 
 # Avoid overlapping runs if one is slow.
