@@ -78,7 +78,7 @@ def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
     intro_html = (f'<p class="{ic} text-[1.05rem] leading-relaxed max-w-2xl '
                   f'mx-auto mt-5">{intro}</p>') if intro else ""
     return f"""
-<section id="{id_}" class="py-24 px-6 {bg}">
+<section id="{id_}" class="reveal py-24 px-6 {bg}">
   <div class="max-w-6xl mx-auto">
     <div class="text-center mb-14">
       <p class="{eb} font-medium tracking-[0.25em] uppercase text-xs mb-4">{eyebrow}</p>
@@ -512,8 +512,7 @@ def build():
     parts.append(footer(generated))
     parts.append(SCRIPTS)
 
-    # Mark content sections for scroll-reveal (skip nav/hero/head).
-    html = "".join(parts).replace('<section id="', '<section class="reveal" id="')
+    html = "".join(parts)
 
     out = PUBLIC_DIR / "index.html"
     out.write_text(html, encoding="utf-8")
