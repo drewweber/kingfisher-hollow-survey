@@ -17,10 +17,25 @@ def _parse_location(obs):
         return None, None
 
 
+def _first_photo(obs):
+    """(medium_url, attribution, license) for the first photo, or (None,)*3.
+
+    iNat serves several sizes off one path; swap the 'square' thumb for the
+    larger 'medium' rendition used in the gallery.
+    """
+    photos = obs.get("photos") or []
+    if not photos:
+        return None, None, None
+    p = photos[0]
+    url = (p.get("url") or "").replace("square", "medium") or None
+    return url, p.get("attribution"), p.get("license_code")
+
+
 def _property_row(obs):
     taxon = obs.get("taxon") or {}
     user = obs.get("user") or {}
     lat, lng = _parse_location(obs)
+    photo_url, photo_attr, photo_lic = _first_photo(obs)
     return (
         obs["id"],
         obs.get("uuid"),
@@ -38,6 +53,9 @@ def _property_row(obs):
         lng,
         obs.get("uri"),
         obs.get("created_at"),
+        photo_url,
+        photo_attr,
+        photo_lic,
     )
 
 
@@ -60,8 +78,8 @@ PROPERTY_INSERT = (
     "INSERT OR REPLACE INTO property_obs "
     "(id, uuid, observed_on, observed_at, taxon_id, taxon_name, common_name, "
     " iconic_taxon, rank, quality_grade, user_login, user_name, latitude, "
-    " longitude, url, created_at) "
-    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    " longitude, url, created_at, photo_url, photo_attribution, photo_license) "
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 )
 
 COUNTY_INSERT = (

@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS property_obs (
     latitude      REAL,
     longitude     REAL,
     url           TEXT,
-    created_at    TEXT
+    created_at    TEXT,
+    photo_url     TEXT,
+    photo_attribution TEXT,
+    photo_license TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_property_taxon ON property_obs(taxon_id);
 CREATE INDEX IF NOT EXISTS idx_property_observed ON property_obs(observed_on);
@@ -81,9 +84,22 @@ def connect():
         conn.close()
 
 
+# Columns added after the first schema shipped; applied to existing DBs.
+_MIGRATIONS = {
+    "property_obs": ["photo_url TEXT", "photo_attribution TEXT", "photo_license TEXT"],
+}
+
+
 def init_db():
     with connect() as conn:
         conn.executescript(SCHEMA)
+        for table, cols in _MIGRATIONS.items():
+            existing = {r["name"] for r in
+                        conn.execute(f"PRAGMA table_info({table})").fetchall()}
+            for coldef in cols:
+                name = coldef.split()[0]
+                if name not in existing:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {coldef}")
 
 
 def max_id(conn, table):

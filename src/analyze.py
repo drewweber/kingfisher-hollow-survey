@@ -140,3 +140,127 @@ def uniqueness_table(df, stats):
         ["is_county_first", "state_obs_count"], ascending=[False, True]
     )
     return out
+
+
+# --- representative photo per taxon ----------------------------------------
+def _photo_by_taxon(df):
+    """Map taxon_id -> (photo_url, attribution) using each taxon's most recent
+    photographed observation. Empty if photos haven't been synced yet."""
+    if "photo_url" not in df.columns:
+        return {}
+    photographed = df.dropna(subset=["photo_url", "taxon_id"]).sort_values(
+        "observed_on"
+    )
+    out = {}
+    for _, r in photographed.iterrows():
+        out[r["taxon_id"]] = (r["photo_url"], r.get("photo_attribution"))
+    return out
+
+
+def _label(row):
+    return row.get("common_name") or row.get("taxon_name") or "Unidentified"
+
+
+# --- life list --------------------------------------------------------------
+def life_list(df):
+    """One row per species: names, group, rank, first/last seen, counts."""
+    sub = df.dropna(subset=["taxon_id"])
+    g = sub.groupby("taxon_id").agg(
+        common_name=("common_name", "first"),
+        taxon_name=("taxon_name", "first"),
+        iconic_taxon=("iconic_taxon", "first"),
+        rank=("rank", "first"),
+        observations=("id", "count"),
+        first_seen=("observed_on", "min"),
+        last_seen=("observed_on", "max"),
+        observers=("user_login", "nunique"),
+    ).reset_index()
+    g["label"] = g["common_name"].fillna(g["taxon_name"])
+    g["iconic_taxon"] = g["iconic_taxon"].fillna("Other")
+    return g.sort_values(["iconic_taxon", "label"])
+
+
+# --- rarest finds (fewest NY records) --------------------------------------
+def rarest_finds(df, stats, n=12):
+    if stats.empty:
+        return stats
+    photos = _photo_by_taxon(df)
+    out = stats.copy()
+    out["label"] = out["common_name"].fillna(out["taxon_name"])
+    out = out[out["state_obs_count"].notna() & (out["state_obs_count"] > 0)]
+    out = out.sort_values("state_obs_count").head(n)
+    out["photo_url"] = out["taxon_id"].map(lambda t: (photos.get(t) or (None,))[0])
+    return out
+
+
+# --- county-first showcase --------------------------------------------------
+def county_first_showcase(df, stats, n=12):
+    """Species where the property holds the earliest record in Tioga County,
+    each with a representative photo. The headline 'how unique' feature."""
+    if stats.empty:
+        return stats
+    photos = _photo_by_taxon(df)
+    firsts = stats[stats["is_county_first"] == 1].copy()
+    firsts["label"] = firsts["common_name"].fillna(firsts["taxon_name"])
+    firsts = firsts.sort_values("state_obs_count")
+    firsts["photo_url"] = firsts["taxon_id"].map(
+        lambda t: (photos.get(t) or (None, None))[0]
+    )
+    firsts["photo_attribution"] = firsts["taxon_id"].map(
+        lambda t: (photos.get(t) or (None, None))[1]
+    )
+    # Prefer ones we have a photo for, but keep the rest.
+    firsts["_has_photo"] = firsts["photo_url"].notna()
+    firsts = firsts.sort_values(
+        ["_has_photo", "state_obs_count"], ascending=[False, True]
+    )
+    return firsts.head(n)
+
+
+# --- species "firsts" timeline ---------------------------------------------
+def firsts_timeline(df):
+    """The first time each species was recorded on the property — the
+    discovery story. One row per taxon at its first observation."""
+    sub = df.dropna(subset=["taxon_id", "observed_on"]).sort_values("observed_on")
+    first_idx = sub.groupby("taxon_id")["observed_on"].idxmin()
+    firsts = sub.loc[first_idx].copy()
+    firsts["label"] = firsts["common_name"].fillna(firsts["taxon_name"])
+    firsts = firsts.sort_values("observed_on")
+    firsts["cumulative"] = range(1, len(firsts) + 1)
+    return firsts
+
+
+# --- seasonal / migration timing -------------------------------------------
+def seasonal_timing(df, iconic_taxon="Aves", min_obs=4, max_species=28):
+    """Per-species day-of-year distribution for a taxon group, for a dot/range
+    plot of when each species appears through the year."""
+    sub = df.dropna(subset=["observed_on", "taxon_id"])
+    sub = sub[sub["iconic_taxon"] == iconic_taxon].copy()
+    if sub.empty:
+        return pd.DataFrame()
+    sub["doy"] = sub["observed_on"].dt.dayofyear
+    sub["label"] = sub["common_name"].fillna(sub["taxon_name"])
+    agg = sub.groupby("label").agg(
+        n=("id", "count"),
+        first_doy=("doy", "min"),
+        last_doy=("doy", "max"),
+        median_doy=("doy", "median"),
+        q1=("doy", lambda s: s.quantile(0.25)),
+        q3=("doy", lambda s: s.quantile(0.75)),
+    ).reset_index()
+    agg = agg[agg["n"] >= min_obs]
+    # Order by median appearance so the chart reads as a seasonal cascade.
+    agg = agg.sort_values("median_doy").head(max_species)
+    return agg
+
+
+# --- photo highlights -------------------------------------------------------
+def photo_highlights(df, n=18):
+    """Recent research-grade observations that have a photo, for the gallery."""
+    if "photo_url" not in df.columns:
+        return pd.DataFrame()
+    sub = df.dropna(subset=["photo_url"]).copy()
+    research = sub[sub["quality_grade"] == "research"]
+    sub = research if not research.empty else sub
+    sub["label"] = sub["common_name"].fillna(sub["taxon_name"])
+    return sub.sort_values("observed_on", ascending=False).head(n)

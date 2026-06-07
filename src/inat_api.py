@@ -14,18 +14,30 @@ _session.headers["User-Agent"] = USER_AGENT
 
 
 def _get(path, **params):
-    """GET with light retry on transient errors; honours a polite pause."""
+    """GET with retry on transient HTTP *and* connection errors.
+
+    Long sweeps make thousands of calls, so dropped connections and brief
+    rate-limit / 5xx blips are expected; back off and retry rather than abort
+    the whole run.
+    """
     url = f"{BASE}/{path}"
-    for attempt in range(4):
-        resp = _session.get(url, params=params, timeout=60)
+    last_exc = None
+    for attempt in range(6):
+        try:
+            resp = _session.get(url, params=params, timeout=60)
+        except requests.exceptions.RequestException as exc:
+            last_exc = exc
+            time.sleep(min(2 ** attempt, 30))
+            continue
         if resp.status_code == 200:
             time.sleep(REQUEST_PAUSE)
             return resp.json()
-        # 429 (rate limit) or 5xx -> back off and retry
         if resp.status_code in (429, 500, 502, 503, 504):
-            time.sleep(2 ** attempt)
+            time.sleep(min(2 ** attempt, 30))
             continue
         resp.raise_for_status()
+    if last_exc:
+        raise last_exc
     resp.raise_for_status()
 
 
