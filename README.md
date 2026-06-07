@@ -57,6 +57,8 @@ homepage on `www`. The job runs `sync.py --all` + `report.py`, then deploys the
 `public/` directory to a dedicated Cloudflare Pages project (`kingfisher-survey`).
 The SQLite DB is persisted between runs via Actions cache (a cache miss just
 re-pulls from the API, since sync is idempotent), so nothing binary is committed.
+A tiny `LAST_UPDATED.txt` marker is committed each run so the repo stays active —
+otherwise GitHub disables scheduled workflows after 60 days of no commits.
 
 One-time setup (the only steps that need your credentials):
 1. **Push to GitHub** (a repo is initialised here):
