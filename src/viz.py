@@ -356,11 +356,11 @@ def family_breakdown(fam, dark=True):
     c = _palette(dark)
     f = fam.iloc[::-1]   # largest family on top
     labels = [f"{lbl} ({r}/{t})" for lbl, r, t in
-              zip(f["label"], f["recorded"], f["county_total"])]
+              zip(f["label"], f["recorded"], f["region_total"])]
     fig = go.Figure()
-    fig.add_bar(y=labels, x=f["county_total"], orientation="h",
-                marker_color="rgba(142,200,177,0.20)", name="Known in county",
-                hovertemplate="%{y}<br>%{x} county species<extra></extra>")
+    fig.add_bar(y=labels, x=f["region_total"], orientation="h",
+                marker_color="rgba(142,200,177,0.20)", name="Known within 50 mi",
+                hovertemplate="%{y}<br>%{x} regional species<extra></extra>")
     fig.add_bar(y=labels, x=f["recorded"], orientation="h",
                 marker_color=c["line2"], name="Recorded here",
                 hovertemplate="%{y}<br>%{x} recorded here<extra></extra>")

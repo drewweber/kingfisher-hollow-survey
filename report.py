@@ -410,19 +410,28 @@ def moth_showcase(highlights):
 
 
 def moth_gap_body(gap):
-    """County moths not yet found here — ranked by how common they are nearby."""
+    """Regional moths not yet found here — ranked by how common they are nearby."""
     if not gap or gap.get("missing_count", 0) == 0:
         return '<p class="text-center text-white/50">No gap data yet.</p>'
-    lead = (f'<p class="text-center text-white/60 mb-8">You\'ve recorded '
-            f'<strong class="text-hollow-300">{gap["have"]}</strong> of Tioga County\'s '
-            f'<strong class="text-hollow-300">{gap["county_total"]}</strong> known moth species '
-            f'(<strong class="text-hollow-300">{gap["pct"]}%</strong>). The '
-            f'<strong class="text-hollow-300">{gap["missing_count"]}</strong> below are recorded '
+    radius = gap.get("region_radius_km", 80)
+    miles = round(radius / 1.609)
+    region_total = gap.get("region_total", 0)
+    county_line = ""
+    if gap.get("county_total"):
+        county_line = (f' For context, that\'s '
+                       f'<strong class="text-hollow-300">{gap["county_pct"]}%</strong> of the '
+                       f'{gap["county_total"]} moths recorded in Tioga County itself — but the '
+                       f'county is thinly surveyed, so the wider region is the truer yardstick.')
+    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">You\'ve recorded '
+            f'<strong class="text-hollow-300">{gap["have"]}</strong> of the '
+            f'<strong class="text-hollow-300">{region_total}</strong> moth species logged within '
+            f'~{miles} miles (<strong class="text-hollow-300">{gap["pct"]}%</strong>).{county_line} '
+            f'The <strong class="text-hollow-300">{gap["missing_count"]}</strong> below are recorded '
             f'nearby but not yet here — the likeliest next finds.</p>')
-    gmax = max(int(r["county_count"]) for _, r in gap["missing"].iterrows()) or 1
+    gmax = max(int(r["ref_count"]) for _, r in gap["missing"].iterrows()) or 1
     rows = []
     for _, r in gap["missing"].iterrows():
-        cc = int(r["county_count"])
+        cc = int(r["ref_count"])
         pct = max(4, round(100 * cc / gmax))   # commoner nearby = longer bar
         link = taxon_link(r.get("taxon_id"), r["label"],
                           cls="font-medium text-white hover:text-hollow-300")
@@ -432,7 +441,7 @@ def moth_gap_body(gap):
             <div class="text-white/40 text-sm italic truncate">{esc(r.get('taxon_name'))}</div>
             <div class="mt-1.5 h-1 rounded-full bg-white/10"><div class="h-1 rounded-full" style="width:{pct}%;background:#8ec8b1"></div></div></div>
           <div class="text-right whitespace-nowrap"><span class="font-serif text-lg font-bold text-hollow-300">{cc}</span>
-            <span class="text-white/40 text-[0.7rem] uppercase tracking-wider ml-1">county records</span></div>
+            <span class="text-white/40 text-[0.7rem] uppercase tracking-wider ml-1">nearby records</span></div>
         </div>""")
     return (lead + '<div class="max-w-2xl mx-auto bg-white/[0.04] border border-white/10 '
             'rounded-2xl p-6 md:p-8">' + "".join(rows) + "</div>")
@@ -733,16 +742,16 @@ def moth_view(df, stats):
         "moth-families", "By Family",
         'Where the <em class="text-hollow-300">Gaps</em> Are',
         chart_card(viz.family_breakdown(analyze.moth_family_breakdown(moths)),
-                   note="Solid bar: species recorded here. Faint bar: species known from "
-                        "Tioga County. Bar labels show recorded / county.",
+                   note="Solid bar: species recorded here. Faint bar: species known within "
+                        "~50 miles. Bar labels show recorded / regional.",
                    dark=True)
         + takeaway(
-            "The single \"70% complete\" figure hides a sharp split by family. The big, "
-            "showy macro-moths — owlets, geometers, tigers — are well covered, but the "
-            "tiny, hard-to-identify micro-moth families are barely scratched. That's where "
-            "most of the ~190 missing species are hiding, and where extra effort would pay off.",
-            dark=True),
-        intro="Completeness isn't even across the moths — some families are nearly done, "
+            "Completeness is far from even across the moths. The big, showy macro-moths — "
+            "owlets, geometers, tigers — are well represented, but the tiny, hard-to-identify "
+            "micro-moth families trail far behind the regional pool. That's where most of the "
+            "undiscovered species are hiding, and where extra trapping and dissection would "
+            "pay off most.", dark=True),
+        intro="Completeness isn't even across the moths — some families are well covered, "
               "others wide open.",
         dark=True))
     out.append(section(
@@ -779,12 +788,13 @@ def moth_view(df, stats):
         'The <em class="text-hollow-300">Gap List</em>',
         moth_gap_body(gap)
         + takeaway(
-            "These are moths recorded elsewhere in Tioga County but not yet on the "
-            "property, ranked by how often they turn up nearby — so the top of the list "
-            "is where to point the light next. The county total is itself just a running "
-            "iNaturalist tally, so it's a floor: some property moths may even be county firsts.",
-            dark=True),
-        intro="Tioga County moths recorded nearby but not yet on the property.",
+            "Because Tioga County is lightly surveyed, this list is built from the much "
+            "better-sampled ~50-mile region (which reaches into the Ithaca area and across "
+            "into Pennsylvania) — a truer picture of what could occur here. Species are "
+            "ranked by how often they're recorded nearby, so the top of the list is where "
+            "to point the light next.", dark=True),
+        intro="Moths recorded within ~50 miles but not yet on the property — the truest "
+              "measure of what's still out there.",
         dark=True))
     out.append(section(
         "moth-diversity", "Diversity",

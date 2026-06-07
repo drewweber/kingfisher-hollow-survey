@@ -44,6 +44,7 @@ def main():
     if args.all or args.county:
         fetch.sync_county()
         fetch.sync_county_moths()
+        fetch.sync_region_moths()
     if args.all or args.moths:
         fetch.sync_moths()
         fetch.sync_butterflies()

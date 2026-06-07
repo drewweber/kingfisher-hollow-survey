@@ -21,6 +21,11 @@ MY_USERNAME = "drewweber"
 LEPIDOPTERA_TAXON_ID = 47157
 BUTTERFLY_TAXON_ID = 47224
 
+# Regional reference pool for the moth gap analysis. Tioga County itself is
+# undersampled, so a distance radius (crossing into the better-covered Ithaca
+# area and PA) gives a truer picture of what moths could occur on the property.
+REGION_RADIUS_KM = 80   # ≈ 50 miles
+
 # --- Paths -------------------------------------------------------------------
 # Resolve everything relative to the repo root (parent of this src/ dir) so the
 # scripts work the same whether launched by hand or by launchd.

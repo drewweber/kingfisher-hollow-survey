@@ -3,7 +3,7 @@
 
 import pandas as pd
 
-from config import SPECIES_RANKS
+from config import REGION_RADIUS_KM, SPECIES_RANKS
 from db import connect
 
 
@@ -463,26 +463,28 @@ def moth_completeness(df, moths):
 
 
 def moth_family_breakdown(moths, n=14):
-    """Per-family: moth species recorded here vs. species known from the county.
-    Reframes overall completeness — typically near-complete on the big macro-moth
-    families, barely scratching the species-rich micro families."""
+    """Per-family: moth species recorded here vs. species known from the ~50-mile
+    region. Reframes overall completeness — typically near-complete on the big
+    macro-moth families, barely scratching the species-rich micro families.
+    Uses the regional pool (county is too undersampled to compare fairly)."""
     meta = _load_table("taxon_meta")
-    county = _load_table("county_moth_taxa")
-    if meta.empty or moths.empty:
+    region = _load_table("region_moth_taxa")
+    ref = region if not region.empty else _load_table("county_moth_taxa")
+    if meta.empty or moths.empty or ref.empty:
         return pd.DataFrame()
     meta = meta[["taxon_id", "family_name", "family_common"]]
     fam_common = (meta.dropna(subset=["family_name"]).drop_duplicates("family_name")
                   .set_index("family_name")["family_common"].to_dict())
     prop = moths[["taxon_id"]].merge(meta, on="taxon_id", how="left")
-    cty = county[["taxon_id"]].merge(meta, on="taxon_id", how="left")
+    reg = ref[["taxon_id"]].merge(meta, on="taxon_id", how="left")
     rec = prop.dropna(subset=["family_name"]).groupby("family_name")["taxon_id"].nunique()
-    ctot = cty.dropna(subset=["family_name"]).groupby("family_name")["taxon_id"].nunique()
-    out = pd.DataFrame({"recorded": rec, "county_total": ctot}).fillna(0).astype(int)
-    # County tally is a floor; never let it read below what we've recorded.
-    out["county_total"] = out[["county_total", "recorded"]].max(axis=1)
-    out["gap"] = out["county_total"] - out["recorded"]
+    rtot = reg.dropna(subset=["family_name"]).groupby("family_name")["taxon_id"].nunique()
+    out = pd.DataFrame({"recorded": rec, "region_total": rtot}).fillna(0).astype(int)
+    # Regional tally is a floor; never let it read below what we've recorded.
+    out["region_total"] = out[["region_total", "recorded"]].max(axis=1)
+    out["gap"] = out["region_total"] - out["recorded"]
     out["label"] = [fam_common.get(f) or f for f in out.index]
-    return out.sort_values("county_total", ascending=False).head(n).reset_index(drop=True)
+    return out.sort_values("region_total", ascending=False).head(n).reset_index(drop=True)
 
 
 def moth_survey_nights(df, moths):
@@ -510,22 +512,44 @@ def moth_effort(df, moths):
 
 
 def moth_county_gap(moths, n=15):
-    """Tioga County moths not yet recorded on the property, ranked by how common
-    they are in the county (most-recorded-nearby first = likeliest to find)."""
+    """Moths recorded near the property but not yet found here.
+
+    Tioga County is undersampled, so the gap list and headline are driven by the
+    well-sampled ~50-mile regional pool (a truer picture of what could occur),
+    while still reporting county completeness for context. Missing species are
+    ranked by how often they're recorded regionally — the likeliest next finds.
+    """
+    region = _load_table("region_moth_taxa")
     county = _load_table("county_moth_taxa")
     have = set(moths["taxon_id"].dropna().astype(int))
-    if county.empty:
-        return {"county_total": 0, "have": len(have), "pct": 0,
-                "missing_count": 0, "missing": county}
-    county_total = int(county["taxon_id"].nunique())
-    recorded = int(county["taxon_id"].isin(have).sum())
-    missing = county[~county["taxon_id"].isin(have)].copy()
+
+    def completeness(tbl):
+        if tbl.empty:
+            return 0, 0, 0
+        total = int(tbl["taxon_id"].nunique())
+        rec = int(tbl["taxon_id"].isin(have).sum())
+        return total, rec, (round(100 * rec / total) if total else 0)
+
+    region_total, region_have, region_pct = completeness(region)
+    county_total, county_have, county_pct = completeness(county)
+
+    # Fall back to county if the region pool hasn't synced yet.
+    pool = region if not region.empty else county
+    count_col = "region_count" if not region.empty else "county_count"
+    if pool.empty:
+        return {"region_total": 0, "county_total": 0, "have": len(have),
+                "pct": 0, "county_pct": 0, "missing_count": 0, "missing": pool}
+    missing = pool[~pool["taxon_id"].isin(have)].copy()
     missing["label"] = missing["common_name"].fillna(missing["taxon_name"])
-    missing = missing.sort_values("county_count", ascending=False)
+    missing["ref_count"] = missing[count_col]
+    missing = missing.sort_values(count_col, ascending=False)
     return {
+        "region_total": region_total,
+        "region_radius_km": REGION_RADIUS_KM,
         "county_total": county_total,
-        "have": recorded,
-        "pct": round(100 * recorded / county_total) if county_total else 0,
+        "have": region_have if not region.empty else county_have,
+        "pct": region_pct if not region.empty else county_pct,
+        "county_pct": county_pct,
         "missing_count": int(len(missing)),
         "missing": missing.head(n),
     }

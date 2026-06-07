@@ -2,7 +2,7 @@
 
 import inat_api
 from config import (BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID, LEPIDOPTERA_TAXON_ID,
-                    PROPERTY_PROJECT_ID)
+                    PROPERTY_PROJECT_ID, REGION_RADIUS_KM)
 from db import connect, max_id, record_sync
 
 
@@ -195,6 +195,34 @@ def sync_county_moths():
     return n, 0
 
 
+def _property_center():
+    """Median lat/lng of recorded property observations — the regional center."""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT latitude, longitude FROM property_obs "
+            "WHERE latitude IS NOT NULL AND longitude IS NOT NULL").fetchall()
+    if not rows:
+        return None, None
+    import statistics
+    return (statistics.median(r["latitude"] for r in rows),
+            statistics.median(r["longitude"] for r in rows))
+
+
+def sync_region_moths():
+    """Moths recorded within REGION_RADIUS_KM of the property — a better-sampled
+    regional reference than the county for the gap analysis."""
+    lat, lng = _property_center()
+    if lat is None:
+        print("[region-moths] no property coordinates yet; skipping")
+        return 0, 0
+    n = _sync_roster("region_moth_taxa", "region_count",
+                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                     taxon_id=LEPIDOPTERA_TAXON_ID,
+                     without_taxon_id=BUTTERFLY_TAXON_ID)
+    print(f"[region-moths] {n} moth species within {REGION_RADIUS_KM} km")
+    return n, 0
+
+
 def sync_taxonomy(batch_size=30):
     """Fill taxon_meta (order/family names) for property species missing it.
 
@@ -208,6 +236,7 @@ def sync_taxonomy(batch_size=30):
             "SELECT taxon_id FROM ("
             "  SELECT taxon_id FROM property_obs WHERE taxon_id IS NOT NULL"
             "  UNION SELECT taxon_id FROM county_moth_taxa WHERE taxon_id IS NOT NULL"
+            "  UNION SELECT taxon_id FROM region_moth_taxa WHERE taxon_id IS NOT NULL"
             ") t LEFT JOIN taxon_meta m USING (taxon_id) WHERE m.taxon_id IS NULL"
         ).fetchall()]
     added = 0
