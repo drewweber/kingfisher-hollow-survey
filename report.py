@@ -666,7 +666,13 @@ tailwind.config = {{ theme: {{ extend: {{
   body[data-mode="moths"] #navbar.nav-solid {{ background:rgba(13,34,28,0.92); border-bottom:1px solid rgba(255,255,255,0.08); }}
   body[data-mode="moths"] #navbar.nav-solid #nav-brand {{ color:#fff !important; }}
   body[data-mode="moths"] #navbar.nav-solid .nav-link {{ color:rgba(255,255,255,0.8) !important; }}
-  /* Log mode = same light background as All life */
+  /* Log mode: no hero, so force solid nav appearance immediately */
+  body[data-mode="log"] #navbar {{ background:rgba(255,255,255,0.94) !important; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid rgba(0,0,0,0.07) !important; }}
+  body[data-mode="log"] #navbar #nav-brand {{ color:#1c1917 !important; }}
+  body[data-mode="log"] #navbar .nav-link {{ color:#44403c !important; }}
+  /* Mode-toggle button text: dark on light nav backgrounds (all life scrolled + log), white in moths */
+  body:not([data-mode="moths"]) #navbar.nav-solid .mode-btn:not(.mode-active),
+  body[data-mode="log"] #navbar .mode-btn:not(.mode-active) {{ color:rgba(13,34,28,0.55); }}
   .log-rarity {{ color:#2e735c; font-size:.78rem; font-weight:500; }}
   .log-moth-label {{ color:#57534e; font-size:.8rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }}
 </style></head>
