@@ -690,9 +690,9 @@ def nav():
     desktop_links = (f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
                      f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
                      f'<span class="links-log hidden items-center gap-6">{links_html(log_links, desk_cls)}</span>')
-    mob_links = (f'<span class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</span>'
-                 f'<span class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</span>'
-                 f'<span class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</span>')
+    mob_links = (f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
+                 f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
+                 f'<div class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</div>')
     toggle = """
       <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15" role="group" aria-label="Switch view">
         <button class="mode-btn mode-active" data-mode="all" aria-pressed="true">All life</button>
@@ -715,6 +715,7 @@ def nav():
     <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15 self-start" role="group" aria-label="Switch view">
       <button class="mode-btn mode-active" data-mode="all" aria-pressed="true">All life</button>
       <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
+      <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
     </div>
     {mob_links}
     <a href="{SITE}" class="text-hollow-300 text-sm py-1">← Main site</a>
@@ -817,9 +818,9 @@ SCRIPTS = """
       vMoth.classList.toggle('hidden',mode!=='moths');
       vLog.classList.toggle('hidden',mode!=='log');
       // Swap nav link set to match active view.
-      document.querySelectorAll('.links-all').forEach(e=>e.classList.toggle('hidden',mode!=='all'));
-      document.querySelectorAll('.links-moths').forEach(e=>e.classList.toggle('hidden',mode!=='moths'));
-      document.querySelectorAll('.links-log').forEach(e=>e.classList.toggle('hidden',mode!=='log'));
+      [['links-all','all'],['links-moths','moths'],['links-log','log']].forEach(([cls,m])=>{
+        document.querySelectorAll('.'+cls).forEach(e=>{
+          const on=mode===m;e.classList.toggle('hidden',!on);e.classList.toggle('flex',on);});});
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
       const hash=mode==='moths'?'#moths':mode==='log'?'#log':location.pathname;
