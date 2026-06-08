@@ -511,7 +511,7 @@ def activity_log_body(log_entries, weather_cache):
     html_parts = ['<div class="max-w-3xl mx-auto">']
     current_year = None
 
-    for entry in log_entries:
+    for entry in reversed(log_entries):
         d = entry["date"]
         year = d.year
 
