@@ -18,6 +18,17 @@ def _parse_location(obs):
         return None, None
 
 
+def observation_dates():
+    """Sorted list of all distinct observed_on dates in property_obs."""
+    import datetime
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT observed_on FROM property_obs "
+            "WHERE observed_on IS NOT NULL ORDER BY observed_on"
+        ).fetchall()
+    return [datetime.date.fromisoformat(r[0]) for r in rows]
+
+
 def _first_photo(obs):
     """(medium_url, attribution, license) for the first photo, or (None,)*3.
 

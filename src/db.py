@@ -101,6 +101,17 @@ CREATE TABLE IF NOT EXISTS taxon_meta (
     family_common TEXT
 );
 
+CREATE TABLE IF NOT EXISTS weather_cache (
+    date         TEXT PRIMARY KEY,
+    temp_f_hi    INTEGER,
+    temp_f_lo    INTEGER,
+    humidity_pct INTEGER,
+    wind_mph     REAL,
+    wind_dir_deg INTEGER,
+    precip_in    REAL,
+    moon_phase   REAL
+);
+
 CREATE TABLE IF NOT EXISTS sync_log (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     source              TEXT,

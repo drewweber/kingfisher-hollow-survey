@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import fetch  # noqa: E402
 import stats  # noqa: E402
+import weather  # noqa: E402
 from db import init_db  # noqa: E402
 
 
@@ -28,12 +29,14 @@ def main():
     ap.add_argument("--stats", action="store_true", help="refresh uniqueness stats")
     ap.add_argument("--taxonomy", action="store_true",
                     help="enrich order/family for new species")
+    ap.add_argument("--weather", action="store_true",
+                    help="fetch/update weather cache for all observation dates")
     ap.add_argument("--all", action="store_true",
-                    help="property + county + moths/butterflies + taxonomy + stats")
+                    help="property + county + moths/butterflies + taxonomy + stats + weather")
     args = ap.parse_args()
 
     flags = [args.property, args.county, args.moths, args.taxonomy,
-             args.stats, args.all]
+             args.stats, args.weather, args.all]
     if not any(flags):
         ap.print_help()
         return
@@ -52,6 +55,8 @@ def main():
         fetch.sync_taxonomy()
     if args.all or args.stats:
         stats.refresh_stats()
+    if args.all or args.weather:
+        weather.sync_weather(fetch.observation_dates())
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import analyze  # noqa: E402
 import viz  # noqa: E402
+import weather  # noqa: E402
 from config import PUBLIC_DIR  # noqa: E402
 from db import connect, init_db  # noqa: E402
 
@@ -459,6 +460,149 @@ def moth_diversity_body(div):
             + _dark_divider().join(tiles) + "</div>")
 
 
+# ── field journal / activity log ────────────────────────────────────────────
+def _ordinal(n):
+    if 11 <= (n % 100) <= 13:
+        return f"{n}th"
+    return f"{n}{['th','st','nd','rd','th','th','th','th','th','th'][n % 10]}"
+
+
+def _rarity_badge(sp):
+    """Return inline rarity annotation for one species, e.g. '★ first for Tioga · 9th for NY'."""
+    parts = []
+    if sp.get("is_county_first"):
+        parts.append("★ first for Tioga")
+    elif sp.get("county_obs") is not None and sp["county_obs"] < 10:
+        parts.append(f"{_ordinal(sp['county_obs'])} for Tioga")
+    if sp.get("state_obs") is not None and sp["state_obs"] < 10:
+        if sp["state_obs"] == 1:
+            parts.append("only NY record")
+        else:
+            parts.append(f"{_ordinal(sp['state_obs'])} for NY")
+    return " · ".join(parts)
+
+
+def _weather_line(w):
+    """Compact weather summary string for a journal entry."""
+    if not w:
+        return ""
+    parts = []
+    if w.get("temp_f_hi") is not None:
+        parts.append(f"{w['temp_f_hi']}°F")
+    if w.get("humidity_pct") is not None:
+        parts.append(f"{w['humidity_pct']}% humidity")
+    wd = w.get("wind_desc")
+    if wd:
+        parts.append(wd)
+    moon = w.get("moon")
+    if moon:
+        parts.append(moon)
+    return " · ".join(parts)
+
+
+def activity_log_body(log_entries, weather_cache):
+    """Render the full field journal as a timeline of dated entries."""
+    if not log_entries:
+        return '<p class="text-center text-stone-500">No entries yet.</p>'
+
+    month_names = ["", "January", "February", "March", "April", "May", "June",
+                   "July", "August", "September", "October", "November", "December"]
+
+    html_parts = ['<div class="max-w-3xl mx-auto">']
+    current_year = None
+
+    for entry in log_entries:
+        d = entry["date"]
+        year = d.year
+
+        if year != current_year:
+            current_year = year
+            html_parts.append(
+                f'<div class="flex items-center gap-4 mt-12 mb-6 first:mt-0">'
+                f'<span class="font-serif text-3xl font-bold text-stone-900">{year}</span>'
+                f'<span class="flex-1 h-px bg-stone-200"></span></div>'
+            )
+
+        date_label = f"{month_names[d.month]} {d.day}"
+        w = weather_cache.get(str(d))
+        weather_str = _weather_line(w)
+        weather_html = (
+            f'<p class="text-stone-400 text-sm mt-1">{esc(weather_str)}</p>'
+            if weather_str else ""
+        )
+
+        # Separate moths from everything else.
+        moths = [sp for sp in entry["new_species"] if sp["is_moth"]]
+        others = [sp for sp in entry["new_species"] if not sp["is_moth"]]
+
+        def _sp_html(sp):
+            badge = _rarity_badge(sp)
+            name_html = taxon_link(sp["taxon_id"], sp["label"])
+            if badge:
+                return (f'{name_html} <span class="text-hollow-600 text-xs font-medium '
+                        f'whitespace-nowrap">({badge})</span>')
+            return name_html
+
+        species_parts = []
+        if moths:
+            moth_items = ", ".join(_sp_html(sp) for sp in moths)
+            species_parts.append(
+                f'<span class="font-medium text-stone-700">Moths:</span> {moth_items}'
+            )
+        if others:
+            # Group non-moths by group name.
+            groups_seen = {}
+            for sp in others:
+                grp = sp["group"] or "Other"
+                groups_seen.setdefault(grp, []).append(sp)
+            # If there's only one group besides moths, label it; otherwise
+            # flatten under "Other species".
+            if len(groups_seen) == 1:
+                grp_name, grp_sps = next(iter(groups_seen.items()))
+                items = ", ".join(_sp_html(sp) for sp in grp_sps)
+                species_parts.append(
+                    f'<span class="font-medium text-stone-700">{esc(grp_name)}:</span> {items}'
+                )
+            else:
+                other_items = ", ".join(_sp_html(sp) for sp in others)
+                label = "Other species" if moths else "Species"
+                species_parts.append(
+                    f'<span class="font-medium text-stone-700">{label}:</span> {other_items}'
+                )
+
+        species_html = (
+            '<p class="text-stone-700 leading-relaxed mt-2 text-[0.95rem]">'
+            + " &nbsp;·&nbsp; ".join(species_parts)
+            + '</p>'
+        ) if species_parts else ""
+
+        new_count = len(entry["new_species"])
+        count_badge = (
+            f'<span class="inline-flex items-center justify-center w-6 h-6 '
+            f'rounded-full bg-hollow-100 text-hollow-700 text-xs font-bold '
+            f'flex-shrink-0 mt-0.5">{new_count}</span>'
+        )
+
+        html_parts.append(f"""
+<div class="grid grid-cols-[8rem_1fr] gap-x-6 py-5 border-b border-stone-100 group">
+  <div class="text-right pt-0.5">
+    <span class="font-serif text-lg font-bold text-stone-900 leading-snug">{date_label}</span>
+  </div>
+  <div>
+    <div class="flex items-start gap-2">
+      {count_badge}
+      <div class="flex-1 min-w-0">
+        {weather_html}
+        {species_html}
+      </div>
+    </div>
+  </div>
+</div>""")
+
+    html_parts.append("</div>")
+    return "".join(html_parts)
+
+
 # ── head / nav / footer ──────────────────────────────────────────────────────
 def head():
     desc = ("A living biodiversity survey of Kingfisher Hollow — every species "
@@ -522,6 +666,9 @@ tailwind.config = {{ theme: {{ extend: {{
   body[data-mode="moths"] #navbar.nav-solid {{ background:rgba(13,34,28,0.92); border-bottom:1px solid rgba(255,255,255,0.08); }}
   body[data-mode="moths"] #navbar.nav-solid #nav-brand {{ color:#fff !important; }}
   body[data-mode="moths"] #navbar.nav-solid .nav-link {{ color:rgba(255,255,255,0.8) !important; }}
+  /* Log mode = same light background as All life */
+  .log-rarity {{ color:#2e735c; font-size:.78rem; font-weight:500; }}
+  .log-moth-label {{ color:#57534e; font-size:.8rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }}
 </style></head>
 <body class="font-sans text-stone-800 antialiased" data-mode="all">"""
 
@@ -533,20 +680,24 @@ def nav():
     moth_links = [("#moth-completeness", "Completeness"), ("#moth-families", "Families"),
                   ("#moth-seasons", "Flight Seasons"), ("#moth-gap", "Gap List"),
                   ("#moth-diversity", "Diversity"), ("#moth-standouts", "Standouts")]
+    log_links = [("#log-journal", "Field Journal")]
 
     def links_html(links, item_cls):
         return "".join(f'<a href="{h}" class="{item_cls}">{t}</a>' for h, t in links)
     desk_cls = "nav-link text-white/80 hover:text-white text-sm font-medium transition-colors"
     mob_cls = "text-white/80 hover:text-white text-sm py-1"
-    # Both sets render; setMode() shows the one matching the active view.
+    # All three sets render; setMode() shows the one matching the active view.
     desktop_links = (f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
-                     f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>')
+                     f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
+                     f'<span class="links-log hidden items-center gap-6">{links_html(log_links, desk_cls)}</span>')
     mob_links = (f'<span class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</span>'
-                 f'<span class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</span>')
+                 f'<span class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</span>'
+                 f'<span class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</span>')
     toggle = """
       <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15" role="group" aria-label="Switch view">
         <button class="mode-btn mode-active" data-mode="all" aria-pressed="true">All life</button>
         <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
+        <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
       </div>"""
     return f"""
 <a href="#whats-new" class="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-1 focus:rounded">Skip to content</a>
@@ -655,25 +806,27 @@ SCRIPTS = """
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-  // Mode toggle: All life (light) ⇄ Moths (dark). One page, two views.
+  // Mode toggle: All life / Moths / Log — one page, three views.
   (function(){
-    const vAll=document.getElementById('view-all'),vMoth=document.getElementById('view-moths');
+    const vAll=document.getElementById('view-all'),vMoth=document.getElementById('view-moths'),
+          vLog=document.getElementById('view-log');
     function setMode(mode,force){
-      if(mode!=='moths') mode='all';
+      if(mode!=='moths'&&mode!=='log') mode='all';
       document.body.dataset.mode=mode;
-      vAll.classList.toggle('hidden',mode==='moths');
+      vAll.classList.toggle('hidden',mode!=='all');
       vMoth.classList.toggle('hidden',mode!=='moths');
-      // Swap the nav link set to match the visible view (anchors differ).
-      document.querySelectorAll('.links-all').forEach(e=>e.classList.toggle('hidden',mode==='moths'));
+      vLog.classList.toggle('hidden',mode!=='log');
+      // Swap nav link set to match active view.
+      document.querySelectorAll('.links-all').forEach(e=>e.classList.toggle('hidden',mode!=='all'));
       document.querySelectorAll('.links-moths').forEach(e=>e.classList.toggle('hidden',mode!=='moths'));
+      document.querySelectorAll('.links-log').forEach(e=>e.classList.toggle('hidden',mode!=='log'));
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
-      history.replaceState(null,'',mode==='moths'?'#moths':location.pathname);
+      const hash=mode==='moths'?'#moths':mode==='log'?'#log':location.pathname;
+      history.replaceState(null,'',hash);
       updateNav&&updateNav();
       if(force){
-        // Reveal the now-shown view's sections (IO won't re-fire reliably after
-        // an un-hide) and refit Plotly charts that were sized while hidden.
-        const sel=(mode==='moths'?'#view-moths':'#view-all')+' .reveal';
+        const sel='#view-'+mode+' .reveal';
         document.querySelectorAll(sel).forEach(el=>el.classList.add('in'));
         window.dispatchEvent(new Event('resize'));
       }
@@ -681,7 +834,8 @@ SCRIPTS = """
     document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{
       setMode(b.dataset.mode,true);window.scrollTo({top:0,behavior:'smooth'});
       document.getElementById('mob').classList.add('hidden');}));
-    setMode(location.hash==='#moths'?'moths':'all', location.hash==='#moths');
+    const h=location.hash;
+    setMode(h==='#moths'?'moths':h==='#log'?'log':'all', h==='#moths'||h==='#log');
   })();
 </script></body></html>"""
 
@@ -956,6 +1110,17 @@ def build():
     parts.append('<div id="view-moths" class="hidden">')
     parts.append(moth_view(df, stats))
     parts.append('</div>')  # /view-moths
+
+    # ── Log view (light, journal) ────────────────────────────────────────────
+    parts.append('<div id="view-log" class="hidden">')
+    log_entries = analyze.activity_log(df, stats)
+    weather_cache = weather.load_weather()
+    parts.append(section(
+        "log-journal", "Field Journal",
+        'The <em class="text-hollow-600">Daily Log</em>',
+        activity_log_body(log_entries, weather_cache),
+        intro="Every day a new species was recorded on the property — conditions, moths first, then everything else."))
+    parts.append('</div>')  # /view-log
 
     parts.append(footer(_git_date(), data_updated_date()))
     parts.append(SCRIPTS)

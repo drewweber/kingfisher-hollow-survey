@@ -555,6 +555,109 @@ def moth_county_gap(moths, n=15):
     }
 
 
+def observation_dates(df=None):
+    """Sorted list of all distinct observed_on dates on the property."""
+    if df is None:
+        df = load_property(species_only=False)
+    return sorted(df["observed_on"].dt.date.dropna().unique())
+
+
+# --- activity log -----------------------------------------------------------
+def activity_log(df, stats):
+    """Daily log of new-to-property species, for the Field Journal view.
+
+    Returns a list of dicts (one per day that introduced at least one new
+    species), sorted chronologically.  Each dict:
+        date            datetime.date
+        total_obs       int
+        new_species     list of species dicts (see below)
+
+    Each species dict:
+        label           str  (common name or taxon_name)
+        taxon_id        int
+        taxon_name      str
+        is_moth         bool
+        group           str  (readable group label)
+        county_obs      int or None
+        state_obs       int or None
+        is_county_first bool
+    """
+    if df.empty:
+        return []
+
+    moth_ids, butterfly_ids, order_common = _group_inputs()
+    labeler = group_labeler(moth_ids, butterfly_ids, order_common)
+
+    # Work with the full df (sorted by observed_on) to determine first
+    # appearances in chronological order.
+    sub = df.dropna(subset=["taxon_id", "observed_on"]).sort_values("observed_on")
+    sub = sub.copy()
+    sub["date"] = sub["observed_on"].dt.date
+
+    # Build stats lookup.
+    if not stats.empty:
+        stat_by_taxon = stats.set_index("taxon_id")[
+            ["county_obs_count", "state_obs_count", "is_county_first"]
+        ].to_dict("index")
+    else:
+        stat_by_taxon = {}
+
+    seen = set()
+    entries_by_date = {}
+
+    # Total obs per date (non-Aves, any rank).
+    obs_per_date = sub.groupby("date")["id"].count().to_dict()
+
+    for _, row in sub.iterrows():
+        tid = int(row["taxon_id"])
+        d = row["date"]
+        if tid not in seen:
+            seen.add(tid)
+            s = stat_by_taxon.get(tid, {})
+            county_obs = s.get("county_obs_count")
+            state_obs = s.get("state_obs_count")
+            is_cf = bool(s.get("is_county_first") == 1)
+            is_moth = tid in moth_ids
+            grp = labeler(tid, row.get("iconic_taxon"))
+            cn = row.get("common_name")
+            tn = row.get("taxon_name")
+            cn = None if (cn is None or (cn != cn)) else cn
+            tn = None if (tn is None or (tn != tn)) else tn
+            sp = {
+                "label": cn or tn or "Unidentified",
+                "taxon_id": tid,
+                "taxon_name": tn or "",
+                "is_moth": is_moth,
+                "group": grp,
+                "county_obs": int(county_obs) if county_obs == county_obs and county_obs is not None else None,
+                "state_obs": int(state_obs) if state_obs == state_obs and state_obs is not None else None,
+                "is_county_first": is_cf,
+            }
+            entries_by_date.setdefault(d, []).append(sp)
+
+    result = []
+    for d in sorted(entries_by_date):
+        species = entries_by_date[d]
+        # Sort: moths first (rarest state count first), then other groups
+        # alphabetically then by state rarity.
+        def _sort_key(sp):
+            state = sp["state_obs"] if sp["state_obs"] is not None else 999999
+            grp = sp["group"]
+            if not isinstance(grp, str):
+                grp = ""
+            lbl = sp["label"]
+            if not isinstance(lbl, str):
+                lbl = ""
+            return (0 if sp["is_moth"] else 1, grp, state, lbl)
+        species.sort(key=_sort_key)
+        result.append({
+            "date": d,
+            "total_obs": obs_per_date.get(d, 0),
+            "new_species": species,
+        })
+    return result
+
+
 def moth_diversity(df, moths):
     """Shannon H', Gini-Simpson, Pielou evenness, and a rank-abundance series."""
     import math

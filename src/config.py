@@ -26,6 +26,10 @@ BUTTERFLY_TAXON_ID = 47224
 # area and PA) gives a truer picture of what moths could occur on the property.
 REGION_RADIUS_KM = 80   # ≈ 50 miles
 
+# Property centroid (computed from observation averages) — used for weather API.
+PROPERTY_LAT = 42.2744
+PROPERTY_LON = -76.4926
+
 # --- Paths -------------------------------------------------------------------
 # Resolve everything relative to the repo root (parent of this src/ dir) so the
 # scripts work the same whether launched by hand or by launchd.
