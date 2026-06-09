@@ -7,6 +7,24 @@ from config import REGION_RADIUS_KM, SPECIES_RANKS
 from db import connect
 
 
+def _session_dates(sub, cutoff_hour=12):
+    """Return a Series of session dates for mothing analysis.
+
+    Mothing sessions span an evening and the following morning, so observations
+    recorded before cutoff_hour are rolled back to the prior day. This ensures
+    the morning check after a light-trap session is counted as the same survey
+    night as the evening that started it, keeping Chao2 and survey-night counts
+    accurate. Falls back to observed_on for rows without a timestamp.
+    """
+    # observed_at is stored as local ISO-8601 e.g. "2025-06-24T06:26:45-04:00".
+    # The hour digits at positions 11-12 are already local time.
+    hour = pd.to_numeric(sub["observed_at"].str[11:13], errors="coerce")
+    base = sub["observed_on"].dt.normalize()  # midnight of each observed_on date
+    rollback = hour.notna() & (hour < cutoff_hour)
+    adjusted = base - pd.to_timedelta(rollback.astype(int), unit="D")
+    return adjusted.dt.date
+
+
 def load_property(species_only=True):
     """Property observations as a DataFrame with parsed date columns.
 
@@ -426,7 +444,7 @@ def moth_completeness(df, moths):
     """
     import math
     sub = moth_obs(df, moths).dropna(subset=["taxon_id", "observed_on"]).copy()
-    sub["night"] = sub["observed_on"].dt.date
+    sub["night"] = _session_dates(sub)
     nights_per_species = sub.groupby("taxon_id")["night"].nunique()
     s_obs = int(len(nights_per_species))
     q1 = int((nights_per_species == 1).sum())
@@ -493,7 +511,7 @@ def moth_survey_nights(df, moths):
     sub = moth_obs(df, moths).dropna(subset=["observed_on"])
     if sub.empty:
         return {"nights": 0, "first": None, "last": None}
-    dates = sub["observed_on"].dt.date
+    dates = _session_dates(sub)
     return {"nights": int(dates.nunique()),
             "first": sub["observed_on"].min(), "last": sub["observed_on"].max()}
 
