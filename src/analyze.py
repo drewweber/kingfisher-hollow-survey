@@ -582,11 +582,13 @@ def observation_dates(df=None):
 
 # --- activity log -----------------------------------------------------------
 def activity_log(df, stats):
-    """Daily log of new-to-property species, for the Field Journal view.
+    """Log of new-to-property species grouped by mothing session, for the Field Journal.
 
-    Returns a list of dicts (one per day that introduced at least one new
-    species), sorted chronologically.  Each dict:
-        date            datetime.date
+    Evening and the following morning are treated as one session (observations
+    before noon are attributed to the prior day). Returns a list of dicts sorted
+    chronologically, one per session that introduced at least one new species:
+        date            datetime.date  (session start — the evening date)
+        date_end        datetime.date or None  (the morning date, if session spans midnight)
         total_obs       int
         new_species     list of species dicts (see below)
 
@@ -601,17 +603,18 @@ def activity_log(df, stats):
         state_obs       int or None
         is_county_first bool
     """
+    import datetime
+
     if df.empty:
         return []
 
     moth_ids, butterfly_ids, order_common = _group_inputs()
     labeler = group_labeler(moth_ids, butterfly_ids, order_common)
 
-    # Work with the full df (sorted by observed_on) to determine first
-    # appearances in chronological order.
     sub = df.dropna(subset=["taxon_id", "observed_on"]).sort_values("observed_on")
     sub = sub.copy()
-    sub["date"] = sub["observed_on"].dt.date
+    sub["session"] = _session_dates(sub)   # evening date (morning obs rolled back)
+    sub["cal_date"] = sub["observed_on"].dt.date
 
     # Build stats lookup.
     if not stats.empty:
@@ -622,14 +625,15 @@ def activity_log(df, stats):
         stat_by_taxon = {}
 
     seen = set()
-    entries_by_date = {}
+    entries_by_session = {}
 
-    # Total obs per date (non-Aves, any rank).
-    obs_per_date = sub.groupby("date")["id"].count().to_dict()
+    # Total obs and latest calendar date per session.
+    obs_per_session = sub.groupby("session")["id"].count().to_dict()
+    max_cal_per_session = sub.groupby("session")["cal_date"].max().to_dict()
 
     for _, row in sub.iterrows():
         tid = int(row["taxon_id"])
-        d = row["date"]
+        sess = row["session"]
         if tid not in seen:
             seen.add(tid)
             s = stat_by_taxon.get(tid, {})
@@ -653,13 +657,11 @@ def activity_log(df, stats):
                 "state_obs": int(state_obs) if state_obs == state_obs and state_obs is not None else None,
                 "is_county_first": is_cf,
             }
-            entries_by_date.setdefault(d, []).append(sp)
+            entries_by_session.setdefault(sess, []).append(sp)
 
     result = []
-    for d in sorted(entries_by_date):
-        species = entries_by_date[d]
-        # Sort: moths first (rarest state count first), then other groups
-        # alphabetically then by state rarity.
+    for sess in sorted(entries_by_session):
+        species = entries_by_session[sess]
         def _sort_key(sp):
             state = sp["state_obs"] if sp["state_obs"] is not None else 999999
             grp = sp["group"]
@@ -670,9 +672,12 @@ def activity_log(df, stats):
                 lbl = ""
             return (0 if sp["is_moth"] else 1, grp, state, lbl)
         species.sort(key=_sort_key)
+        max_cal = max_cal_per_session.get(sess)
+        date_end = max_cal if (max_cal and max_cal != sess) else None
         result.append({
-            "date": d,
-            "total_obs": obs_per_date.get(d, 0),
+            "date": sess,
+            "date_end": date_end,
+            "total_obs": obs_per_session.get(sess, 0),
             "new_species": species,
         })
     return result

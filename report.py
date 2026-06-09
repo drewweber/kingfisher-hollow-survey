@@ -526,7 +526,13 @@ def activity_log_body(log_entries, weather_cache):
                 f'<span class="flex-1 h-px bg-stone-200"></span></div>'
             )
 
-        date_label = f"{month_names[d.month]} {d.day}"
+        d_end = entry.get("date_end")
+        if d_end and d_end.month == d.month:
+            date_label = f"{month_names[d.month]} {d.day}–{d_end.day}"
+        elif d_end:
+            date_label = f"{month_names[d.month]} {d.day}–{month_names[d_end.month]} {d_end.day}"
+        else:
+            date_label = f"{month_names[d.month]} {d.day}"
         w = weather_cache.get(str(d))
         weather_str = _weather_line(w)
         weather_html = (
