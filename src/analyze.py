@@ -598,6 +598,7 @@ def activity_log(df, stats):
         obs_id          int  (iNaturalist observation id for the first record)
         taxon_name      str
         is_moth         bool
+        is_morning      bool (True = morning-after half of an overnight session)
         group           str  (readable group label)
         county_obs      int or None
         state_obs       int or None
@@ -615,6 +616,8 @@ def activity_log(df, stats):
     sub = sub.copy()
     sub["session"] = _session_dates(sub)   # evening date (morning obs rolled back)
     sub["cal_date"] = sub["observed_on"].dt.date
+    # is_morning: observation rolled back from the calendar day after the session
+    sub["is_morning"] = sub["cal_date"] != sub["session"]
 
     # Build stats lookup.
     if not stats.empty:
@@ -627,9 +630,25 @@ def activity_log(df, stats):
     seen = set()
     entries_by_session = {}
 
-    # Total obs and latest calendar date per session.
+    # Total obs per session.
     obs_per_session = sub.groupby("session")["id"].count().to_dict()
-    max_cal_per_session = sub.groupby("session")["cal_date"].max().to_dict()
+
+    # Observers per session: all distinct user_names (or user_login fallback)
+    # drawn from ALL obs in the session (not just new-species ones).
+    def _name(row):
+        n = row.get("user_name")
+        return n if (n and n == n and n.strip()) else (row.get("user_login") or "")
+
+    observers_by_session = {}
+    for _, row in sub.iterrows():
+        sess = row["session"]
+        n = _name(row)
+        if n:
+            observers_by_session.setdefault(sess, set()).add(n)
+
+    # Whether the session has any morning obs at all (to know if it spans midnight).
+    has_morning = sub[sub["is_morning"]]["session"].unique()
+    has_morning_set = set(has_morning)
 
     for _, row in sub.iterrows():
         tid = int(row["taxon_id"])
@@ -652,6 +671,7 @@ def activity_log(df, stats):
                 "obs_id": int(row["id"]),
                 "taxon_name": tn or "",
                 "is_moth": is_moth,
+                "is_morning": bool(row["is_morning"]),
                 "group": grp,
                 "county_obs": int(county_obs) if county_obs == county_obs and county_obs is not None else None,
                 "state_obs": int(state_obs) if state_obs == state_obs and state_obs is not None else None,
@@ -672,12 +692,12 @@ def activity_log(df, stats):
                 lbl = ""
             return (0 if sp["is_moth"] else 1, grp, state, lbl)
         species.sort(key=_sort_key)
-        max_cal = max_cal_per_session.get(sess)
-        date_end = max_cal if (max_cal and max_cal != sess) else None
+        observers = sorted(observers_by_session.get(sess, set()))
         result.append({
             "date": sess,
-            "date_end": date_end,
+            "has_morning": sess in has_morning_set,
             "total_obs": obs_per_session.get(sess, 0),
+            "observers": observers,
             "new_species": species,
         })
     return result

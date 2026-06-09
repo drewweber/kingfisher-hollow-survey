@@ -526,13 +526,9 @@ def activity_log_body(log_entries, weather_cache):
                 f'<span class="flex-1 h-px bg-stone-200"></span></div>'
             )
 
-        d_end = entry.get("date_end")
-        if d_end and d_end.month == d.month:
-            date_label = f"{month_names[d.month]} {d.day}–{d_end.day}"
-        elif d_end:
-            date_label = f"{month_names[d.month]} {d.day}–{month_names[d_end.month]} {d_end.day}"
-        else:
-            date_label = f"{month_names[d.month]} {d.day}"
+        has_morning = entry.get("has_morning", False)
+        date_label = f"Night of {month_names[d.month]} {d.day}"
+
         w = weather_cache.get(str(d))
         weather_str = _weather_line(w)
         weather_html = (
@@ -540,9 +536,11 @@ def activity_log_body(log_entries, weather_cache):
             if weather_str else ""
         )
 
-        # Separate moths from everything else.
-        moths = [sp for sp in entry["new_species"] if sp["is_moth"]]
-        others = [sp for sp in entry["new_species"] if not sp["is_moth"]]
+        observers = entry.get("observers", [])
+        observers_html = (
+            f'<p class="text-stone-400 text-xs mt-1">{esc(", ".join(observers))}</p>'
+            if observers else ""
+        )
 
         def _sp_html(sp):
             badge = _rarity_badge(sp)
@@ -557,38 +555,50 @@ def activity_log_body(log_entries, weather_cache):
                         f'whitespace-nowrap">({badge})</span>')
             return name_html
 
-        species_parts = []
-        if moths:
-            moth_items = ", ".join(_sp_html(sp) for sp in moths)
-            species_parts.append(
-                f'<span class="font-medium text-stone-700">Moths:</span> {moth_items}'
+        def _group_html(species_list):
+            """Render a list of species into labelled group paragraph(s)."""
+            moths = [sp for sp in species_list if sp["is_moth"]]
+            others = [sp for sp in species_list if not sp["is_moth"]]
+            parts = []
+            if moths:
+                parts.append(
+                    f'<span class="font-medium text-stone-700">Moths:</span> '
+                    + ", ".join(_sp_html(sp) for sp in moths)
+                )
+            if others:
+                groups_seen = {}
+                for sp in others:
+                    grp = sp["group"] or "Other"
+                    groups_seen.setdefault(grp, []).append(sp)
+                if len(groups_seen) == 1:
+                    grp_name, grp_sps = next(iter(groups_seen.items()))
+                    parts.append(
+                        f'<span class="font-medium text-stone-700">{esc(grp_name)}:</span> '
+                        + ", ".join(_sp_html(sp) for sp in grp_sps)
+                    )
+                else:
+                    lbl = "Other species" if moths else "Species"
+                    parts.append(
+                        f'<span class="font-medium text-stone-700">{lbl}:</span> '
+                        + ", ".join(_sp_html(sp) for sp in others)
+                    )
+            if not parts:
+                return ""
+            return (
+                '<p class="text-stone-700 leading-relaxed mt-2 text-[0.95rem]">'
+                + " &nbsp;·&nbsp; ".join(parts)
+                + "</p>"
             )
-        if others:
-            # Group non-moths by group name.
-            groups_seen = {}
-            for sp in others:
-                grp = sp["group"] or "Other"
-                groups_seen.setdefault(grp, []).append(sp)
-            # If there's only one group besides moths, label it; otherwise
-            # flatten under "Other species".
-            if len(groups_seen) == 1:
-                grp_name, grp_sps = next(iter(groups_seen.items()))
-                items = ", ".join(_sp_html(sp) for sp in grp_sps)
-                species_parts.append(
-                    f'<span class="font-medium text-stone-700">{esc(grp_name)}:</span> {items}'
-                )
-            else:
-                other_items = ", ".join(_sp_html(sp) for sp in others)
-                label = "Other species" if moths else "Species"
-                species_parts.append(
-                    f'<span class="font-medium text-stone-700">{label}:</span> {other_items}'
-                )
 
-        species_html = (
-            '<p class="text-stone-700 leading-relaxed mt-2 text-[0.95rem]">'
-            + " &nbsp;·&nbsp; ".join(species_parts)
-            + '</p>'
-        ) if species_parts else ""
+        if has_morning:
+            morning_sps = [sp for sp in entry["new_species"] if sp["is_morning"]]
+            evening_sps = [sp for sp in entry["new_species"] if not sp["is_morning"]]
+            morning_html = _group_html(morning_sps)
+            evening_html = _group_html(evening_sps)
+            divider = '<hr class="border-stone-100 my-2">' if morning_html and evening_html else ""
+            species_html = morning_html + divider + evening_html
+        else:
+            species_html = _group_html(entry["new_species"])
 
         new_count = len(entry["new_species"])
         count_badge = (
@@ -607,6 +617,7 @@ def activity_log_body(log_entries, weather_cache):
       {count_badge}
       <div class="flex-1 min-w-0">
         {weather_html}
+        {observers_html}
         {species_html}
       </div>
     </div>
