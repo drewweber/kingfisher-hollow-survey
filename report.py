@@ -484,15 +484,17 @@ def _rarity_badge(sp):
 
 
 def _weather_line(w):
-    """Compact weather summary string for a journal entry."""
+    """Compact weather summary string for a journal entry (9 PM conditions)."""
     if not w:
         return ""
     parts = []
-    if w.get("temp_f_hi") is not None:
-        parts.append(f"{w['temp_f_hi']}°F")
-    if w.get("humidity_pct") is not None:
-        parts.append(f"{w['humidity_pct']}% humidity")
-    wd = w.get("wind_desc")
+    temp = w.get("temp_f_9pm") if w.get("temp_f_9pm") is not None else w.get("temp_f_hi")
+    if temp is not None:
+        parts.append(f"{temp}°F")
+    hum = w.get("humidity_9pm") if w.get("humidity_9pm") is not None else w.get("humidity_pct")
+    if hum is not None:
+        parts.append(f"{hum}% humidity")
+    wd = w.get("wind_desc_9pm") or w.get("wind_desc")
     if wd:
         parts.append(wd)
     moon = w.get("moon")

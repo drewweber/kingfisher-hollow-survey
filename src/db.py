@@ -142,6 +142,12 @@ def connect():
 # Columns added after the first schema shipped; applied to existing DBs.
 _MIGRATIONS = {
     "property_obs": ["photo_url TEXT", "photo_attribution TEXT", "photo_license TEXT"],
+    "weather_cache": [
+        "temp_f_9pm    INTEGER",
+        "humidity_9pm  INTEGER",
+        "wind_mph_9pm  REAL",
+        "wind_dir_9pm  INTEGER",
+    ],
 }
 
 

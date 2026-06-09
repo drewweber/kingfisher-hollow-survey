@@ -79,10 +79,11 @@ def moon_phase(date):
 
 
 def _fetch_range(start_date, end_date):
-    """Fetch daily weather from Open-Meteo for a date range.
+    """Fetch daily + hourly weather from Open-Meteo for a date range.
 
     Returns {date_str: {temp_f_hi, temp_f_lo, humidity_pct, wind_mph,
-                        wind_dir_deg, precip_in}} for each date returned.
+                        wind_dir_deg, precip_in,
+                        temp_f_9pm, humidity_9pm, wind_mph_9pm, wind_dir_9pm}}
     Open-Meteo archive has a ~5-day lag; dates too recent are silently absent.
     """
     import urllib.request
@@ -101,6 +102,12 @@ def _fetch_range(start_date, end_date):
             "windspeed_10m_max",
             "winddirection_10m_dominant",
             "precipitation_sum",
+        ]),
+        "hourly": ",".join([
+            "temperature_2m",
+            "relative_humidity_2m",
+            "windspeed_10m",
+            "winddirection_10m",
         ]),
         "timezone": "America/New_York",
         "temperature_unit": "celsius",
@@ -124,6 +131,23 @@ def _fetch_range(start_date, end_date):
     wdir = daily.get("winddirection_10m_dominant", [])
     precip = daily.get("precipitation_sum", [])
 
+    # Build a lookup from "YYYY-MM-DDTHH:00" → hourly value index.
+    hourly = data.get("hourly", {})
+    h_times = hourly.get("time", [])
+    h_temp  = hourly.get("temperature_2m", [])
+    h_hum   = hourly.get("relative_humidity_2m", [])
+    h_wspd  = hourly.get("windspeed_10m", [])
+    h_wdir  = hourly.get("winddirection_10m", [])
+    h_idx   = {t: i for i, t in enumerate(h_times)}
+
+    def _9pm(date_str, lst):
+        key = f"{date_str}T21:00"
+        i = h_idx.get(key)
+        if i is None or i >= len(lst):
+            return None
+        v = lst[i]
+        return None if v is None or v != v else v
+
     out = {}
     for i, d in enumerate(dates):
         def _get(lst):
@@ -132,6 +156,12 @@ def _fetch_range(start_date, end_date):
 
         hi_c = _get(t_max)
         lo_c = _get(t_min)
+
+        t9_c  = _9pm(d, h_temp)
+        h9    = _9pm(d, h_hum)
+        ws9   = _9pm(d, h_wspd)
+        wd9   = _9pm(d, h_wdir)
+
         out[d] = {
             "temp_f_hi": round(_c_to_f(hi_c)) if hi_c is not None else None,
             "temp_f_lo": round(_c_to_f(lo_c)) if lo_c is not None else None,
@@ -139,6 +169,10 @@ def _fetch_range(start_date, end_date):
             "wind_mph": round(_kmh_to_mph(_get(wspd)), 1) if _get(wspd) is not None else None,
             "wind_dir_deg": round(_get(wdir)) if _get(wdir) is not None else None,
             "precip_in": round(_get(precip) * 0.0393701, 2) if _get(precip) is not None else None,
+            "temp_f_9pm":   round(_c_to_f(t9_c)) if t9_c is not None else None,
+            "humidity_9pm": round(h9) if h9 is not None else None,
+            "wind_mph_9pm": round(_kmh_to_mph(ws9), 1) if ws9 is not None else None,
+            "wind_dir_9pm": round(wd9) if wd9 is not None else None,
         }
     return out
 
@@ -175,13 +209,16 @@ def sync_weather(dates):
             w["temp_f_hi"], w["temp_f_lo"], w["humidity_pct"],
             w["wind_mph"], w["wind_dir_deg"], w["precip_in"],
             round(frac, 4),
+            w["temp_f_9pm"], w["humidity_9pm"],
+            w["wind_mph_9pm"], w["wind_dir_9pm"],
         ))
     with connect() as conn:
         conn.executemany(
             "INSERT OR REPLACE INTO weather_cache "
             "(date, temp_f_hi, temp_f_lo, humidity_pct, wind_mph, "
-            " wind_dir_deg, precip_in, moon_phase) "
-            "VALUES (?,?,?,?,?,?,?,?)",
+            " wind_dir_deg, precip_in, moon_phase, "
+            " temp_f_9pm, humidity_9pm, wind_mph_9pm, wind_dir_9pm) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             rows,
         )
     print(f"  weather: cached {len(rows)} dates")
@@ -205,5 +242,10 @@ def load_weather():
             "precip_in": r["precip_in"],
             "moon": mname,
             "wind_desc": wind_description(r["wind_mph"], r["wind_dir_deg"]),
+            "temp_f_9pm": r["temp_f_9pm"],
+            "humidity_9pm": r["humidity_9pm"],
+            "wind_mph_9pm": r["wind_mph_9pm"],
+            "wind_dir_9pm": r["wind_dir_9pm"],
+            "wind_desc_9pm": wind_description(r["wind_mph_9pm"], r["wind_dir_9pm"]),
         }
     return out
