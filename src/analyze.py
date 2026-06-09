@@ -575,6 +575,7 @@ def activity_log(df, stats):
     Each species dict:
         label           str  (common name or taxon_name)
         taxon_id        int
+        obs_id          int  (iNaturalist observation id for the first record)
         taxon_name      str
         is_moth         bool
         group           str  (readable group label)
@@ -626,6 +627,7 @@ def activity_log(df, stats):
             sp = {
                 "label": cn or tn or "Unidentified",
                 "taxon_id": tid,
+                "obs_id": int(row["id"]),
                 "taxon_name": tn or "",
                 "is_moth": is_moth,
                 "group": grp,

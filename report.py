@@ -21,6 +21,7 @@ PLOTLY_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
 SITE = "https://www.kingfisher-hollow.com"
 PROJECT_URL = "https://www.inaturalist.org/projects/kingfisher-hollow-biodiversity-survey"
 TAXON_URL = "https://www.inaturalist.org/taxa/"   # + taxon_id → species page
+OBS_URL   = "https://www.inaturalist.org/observations/"  # + obs_id → observation
 HERO_PHOTO = f"{SITE}/aerial/dji_fly_20251020_173830_305_1760996794506_photo_optimized.JPG"
 
 # Belted Kingfisher mark, lifted from the main site for visual continuity.
@@ -537,7 +538,12 @@ def activity_log_body(log_entries, weather_cache):
 
         def _sp_html(sp):
             badge = _rarity_badge(sp)
-            name_html = taxon_link(sp["taxon_id"], sp["label"])
+            obs_id = sp.get("obs_id")
+            if obs_id:
+                name_html = (f'<a href="{OBS_URL}{obs_id}" target="_blank" rel="noopener">'
+                             f'{esc(sp["label"])}</a>')
+            else:
+                name_html = taxon_link(sp["taxon_id"], sp["label"])
             if badge:
                 return (f'{name_html} <span class="text-hollow-600 text-xs font-medium '
                         f'whitespace-nowrap">({badge})</span>')
