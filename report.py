@@ -590,31 +590,71 @@ def activity_log_body(log_entries, weather_cache):
                 + "</p>"
             )
 
+        def _badge(n):
+            return (
+                f'<span class="inline-flex items-center justify-center w-6 h-6 '
+                f'rounded-full bg-hollow-100 text-hollow-700 text-xs font-bold '
+                f'flex-shrink-0 mt-0.5">{n}</span>'
+            )
+
+        section_label_cls = (
+            'text-stone-400 text-[0.68rem] font-semibold tracking-[0.15em] uppercase mb-1'
+        )
+
         if has_morning:
             morning_sps = [sp for sp in entry["new_species"] if sp["is_morning"]]
             evening_sps = [sp for sp in entry["new_species"] if not sp["is_morning"]]
             morning_html = _group_html(morning_sps)
             evening_html = _group_html(evening_sps)
-            divider = '<hr class="border-stone-100 my-2">' if morning_html and evening_html else ""
-            species_html = morning_html + divider + evening_html
+
+            morning_row = ""
+            if morning_html:
+                morning_row = f"""
+  <div class="grid grid-cols-[8rem_1fr] gap-x-6 pb-3">
+    <div></div>
+    <div>
+      <div class="{section_label_cls}">Morning</div>
+      <div class="flex items-start gap-2">
+        {_badge(len(morning_sps))}
+        <div class="flex-1 min-w-0">{morning_html}</div>
+      </div>
+    </div>
+  </div>
+  <hr class="border-stone-100 ml-[calc(8rem+1.5rem)]">"""
+
+            evening_meta = f"""
+      <div class="{section_label_cls}">Evening</div>
+      {weather_html}
+      {observers_html}"""
+
+            html_parts.append(f"""
+<div class="py-5 border-b border-stone-100 group">{morning_row}
+  <div class="grid grid-cols-[8rem_1fr] gap-x-6 pt-3">
+    <div class="text-right pt-0.5">
+      <span class="font-serif text-lg font-bold text-stone-900 leading-snug">{date_label}</span>
+    </div>
+    <div>
+      <div class="flex items-start gap-2">
+        {_badge(len(evening_sps) or len(entry["new_species"]))}
+        <div class="flex-1 min-w-0">{evening_meta}
+          {evening_html}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>""")
+
         else:
             species_html = _group_html(entry["new_species"])
-
-        new_count = len(entry["new_species"])
-        count_badge = (
-            f'<span class="inline-flex items-center justify-center w-6 h-6 '
-            f'rounded-full bg-hollow-100 text-hollow-700 text-xs font-bold '
-            f'flex-shrink-0 mt-0.5">{new_count}</span>'
-        )
-
-        html_parts.append(f"""
+            new_count = len(entry["new_species"])
+            html_parts.append(f"""
 <div class="grid grid-cols-[8rem_1fr] gap-x-6 py-5 border-b border-stone-100 group">
   <div class="text-right pt-0.5">
     <span class="font-serif text-lg font-bold text-stone-900 leading-snug">{date_label}</span>
   </div>
   <div>
     <div class="flex items-start gap-2">
-      {count_badge}
+      {_badge(new_count)}
       <div class="flex-1 min-w-0">
         {weather_html}
         {observers_html}
