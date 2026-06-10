@@ -153,7 +153,7 @@ def hero(s, county_firsts):
       Life at <em class="font-normal text-hollow-200" style="font-style:italic;">the Hollow</em>
     </h1>
     <p class="fade-up delay-2 text-white/70 text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12">
-      1,367 species. 314 county firsts. 30 riparian acres along Michigan Creek — and the inventory is still accelerating.
+      1,367 species across 30 riparian acres in Tioga County, NY — 314 of them new to the county record. The survey is a year old and still nowhere near done.
     </p>
     <div class="fade-up delay-3 flex flex-wrap items-center justify-center gap-8 md:gap-12">
       {stat(f"{s['species']:,}", "Species")}
@@ -371,25 +371,25 @@ def property_profile_body():
         + _dark_stat("35–50% richer", "Creek Ecotone")
         + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
         'Arthropod richness at a stream-hardwood edge runs 35–50% above comparable upland sites. '
-        'The transition zone between water and forest multiplies available microhabitats and '
-        'host-plant niches.'
+        'The transition between water and forest stacks microhabitats and host-plant niches that '
+        'a uniform woodland can\'t provide.'
         '</p></div>'
     )
     col2 = (
         '<div class="space-y-3">'
         + _dark_stat("50–100 m from bank", "Humidity Buffer")
         + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
-        'Below ~65°F, dry air suppresses moth flight — but creek-side humidity counters that effect '
-        'within 50–100 m of the bank, extending the effective survey window on marginal nights.'
+        'Dry air below ~65°F suppresses moth flight — but creek-side humidity counters that within '
+        '50–100 m of the bank. Marginal nights that shut down upland sites often stay productive here.'
         '</p></div>'
     )
     col3 = (
         '<div class="space-y-3">'
         + _dark_stat("247 species · 30 acres", "Host Plants")
         + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
-        'That is 2–3× the NY mixed-hardwood baseline. Eastern Lepidoptera are overwhelmingly '
-        'host-plant specialists; the math nearly closes: 247 plants × ~1.8 predicted moths per '
-        'plant species ≈ 445 predicted species. Observed: 438.'
+        '2–3× the NY mixed-hardwood baseline. Eastern Lepidoptera are mostly host-plant specialists; '
+        'the math holds: 247 plants × ~1.8 predicted moths per plant species ≈ 445 predicted. '
+        'Observed: 438.'
         '</p></div>'
     )
     return (
@@ -461,11 +461,11 @@ def moth_gap_body(gap):
     lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">Kingfisher Hollow has recorded '
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of the '
             f'<strong class="text-hollow-300">{region_total}</strong> moth species documented within '
-            f'~{miles} miles — <strong class="text-hollow-300">{gap["pct"]}%</strong> of the regional pool '
-            f'in hand.{county_line} The <strong class="text-hollow-300">{gap["missing_count"]}</strong> '
-            f'species below have all been seen by someone, somewhere nearby. They are not rare. They are not '
-            f'hypothetical. They are simply waiting for the right night, the right trap position, or the right '
-            f'observer to notice them at Kingfisher Hollow.</p>')
+            f'~{miles} miles — <strong class="text-hollow-300">{gap["pct"]}%</strong> of the regional '
+            f'pool.{county_line} The <strong class="text-hollow-300">{gap["missing_count"]}</strong> '
+            f'species below have all been seen by someone nearby. They\'re not rare. They\'re not '
+            f'hypothetical. They need the right night, the right trap position, or the right observer '
+            f'paying attention.</p>')
     gmax = max(int(r["ref_count"]) for _, r in gap["missing"].iterrows()) or 1
     rows = []
     for _, r in gap["missing"].iterrows():
@@ -706,10 +706,10 @@ def activity_log_body(log_entries, weather_cache):
 
 # ── head / nav / footer ──────────────────────────────────────────────────────
 def head():
-    desc = ("A living biodiversity survey of Kingfisher Hollow — 1,367 species on 30 riparian acres along "
-            "Michigan Creek, Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / "
-            "mid-Atlantic floristic junction: 314 county-first records, 438 moth species, and a plant diversity "
-            "2–3× the NY upland baseline. Data updated nightly.")
+    desc = ("Biodiversity survey of Kingfisher Hollow — 1,367 species on 30 riparian acres along Michigan Creek, "
+            "Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / mid-Atlantic junction: "
+            "314 county-first records, 438 moth species, plant diversity 2–3× the NY upland baseline. "
+            "Data updated nightly.")
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kingfisher Hollow · Biodiversity Survey</title>
@@ -968,17 +968,15 @@ def moth_view(df, stats):
     out.append(section(
         'moth-why-here', 'Riparian Context', 'Why <em class="text-hollow-300">Here</em>',
         property_profile_body(),
-        intro='Michigan Creek is not backdrop — it is mechanism.',
+        intro='Michigan Creek explains the moth numbers. Here is why.',
         dark=True))
     out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
         moth_stats(msum, comp),
-        intro="438 moth species in a single field season on 30 riparian acres. That rivals the take from major "
-              "North American museum light-trap expeditions targeting hotspot sites over multiple years. The "
-              "creek’s humidity buffer keeps moths flying on nights too dry and cool for upland sites — nearly "
-              "every species here traces back to a specific plant genus in the canopy, shrub layer, or wetland "
-              "edge. With 247 plant species on the property, the diversity below is almost entirely predicted "
-              "by the diversity above.",
+        intro="438 moth species in one field season on 30 acres. Nearly every species ties back to a specific "
+              "plant genus in the canopy, shrub layer, or wetland edge — and the property has 247 plant species. "
+              "The creek’s humidity buffer keeps moths flying on nights too dry and cool for upland sites nearby. "
+              "The diversity below is almost entirely predicted by the diversity above.",
         dark=True))
 
     # Headline diagnostic: species detected on only one or two nights.
@@ -994,20 +992,18 @@ def moth_view(df, stats):
         'The Inventory, <em class="text-hollow-300">Estimated</em>',
         once_band
         + chart_card(viz.completeness_curve(eff, comp),
-                     note=f"Chao2 uses the ratio of species seen on exactly one night (Q1) versus exactly two nights (Q2) across all {comp['nights']} survey sessions to project how many species remain undetected. Shaded band: 95% confidence interval. The curve flattening would indicate a nearly complete inventory — it hasn't flattened yet.",
+                     note=f"Chao2 uses the ratio of species seen on exactly one night (Q1) vs. exactly two nights (Q2) across {comp['nights']} survey sessions to project undetected species. Shaded band: 95% CI. The curve hasn't flattened yet.",
                      dark=True)
         + takeaway(
-            f"Of the <strong>{comp['observed']}</strong> moth species confirmed at Kingfisher Hollow, "
-            f"<strong>{comp['q1']}</strong> have appeared on exactly one night — seen once and not yet again. "
-            f"That single-night rate is the engine of the Chao2 estimate: it predicts roughly "
-            f"<strong>{comp['estimated']}</strong> total species (95% CI: {comp['low']}–{comp['high']}), "
-            f"placing the survey at about <strong>{comp['pct_complete']}%</strong> complete. Note that the "
-            f"regional pool of 1,756 species is far larger — most of those simply don't occur at a riparian "
-            f"forest site in the Appalachian highlands, belonging to different habitats entirely. The ~700 "
-            f"Chao2 ceiling is a realistic estimate for <em>this</em> place. In practical terms: dozens of "
-            f"real species are out there, already present on the property, just waiting for the night they "
-            f"finally cross the sheet.", dark=True),
-        intro="438 species confirmed. Statistical modeling says there are roughly 700 on the property. Here is the evidence for that gap — and how fast it's closing.",
+            f"Of the <strong>{comp['observed']}</strong> moth species confirmed here, "
+            f"<strong>{comp['q1']}</strong> have appeared on exactly one night — seen once and not since. "
+            f"That single-night rate drives the Chao2 estimate: roughly "
+            f"<strong>{comp['estimated']}</strong> species total (95% CI: {comp['low']}–{comp['high']}), "
+            f"putting the survey about <strong>{comp['pct_complete']}%</strong> complete. The regional pool of "
+            f"1,756 species is much larger, but most of those belong to habitats this property doesn't have. "
+            f"The ~700 ceiling is a realistic figure for this specific place. Dozens of real species are "
+            f"already present on the property — they just haven't crossed the sheet yet.", dark=True),
+        intro="438 species confirmed. Statistical modeling puts the true total around 700. Here's the evidence for that gap — and how fast it's closing.",
         dark=True))
 
     # Moth-monthly: effort and discovery by calendar month
@@ -1015,114 +1011,106 @@ def moth_view(df, stats):
     season_months = [r for r in msum_monthly if r['survey_season'] and r['nights_surveyed'] > 0]
     best_roi = max(season_months, key=lambda r: r['new_species_count'] / r['nights_surveyed']) if season_months else None
     best_roi_text = (
-        f"<strong>{best_roi['month_name']}</strong> has returned the most new species per "
-        f"survey night ({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} nights). "
-        "Months with a tall terracotta bar but a short green bar are where targeted effort would be "
-        "most productive — new species, not repeat sightings, are still waiting. "
-        "Activity peaks from late June through August; nights below 55°F or around a bright full moon are largely quiet."
+        f"<strong>{best_roi['month_name']}</strong> has produced the most new species per survey night "
+        f"({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} nights). "
+        "Months with a tall terracotta bar but a short green one are where additional effort would pay off. "
+        "The core season runs late June through August; nights below 55°F or near a full moon are mostly quiet."
     ) if best_roi else ''
     out.append(section(
         'moth-monthly', 'When to Look', 'Month <em class="text-hollow-300">by Month</em>',
         chart_card(viz.monthly_survey_bar(msum_monthly),
-                   note='Green: species recorded that month. Terracotta overlay: species seen for the first time ever. '
-                        'Faded months are outside the core May–September flight season. Hover for survey-night counts.',
+                   note='Green: species recorded that month. Terracotta: species recorded for the first time ever. '
+                        'Faded months are outside the May–September core flight season. Hover for survey-night counts.',
                    dark=True)
         + takeaway(best_roi_text, dark=True),
-        intro='How many moth species turn up each month, how many are first records, and where the effort gaps remain.',
+        intro="Month-by-month species totals, first records, and where the calendar gaps still sit.",
         dark=True))
 
     out.append(section(
         "moth-families", "By Family",
         'Where the <em class="text-hollow-300">Gaps</em> Are',
         chart_card(viz.family_breakdown(analyze.moth_family_breakdown(moths)),
-                   note="Solid bar: species recorded at Kingfisher Hollow. Faint bar: species known within ~50 miles of the property. Numbers at bar ends show the recorded / regional ratio. Families sorted by recorded species count.",
+                   note="Solid bar: species recorded here. Faint bar: species known within ~50 miles. Numbers at bar ends show the recorded-to-regional ratio. Sorted by recorded species count.",
                    dark=True)
         + takeaway(
             "The large, conspicuous families — Noctuidae (owlet moths), Geometridae (geometers), Erebidae "
-            "(tiger moths and kin) — are well represented because they're big enough to identify by eye at the "
-            "sheet. The micro-moth families are a different story: Tortricidae, Gelechiidae, Coleophoridae, and "
-            "Nepticulidae together account for a majority of temperate moth diversity, yet they require methods "
-            "beyond a standard UV sheet — different trap heights, sugar and fermented bait, day-beating of "
-            "foliage, and often microscopic genitalic dissection to reach species-level ID. Most of the "
-            "estimated 260 undiscovered species are probably micro-moths. That's not a failure of effort — "
-            "it's a technical frontier. Targeted micro-moth work here would almost certainly push the species "
-            "total well past 500.", dark=True),
-        intro="The moth fauna is not evenly sampled. A handful of families are nearly fully inventoried — others are barely scratched. This is where the undiscovered species are hiding.",
+            "(tiger moths and kin) — are well represented because they're big enough to identify at the sheet. "
+            "The micro-moth families tell a different story. Tortricidae, Gelechiidae, Coleophoridae, and "
+            "Nepticulidae together account for a majority of temperate moth diversity, but they need methods "
+            "a UV sheet can't provide: different trap heights, sugar bait, day-beating of foliage, and often "
+            "genitalic dissection to confirm an ID. Most of the estimated 260 undiscovered species are "
+            "probably micro-moths. Targeted micro-moth work here would push the total well past 500.", dark=True),
+        intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried; others have barely been touched. The undiscovered species are concentrated in specific groups.",
         dark=True))
     out.append(section(
         "moth-seasons", "Flight Seasons",
         'On the <em class="text-hollow-300">Wing</em>',
         chart_card(viz.seasonal_cascade(analyze.moth_seasonal(df, moths), dark=True),
-                   note="Faint line: full date range observed. Thick bar: middle 50% of records (core flight period). Dot: median date. Species with fewer than three records are omitted. Sorted by median flight date.",
+                   note="Faint line: full observed date range. Thick bar: middle 50% of records (core flight window). Dot: median date. Species with fewer than 3 records omitted. Sorted by median flight date.",
                    dark=True)
         + takeaway(
-            "Each horizontal row is one moth species. The thick bar is its core flight window — the middle 50% "
-            "of all records. The faint line stretches to its earliest and latest confirmed dates. Stack all 438 "
-            "rows and the chart becomes a map of the entire season: a sparse trickle in April, an explosion in "
-            "June and July, a long plateau through August, and a gradual fade into October. After one year, "
-            "these windows are first drafts — they will sharpen and lengthen as more nights of data accumulate.", dark=True),
-        intro="The full moth season laid out as a cascade — every species in its flight window, stacked from the first warm nights of April through the last flights of November.",
+            "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
+            "The faint line reaches its earliest and latest confirmed dates. Read all 438 rows together and "
+            "you get the season's shape: sparse in April, dense in June and July, a long plateau through "
+            "August, fading through October. After one year these windows are first drafts; they'll sharpen "
+            "as more nights accumulate.", dark=True),
+        intro="Every species in its flight window, from the first warm nights of April through the last flights of November.",
         dark=True))
     out.append(section(
         "moth-phenology", "By Month",
         'Moth <em class="text-hollow-300">Phenology</em>',
         chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
-                   note="Each row is normalized to its own peak month, so a species seen 4 times reads as vividly as one seen 400 times. This lets rare species' seasonal patterns show up alongside common ones. Hover any cell for raw observation counts.",
+                   note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
                    dark=True)
         + takeaway(
-            "Scan across a row: that species' entire season in a glance, bright where it peaks, dark where it "
-            "disappears. Scan down a column: the active community of that month. The sparse winter columns are "
-            "partly real — very few moths fly in January and February — and partly a survey artifact, since few "
-            "people are running lights in the cold. Both are true simultaneously, and next year's data will "
-            "help separate them.", dark=True),
-        intro="Each moth species' monthly fingerprint — which months it peaks, which it avoids, and where its season overlaps with others.",
+            "Scan a row: that species' season, bright at its peak, dark where it disappears. Scan a column: "
+            "the active community for that month. The sparse winter columns are partly real — few moths fly "
+            "in January and February — and partly a survey gap, since few people run lights in the cold. "
+            "Both things are true, and more data will eventually separate them.", dark=True),
+        intro="Each species' monthly fingerprint — when it peaks, when it disappears, and where seasons overlap.",
         dark=True))
     out.append(section(
         "moth-gap", "Yet to Find",
         'The <em class="text-hollow-300">Gap List</em>',
         moth_gap_body(gap)
         + takeaway(
-            "Tioga County's moth records are sparse — most of what's been observed there is from Kingfisher "
-            "Hollow itself — so this gap list is drawn from the much denser regional pool extending ~50 miles "
-            "in all directions, reaching south into Pennsylvania and east toward Ithaca. That region is "
-            "well-sampled enough to trust. Species at the top of the list are seen dozens of times nearby; "
-            "their absence here is almost certainly a survey gap, not a genuine absence. Worth noting: several "
-            "top-ranked Noctuidae are spring-emergent adults that fly in March and April before standard "
-            "light-trap season begins, and Catocala underwings respond poorly to UV lights but come readily to "
-            "sugar bait on warm August nights. Different gaps require different methods. Go find them.", dark=True),
-        intro="Every moth species recorded within ~50 miles of Kingfisher Hollow but not yet on the property list — ranked by how frequently they turn up nearby. These are not hypotheticals. They are real species, present in the region, with every reason to be here.",
+            "Tioga County's moth records are thin — most of what exists comes from Kingfisher Hollow itself "
+            "— so this list draws from the regional pool extending ~50 miles, south into Pennsylvania and "
+            "east toward Ithaca. That region is well-sampled. Species at the top are seen dozens of times "
+            "nearby; their absence here is almost certainly a survey gap. A few specifics worth noting: "
+            "several top-ranked Noctuidae are spring adults flying in March and April, before UV-sheet season "
+            "starts. Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
+            "Different gaps need different methods.", dark=True),
+        intro="Every moth species recorded within ~50 miles of Kingfisher Hollow but not yet found on the property, ranked by regional frequency. They've been seen nearby. They belong here.",
         dark=True))
     out.append(section(
         "moth-diversity", "Diversity",
         'A <em class="text-hollow-300">Balanced</em> Community',
         moth_diversity_body(div)
         + chart_card(viz.rank_abundance(div.get("rank_abundance", [])),
-                     note="Species ranked by total records, plotted on a log scale. A steep initial drop followed by a long flat tail is the signature of high evenness — no species dominates. Terracotta: species recorded only once or twice (singletons and doubletons).",
+                     note="Species ranked by total records, log scale. A steep initial drop followed by a long flat tail indicates high evenness — no species dominates. Terracotta: species recorded only once or twice.",
                      dark=True)
         + takeaway(
-            "This rank-abundance curve is the most ecologically significant chart on the site. A rank-abundance "
-            "curve for a degraded habitat drops off a cliff: one or two species dominate and the rest are noise. "
-            "This curve doesn't do that. It slopes gently across hundreds of species, which means the moth "
-            "community at Kingfisher Hollow is genuinely equitable — no single species has crowded out the "
-            "rest. Ecologists call this high evenness, and it's one of the better indicators of a functioning, "
-            "structurally complex habitat. The balanced community across 438 species is the predicted signature "
-            "of a site with exceptional host-plant breadth: 247 plant species on 30 acres, 2–3× the NY "
-            "mixed-hardwood baseline, each supporting distinct moth guilds. The long flat tail at the right — "
-            "all the once-or-twice-seen species — is not noise. It's the frontier of what's still being "
-            "discovered.", dark=True),
-        intro="Is the moth community at Kingfisher Hollow dominated by a handful of common species, or is the load spread broadly across many? The diversity metrics answer that question — and the answer is striking.",
+            "A rank-abundance curve for a degraded habitat drops steeply: one or two species dominate, the "
+            "rest are noise. This one doesn't. It slopes gently across hundreds of species — no single "
+            "species has crowded out the rest. Ecologists call that high evenness, and it's a reliable "
+            "indicator of structurally complex habitat. The gentle slope across 438 species is what you'd "
+            "predict from a site with 247 plant species on 30 acres, each supporting distinct moth guilds. "
+            "The long flat tail on the right — all the once-or-twice-seen species — is the frontier of "
+            "what's still being found.", dark=True),
+        intro="Is the moth community dominated by a handful of species, or is it broadly distributed? The diversity metrics give an unusually clear answer.",
         dark=True))
     out.append(section(
         "moth-standouts", "Standouts",
         'Rare &amp; <em class="text-hollow-300">Remarkable</em>',
         moth_showcase(analyze.moth_highlights(moths, stats)),
-        intro="The moths recorded at Kingfisher Hollow with the fewest total records in all of New York — species for which this survey is one of the only documentation points in the state.",
+        intro="Moths from Kingfisher Hollow with almost no other NY records — species this survey is among the few to document in the state.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
         'Recent <em class="text-hollow-300">Moths</em>',
         gallery_body(analyze.photo_highlights(moth_sub)),
-        intro="The latest moth photographs from the property.",
+        intro="Recent moth photographs from the property.",
         dark=True))
     return "".join(out)
 
@@ -1152,21 +1140,20 @@ def build():
     parts.append(section(
         "whats-new", "Latest", 'What\'s <em class="text-hollow-600">New</em>',
         whats_new_body(analyze.whats_new(df, stats)),
-        intro="The most recent species to cross the threshold — each one a first for Kingfisher Hollow, some a first for all of Tioga County.",
+        intro="Species recorded at Kingfisher Hollow for the first time — some of them new to all of Tioga County.",
         tint="bg-stone-100"))
     parts.append(section(
         "discovery", "The Story So Far",
         'A Growing <em class="text-hollow-600">Life List</em>',
         chart_card(viz.discovery_curve(firsts),
-                   note="Each vertical step marks the first time a species was recorded at Kingfisher Hollow. A curve still climbing steeply after 3,000+ observations indicates an inventory far from complete.")
+                   note="Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after 3,000+ observations indicates a long way still to go.")
         + takeaway(
-            "That line is still climbing almost as steeply as it did on day one — meaning Kingfisher Hollow "
-            "keeps yielding species that have never been logged here before, months into the survey. The slope "
-            "is steepest for insects, particularly moths, because each new plant genus documented opens a "
-            "potential new set of specialist feeders — 247 plant species on 30 acres is the structural engine "
-            "driving this curve. For comparison, most well-studied nature reserves show a curve that flattens "
-            "within the first season. This one hasn't."),
-        intro="1,367 steps, each one the moment a species was recorded at Kingfisher Hollow for the first time. The line has not levelled off."))
+            "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
+            "show a curve that flattens within the first season; this one hasn't. The steepest runs coincide "
+            "with nights at the mothing lights — each new plant genus documented on the property opens a "
+            "potential new set of specialist feeders, and 247 plant species on 30 acres keeps that process "
+            "running."),
+        intro="1,367 steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
     parts.append(section(
@@ -1174,22 +1161,20 @@ def build():
         'County <em class="text-hollow-300">Firsts</em>',
         showcase_body(analyze.county_first_showcase(df, stats))
         + takeaway(
-            "314 county firsts means Kingfisher Hollow has extended the known range of 314 species into Tioga "
-            "County — the kind of baseline data that feeds range maps, climate-shift studies, and conservation "
-            "assessments for decades. Tioga sits at the meeting point of three floristic provinces — Appalachian "
-            "highlands, northern hardwood, and mid-Atlantic — making it a natural accumulation zone for "
-            "range-edge species arriving from multiple directions. A single well-run property survey has quietly "
-            "become the county's most productive biodiversity reference point.", dark=True),
-        intro="For each of these species, no one in Tioga County had ever recorded it before Kingfisher Hollow did. That's not a local milestone — it's a contribution to the county's scientific record.",
+            "314 county firsts means Kingfisher Hollow has extended the documented range of 314 species into "
+            "Tioga County. Tioga sits at the meeting point of three floristic provinces — Appalachian highlands, "
+            "northern hardwood, and mid-Atlantic — and gets range-edge arrivals from all three directions. "
+            "That's why the count is high, and why it keeps growing: the property is positioned to pick up "
+            "species pushing in from multiple fronts.", dark=True),
+        intro="For each of these species, Kingfisher Hollow holds the first-ever Tioga County record. That goes into the county's scientific baseline and stays there.",
         dark=True))
     rarity_body = (
         chart_card(viz.uniqueness_scatter(stats),
-                   note="Each dot is one species. X-axis: how rare it is statewide (further left = fewer NY records). Y-axis: how often it turns up at Kingfisher Hollow. Terracotta dots are county firsts — the first record anywhere in Tioga County.")
+                   note="Each dot is one species. X-axis: NY rarity (further left = fewer statewide records). Y-axis: frequency at Kingfisher Hollow. Terracotta: county firsts — first record anywhere in Tioga County.")
         + takeaway(
-            "Upper-left is the most interesting real estate on this chart: species that are genuinely scarce "
-            "across New York but show up reliably at Kingfisher Hollow. That pattern — rare statewide, "
-            "concentrated here — is what ecologists call a 'priority site indicator,' and it points to something "
-            "specific about this stretch of Michigan Creek that makes it worth protecting.")
+            "Upper-left is the most interesting territory on this chart: scarce across New York, but showing "
+            "up reliably here. Ecologists call that a 'priority site indicator.' It's pointing at something "
+            "specific about this stretch of Michigan Creek.")
         + '<h3 class="font-serif text-2xl font-bold text-stone-900 text-center mt-14 mb-6">'
           'The rarest of them</h3>'
         + rarest_body(analyze.rarest_finds(df, stats)))
@@ -1197,14 +1182,14 @@ def build():
         "uniqueness", "The Big Picture",
         'Common Here, <em class="text-hollow-600">Rare There</em>',
         rarity_body,
-        intro="Each dot is a species: plotted by how rare it is in New York versus how reliably it turns up here. The upper-left corner is where Kingfisher Hollow's scientific fingerprint lives.",
+        intro="Each dot is a species, plotted by NY rarity against frequency here. The upper-left corner — rare statewide, common at this property — is where the site earns its keep.",
         tint="bg-stone-100"))
 
     parts.append(section(
         "life-list", "The Full Roll",
         'The <em class="text-hollow-600">Life List</em>',
         life_list_body(life),
-        intro="Every species confirmed at Kingfisher Hollow — insects, plants, fungi, mammals, and more. Search by name or filter by group. Birds are tracked separately on eBird."))
+        intro="Every species confirmed at Kingfisher Hollow — insects, plants, fungi, mammals, and more. Search by name or filter by group. Birds are tracked on eBird."))
     two_up = (
         '<div class="grid lg:grid-cols-2 gap-6">'
         + chart_card(viz.per_day(analyze.obs_per_day(df)))
@@ -1215,50 +1200,47 @@ def build():
         'Activity &amp; <em class="text-hollow-600">Taxa</em>',
         two_up
         + takeaway(
-            "The tall spikes on the left are nights at the mothing lights — a single well-run session can "
-            "generate 50 to 100 observations before dawn. The taxonomic breakdown on the right shows what that "
-            "effort actually produces: insects account for the overwhelming majority of species, with moths alone "
-            "outpacing every other non-insect group combined. That asymmetry is not a bias in the survey — it "
-            "reflects a genuine reality of what lives in a riparian Appalachian forest, where 247 plant species "
-            "across 30 acres support specialist insect communities that a simpler landscape cannot.",),
-        intro="How many observations land each day, and how the total distributes across the tree of life — two views of the same survey from different angles.",
+            "The tall spikes are nights at the mothing lights — a well-run session generates 50 to 100 "
+            "observations before dawn. The taxonomic breakdown shows what that effort turns up: insects account "
+            "for the large majority of species, with moths alone outnumbering every other non-insect group "
+            "combined. That's not a survey artifact. It's what lives in a riparian Appalachian forest with "
+            "247 plant species on 30 acres.",),
+        intro="Daily observation totals and a taxonomic breakdown — how the effort is distributed and what it's actually finding.",
         tint="bg-stone-100"))
     parts.append(section(
         "phenology", "Phenology",
         'When Things <em class="text-hollow-600">Appear</em>',
         chart_card(viz.phenology(analyze.phenology(df, top=24), normalize=True),
-                   note="Each row is normalized to its own peak month, so a species seen 5 times reads as vividly as one seen 500 times. This lets rare species' seasonal patterns show up alongside common ones. Hover any cell for raw observation counts.")
+                   note="Each row is normalized to its own peak, so a species seen 5 times reads as vividly as one seen 500 times — rare species' patterns show up alongside common ones. Hover for raw counts.")
         + takeaway(
-            "Read across any row: that's the pulse of one species — its warm-up, its peak, its fade. Read down "
-            "any column: that's the community of the moment, the overlapping ensemble of species active in that "
-            "month. The bright diagonal wave moving from spring to autumn is the year itself, written in species."),
-        intro="When the 24 most-recorded species show up across the year — each species' seasonal rhythm compressed into a single row."))
+            "Read across any row: one species' warm-up, peak, and fade. Read down any column: the community "
+            "active in that month. The bright diagonal moving from spring to autumn is the year itself, "
+            "written in species."),
+        intro="The 24 most-recorded species across the calendar year — each one's seasonal rhythm in a single row."))
     parts.append(section(
         "observers", "Credit Where Due",
         'The <em class="text-hollow-600">Observers</em>',
         chart_card(viz.leaderboard(analyze.observer_leaderboard(df)))
         + takeaway(
-            "The survey's credibility rests on real people making real observations — every record is attributed. "
-            "Hover any bar to see not just how many observations a person submitted, but how many species only "
-            "they have found here: that second number is the measure of irreplaceable expertise. Some of those "
-            "unique species would not be on this list without that one observer."),
-        intro="The people behind the numbers. This survey exists because individuals showed up, looked carefully, and submitted what they found.",
+            "Every record is attributed. Hover any bar to see how many observations a person submitted — and "
+            "how many species only they have found here. Some of those species wouldn't be on the list without "
+            "that one person."),
+        intro="The survey exists because people showed up and submitted what they found. Each bar is one person's contribution; hover to see how many species only they have found here.",
         tint="bg-stone-100"))
     parts.append(section(
         "gallery", "In Pictures",
         'Recent <em class="text-hollow-600">Sightings</em>',
         gallery_body(analyze.photo_highlights(df)),
-        intro="The latest research-grade photographs submitted to iNaturalist — the visual evidence behind the species count."))
+        intro="Recent research-grade photographs from iNaturalist — the visual evidence behind the species count."))
     parts.append(section(
         "map", "Where", 'On the <em class="text-hollow-600">Land</em>',
         chart_card(viz.obs_map(df))
         + takeaway(
-            "The heaviest clusters follow the stream corridor and the spots where mothing lights run on summer "
-            "nights — the survey's effort is not random, it's targeted. The sparser areas of the property aren't "
-            "empty; they're under-walked. A day of systematic transects through the upland forest edge would "
-            "almost certainly add species. Coordinates for rare or sensitive species are automatically obscured "
-            "by iNaturalist to protect them."),
-        intro="Every observation with GPS coordinates, plotted on the 30 acres. The clusters tell you where the survey effort has been concentrated — and which parts of the property are still waiting."))
+            "The heaviest clusters follow the stream corridor and the mothing-light stations. The sparser "
+            "areas aren't empty — they're under-walked. A day of transects through the upland forest edge "
+            "would almost certainly add species. iNaturalist automatically obscures coordinates for rare or "
+            "sensitive species."),
+        intro="Every GPS-tagged observation on the 30 acres. The clusters show where effort has been concentrated; the gaps show what's still unwalked."))
     parts.append('</div>')  # /view-all
 
     # ── Moths view (dark) ────────────────────────────────────────────────────
@@ -1274,7 +1256,7 @@ def build():
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
         activity_log_body(log_entries, weather_cache),
-        intro="A night-by-night record of every session — the weather, who was there, and every species appearing for the first time on the property. The field journal behind the numbers."))
+        intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
     parts.append('</div>')  # /view-log
 
     parts.append(footer(_git_date(), data_updated_date()))
