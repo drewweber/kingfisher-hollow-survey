@@ -2,6 +2,7 @@
 
 import inat_api
 from config import (BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID, LEPIDOPTERA_TAXON_ID,
+                    MAMMALIA_TAXON_ID, PLANTAE_TAXON_ID,
                     PROPERTY_PROJECT_ID, REGION_RADIUS_KM)
 from db import connect, max_id, record_sync
 
@@ -231,6 +232,50 @@ def sync_region_moths():
                      taxon_id=LEPIDOPTERA_TAXON_ID,
                      without_taxon_id=BUTTERFLY_TAXON_ID)
     print(f"[region-moths] {n} moth species within {REGION_RADIUS_KM} km")
+    return n, 0
+
+
+def sync_mammals():
+    """Mammal roster for the project."""
+    n = _sync_roster("mammal_taxa", "obs_count",
+                     project_id=PROPERTY_PROJECT_ID,
+                     taxon_id=MAMMALIA_TAXON_ID)
+    print(f"[mammals] {n} mammal species")
+    return n, 0
+
+
+def sync_region_mammals():
+    """Mammals recorded within REGION_RADIUS_KM of the property."""
+    lat, lng = _property_center()
+    if lat is None:
+        print("[region-mammals] no property coordinates yet; skipping")
+        return 0, 0
+    n = _sync_roster("region_mammal_taxa", "region_count",
+                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                     taxon_id=MAMMALIA_TAXON_ID)
+    print(f"[region-mammals] {n} mammal species within {REGION_RADIUS_KM} km")
+    return n, 0
+
+
+def sync_plants():
+    """Plant roster for the project."""
+    n = _sync_roster("plant_taxa", "obs_count",
+                     project_id=PROPERTY_PROJECT_ID,
+                     taxon_id=PLANTAE_TAXON_ID)
+    print(f"[plants] {n} plant species")
+    return n, 0
+
+
+def sync_region_plants():
+    """Plants recorded within REGION_RADIUS_KM of the property."""
+    lat, lng = _property_center()
+    if lat is None:
+        print("[region-plants] no property coordinates yet; skipping")
+        return 0, 0
+    n = _sync_roster("region_plant_taxa", "region_count",
+                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                     taxon_id=PLANTAE_TAXON_ID)
+    print(f"[region-plants] {n} plant species within {REGION_RADIUS_KM} km")
     return n, 0
 
 

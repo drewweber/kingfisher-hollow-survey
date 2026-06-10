@@ -20,6 +20,8 @@ MY_USERNAME = "drewweber"
 # iNat taxa for the moth section: moths = Lepidoptera minus the butterflies.
 LEPIDOPTERA_TAXON_ID = 47157
 BUTTERFLY_TAXON_ID = 47224
+MAMMALIA_TAXON_ID = 40151
+PLANTAE_TAXON_ID = 47126
 
 # Regional reference pool for the moth gap analysis. Tioga County itself is
 # undersampled, so a distance radius (crossing into the better-covered Ithaca

@@ -447,6 +447,54 @@ def moth_showcase(highlights):
             + "".join(cards) + "</div>") if cards else ""
 
 
+def _gap_photo_grid(missing, placeholder="?"):
+    """Shared photo grid for any taxa gap list DataFrame."""
+    if missing is None or missing.empty:
+        return '<p class="text-center text-white/50 py-8">No gap data yet.</p>'
+    gmax = max(int(r["ref_count"]) for _, r in missing.iterrows()) or 1
+    cards = []
+    for _, r in missing.iterrows():
+        cc = int(r["ref_count"])
+        bar_pct = max(4, round(100 * cc / gmax))
+        taxon_id = r.get("taxon_id")
+        common = r["label"]
+        sci = r.get("taxon_name", "")
+        photo_url = r.get("photo_url") or ""
+        inat_url = f"https://www.inaturalist.org/taxa/{taxon_id}" if taxon_id else "#"
+        if photo_url:
+            photo_html = (
+                f'<img src="{esc(photo_url)}" alt="{esc(common)}" loading="lazy" '
+                f'class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">'
+            )
+        else:
+            photo_html = (
+                f'<div class="w-full h-full flex items-center justify-center">'
+                f'<span class="text-white/20 text-3xl">{placeholder}</span></div>'
+            )
+        cards.append(
+            f'<a href="{inat_url}" target="_blank" rel="noopener" '
+            f'class="group relative block rounded-xl overflow-hidden bg-white/[0.04] '
+            f'border border-white/10 hover:border-hollow-400/60 transition-colors">'
+            f'  <div class="aspect-square overflow-hidden bg-white/5">{photo_html}</div>'
+            f'  <div class="p-2.5">'
+            f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
+            f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
+            f'    <div class="mt-2 flex items-center justify-between gap-1">'
+            f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
+            f'        <div class="h-1 rounded-full" style="width:{bar_pct}%;background:#8ec8b1"></div>'
+            f'      </div>'
+            f'      <span class="text-[0.65rem] text-hollow-300 font-medium ml-1.5 whitespace-nowrap">{cc}×</span>'
+            f'    </div>'
+            f'  </div>'
+            f'</a>'
+        )
+    return (
+        '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">'
+        + "".join(cards)
+        + "</div>"
+    )
+
+
 def moth_gap_body(gap):
     """Regional moths not yet found here — photo grid ranked by nearby frequency."""
     if not gap or gap.get("missing_count", 0) == 0:
@@ -467,51 +515,38 @@ def moth_gap_body(gap):
             f'species below have all been seen by someone nearby. They\'re not rare. They\'re not '
             f'hypothetical. They need the right night, the right trap position, or the right observer '
             f'paying attention.</p>')
-    gmax = max(int(r["ref_count"]) for _, r in gap["missing"].iterrows()) or 1
-    cards = []
-    for rank, (_, r) in enumerate(gap["missing"].iterrows(), 1):
-        cc = int(r["ref_count"])
-        bar_pct = max(4, round(100 * cc / gmax))
-        taxon_id = r.get("taxon_id")
-        common = r["label"]
-        sci = r.get("taxon_name", "")
-        photo_url = r.get("photo_url") or ""
-        inat_url = f"https://www.inaturalist.org/taxa/{taxon_id}" if taxon_id else "#"
+    return lead + _gap_photo_grid(gap["missing"])
 
-        if photo_url:
-            photo_html = (
-                f'<img src="{esc(photo_url)}" alt="{esc(common)}" loading="lazy" '
-                f'class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">'
-            )
-        else:
-            photo_html = (
-                '<div class="w-full h-full flex items-center justify-center">'
-                '<span class="text-white/20 text-3xl">🦋</span></div>'
-            )
 
-        cards.append(
-            f'<a href="{inat_url}" target="_blank" rel="noopener" '
-            f'class="group relative block rounded-xl overflow-hidden bg-white/[0.04] '
-            f'border border-white/10 hover:border-hollow-400/60 transition-colors">'
-            f'  <div class="aspect-square overflow-hidden bg-white/5">{photo_html}</div>'
-            f'  <div class="p-2.5">'
-            f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
-            f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
-            f'    <div class="mt-2 flex items-center justify-between gap-1">'
-            f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
-            f'        <div class="h-1 rounded-full" style="width:{bar_pct}%;background:#8ec8b1"></div>'
-            f'      </div>'
-            f'      <span class="text-[0.65rem] text-hollow-300 font-medium ml-1.5 whitespace-nowrap">{cc}×</span>'
-            f'    </div>'
-            f'  </div>'
-            f'</a>'
-        )
-    return (
-        lead
-        + '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">'
-        + "".join(cards)
-        + "</div>"
-    )
+def mammal_gap_body(gap):
+    """Regional mammals not yet documented — photo grid."""
+    if not gap or gap.get("missing_count", 0) == 0:
+        return '<p class="text-center text-white/50">No gap data yet.</p>'
+    miles = round(gap.get("region_radius_km", 80) / 1.609)
+    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+            f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
+            f'<strong class="text-hollow-300">{gap["region_total"]}</strong> mammal species documented within '
+            f'~{miles} miles have been recorded here. '
+            f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
+            f'have county or regional records for this time of year — all realistic targets.</p>')
+    return lead + _gap_photo_grid(gap["missing"], placeholder="🦌")
+
+
+def plant_gap_body(gap):
+    """Regional plants not yet documented — photo grid."""
+    if not gap or gap.get("missing_count", 0) == 0:
+        return '<p class="text-center text-white/50">No gap data yet.</p>'
+    miles = round(gap.get("region_radius_km", 80) / 1.609)
+    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+            f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
+            f'<strong class="text-hollow-300">{gap["region_total"]}</strong> plant species documented within '
+            f'~{miles} miles have been recorded here. '
+            f'The ~{miles}-mile regional pool includes many habitat types the property doesn\'t have, '
+            f'so the raw completeness figure understates how thoroughly the property flora is known. '
+            f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
+            f'are ranked by how often they turn up in county records this month — all plausible finds '
+            f'on a careful walk.</p>')
+    return lead + _gap_photo_grid(gap["missing"], placeholder="🌿")
 
 
 def moth_diversity_body(div):
@@ -884,23 +919,32 @@ def nav():
                   ("#moth-monthly", "By Month"), ("#moth-families", "Families"),
                   ("#moth-seasons", "Flight Seasons"), ("#moth-gap", "Gap List"),
                   ("#moth-diversity", "Diversity"), ("#moth-standouts", "Standouts")]
+    mammal_links = [("#mammals", "Overview"), ("#mammal-gap", "Gap List")]
+    plant_links = [("#plants", "Overview"), ("#plant-gap", "Gap List")]
     log_links = [("#log-journal", "Field Journal")]
 
     def links_html(links, item_cls):
         return "".join(f'<a href="{h}" class="{item_cls}">{t}</a>' for h, t in links)
     desk_cls = "nav-link text-white/80 hover:text-white text-sm font-medium transition-colors"
     mob_cls = "text-white/80 hover:text-white text-sm py-1"
-    # All three sets render; setMode() shows the one matching the active view.
-    desktop_links = (f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
-                     f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
-                     f'<span class="links-log hidden items-center gap-6">{links_html(log_links, desk_cls)}</span>')
-    mob_links = (f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
-                 f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
-                 f'<div class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</div>')
+    desktop_links = (
+        f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
+        f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
+        f'<span class="links-mammals hidden items-center gap-6">{links_html(mammal_links, desk_cls)}</span>'
+        f'<span class="links-plants hidden items-center gap-6">{links_html(plant_links, desk_cls)}</span>'
+        f'<span class="links-log hidden items-center gap-6">{links_html(log_links, desk_cls)}</span>')
+    mob_links = (
+        f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
+        f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
+        f'<div class="links-mammals hidden flex-col gap-3">{links_html(mammal_links, mob_cls)}</div>'
+        f'<div class="links-plants hidden flex-col gap-3">{links_html(plant_links, mob_cls)}</div>'
+        f'<div class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</div>')
     toggle = """
       <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15" role="group" aria-label="Switch view">
         <button class="mode-btn mode-active" data-mode="all" aria-pressed="true">All life</button>
         <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
+        <button class="mode-btn" data-mode="mammals" aria-pressed="false">Mammals</button>
+        <button class="mode-btn" data-mode="plants" aria-pressed="false">Plants</button>
         <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
       </div>"""
     return f"""
@@ -919,6 +963,8 @@ def nav():
     <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15 self-start" role="group" aria-label="Switch view">
       <button class="mode-btn mode-active" data-mode="all" aria-pressed="true">All life</button>
       <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
+      <button class="mode-btn" data-mode="mammals" aria-pressed="false">Mammals</button>
+      <button class="mode-btn" data-mode="plants" aria-pressed="false">Plants</button>
       <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
     </div>
     {mob_links}
@@ -1011,28 +1057,25 @@ SCRIPTS = """
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-  // Mode toggle: All life / Moths / Log — one page, three views.
+  // Mode toggle: All life / Moths / Mammals / Plants / Log — one page, five views.
   (function(){
-    const vAll=document.getElementById('view-all'),vMoth=document.getElementById('view-moths'),
-          vLog=document.getElementById('view-log');
+    const MODES=['all','moths','mammals','plants','log'];
+    const views=Object.fromEntries(MODES.map(m=>[m,document.getElementById('view-'+m)]));
     function setMode(mode,force){
-      if(mode!=='moths'&&mode!=='log') mode='all';
+      if(!MODES.includes(mode)) mode='all';
       document.body.dataset.mode=mode;
-      vAll.classList.toggle('hidden',mode!=='all');
-      vMoth.classList.toggle('hidden',mode!=='moths');
-      vLog.classList.toggle('hidden',mode!=='log');
+      MODES.forEach(m=>views[m]&&views[m].classList.toggle('hidden',m!==mode));
       // Swap nav link set to match active view.
-      [['links-all','all'],['links-moths','moths'],['links-log','log']].forEach(([cls,m])=>{
-        document.querySelectorAll('.'+cls).forEach(e=>{
+      MODES.forEach(m=>{
+        document.querySelectorAll('.links-'+m).forEach(e=>{
           const on=mode===m;e.classList.toggle('hidden',!on);e.classList.toggle('flex',on);});});
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
-      const hash=mode==='moths'?'#moths':mode==='log'?'#log':location.pathname;
-      history.replaceState(null,'',hash);
+      const hashes={moths:'#moths',mammals:'#mammals',plants:'#plants',log:'#log'};
+      history.replaceState(null,'',hashes[mode]||location.pathname);
       updateNav&&updateNav();
       if(force){
-        const sel='#view-'+mode+' .reveal';
-        document.querySelectorAll(sel).forEach(el=>el.classList.add('in'));
+        document.querySelectorAll('#view-'+mode+' .reveal').forEach(el=>el.classList.add('in'));
         window.dispatchEvent(new Event('resize'));
       }
     }
@@ -1040,7 +1083,8 @@ SCRIPTS = """
       setMode(b.dataset.mode,true);window.scrollTo({top:0,behavior:'smooth'});
       document.getElementById('mob').classList.add('hidden');}));
     const h=location.hash;
-    setMode(h==='#moths'?'moths':h==='#log'?'log':'all', h==='#moths'||h==='#log');
+    const fromHash={['#moths']:'moths',['#mammals']:'mammals',['#plants']:'plants',['#log']:'log'};
+    setMode(fromHash[h]||'all', h in fromHash);
   })();
 </script></body></html>"""
 
@@ -1217,6 +1261,68 @@ def moth_view(df, stats):
     return "".join(out)
 
 
+def mammals_view(df, stats):
+    """Dark mammals view: stats band + regional gap list."""
+    import datetime as _dt
+    mammals = analyze.load_mammals()
+    _today = _dt.date.today()
+    target_months = sorted({_today.month, (_today + _dt.timedelta(days=14)).month})
+    gap = analyze.mammal_gap(mammals, n=30, target_months=target_months)
+    msum = analyze.mammal_summary(df, mammals) if not mammals.empty else {"species": 0, "records": 0, "top_month": ""}
+    stats_band = (
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
+        + _dark_divider().join([
+            _dark_stat(str(msum["species"]), "mammal species"),
+            _dark_stat(str(msum["records"]), "total records"),
+            _dark_stat(msum.get("top_month") or "—", "peak month"),
+        ]) + '</div>')
+    out = []
+    out.append(section(
+        "mammals", "Warm-blooded",
+        'The <em class="text-hollow-300">Mammals</em>',
+        stats_band,
+        intro="Many of the property's mammals leave traces — tracks, scat, camera — before they appear in iNaturalist. The species count here understates what's actually present.",
+        dark=True))
+    out.append(section(
+        "mammal-gap", "Who's Missing?",
+        'Mammal <em class="text-hollow-300">Gap List</em>',
+        mammal_gap_body(gap),
+        intro="Mammals confirmed within ~50 miles but not yet recorded at Kingfisher Hollow — ranked by how often they turn up in county records this time of year.",
+        dark=True))
+    return "".join(out)
+
+
+def plants_view(df, stats):
+    """Dark plants view: stats band + regional gap list."""
+    import datetime as _dt
+    plants = analyze.load_plants()
+    _today = _dt.date.today()
+    target_months = sorted({_today.month, (_today + _dt.timedelta(days=14)).month})
+    gap = analyze.plant_gap(plants, n=50, target_months=target_months)
+    psum = analyze.plant_summary(df, plants) if not plants.empty else {"species": 0, "records": 0, "top_month": ""}
+    stats_band = (
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
+        + _dark_divider().join([
+            _dark_stat(str(psum["species"]), "plant species"),
+            _dark_stat(str(psum["records"]), "total records"),
+            _dark_stat(psum.get("top_month") or "—", "peak month"),
+        ]) + '</div>')
+    out = []
+    out.append(section(
+        "plants", "Green World",
+        'The <em class="text-hollow-300">Plants</em>',
+        stats_band,
+        intro="247 plant species on 30 acres. Each genus recorded here is a potential host for specialist moth and insect guilds — the plant list is the structural explanation for the moth list.",
+        dark=True))
+    out.append(section(
+        "plant-gap", "What's Unrecorded?",
+        'Plant <em class="text-hollow-300">Gap List</em>',
+        plant_gap_body(gap),
+        intro="Plants confirmed within ~50 miles but not yet documented at Kingfisher Hollow — ranked by how often they turn up nearby this month.",
+        dark=True))
+    return "".join(out)
+
+
 def build():
     init_db()
     df = analyze.load_property()
@@ -1349,6 +1455,16 @@ def build():
     parts.append('<div id="view-moths" class="hidden">')
     parts.append(moth_view(df, stats))
     parts.append('</div>')  # /view-moths
+
+    # ── Mammals view (dark) ──────────────────────────────────────────────────
+    parts.append('<div id="view-mammals" class="hidden">')
+    parts.append(mammals_view(df, stats))
+    parts.append('</div>')  # /view-mammals
+
+    # ── Plants view (dark) ───────────────────────────────────────────────────
+    parts.append('<div id="view-plants" class="hidden">')
+    parts.append(plants_view(df, stats))
+    parts.append('</div>')  # /view-plants
 
     # ── Log view (light, journal) ────────────────────────────────────────────
     parts.append('<div id="view-log" class="hidden">')

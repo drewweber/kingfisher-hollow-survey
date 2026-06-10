@@ -92,6 +92,38 @@ CREATE TABLE IF NOT EXISTS region_moth_taxa (
     photo_url    TEXT
 );
 
+CREATE TABLE IF NOT EXISTS mammal_taxa (
+    taxon_id    INTEGER PRIMARY KEY,
+    taxon_name  TEXT,
+    common_name TEXT,
+    obs_count   INTEGER,
+    photo_url   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS region_mammal_taxa (
+    taxon_id     INTEGER PRIMARY KEY,
+    taxon_name   TEXT,
+    common_name  TEXT,
+    region_count INTEGER,
+    photo_url    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS plant_taxa (
+    taxon_id    INTEGER PRIMARY KEY,
+    taxon_name  TEXT,
+    common_name TEXT,
+    obs_count   INTEGER,
+    photo_url   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS region_plant_taxa (
+    taxon_id     INTEGER PRIMARY KEY,
+    taxon_name   TEXT,
+    common_name  TEXT,
+    region_count INTEGER,
+    photo_url    TEXT
+);
+
 -- Higher taxonomy per property species, for readable group labels.
 CREATE TABLE IF NOT EXISTS taxon_meta (
     taxon_id      INTEGER PRIMARY KEY,

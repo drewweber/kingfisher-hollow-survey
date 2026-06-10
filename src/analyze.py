@@ -366,6 +366,102 @@ def photo_highlights(df, n=18):
     return sub.sort_values("observed_on", ascending=False).head(n)
 
 
+# --- mammals & plants shared gap helper -------------------------------------
+def _region_gap(taxa, region_table, n=30, target_months=None):
+    """Generic regional gap: species in region_table not yet in taxa, with optional
+    seasonal filter via county_obs phenology. Mirrors moth_county_gap logic."""
+    region = _load_table(region_table)
+    have = set(taxa["taxon_id"].dropna().astype(int)) if not taxa.empty else set()
+
+    if region.empty:
+        return {"region_total": 0, "region_radius_km": REGION_RADIUS_KM, "have": len(have),
+                "pct": 0, "missing_count": 0, "missing": region,
+                "target_months": target_months or []}
+
+    region_total = int(region["taxon_id"].nunique())
+    region_have = int(region["taxon_id"].isin(have).sum())
+    region_pct = round(100 * region_have / region_total) if region_total else 0
+
+    missing = region[~region["taxon_id"].isin(have)].copy()
+    missing["label"] = missing["common_name"].fillna(missing["taxon_name"])
+
+    if target_months:
+        month_strs = ",".join(f"'{m:02d}'" for m in target_months)
+        with connect() as conn:
+            rows = conn.execute(
+                f"SELECT taxon_id, COUNT(*) AS cnt FROM county_obs "
+                f"WHERE taxon_id IS NOT NULL "
+                f"AND strftime('%m', observed_on) IN ({month_strs}) "
+                f"GROUP BY taxon_id"
+            ).fetchall()
+        seasonal_counts = {int(r["taxon_id"]): int(r["cnt"]) for r in rows}
+        missing = missing[missing["taxon_id"].isin(seasonal_counts)].copy()
+        missing["ref_count"] = missing["taxon_id"].map(
+            lambda tid: seasonal_counts.get(int(tid), 0)
+        )
+        missing = missing.sort_values("ref_count", ascending=False)
+    else:
+        missing["ref_count"] = missing["region_count"]
+        missing = missing.sort_values("region_count", ascending=False)
+
+    return {
+        "region_total": region_total,
+        "region_radius_km": REGION_RADIUS_KM,
+        "have": region_have,
+        "pct": region_pct,
+        "missing_count": int(len(missing)),
+        "missing": missing.head(n),
+        "target_months": target_months or [],
+    }
+
+
+# --- mammals -----------------------------------------------------------------
+def load_mammals():
+    with connect() as conn:
+        return pd.read_sql_query("SELECT * FROM mammal_taxa", conn)
+
+
+def mammal_summary(df, mammals):
+    ids = set(mammals["taxon_id"].dropna())
+    sub = df[df["taxon_id"].isin(ids)]
+    return {
+        "species": int(mammals["taxon_id"].nunique()),
+        "records": int(len(sub)),
+        "top_month": _peak_month(sub) if not sub.empty else "",
+    }
+
+
+_EXCLUDE_FROM_MAMMALS = {43584}  # Homo sapiens
+
+
+def mammal_gap(mammals, n=30, target_months=None):
+    gap = _region_gap(mammals, "region_mammal_taxa", n=n + 5, target_months=target_months)
+    gap["missing"] = gap["missing"][
+        ~gap["missing"]["taxon_id"].isin(_EXCLUDE_FROM_MAMMALS)
+    ].head(n)
+    return gap
+
+
+# --- plants ------------------------------------------------------------------
+def load_plants():
+    with connect() as conn:
+        return pd.read_sql_query("SELECT * FROM plant_taxa", conn)
+
+
+def plant_summary(df, plants):
+    ids = set(plants["taxon_id"].dropna())
+    sub = df[df["taxon_id"].isin(ids)]
+    return {
+        "species": int(plants["taxon_id"].nunique()),
+        "records": int(len(sub)),
+        "top_month": _peak_month(sub) if not sub.empty else "",
+    }
+
+
+def plant_gap(plants, n=50, target_months=None):
+    return _region_gap(plants, "region_plant_taxa", n=n, target_months=target_months)
+
+
 # --- moths ("After Dark") ---------------------------------------------------
 def load_moths():
     """Moth roster (Lepidoptera minus butterflies) with representative photos."""
