@@ -12,9 +12,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import analyze  # noqa: E402
+import inat_api  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
-from config import PUBLIC_DIR  # noqa: E402
+from config import MY_USERNAME, PROPERTY_PROJECT_ID, PUBLIC_DIR  # noqa: E402
 from db import connect, init_db  # noqa: E402
 
 PLOTLY_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
@@ -498,6 +499,73 @@ def moth_diversity_body(div):
 
 
 # ── field journal / activity log ────────────────────────────────────────────
+def id_changes_body(changes):
+    """Render recent improving/maverick identifications on the property observations."""
+    if not changes:
+        return '<p class="text-stone-400 text-sm text-center py-4">No recent identification changes.</p>'
+
+    taxon_url = "https://www.inaturalist.org/taxa/"
+    rows = []
+    for c in changes:
+        date_str = c["obs_date"]
+        id_date = c["id_created_at"][:10] if c["id_created_at"] else ""
+
+        prev_name = c["prev_taxon_common"] or c["prev_taxon_name"] or "—"
+        new_name = c["new_taxon_common"] or c["new_taxon_name"] or "—"
+
+        prev_html = (
+            f'<a href="{taxon_url}{c["prev_taxon_id"]}" target="_blank" rel="noopener" '
+            f'class="text-stone-600 italic">{esc(prev_name)}</a>'
+            if c["prev_taxon_id"] else f'<span class="text-stone-500 italic">{esc(prev_name)}</span>'
+        )
+        new_html = (
+            f'<a href="{taxon_url}{c["new_taxon_id"]}" target="_blank" rel="noopener" '
+            f'class="font-medium text-stone-800 italic">{esc(new_name)}</a>'
+            if c["new_taxon_id"] else f'<span class="font-medium text-stone-800 italic">{esc(new_name)}</span>'
+        )
+
+        if c["category"] == "improving":
+            badge = '<span class="text-xs font-medium px-1.5 py-0.5 rounded bg-green-50 text-green-700">refined</span>'
+        else:
+            badge = '<span class="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">disagrees</span>'
+
+        identifier_url = f"https://www.inaturalist.org/people/{c['identifier_login']}"
+        identifier_html = (
+            f'<a href="{identifier_url}" target="_blank" rel="noopener" '
+            f'class="text-stone-500 hover:text-stone-700">{esc(c["identifier_login"])}</a>'
+        )
+
+        obs_link = (
+            f'<a href="{c["obs_url"]}" target="_blank" rel="noopener" '
+            f'class="text-stone-400 hover:text-hollow-600 text-xs ml-1" title="View observation">↗</a>'
+        )
+
+        rows.append(
+            f'<div class="flex items-start gap-3 py-2.5 border-b border-stone-100 last:border-0">'
+            f'  <div class="w-20 shrink-0 text-xs text-stone-400 pt-0.5">'
+            f'    <div>{esc(id_date)}</div>'
+            f'    <div class="text-stone-300">obs {esc(date_str)}</div>'
+            f'  </div>'
+            f'  <div class="flex-1 min-w-0 text-sm">'
+            f'    {prev_html} → {new_html} {obs_link}'
+            f'  </div>'
+            f'  <div class="flex items-center gap-2 shrink-0">'
+            f'    {badge}'
+            f'    <span class="text-xs text-stone-400">by {identifier_html}</span>'
+            f'  </div>'
+            f'</div>'
+        )
+
+    return (
+        '<div class="max-w-3xl mx-auto mt-12">'
+        '<h3 class="font-serif text-2xl font-bold text-stone-900 mb-1">ID Updates</h3>'
+        '<p class="text-sm text-stone-400 mb-4">Identifications on your observations refined or disputed by other users — not shown in iNat notifications.</p>'
+        '<div class="rounded-lg border border-stone-200 bg-white px-4 divide-y divide-stone-100">'
+        + "".join(rows)
+        + '</div></div>'
+    )
+
+
 def _ordinal(n):
     if 11 <= (n % 100) <= 13:
         return f"{n}th"
@@ -1258,10 +1326,12 @@ def build():
     parts.append('<div id="view-log" class="hidden">')
     log_entries = analyze.activity_log(df, stats)
     weather_cache = weather.load_weather()
+    id_changes = inat_api.fetch_id_changes(PROPERTY_PROJECT_ID, MY_USERNAME)
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
-        activity_log_body(log_entries, weather_cache),
+        activity_log_body(log_entries, weather_cache)
+        + id_changes_body(id_changes),
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
     parts.append('</div>')  # /view-log
 
