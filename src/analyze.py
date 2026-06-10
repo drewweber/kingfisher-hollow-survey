@@ -529,13 +529,17 @@ def moth_effort(df, moths):
     return pd.DataFrame({"cum_obs": cum_obs, "cum_species": cum_species})
 
 
-def moth_county_gap(moths, n=15):
+def moth_county_gap(moths, n=15, target_months=None):
     """Moths recorded near the property but not yet found here.
 
     Tioga County is undersampled, so the gap list and headline are driven by the
     well-sampled ~50-mile regional pool (a truer picture of what could occur),
     while still reporting county completeness for context. Missing species are
     ranked by how often they're recorded regionally — the likeliest next finds.
+
+    target_months: optional list of month numbers (e.g. [6, 7]). When given,
+    restricts the gap list to species with county_obs records in those months
+    and re-ranks by seasonal county record count instead of overall region count.
     """
     region = _load_table("region_moth_taxa")
     county = _load_table("county_moth_taxa")
@@ -556,11 +560,31 @@ def moth_county_gap(moths, n=15):
     count_col = "region_count" if not region.empty else "county_count"
     if pool.empty:
         return {"region_total": 0, "county_total": 0, "have": len(have),
-                "pct": 0, "county_pct": 0, "missing_count": 0, "missing": pool}
+                "pct": 0, "county_pct": 0, "missing_count": 0, "missing": pool,
+                "target_months": target_months or []}
     missing = pool[~pool["taxon_id"].isin(have)].copy()
     missing["label"] = missing["common_name"].fillna(missing["taxon_name"])
-    missing["ref_count"] = missing[count_col]
-    missing = missing.sort_values(count_col, ascending=False)
+
+    if target_months:
+        month_strs = ",".join(f"'{m:02d}'" for m in target_months)
+        with connect() as conn:
+            rows = conn.execute(
+                f"SELECT taxon_id, COUNT(*) AS cnt FROM county_obs "
+                f"WHERE taxon_id IS NOT NULL "
+                f"AND strftime('%m', observed_on) IN ({month_strs}) "
+                f"GROUP BY taxon_id"
+            ).fetchall()
+        seasonal_counts = {int(r["taxon_id"]): int(r["cnt"]) for r in rows}
+        seasonal_ids = set(seasonal_counts.keys())
+        missing = missing[missing["taxon_id"].isin(seasonal_ids)].copy()
+        missing["ref_count"] = missing["taxon_id"].map(
+            lambda tid: seasonal_counts.get(int(tid), 0)
+        )
+        missing = missing.sort_values("ref_count", ascending=False)
+    else:
+        missing["ref_count"] = missing[count_col]
+        missing = missing.sort_values(count_col, ascending=False)
+
     return {
         "region_total": region_total,
         "region_radius_km": REGION_RADIUS_KM,
@@ -570,6 +594,7 @@ def moth_county_gap(moths, n=15):
         "county_pct": county_pct,
         "missing_count": int(len(missing)),
         "missing": missing.head(n),
+        "target_months": target_months or [],
     }
 
 

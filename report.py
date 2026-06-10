@@ -959,7 +959,11 @@ def moth_view(df, stats):
                        'yet.</p>', dark=True)
     msum = analyze.moth_summary(df, moths)
     comp = analyze.moth_completeness(df, moths)
-    gap = analyze.moth_county_gap(moths)
+    import datetime as _dt
+    _today = _dt.date.today()
+    _window_end = _today + _dt.timedelta(days=14)
+    target_months = sorted({_today.month, _window_end.month})
+    gap = analyze.moth_county_gap(moths, target_months=target_months)
     div = analyze.moth_diversity(df, moths)
     eff = analyze.moth_effort(df, moths)
     moth_sub = analyze.moth_obs(df, moths)
@@ -1069,19 +1073,21 @@ def moth_view(df, stats):
             "Both things are true, and more data will eventually separate them.", dark=True),
         intro="Each species' monthly fingerprint — when it peaks, when it disappears, and where seasons overlap.",
         dark=True))
+    _import_calendar = __import__('calendar')
+    _month_names = [_import_calendar.month_name[m] for m in target_months]
+    _months_label = " and ".join(_month_names)
     out.append(section(
         "moth-gap", "Yet to Find",
         'The <em class="text-hollow-300">Gap List</em>',
         moth_gap_body(gap)
         + takeaway(
-            "Tioga County's moth records are thin — most of what exists comes from Kingfisher Hollow itself "
-            "— so this list draws from the regional pool extending ~50 miles, south into Pennsylvania and "
-            "east toward Ithaca. That region is well-sampled. Species at the top are seen dozens of times "
-            "nearby; their absence here is almost certainly a survey gap. A few specifics worth noting: "
-            "several top-ranked Noctuidae are spring adults flying in March and April, before UV-sheet season "
-            "starts. Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
+            f"Filtered to species with county records in {_months_label} — the flight window covering the next two weeks. "
+            "Tioga County's moth records are thin, so this list draws from the regional pool extending ~50 miles, "
+            "south into Pennsylvania and east toward Ithaca. Species at the top are seen dozens of times nearby "
+            "in these same weeks; their absence here is a survey gap. "
+            "Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
             "Different gaps need different methods.", dark=True),
-        intro="Every moth species recorded within ~50 miles of Kingfisher Hollow but not yet found on the property, ranked by regional frequency. They've been seen nearby. They belong here.",
+        intro=f"Moth species recorded within ~50 miles but not yet found on the property, ranked by how often they appear in {_months_label} county records. These are the most plausible next finds in the coming weeks.",
         dark=True))
     out.append(section(
         "moth-diversity", "Diversity",
