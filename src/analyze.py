@@ -722,3 +722,46 @@ def moth_diversity(df, moths):
         "species": s,
         "rank_abundance": counts.tolist(),
     }
+
+
+def monthly_survey_summary(df, moths):
+    """Returns a list of 12 dicts (one per calendar month, ordered 1–12) describing
+    moth survey effort and discovery rate.
+
+    Uses the existing _session_dates() noon-cutoff logic so overnight sessions
+    spanning midnight are attributed to the correct evening date. 'new_species_count'
+    is computed from each taxon's all-time first session-date — stable as new data
+    arrives because a species' first month never changes.
+
+    Returns list of 12 dicts with keys:
+        month_num         int 1–12
+        month_name        str
+        obs_count         int
+        species_count     int  (distinct species ever recorded that month)
+        new_species_count int  (species whose first-ever property record fell in that month)
+        nights_surveyed   int  (distinct session-dates with at least one moth observation)
+        survey_season     bool (True for May–September inclusive)
+    """
+    import calendar
+    sub = moth_obs(df, moths).dropna(subset=['taxon_id', 'observed_on']).copy()
+    sub['night'] = _session_dates(sub)
+    sub['month_num'] = sub['observed_on'].dt.month
+    month_obs = sub.groupby('month_num')['id'].count().rename('obs_count')
+    month_spp = sub.groupby('month_num')['taxon_id'].nunique().rename('species_count')
+    sub['night_month'] = pd.to_datetime(sub['night']).dt.month
+    month_nights = sub.drop_duplicates('night').groupby('night_month').size().rename('nights_surveyed')
+    first_night = sub.groupby('taxon_id')['night'].min().reset_index()
+    first_night['month_num'] = pd.to_datetime(first_night['night']).dt.month
+    month_new = first_night.groupby('month_num').size().rename('new_species_count')
+    rows = []
+    for m in range(1, 13):
+        rows.append({
+            'month_num': m,
+            'month_name': calendar.month_name[m],
+            'obs_count': int(month_obs.get(m, 0)),
+            'species_count': int(month_spp.get(m, 0)),
+            'new_species_count': int(month_new.get(m, 0)),
+            'nights_surveyed': int(month_nights.get(m, 0)),
+            'survey_season': 5 <= m <= 9,
+        })
+    return rows

@@ -404,3 +404,72 @@ def rank_abundance(counts, dark=True):
     fig.update_xaxes(title=dict(text="Species rank (most → least recorded)",
                      font=dict(size=11, color=c["muted"])))
     return _html(_style(fig, height=360, dark=dark))
+
+
+def monthly_survey_bar(summary, dark=True):
+    """Horizontal grouped bar chart of monthly moth survey effort and discovery.
+
+    Each month is a row. The primary (wider) bar shows species_count in
+    hollow-green. A thinner overlay bar shows new_species_count in terracotta.
+    Months outside the core survey season (October–April) render at 30% opacity.
+    Hover shows species count, new species count, and survey nights.
+
+    `summary` is the list of 12 dicts returned by analyze.monthly_survey_summary().
+    Returns an HTML fragment (include_plotlyjs=False, displayModeBar=False).
+    """
+    if not summary:
+        return "<p class='chart-empty'>No survey data yet.</p>"
+    c = _palette(dark)
+
+    labels = [r["month_name"] for r in summary]
+    species_counts = [r["species_count"] for r in summary]
+    new_counts = [r["new_species_count"] for r in summary]
+    nights = [r["nights_surveyed"] for r in summary]
+    in_season = [r["survey_season"] for r in summary]
+
+    # Species bar: solid green for survey months, 30% opacity for off-season.
+    species_colors = [
+        (c["line2"] if s else f"rgba(94,171,141,0.30)") for s in in_season
+    ]
+    # New-species overlay: terracotta at full opacity in season, 30% off-season.
+    new_colors = [
+        (ACCENT if s else "rgba(194,112,61,0.30)") for s in in_season
+    ]
+
+    fig = go.Figure()
+
+    # Primary bar: species recorded that month.
+    fig.add_bar(
+        y=labels,
+        x=species_counts,
+        orientation="h",
+        name="Species recorded",
+        marker_color=species_colors,
+        customdata=list(zip(species_counts, new_counts, nights)),
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "%{customdata[0]} species · %{customdata[1]} new<br>"
+            "%{customdata[2]} nights surveyed<extra></extra>"
+        ),
+    )
+
+    # Overlay bar: species first recorded on the property that month (thinner).
+    fig.add_bar(
+        y=labels,
+        x=new_counts,
+        orientation="h",
+        name="New to property",
+        marker_color=new_colors,
+        width=0.35,
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "%{x} species first recorded here<extra></extra>"
+        ),
+    )
+
+    fig.update_layout(barmode="overlay", bargap=0.25)
+    fig.update_xaxes(
+        title=dict(text="Species →", font=dict(size=11, color=c["muted"]))
+    )
+    fig.update_yaxes(showgrid=False, tickfont=dict(size=12, color=c["ink"]))
+    return _html(_style(fig, height=420, showlegend=True, dark=dark))
