@@ -448,7 +448,7 @@ def moth_showcase(highlights):
 
 
 def moth_gap_body(gap):
-    """Regional moths not yet found here — ranked by how common they are nearby."""
+    """Regional moths not yet found here — photo grid ranked by nearby frequency."""
     if not gap or gap.get("missing_count", 0) == 0:
         return '<p class="text-center text-white/50">No gap data yet.</p>'
     radius = gap.get("region_radius_km", 80)
@@ -468,22 +468,50 @@ def moth_gap_body(gap):
             f'hypothetical. They need the right night, the right trap position, or the right observer '
             f'paying attention.</p>')
     gmax = max(int(r["ref_count"]) for _, r in gap["missing"].iterrows()) or 1
-    rows = []
-    for _, r in gap["missing"].iterrows():
+    cards = []
+    for rank, (_, r) in enumerate(gap["missing"].iterrows(), 1):
         cc = int(r["ref_count"])
-        pct = max(4, round(100 * cc / gmax))   # commoner nearby = longer bar
-        link = taxon_link(r.get("taxon_id"), r["label"],
-                          cls="font-medium text-white hover:text-hollow-300")
-        rows.append(f"""
-        <div class="flex items-center justify-between gap-4 py-2.5 border-b border-white/10 last:border-0">
-          <div class="min-w-0 flex-1"><div class="truncate">{link}</div>
-            <div class="text-white/40 text-sm italic truncate">{esc(r.get('taxon_name'))}</div>
-            <div class="mt-1.5 h-1 rounded-full bg-white/10"><div class="h-1 rounded-full" style="width:{pct}%;background:#8ec8b1"></div></div></div>
-          <div class="text-right whitespace-nowrap"><span class="font-serif text-lg font-bold text-hollow-300">{cc}</span>
-            <span class="text-white/40 text-[0.7rem] uppercase tracking-wider ml-1">nearby records</span></div>
-        </div>""")
-    return (lead + '<div class="max-w-2xl mx-auto bg-white/[0.04] border border-white/10 '
-            'rounded-2xl p-6 md:p-8">' + "".join(rows) + "</div>")
+        bar_pct = max(4, round(100 * cc / gmax))
+        taxon_id = r.get("taxon_id")
+        common = r["label"]
+        sci = r.get("taxon_name", "")
+        photo_url = r.get("photo_url") or ""
+        inat_url = f"https://www.inaturalist.org/taxa/{taxon_id}" if taxon_id else "#"
+
+        if photo_url:
+            photo_html = (
+                f'<img src="{esc(photo_url)}" alt="{esc(common)}" loading="lazy" '
+                f'class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">'
+            )
+        else:
+            photo_html = (
+                '<div class="w-full h-full flex items-center justify-center">'
+                '<span class="text-white/20 text-3xl">🦋</span></div>'
+            )
+
+        cards.append(
+            f'<a href="{inat_url}" target="_blank" rel="noopener" '
+            f'class="group relative block rounded-xl overflow-hidden bg-white/[0.04] '
+            f'border border-white/10 hover:border-hollow-400/60 transition-colors">'
+            f'  <div class="aspect-square overflow-hidden bg-white/5">{photo_html}</div>'
+            f'  <div class="p-2.5">'
+            f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
+            f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
+            f'    <div class="mt-2 flex items-center justify-between gap-1">'
+            f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
+            f'        <div class="h-1 rounded-full" style="width:{bar_pct}%;background:#8ec8b1"></div>'
+            f'      </div>'
+            f'      <span class="text-[0.65rem] text-hollow-300 font-medium ml-1.5 whitespace-nowrap">{cc}×</span>'
+            f'    </div>'
+            f'  </div>'
+            f'</a>'
+        )
+    return (
+        lead
+        + '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">'
+        + "".join(cards)
+        + "</div>"
+    )
 
 
 def moth_diversity_body(div):
@@ -1031,7 +1059,7 @@ def moth_view(df, stats):
     _today = _dt.date.today()
     _window_end = _today + _dt.timedelta(days=14)
     target_months = sorted({_today.month, _window_end.month})
-    gap = analyze.moth_county_gap(moths, target_months=target_months)
+    gap = analyze.moth_county_gap(moths, n=50, target_months=target_months)
     div = analyze.moth_diversity(df, moths)
     eff = analyze.moth_effort(df, moths)
     moth_sub = analyze.moth_obs(df, moths)
