@@ -915,10 +915,10 @@ def nav():
     all_links = [("#whats-new", "What's New"), ("#discovery", "Discovery"),
                  ("#unique", "Unique Finds"), ("#life-list", "Life List"),
                  ("#gallery", "Gallery")]
-    moth_links = [("#moth-why-here", "Why Here"), ("#moth-completeness", "Completeness"),
-                  ("#moth-monthly", "By Month"), ("#moth-families", "Families"),
-                  ("#moth-seasons", "Flight Seasons"), ("#moth-gap", "Gap List"),
-                  ("#moth-diversity", "Diversity"), ("#moth-standouts", "Standouts")]
+    moth_links = [("#moth-why-here", "Why Here"), ("#moth-gap", "Gap List"),
+                  ("#moth-families", "Families"), ("#moth-standouts", "Standouts"),
+                  ("#moth-completeness", "Inventory"), ("#moth-diversity", "Diversity"),
+                  ("#moth-calendar", "Calendar")]
     mammal_links = [("#mammals", "Overview"), ("#mammal-gap", "Gap List")]
     plant_links = [("#plants", "Overview"), ("#plant-gap", "Gap List")]
     log_links = [("#log-journal", "Field Journal")]
@@ -1119,8 +1119,53 @@ def moth_view(df, stats):
         moth_stats(msum, comp),
         intro="438 moth species in one field season on 30 acres. Nearly every species ties back to a specific "
               "plant genus in the canopy, shrub layer, or wetland edge — and the property has 247 plant species. "
-              "The creek’s humidity buffer keeps moths flying on nights too dry and cool for upland sites nearby. "
+              "The creek's humidity buffer keeps moths flying on nights too dry and cool for upland sites nearby. "
               "The diversity below is almost entirely predicted by the diversity above.",
+        dark=True))
+    out.append(section(
+        "moth-gallery", "In Pictures",
+        'Recent <em class="text-hollow-300">Moths</em>',
+        gallery_body(analyze.photo_highlights(moth_sub)),
+        intro="Recent moth photographs from the property.",
+        dark=True))
+
+    _import_calendar = __import__('calendar')
+    _month_names = [_import_calendar.month_name[m] for m in target_months]
+    _months_label = " and ".join(_month_names)
+    out.append(section(
+        "moth-gap", "Yet to Find",
+        'The <em class="text-hollow-300">Gap List</em>',
+        moth_gap_body(gap)
+        + takeaway(
+            f"Filtered to species with county records in {_months_label} — the flight window covering the next two weeks. "
+            "Tioga County's moth records are thin, so this list draws from the regional pool extending ~50 miles, "
+            "south into Pennsylvania and east toward Ithaca. Species at the top are seen dozens of times nearby "
+            "in these same weeks; their absence here is a survey gap. "
+            "Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
+            "Different gaps need different methods.", dark=True),
+        intro=f"Moth species recorded within ~50 miles but not yet found on the property, ranked by how often they appear in {_months_label} county records. These are the most plausible next finds in the coming weeks.",
+        dark=True))
+    out.append(section(
+        "moth-families", "By Family",
+        'Where the <em class="text-hollow-300">Gaps</em> Are',
+        chart_card(viz.family_breakdown(analyze.moth_family_breakdown(moths)),
+                   note="Solid bar: species recorded here. Faint bar: species known within ~50 miles. Numbers at bar ends show the recorded-to-regional ratio. Sorted by recorded species count.",
+                   dark=True)
+        + takeaway(
+            "The large, conspicuous families — Noctuidae (owlet moths), Geometridae (geometers), Erebidae "
+            "(tiger moths and kin) — are well represented because they're big enough to identify at the sheet. "
+            "The micro-moth families tell a different story. Tortricidae, Gelechiidae, Coleophoridae, and "
+            "Nepticulidae together account for a majority of temperate moth diversity, but they need methods "
+            "a UV sheet can't provide: different trap heights, sugar bait, day-beating of foliage, and often "
+            "genitalic dissection to confirm an ID. Most of the estimated 260 undiscovered species are "
+            "probably micro-moths. Targeted micro-moth work here would push the total well past 500.", dark=True),
+        intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried; others have barely been touched. The undiscovered species are concentrated in specific groups.",
+        dark=True))
+    out.append(section(
+        "moth-standouts", "Standouts",
+        'Rare &amp; <em class="text-hollow-300">Remarkable</em>',
+        moth_showcase(analyze.moth_highlights(moths, stats)),
+        intro="Moths from Kingfisher Hollow with almost no other NY records — species this survey is among the few to document in the state.",
         dark=True))
 
     # Headline diagnostic: species detected on only one or two nights.
@@ -1149,86 +1194,6 @@ def moth_view(df, stats):
             f"already present on the property — they just haven't crossed the sheet yet.", dark=True),
         intro="438 species confirmed. Statistical modeling puts the true total around 700. Here's the evidence for that gap — and how fast it's closing.",
         dark=True))
-
-    # Moth-monthly: effort and discovery by calendar month
-    msum_monthly = analyze.monthly_survey_summary(df, moths)
-    season_months = [r for r in msum_monthly if r['survey_season'] and r['nights_surveyed'] > 0]
-    best_roi = max(season_months, key=lambda r: r['new_species_count'] / r['nights_surveyed']) if season_months else None
-    best_roi_text = (
-        f"<strong>{best_roi['month_name']}</strong> has produced the most new species per survey night "
-        f"({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} nights). "
-        "Months with a tall terracotta bar but a short green one are where additional effort would pay off. "
-        "The core season runs late June through August; nights below 55°F or near a full moon are mostly quiet."
-    ) if best_roi else ''
-    out.append(section(
-        'moth-monthly', 'When to Look', 'Month <em class="text-hollow-300">by Month</em>',
-        chart_card(viz.monthly_survey_bar(msum_monthly),
-                   note='Green: species recorded that month. Terracotta: species recorded for the first time ever. '
-                        'Faded months are outside the May–September core flight season. Hover for survey-night counts.',
-                   dark=True)
-        + takeaway(best_roi_text, dark=True),
-        intro="Month-by-month species totals, first records, and where the calendar gaps still sit.",
-        dark=True))
-
-    out.append(section(
-        "moth-families", "By Family",
-        'Where the <em class="text-hollow-300">Gaps</em> Are',
-        chart_card(viz.family_breakdown(analyze.moth_family_breakdown(moths)),
-                   note="Solid bar: species recorded here. Faint bar: species known within ~50 miles. Numbers at bar ends show the recorded-to-regional ratio. Sorted by recorded species count.",
-                   dark=True)
-        + takeaway(
-            "The large, conspicuous families — Noctuidae (owlet moths), Geometridae (geometers), Erebidae "
-            "(tiger moths and kin) — are well represented because they're big enough to identify at the sheet. "
-            "The micro-moth families tell a different story. Tortricidae, Gelechiidae, Coleophoridae, and "
-            "Nepticulidae together account for a majority of temperate moth diversity, but they need methods "
-            "a UV sheet can't provide: different trap heights, sugar bait, day-beating of foliage, and often "
-            "genitalic dissection to confirm an ID. Most of the estimated 260 undiscovered species are "
-            "probably micro-moths. Targeted micro-moth work here would push the total well past 500.", dark=True),
-        intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried; others have barely been touched. The undiscovered species are concentrated in specific groups.",
-        dark=True))
-    out.append(section(
-        "moth-seasons", "Flight Seasons",
-        'On the <em class="text-hollow-300">Wing</em>',
-        chart_card(viz.seasonal_cascade(analyze.moth_seasonal(df, moths), dark=True),
-                   note="Faint line: full observed date range. Thick bar: middle 50% of records (core flight window). Dot: median date. Species with fewer than 3 records omitted. Sorted by median flight date.",
-                   dark=True)
-        + takeaway(
-            "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
-            "The faint line reaches its earliest and latest confirmed dates. Read all 438 rows together and "
-            "you get the season's shape: sparse in April, dense in June and July, a long plateau through "
-            "August, fading through October. After one year these windows are first drafts; they'll sharpen "
-            "as more nights accumulate.", dark=True),
-        intro="Every species in its flight window, from the first warm nights of April through the last flights of November.",
-        dark=True))
-    out.append(section(
-        "moth-phenology", "By Month",
-        'Moth <em class="text-hollow-300">Phenology</em>',
-        chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
-                   note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
-                   dark=True)
-        + takeaway(
-            "Scan a row: that species' season, bright at its peak, dark where it disappears. Scan a column: "
-            "the active community for that month. The sparse winter columns are partly real — few moths fly "
-            "in January and February — and partly a survey gap, since few people run lights in the cold. "
-            "Both things are true, and more data will eventually separate them.", dark=True),
-        intro="Each species' monthly fingerprint — when it peaks, when it disappears, and where seasons overlap.",
-        dark=True))
-    _import_calendar = __import__('calendar')
-    _month_names = [_import_calendar.month_name[m] for m in target_months]
-    _months_label = " and ".join(_month_names)
-    out.append(section(
-        "moth-gap", "Yet to Find",
-        'The <em class="text-hollow-300">Gap List</em>',
-        moth_gap_body(gap)
-        + takeaway(
-            f"Filtered to species with county records in {_months_label} — the flight window covering the next two weeks. "
-            "Tioga County's moth records are thin, so this list draws from the regional pool extending ~50 miles, "
-            "south into Pennsylvania and east toward Ithaca. Species at the top are seen dozens of times nearby "
-            "in these same weeks; their absence here is a survey gap. "
-            "Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
-            "Different gaps need different methods.", dark=True),
-        intro=f"Moth species recorded within ~50 miles but not yet found on the property, ranked by how often they appear in {_months_label} county records. These are the most plausible next finds in the coming weeks.",
-        dark=True))
     out.append(section(
         "moth-diversity", "Diversity",
         'A <em class="text-hollow-300">Balanced</em> Community',
@@ -1246,17 +1211,43 @@ def moth_view(df, stats):
             "what's still being found.", dark=True),
         intro="Is the moth community dominated by a handful of species, or is it broadly distributed? The diversity metrics give an unusually clear answer.",
         dark=True))
+
+    # Combined calendar section: Month by Month + On the Wing + Phenology
+    msum_monthly = analyze.monthly_survey_summary(df, moths)
+    season_months = [r for r in msum_monthly if r['survey_season'] and r['nights_surveyed'] > 0]
+    best_roi = max(season_months, key=lambda r: r['new_species_count'] / r['nights_surveyed']) if season_months else None
+    best_roi_text = (
+        f"<strong>{best_roi['month_name']}</strong> has produced the most new species per survey night "
+        f"({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} nights). "
+        "Months with a tall terracotta bar but a short green one are where additional effort would pay off. "
+        "The core season runs late June through August; nights below 55°F or near a full moon are mostly quiet."
+    ) if best_roi else ''
     out.append(section(
-        "moth-standouts", "Standouts",
-        'Rare &amp; <em class="text-hollow-300">Remarkable</em>',
-        moth_showcase(analyze.moth_highlights(moths, stats)),
-        intro="Moths from Kingfisher Hollow with almost no other NY records — species this survey is among the few to document in the state.",
-        dark=True))
-    out.append(section(
-        "moth-gallery", "In Pictures",
-        'Recent <em class="text-hollow-300">Moths</em>',
-        gallery_body(analyze.photo_highlights(moth_sub)),
-        intro="Recent moth photographs from the property.",
+        "moth-calendar", "The Calendar",
+        'Flight <em class="text-hollow-300">Seasons</em>',
+        chart_card(viz.monthly_survey_bar(msum_monthly),
+                   note='Green: species recorded that month. Terracotta: species recorded for the first time ever. '
+                        'Faded months are outside the May–September core flight season. Hover for survey-night counts.',
+                   dark=True)
+        + takeaway(best_roi_text, dark=True)
+        + chart_card(viz.seasonal_cascade(analyze.moth_seasonal(df, moths), dark=True),
+                     note="Faint line: full observed date range. Thick bar: middle 50% of records (core flight window). Dot: median date. Species with fewer than 3 records omitted. Sorted by median flight date.",
+                     dark=True)
+        + takeaway(
+            "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
+            "The faint line reaches its earliest and latest confirmed dates. Read all 438 rows together and "
+            "you get the season's shape: sparse in April, dense in June and July, a long plateau through "
+            "August, fading through October. After one year these windows are first drafts; they'll sharpen "
+            "as more nights accumulate.", dark=True)
+        + chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
+                     note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
+                     dark=True)
+        + takeaway(
+            "Scan a row: that species' season, bright at its peak, dark where it disappears. Scan a column: "
+            "the active community for that month. The sparse winter columns are partly real — few moths fly "
+            "in January and February — and partly a survey gap, since few people run lights in the cold. "
+            "Both things are true, and more data will eventually separate them.", dark=True),
+        intro="Month-by-month totals and first records, individual flight windows for every species, and the full phenology matrix — the complete calendar of Kingfisher Hollow's moth season.",
         dark=True))
     return "".join(out)
 
