@@ -2,7 +2,11 @@
 """Build the Kingfisher Hollow biodiversity report as a single branded page
 (public/index.html), styled to match kingfisher-hollow.com and composed like an
 editorial infographic. Charts come from viz.py; this module owns the page shell,
-typography, and the photo/table/showcase sections."""
+typography, and the photo/table/showcase sections.
+
+Deploy: changes to this file pushed to main trigger .github/workflows/update.yml
+(sync + build + Cloudflare Pages deploy). public/index.html is gitignored and
+built by CI — never deploy it by hand."""
 
 import subprocess
 import sys
