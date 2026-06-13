@@ -158,7 +158,7 @@ def hero(s, county_firsts):
       Life at <em class="font-normal text-hollow-200" style="font-style:italic;">the Hollow</em>
     </h1>
     <p class="fade-up delay-2 text-white/70 text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12">
-      1,073 species across 30 riparian acres in Tioga County, NY — 362 of them new to the county record. The survey is a year old and still nowhere near done.
+      {s['species']:,} species across 30 riparian acres in Tioga County, NY — {county_firsts:,} of them new to the county record. The survey is a year old and still nowhere near done.
     </p>
     <div class="fade-up delay-3 flex flex-wrap items-center justify-center gap-8 md:gap-12">
       {stat(f"{s['species']:,}", "Species")}
@@ -862,10 +862,10 @@ def activity_log_body(log_entries, weather_cache):
 
 
 # ── head / nav / footer ──────────────────────────────────────────────────────
-def head():
-    desc = ("Biodiversity survey of Kingfisher Hollow — 1,073 species on 30 riparian acres along Michigan Creek, "
+def head(s, county_firsts):
+    desc = (f"Biodiversity survey of Kingfisher Hollow — {s['species']:,} species on 30 riparian acres along Michigan Creek, "
             "Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / mid-Atlantic junction: "
-            "362 county-first records, 510 moth species, plant diversity 2–3× the NY upland baseline. "
+            f"{county_firsts:,} county-first records, 510 moth species, plant diversity 2–3× the NY upland baseline. "
             "Data updated nightly.")
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1428,7 +1428,7 @@ def build():
     firsts = analyze.firsts_timeline(df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
-    parts = [head(), nav(), hero(s, county_firsts)]
+    parts = [head(s, county_firsts), nav(), hero(s, county_firsts)]
 
     # ── All-life view (light) ────────────────────────────────────────────────
     parts.append('<div id="view-all">')
@@ -1448,7 +1448,7 @@ def build():
             "with nights at the mothing lights — each new plant genus documented on the property opens a "
             "potential new set of specialist feeders, and 220 plant species on 30 acres keeps that process "
             "running."),
-        intro="1,073 steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
+        intro=f"{s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
     parts.append(section(
@@ -1456,7 +1456,7 @@ def build():
         'County <em class="text-hollow-300">Firsts</em>',
         showcase_body(analyze.county_first_showcase(df, stats))
         + takeaway(
-            "362 county firsts means Kingfisher Hollow has extended the documented range of 362 species into "
+            f"{county_firsts:,} county firsts means Kingfisher Hollow has extended the documented range of {county_firsts:,} species into "
             "Tioga County. Tioga sits at the meeting point of three floristic provinces — Appalachian highlands, "
             "northern hardwood, and mid-Atlantic — and gets range-edge arrivals from all three directions. "
             "That's why the count is high, and why it keeps growing: the property is positioned to pick up "
