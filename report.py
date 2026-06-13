@@ -558,6 +558,28 @@ def amphibian_gap_body(gap):
     return lead + _gap_photo_grid(gap["missing"], placeholder="🐸")
 
 
+def butterfly_found_body(found):
+    """Butterflies recorded on the property — photo grid, most-recorded first."""
+    if found is None or found.empty:
+        return ('<p class="text-center text-white/50 py-8">Butterfly roster not '
+                'synced yet.</p>')
+    return _gap_photo_grid(found, placeholder="🦋")
+
+
+def butterfly_gap_body(gap):
+    """Regional butterflies not yet documented — photo grid."""
+    if not gap or gap.get("missing_count", 0) == 0:
+        return '<p class="text-center text-white/50">No gap data yet.</p>'
+    miles = round(gap.get("region_radius_km", 80) / 1.609)
+    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+            f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
+            f'<strong class="text-hollow-300">{gap["region_total"]}</strong> butterfly species recorded within '
+            f'~{miles} miles have turned up here. '
+            f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
+            f'are documented in the surrounding region but not yet here — ranked by how common they are nearby.</p>')
+    return lead + _gap_photo_grid(gap["missing"], placeholder="🦋")
+
+
 def plant_gap_body(gap):
     """Regional plants not yet documented — photo grid."""
     if not gap or gap.get("missing_count", 0) == 0:
@@ -919,6 +941,10 @@ tailwind.config = {{ theme: {{ extend: {{
   /* Mode toggle (All life / Moths) */
   .mode-btn {{ font-size:.78rem; font-weight:600; padding:.3rem .8rem; border-radius:9999px; color:rgba(255,255,255,0.7); transition:all .2s; cursor:pointer; white-space:nowrap; }}
   .mode-btn.mode-active {{ background:#8ec8b1; color:#0d221c; }}
+  /* Mobile menu is always dark: keep its mode chips legible + tappable regardless of nav scroll state. */
+  #mob .mode-btn {{ background:rgba(255,255,255,0.06); padding:.4rem .85rem; }}
+  #mob .mode-btn:not(.mode-active) {{ color:rgba(255,255,255,0.82) !important; }}
+  #mob .mode-btn.mode-active {{ background:#8ec8b1; color:#0d221c !important; }}
   /* Moths mode = night: dark page + dark nav regardless of scroll */
   body[data-mode="moths"] {{ background:#0d221c; }}
   body[data-mode="moths"] #navbar.nav-solid {{ background:rgba(13,34,28,0.92); border-bottom:1px solid rgba(255,255,255,0.08); }}
@@ -945,10 +971,22 @@ def nav():
                   ("#moth-families", "Families"), ("#moth-standouts", "Standouts"),
                   ("#moth-completeness", "Inventory"), ("#moth-diversity", "Diversity"),
                   ("#moth-calendar", "Calendar")]
+    butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List")]
     mammal_links = [("#mammals", "Overview"), ("#mammal-gap", "Gap List")]
     plant_links = [("#plants", "Overview"), ("#plant-gap", "Gap List")]
     amphibian_links = [("#amphibians", "Found"), ("#amphibian-gap", "Gap List")]
     log_links = [("#log-journal", "Field Journal")]
+
+    # One source of truth for the view switcher, used by both toggles.
+    modes = [("all", "All life"), ("moths", "Moths"), ("butterflies", "Butterflies"),
+             ("mammals", "Mammals"), ("plants", "Plants"),
+             ("amphibians", "Amphibians"), ("log", "Log")]
+
+    def mode_buttons():
+        return "".join(
+            f'<button class="mode-btn{" mode-active" if m == "all" else ""}" '
+            f'data-mode="{m}" aria-pressed="{"true" if m == "all" else "false"}">{label}</button>'
+            for m, label in modes)
 
     def links_html(links, item_cls):
         return "".join(f'<a href="{h}" class="{item_cls}">{t}</a>' for h, t in links)
@@ -957,6 +995,7 @@ def nav():
     desktop_links = (
         f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
         f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
+        f'<span class="links-butterflies hidden items-center gap-6">{links_html(butterfly_links, desk_cls)}</span>'
         f'<span class="links-mammals hidden items-center gap-6">{links_html(mammal_links, desk_cls)}</span>'
         f'<span class="links-plants hidden items-center gap-6">{links_html(plant_links, desk_cls)}</span>'
         f'<span class="links-amphibians hidden items-center gap-6">{links_html(amphibian_links, desk_cls)}</span>'
@@ -964,40 +1003,30 @@ def nav():
     mob_links = (
         f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
         f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
+        f'<div class="links-butterflies hidden flex-col gap-3">{links_html(butterfly_links, mob_cls)}</div>'
         f'<div class="links-mammals hidden flex-col gap-3">{links_html(mammal_links, mob_cls)}</div>'
         f'<div class="links-plants hidden flex-col gap-3">{links_html(plant_links, mob_cls)}</div>'
         f'<div class="links-amphibians hidden flex-col gap-3">{links_html(amphibian_links, mob_cls)}</div>'
         f'<div class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</div>')
-    toggle = """
-      <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15" role="group" aria-label="Switch view">
-        <button class="mode-btn mode-active" data-mode="all" aria-pressed="true">All life</button>
-        <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
-        <button class="mode-btn" data-mode="mammals" aria-pressed="false">Mammals</button>
-        <button class="mode-btn" data-mode="plants" aria-pressed="false">Plants</button>
-        <button class="mode-btn" data-mode="amphibians" aria-pressed="false">Amphibians</button>
-        <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
-      </div>"""
+    toggle = (
+        '<div class="mode-toggle flex flex-wrap items-center justify-end rounded-2xl '
+        'p-0.5 gap-0.5 bg-white/10 border border-white/15" role="group" aria-label="Switch view">'
+        f'{mode_buttons()}</div>')
     return f"""
 <a href="#whats-new" class="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-1 focus:rounded">Skip to content</a>
 <nav id="navbar" class="nav-transparent fixed top-0 inset-x-0 z-50 transition-all duration-300">
   <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
     <a href="{SITE}" class="flex items-center gap-2.5">{LOGO}
       <span id="nav-brand" class="font-serif text-white text-xl font-semibold tracking-wide transition-colors">Kingfisher Hollow</span></a>
-    <div class="hidden md:flex items-center gap-6">{desktop_links}{toggle}
-      <a href="{SITE}" class="text-white/70 hover:text-white text-sm font-medium transition-colors">← Main site</a>
+    <div class="hidden md:flex flex-wrap items-center justify-end gap-x-5 gap-y-2 pl-4">{desktop_links}{toggle}
+      <a href="{SITE}" class="text-white/70 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">← Main site</a>
     </div>
     <button onclick="document.getElementById('mob').classList.toggle('hidden')" class="md:hidden text-white p-1" aria-label="Menu">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
   </div>
-  <div id="mob" class="hidden md:hidden bg-hollow-950/95 px-6 py-4 flex flex-col gap-3 border-t border-white/10">
-    <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15 self-start" role="group" aria-label="Switch view">
-      <button class="mode-btn mode-active" data-mode="all" aria-pressed="true">All life</button>
-      <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
-      <button class="mode-btn" data-mode="mammals" aria-pressed="false">Mammals</button>
-      <button class="mode-btn" data-mode="plants" aria-pressed="false">Plants</button>
-      <button class="mode-btn" data-mode="amphibians" aria-pressed="false">Amphibians</button>
-      <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
-    </div>
+  <div id="mob" class="hidden md:hidden bg-hollow-950/95 px-6 py-4 flex flex-col gap-4 border-t border-white/10">
+    <div class="mode-toggle flex flex-wrap gap-2" role="group" aria-label="Switch view">{mode_buttons()}</div>
+    <div class="h-px bg-white/10"></div>
     {mob_links}
     <a href="{SITE}" class="text-hollow-300 text-sm py-1">← Main site</a>
   </div>
@@ -1090,7 +1119,7 @@ SCRIPTS = """
 
   // Mode toggle: All life / Moths / Mammals / Plants / Log — one page, five views.
   (function(){
-    const MODES=['all','moths','mammals','plants','amphibians','log'];
+    const MODES=['all','moths','butterflies','mammals','plants','amphibians','log'];
     const views=Object.fromEntries(MODES.map(m=>[m,document.getElementById('view-'+m)]));
     function setMode(mode,force){
       if(!MODES.includes(mode)) mode='all';
@@ -1102,7 +1131,7 @@ SCRIPTS = """
           const on=mode===m;e.classList.toggle('hidden',!on);e.classList.toggle('flex',on);});});
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
-      const hashes={moths:'#moths',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
+      const hashes={moths:'#moths',butterflies:'#butterflies',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
       history.replaceState(null,'',hashes[mode]||location.pathname);
       updateNav&&updateNav();
       if(force){
@@ -1114,7 +1143,7 @@ SCRIPTS = """
       setMode(b.dataset.mode,true);window.scrollTo({top:0,behavior:'smooth'});
       document.getElementById('mob').classList.add('hidden');}));
     const h=location.hash;
-    const fromHash={['#moths']:'moths',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
+    const fromHash={['#moths']:'moths',['#butterflies']:'butterflies',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
     setMode(fromHash[h]||'all', h in fromHash);
   })();
 </script></body></html>"""
@@ -1410,6 +1439,42 @@ def amphibians_view(df, stats):
     return "".join(out)
 
 
+def butterflies_view(df, stats):
+    """Dark butterflies view: what's been found + the regional gap list."""
+    butterflies = analyze.load_butterflies()
+    gap = analyze.butterfly_gap(butterflies, n=30)
+    found = (analyze.butterfly_found(df, butterflies) if not butterflies.empty
+             else butterflies)
+    bsum = (analyze.butterfly_summary(df, butterflies) if not butterflies.empty
+            else {"species": 0, "records": 0, "top_month": ""})
+    stats_band = (
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
+        + _dark_divider().join([
+            _dark_stat(str(bsum["species"]), "butterfly species"),
+            _dark_stat(str(bsum["records"]), "total records"),
+            _dark_stat(bsum.get("top_month") or "—", "peak month"),
+        ]) + '</div>')
+    out = []
+    out.append(section(
+        "butterflies", "By Day",
+        'The <em class="text-hollow-300">Butterflies</em>',
+        stats_band + butterfly_found_body(found),
+        intro="Butterflies are the daytime half of the property's Lepidoptera, and so far the barely-sampled "
+              "half. 17 species recorded against 510 moths, the same order with the same dependence on specific "
+              "host plants, but almost no targeted daytime effort yet. Most of the gap closes on a sunny "
+              "afternoon with a net and a camera.",
+        dark=True))
+    out.append(section(
+        "butterfly-gap", "Yet to Find",
+        'Butterfly <em class="text-hollow-300">Gap List</em>',
+        butterfly_gap_body(gap),
+        intro="Butterflies recorded within ~50 miles but not yet found here, ranked by how common they are "
+              "nearby. The skippers and hairstreaks near the top are the easy wins: common in old-field and "
+              "creek-edge habitat, and on the wing all summer.",
+        dark=True))
+    return "".join(out)
+
+
 def build():
     init_db()
     df = analyze.load_property()
@@ -1542,6 +1607,11 @@ def build():
     parts.append('<div id="view-moths" class="hidden">')
     parts.append(moth_view(df, stats))
     parts.append('</div>')  # /view-moths
+
+    # ── Butterflies view (dark) ──────────────────────────────────────────────
+    parts.append('<div id="view-butterflies" class="hidden">')
+    parts.append(butterflies_view(df, stats))
+    parts.append('</div>')  # /view-butterflies
 
     # ── Mammals view (dark) ──────────────────────────────────────────────────
     parts.append('<div id="view-mammals" class="hidden">')

@@ -73,6 +73,14 @@ CREATE TABLE IF NOT EXISTS butterfly_taxa (
     photo_url   TEXT
 );
 
+CREATE TABLE IF NOT EXISTS region_butterfly_taxa (
+    taxon_id     INTEGER PRIMARY KEY,
+    taxon_name   TEXT,
+    common_name  TEXT,
+    region_count INTEGER,
+    photo_url    TEXT
+);
+
 -- Tioga County moth checklist, for the "moths you haven't found yet" gap list.
 CREATE TABLE IF NOT EXISTS county_moth_taxa (
     taxon_id     INTEGER PRIMARY KEY,

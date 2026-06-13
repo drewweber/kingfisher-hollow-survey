@@ -25,7 +25,9 @@ def main():
     ap.add_argument("--property", action="store_true", help="sync property project")
     ap.add_argument("--county", action="store_true", help="sync Tioga County")
     ap.add_argument("--moths", action="store_true",
-                    help="refresh moth + butterfly rosters")
+                    help="refresh moth roster")
+    ap.add_argument("--butterflies", action="store_true",
+                    help="refresh butterfly roster + regional pool")
     ap.add_argument("--mammals", action="store_true",
                     help="refresh mammal roster + regional pool")
     ap.add_argument("--plants", action="store_true",
@@ -38,11 +40,12 @@ def main():
     ap.add_argument("--weather", action="store_true",
                     help="fetch/update weather cache for all observation dates")
     ap.add_argument("--all", action="store_true",
-                    help="property + county + moths/butterflies + mammals + plants + amphibians + taxonomy + stats + weather")
+                    help="property + county + moths + butterflies + mammals + plants + amphibians + taxonomy + stats + weather")
     args = ap.parse_args()
 
-    flags = [args.property, args.county, args.moths, args.mammals, args.plants,
-             args.amphibians, args.taxonomy, args.stats, args.weather, args.all]
+    flags = [args.property, args.county, args.moths, args.butterflies, args.mammals,
+             args.plants, args.amphibians, args.taxonomy, args.stats, args.weather,
+             args.all]
     if not any(flags):
         ap.print_help()
         return
@@ -56,7 +59,9 @@ def main():
         fetch.sync_region_moths()
     if args.all or args.moths:
         fetch.sync_moths()
+    if args.all or args.butterflies:
         fetch.sync_butterflies()
+        fetch.sync_region_butterflies()
     if args.all or args.mammals:
         fetch.sync_mammals()
         fetch.sync_region_mammals()

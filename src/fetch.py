@@ -189,11 +189,24 @@ def sync_moths():
 
 def sync_butterflies():
     """Butterfly roster (Papilionoidea) for the project — for the Lepidoptera
-    split in life-list groups."""
+    split in life-list groups and the butterflies view."""
     n = _sync_roster("butterfly_taxa", "obs_count",
                      project_id=PROPERTY_PROJECT_ID,
                      taxon_id=BUTTERFLY_TAXON_ID)
     print(f"[butterflies] {n} butterfly species")
+    return n, 0
+
+
+def sync_region_butterflies():
+    """Butterflies recorded within REGION_RADIUS_KM of the property."""
+    lat, lng = _property_center()
+    if lat is None:
+        print("[region-butterflies] no property coordinates yet; skipping")
+        return 0, 0
+    n = _sync_roster("region_butterfly_taxa", "region_count",
+                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                     taxon_id=BUTTERFLY_TAXON_ID)
+    print(f"[region-butterflies] {n} butterfly species within {REGION_RADIUS_KM} km")
     return n, 0
 
 

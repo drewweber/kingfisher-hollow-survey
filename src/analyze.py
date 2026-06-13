@@ -522,6 +522,44 @@ def amphibian_gap(amphibians, n=30):
     return gap
 
 
+# --- butterflies -------------------------------------------------------------
+def load_butterflies():
+    with connect() as conn:
+        return pd.read_sql_query("SELECT * FROM butterfly_taxa", conn)
+
+
+def butterfly_summary(df, butterflies):
+    ids = set(butterflies["taxon_id"].dropna())
+    sub = df[df["taxon_id"].isin(ids)]
+    return {
+        "species": int(butterflies["taxon_id"].nunique()),
+        "records": int(len(sub)),
+        "top_month": _peak_month(sub) if not sub.empty else "",
+    }
+
+
+def butterfly_found(df, butterflies):
+    """Recorded butterflies as a gap-grid-shaped DataFrame (label/ref_count/photo)."""
+    if butterflies.empty:
+        return butterflies
+    found = butterflies.copy()
+    counts = (df[df["taxon_id"].isin(set(found["taxon_id"].dropna()))]
+              .groupby("taxon_id").size())
+    found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
+    found["label"] = found["common_name"].fillna(found["taxon_name"])
+    return found.sort_values("ref_count", ascending=False)
+
+
+def butterfly_gap(butterflies, n=30):
+    """Regional butterflies not yet recorded here, ranked by regional frequency.
+
+    Non-seasonal, matching the amphibian gap: rank by how common each species is
+    in the surrounding region so the list reads as realistic targets rather than
+    a thin single-month slice.
+    """
+    return _region_gap(butterflies, "region_butterfly_taxa", n=n)
+
+
 # --- moths ("After Dark") ---------------------------------------------------
 def load_moths():
     """Moth roster (Lepidoptera minus butterflies) with representative photos."""
