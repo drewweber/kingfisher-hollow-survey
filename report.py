@@ -158,7 +158,7 @@ def hero(s, county_firsts):
       Life at <em class="font-normal text-hollow-200" style="font-style:italic;">the Hollow</em>
     </h1>
     <p class="fade-up delay-2 text-white/70 text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12">
-      1,073 species across 30 riparian acres in Tioga County, NY — 410 of them new to the county record. The survey is a year old and still nowhere near done.
+      1,073 species across 30 riparian acres in Tioga County, NY — 362 of them new to the county record. The survey is a year old and still nowhere near done.
     </p>
     <div class="fade-up delay-3 flex flex-wrap items-center justify-center gap-8 md:gap-12">
       {stat(f"{s['species']:,}", "Species")}
@@ -865,7 +865,7 @@ def activity_log_body(log_entries, weather_cache):
 def head():
     desc = ("Biodiversity survey of Kingfisher Hollow — 1,073 species on 30 riparian acres along Michigan Creek, "
             "Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / mid-Atlantic junction: "
-            "410 county-first records, 510 moth species, plant diversity 2–3× the NY upland baseline. "
+            "362 county-first records, 510 moth species, plant diversity 2–3× the NY upland baseline. "
             "Data updated nightly.")
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1148,7 +1148,7 @@ def moth_view(df, stats):
     out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
         moth_stats(msum, comp),
-        intro="510 moth species on 30 riparian acres, and 410 of them are first iNaturalist records for "
+        intro="510 moth species on 30 riparian acres, and 213 of them are first iNaturalist records for "
               "Tioga County. That concentration of range-edge rarity is the property's signature: the three-province "
               "ecotone and Michigan Creek's humidity buffer let species from different directions co-occur on nights "
               "too dry and cool for upland sites nearby. Nearly every one ties back to a specific plant genus in the "
@@ -1456,7 +1456,7 @@ def build():
         'County <em class="text-hollow-300">Firsts</em>',
         showcase_body(analyze.county_first_showcase(df, stats))
         + takeaway(
-            "410 county firsts means Kingfisher Hollow has extended the documented range of 410 species into "
+            "362 county firsts means Kingfisher Hollow has extended the documented range of 362 species into "
             "Tioga County. Tioga sits at the meeting point of three floristic provinces — Appalachian highlands, "
             "northern hardwood, and mid-Atlantic — and gets range-edge arrivals from all three directions. "
             "That's why the count is high, and why it keeps growing: the property is positioned to pick up "
