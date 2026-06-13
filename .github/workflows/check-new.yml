@@ -7,8 +7,8 @@ name: Check for new observations
 # (e.g. an older observation newly *added* to the project, which keeps a lower id).
 on:
   schedule:
-    # Hourly at :45 all day. Off the
-    # top of the hour on purpose — GitHub delays cron heavily at :00 under load.
+    # Every hour at :45, around the clock. Off the top of the hour on purpose —
+    # GitHub delays cron heavily at :00 under load.
     - cron: "45 * * * *"
   workflow_dispatch: {}
 
