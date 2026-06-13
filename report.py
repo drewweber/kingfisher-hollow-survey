@@ -970,11 +970,15 @@ def nav():
     moth_links = [("#moth-why-here", "Why Here"), ("#moth-gap", "Gap List"),
                   ("#moth-families", "Families"), ("#moth-standouts", "Standouts"),
                   ("#moth-completeness", "Inventory"), ("#moth-diversity", "Diversity"),
-                  ("#moth-calendar", "Calendar")]
-    butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List")]
-    mammal_links = [("#mammals", "Overview"), ("#mammal-gap", "Gap List")]
-    plant_links = [("#plants", "Overview"), ("#plant-gap", "Gap List")]
-    amphibian_links = [("#amphibians", "Found"), ("#amphibian-gap", "Gap List")]
+                  ("#moth-calendar", "Calendar"), ("#moth-methods", "Find More")]
+    butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List"),
+                       ("#butterfly-methods", "Find More")]
+    mammal_links = [("#mammals", "Overview"), ("#mammal-gap", "Gap List"),
+                    ("#mammal-methods", "Find More")]
+    plant_links = [("#plants", "Overview"), ("#plant-gap", "Gap List"),
+                   ("#plant-methods", "Find More")]
+    amphibian_links = [("#amphibians", "Found"), ("#amphibian-gap", "Gap List"),
+                       ("#amphibian-methods", "Find More")]
     log_links = [("#log-journal", "Field Journal")]
 
     # One source of truth for the view switcher, used by both toggles.
@@ -1314,6 +1318,14 @@ def moth_view(df, stats):
             "Both things are true, and more data will eventually separate them.", dark=True),
         intro="Month-by-month totals and first records, individual flight windows for every species, and the full phenology matrix — the complete calendar of Kingfisher Hollow's moth season.",
         dark=True))
+    out.append(section(
+        "moth-methods", "Find More",
+        'How to Find <em class="text-hollow-300">More</em>',
+        survey_methods_body(MOTH_METHODS),
+        intro="510 species came almost entirely from a UV sheet, which selects for large, photo-positive "
+              "moths. These are the methods that reach the rest: the micro-moths, the bait-feeders, and the "
+              "canopy and cold-season fliers the sheet never sees.",
+        dark=True))
     return "".join(out)
 
 
@@ -1351,6 +1363,13 @@ def mammals_view(df, stats):
         'Mammal <em class="text-hollow-300">Gap List</em>',
         mammal_gap_body(gap),
         intro="Mammals confirmed within ~50 miles but not yet recorded at Kingfisher Hollow — ranked by how often they turn up in county records this time of year.",
+        dark=True))
+    out.append(section(
+        "mammal-methods", "Find More",
+        'How to Find <em class="text-hollow-300">More</em>',
+        survey_methods_body(MAMMAL_METHODS),
+        intro="21 species, and not one bat. These methods target the guilds a trail camera never catches: "
+              "the acoustic fliers, the small mammals in the leaf litter, and the swimmers along the creek.",
         dark=True))
     return "".join(out)
 
@@ -1392,6 +1411,13 @@ def plants_view(df, stats):
         'Plant <em class="text-hollow-300">Gap List</em>',
         plant_gap_body(gap),
         intro="Plants confirmed within ~50 miles but not yet documented at Kingfisher Hollow — ranked by how often they turn up nearby this month.",
+        dark=True))
+    out.append(section(
+        "plant-methods", "Find More",
+        'How to Find <em class="text-hollow-300">More</em>',
+        survey_methods_body(PLANT_METHODS),
+        intro="220 species, with whole genera still blank: no willows, a single sedge against 107 in the "
+              "regional pool. These passes target the gaps, each timed to when the group is identifiable.",
         dark=True))
     return "".join(out)
 
@@ -1436,6 +1462,14 @@ def amphibians_view(df, stats):
               "are nearby. The stream salamanders near the top are the likeliest finds: flip flat rocks in the "
               "riffles on a cool, wet night.",
         dark=True))
+    out.append(section(
+        "amphibian-methods", "Find More",
+        'How to Find <em class="text-hollow-300">More</em>',
+        survey_methods_body(AMPHIBIAN_METHODS),
+        intro="Ten species, almost all of it incidental. Targeted stream and vernal-pool work is how the "
+              "salamanders get added, and most of it is daytime rock-flipping. Where, when, and what each "
+              "method turns up.",
+        dark=True))
     return "".join(out)
 
 
@@ -1472,7 +1506,170 @@ def butterflies_view(df, stats):
               "nearby. The skippers and hairstreaks near the top are the easy wins: common in old-field and "
               "creek-edge habitat, and on the wing all summer.",
         dark=True))
+    out.append(section(
+        "butterfly-methods", "Find More",
+        'How to Find <em class="text-hollow-300">More</em>',
+        survey_methods_body(BUTTERFLY_METHODS),
+        intro="Seventeen species is a barely-started list. A net, some fermented-fruit bait, and a few sunny "
+              "afternoons across the season would multiply it. Where, when, and what each method adds.",
+        dark=True))
     return "".join(out)
+
+
+def survey_methods_body(methods):
+    """Field-method cards — how to expand a taxon's list: where, when, what it adds.
+    Responsive grid (1 col on phones, up to 3 on desktop)."""
+    cards = []
+    for m in methods:
+        rows = ""
+        for label, val in (("Where", m.get("where")), ("When", m.get("when")),
+                           ("Adds", m.get("targets"))):
+            if not val:
+                continue
+            rows += (
+                '<div class="mt-3">'
+                f'<span class="text-hollow-300 text-[0.6rem] font-semibold tracking-[0.18em] uppercase">{label}</span>'
+                f'<p class="text-white/70 text-[0.9rem] leading-snug mt-1">{esc(val)}</p>'
+                '</div>')
+        cards.append(
+            '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-6">'
+            f'<h4 class="font-serif text-xl text-white font-semibold leading-tight">{esc(m["method"])}</h4>'
+            f'{rows}</div>')
+    return ('<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">'
+            + "".join(cards) + '</div>')
+
+
+# ── Field methods to expand each list — sourced from the taxa expert agents ───
+MOTH_METHODS = [
+    {"method": "Sugar baiting",
+     "where": "Rum-molasses-overripe-banana ferment painted in vertical streaks on mature oak, maple, and shagbark hickory trunks along the mesic slope edge and the floodplain terrace, 50–100 m from the creek where humidity holds.",
+     "when": "Warm, humid August nights, 64–75°F, no moon, light wind; bait at dusk and check by headlamp every 45–60 min until 1 AM. Repeat on warm September nights.",
+     "targets": "Catocala underwings (come poorly to UV) and bait-positive Noctuidae — Eupsilia, Lithophane, Sunira, Amphipyra, Scoliopteryx — that the light sheet misses."},
+    {"method": "Larval beating",
+     "where": "Beating sheet under low streamside Salix and Alnus, plus Carya, Quercus, Acer and Betula on the mesic slope; tap branches and rear what drops.",
+     "when": "June–July daytime for peak Tortricidae and Gelechiidae larvae; a second pass in September. Rear larvae on host foliage to confirm species on emergence.",
+     "targets": "Micro-moths that never reach UV: Tortricidae, Gelechiidae, Coleophoridae case-bearers, Nepticulidae leaf-miners — the bulk of the undetected species."},
+    {"method": "Canopy light sheet",
+     "where": "A second sheet hoisted 10–15 m on a rope-and-pulley over a canopy gap in the mesic slope forest, well above the standard ground sheet.",
+     "when": "Calm June–July nights, 60–72°F, humidity above 60%, no moon; run from 30 min before dark to 2 AM alongside the ground sheet.",
+     "targets": "The Eupithecia complex (20+ species likely) and canopy-flying micro-geometrids and Tortricidae that rarely descend to a ground sheet."},
+    {"method": "Dual light comparison",
+     "where": "A 160W mercury-vapor bulb and a 15W actinic on separate sheets ~30 m apart at the floodplain-creek ecotone, the property's richest edge.",
+     "when": "Peak June and July nights, 60–72°F, no moon, light wind; full dark to 2 AM, swapping observers between stations hourly.",
+     "targets": "Species one light type filters out — MV pulls large Sphingidae, Saturniidae (watch for Hyalophora cecropia) and Catocala; actinic adds small Geometridae and microleps."},
+    {"method": "Shoulder-season runs",
+     "where": "The standard ground sheet at the sheltered creek bank, where the humidity buffer keeps moths flying on cold nights.",
+     "when": "Seasons the survey neglects: warm late-September and October nights, November dusk runs at 38–50°F for Operophtera, and late-March/April nights above 45°F.",
+     "targets": "Cold-season specialists absent from the June/August-heavy record: Operophtera, Sunira, late Noctuidae, and the early-spring Orthosia quaker complex."},
+]
+
+BUTTERFLY_METHODS = [
+    {"method": "Transect netting",
+     "where": "A fixed walk along the sunlit upland edge and the mowed floodplain openings, hitting nectar patches (milkweed, dogbane, joe-pye, asters) and damp creek-bank mud.",
+     "when": "Warm sunny days late April–September, 10 AM–3 PM, above 65°F with little wind; weekly visits to catch successive flights.",
+     "targets": "Most of the missing 40+ resident butterflies — whites and sulphurs, fritillaries and admirals, and the grass-skippers no one has netted."},
+    {"method": "Creek mud-puddling",
+     "where": "Wet gravel bars, seep margins, and damp sandy mud along Michigan Creek and at spring seeps where minerals concentrate.",
+     "when": "Hot sunny mid-summer afternoons, 75–90°F, low wind, especially the day after rain when fresh mud is exposed.",
+     "targets": "Puddling swallowtails, sulphurs, and the blues and hairstreaks (Celastrina, Satyrium, Cupido) drawn to mineral seeps."},
+    {"method": "Host-plant larval search",
+     "where": "Known larval hosts on site: violets on the mesic slope, Salix and Populus on the floodplain, spicebush and Prunus along edges, grasses and sedges in openings.",
+     "when": "May–August daytime; search leaf damage, rolled leaves, and frass, and rear larvae to adult.",
+     "targets": "Breeding residents missed by adult counts — fritillaries, viceroy and admirals, spicebush swallowtail, and cryptic satyrs."},
+    {"method": "Fermented-fruit traps",
+     "where": "Van Someren-Rydon hanging traps baited with fermented banana, 3–5 m up at the mesic slope forest edge and along shaded floodplain woodland.",
+     "when": "Mid-June through September; set in the morning and check daily, best on warm humid stretches.",
+     "targets": "Sap- and fruit-feeding woodland Nymphalidae that ignore flowers: hackberry and tawny emperors, mourning cloak and anglewings."},
+    {"method": "Early-spring edge watch",
+     "where": "South-facing upland edge and sun-warmed forest openings where overwintered adults and first broods bask.",
+     "when": "The first warm sunny days of March–April, above 55°F, late morning — the season the record barely covers.",
+     "targets": "Overwintering and early fliers: mourning cloak, commas and question mark, spring azure, and the elfins."},
+    {"method": "Dusk skipper survey",
+     "where": "Grassy and sedge-dominated floodplain openings and the damp creek-edge meadow.",
+     "when": "June–July, late afternoon into early evening when grass-skippers perch low; sunny, calm conditions.",
+     "targets": "Cryptic skippers (Poanes, Polites, Wallengrenia, Euphyes) tied to the floodplain graminoids."},
+]
+
+PLANT_METHODS = [
+    {"method": "Spring ephemeral walk",
+     "where": "Mesic slope forest above the creek, especially rich toe-of-slope benches and seep margins with deep, moist leaf litter.",
+     "when": "Late March–late April, mid-morning, before the maple-beech canopy leafs out; time it to the first Sanguinaria and Erythronium bloom.",
+     "targets": "Trillium, Claytonia, Dicentra cucullaria, Cardamine, Anemone, and several Viola — photograph leaf and flower together."},
+    {"method": "Sedge survey",
+     "where": "Active floodplain and gravel bars along the creek, plus wet seeps and the shrub-wetland transition; revisit drier upland edges.",
+     "when": "Mid-June through July when perigynia are mature, any time of day.",
+     "targets": "Streamside Carex (lurida, crinita, stipata, vulpinoidea) and upland sedges; also Scirpus, Glyceria, Sparganium. Only one Carex is recorded against 107 in the regional pool."},
+    {"method": "Willow inventory",
+     "where": "Creek banks, point bars, and the riparian shrub fringe alongside Alnus and Cornus.",
+     "when": "April for catkins (sex and bloom timing), then June–July for mature leaves; midday for good underside lighting.",
+     "targets": "Salix — none recorded yet against ~26 in the pool; likely eriocephala, sericea, nigra, discolor. Note leaf shape, underside, stipules, catkin timing."},
+    {"method": "Late-composite pass",
+     "where": "Sunny upland edges, the old-field/shrub transition, and the open floodplain margin.",
+     "when": "Late August into September at peak bloom, midday — Solidago and aster ID needs open flower heads.",
+     "targets": "Additional Solidago and asters beyond those recorded, plus Eutrochium variants. Photograph basal and stem leaves separately."},
+    {"method": "Lichen & bryophyte transect",
+     "where": "Shaded streamside boulders, splash-zone bedrock, decaying floodplain logs, and the bases of mature slope-forest trees.",
+     "when": "Late autumn through early spring, or any damp overcast day when thalli are hydrated; low-angle light.",
+     "targets": "Crustose and foliose lichens and additional bryophytes and liverworts — a near-blank group with only a few mosses recorded."},
+    {"method": "Vine & bramble pass",
+     "where": "Forest edges, fence lines, blowdown gaps, and the shrub-wetland transition where light reaches the understory.",
+     "when": "July for Rubus fruit and Vitis leaves; September for ripe vine fruit and seed.",
+     "targets": "Celastrus (native vs. invasive), more Vitis and Parthenocissus, Toxicodendron, Menispermum, and unrecorded Rubus by armature and leaflet."},
+]
+
+MAMMAL_METHODS = [
+    {"method": "Acoustic bat survey",
+     "where": "Over the open creek channel in a canopy gap where bats funnel and forage; an AudioMoth or Echo Meter on a tripod 1–2 m above the bank, mic down the channel.",
+     "when": "Late May–early September, warm (>50°F) calm nights; record from 30 min before sunset through midnight, peak in the first two hours after dusk.",
+     "targets": "The property's first bats: Big Brown, Eastern Red, Little Brown, Tri-colored, Silver-haired, Hoary; possibly Northern Long-eared near big snags."},
+    {"method": "Sherman live trapping",
+     "where": "A transect of 8–12 baited traps along the creek bank and wetland-edge transition, set at runways under root tangles, logs, and the slope base.",
+     "when": "May–October; set at dusk, check at dawn, run 2–3 consecutive nights. Add bedding on cold nights.",
+     "targets": "Small-mammal gaps: meadow, red-backed and woodland voles, meadow jumping mouse, and additional Peromyscus."},
+    {"method": "Pitfall array",
+     "where": "Wet riparian margin and seep edges between wetland and slope forest; buried cups along a low drift-fence through saturated leaf litter.",
+     "when": "May–October, run continuously 3–5 nights with daily morning checks; most productive in damp spells.",
+     "targets": "Shrews and moles that evade Sherman traps: masked, smoky and pygmy shrews, star-nosed and hairy-tailed moles."},
+    {"method": "Water-crossing camera",
+     "where": "A narrow ford, culvert, or log spanning the creek, plus any latrine boulder or muddy bank slide; camera mounted low, aimed at the crossing.",
+     "when": "Year-round, left 4–8 weeks. Winter adds snow-track confirmation; otter and mink work ice edges and open leads.",
+     "targets": "River Otter and Muskrat at slow-water sections; also documents mink and beaver activity."},
+    {"method": "Cavity-tree night camera",
+     "where": "Large-diameter snags and cavity trees on the mesic slope; camera or nest box facing a suet station or cavity entrance 2–4 m up.",
+     "when": "Year-round, peak autumn–winter; cameras run on motion through the night, 1–2 hours after full dark.",
+     "targets": "Southern (and possibly Northern) Flying Squirrel; also Northern Long-eared Bat roost emergence and porcupine."},
+    {"method": "Travel-corridor cameras",
+     "where": "Stone walls, brush piles, and the forested corridor connecting to nearby Tioga State Forest; pinch points and slope-base game trails.",
+     "when": "Year-round; winter snow improves track confirmation for weasels and skunk; 6–8 weeks per station.",
+     "targets": "Striped Skunk, Porcupine, Eastern Cottontail, possible Least Weasel and additional carnivore corridor records."},
+]
+
+AMPHIBIAN_METHODS = [
+    {"method": "Stream rock-flip",
+     "where": "Riffle and run sections of Michigan Creek; turn flat partly-submerged rocks and cobble at the wetted edge, plus rocks in the seepage zones feeding the creek.",
+     "when": "April–June on cool days, water 45–60°F; daytime is fine since salamanders shelter under rocks. Replace every rock exactly as found.",
+     "targets": "Northern Two-lined, Dusky and Allegheny Mountain Dusky salamanders — the single largest gap on the property."},
+    {"method": "Cold seep search",
+     "where": "Cold, clean spring runs and seeps on the mesic slope where groundwater emerges; flip flat rocks and probe gravel in the spring head.",
+     "when": "April–June daytime when seep water is cold (under ~55°F); also active on warm rainy nights.",
+     "targets": "Spring Salamander — a water-quality indicator and a notable find — plus larval Eurycea."},
+    {"method": "Vernal-pool night walk",
+     "where": "Floodplain depressions and woodland vernal pools off the creek; headlamp the pool edges and the forest-floor migration approach.",
+     "when": "The first warm rainy nights of spring, March into early April, air above 45°F, 9 PM–midnight.",
+     "targets": "Jefferson's and Blue-spotted salamander complex — breeding adults migrating to the pools."},
+    {"method": "Egg-mass search",
+     "where": "The same fishless vernal and floodplain pools; inspect submerged sticks and vegetation for attached masses.",
+     "when": "Mid-March to mid-April daytime, shortly after the salamander migration nights.",
+     "targets": "Confirms the Jefferson/Blue-spotted complex by jelly color and attachment, distinct from the recorded Spotted Salamander."},
+    {"method": "Night chorus survey",
+     "where": "The creek margin, floodplain wet areas, and any standing water or seeps; stop and listen at several stations.",
+     "when": "Warm wet evenings, 9–11 PM; American Toad trills late April–May, leopard frog snore-calls in early-spring meltwater.",
+     "targets": "Northern Leopard Frog and any unrecorded breeding choruses in the floodplain pools."},
+    {"method": "Pool rock-flip / snorkel",
+     "where": "Deeper, slow pools of the creek; lift large submerged flat rocks and woody debris, or snorkel the pool bottoms.",
+     "when": "Night work in spring and fall when the water is cold; mudpuppies are nocturnal and active in cool water.",
+     "targets": "Mudpuppy — fully aquatic, found only by working large rocks in the deeper pools."},
+]
 
 
 def build():
