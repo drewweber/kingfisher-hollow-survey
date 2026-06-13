@@ -462,6 +462,66 @@ def plant_gap(plants, n=50, target_months=None):
     return _region_gap(plants, "region_plant_taxa", n=n, target_months=target_months)
 
 
+# --- amphibians --------------------------------------------------------------
+def load_amphibians():
+    with connect() as conn:
+        return pd.read_sql_query("SELECT * FROM amphibian_taxa", conn)
+
+
+def amphibian_summary(df, amphibians):
+    ids = set(amphibians["taxon_id"].dropna())
+    sub = df[df["taxon_id"].isin(ids)]
+    return {
+        "species": int(amphibians["taxon_id"].nunique()),
+        "records": int(len(sub)),
+        "top_month": _peak_month(sub) if not sub.empty else "",
+    }
+
+
+def amphibian_found(df, amphibians):
+    """Recorded amphibians as a gap-grid-shaped DataFrame (label/ref_count/photo).
+
+    Lets the 'findings' grid reuse the same photo-card renderer as the gap list,
+    with ref_count = how many times each species has been recorded here.
+    """
+    if amphibians.empty:
+        return amphibians
+    found = amphibians.copy()
+    counts = (df[df["taxon_id"].isin(set(found["taxon_id"].dropna()))]
+              .groupby("taxon_id").size())
+    found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
+    found["label"] = found["common_name"].fillna(found["taxon_name"])
+    return found.sort_values("ref_count", ascending=False)
+
+
+# Captive / out-of-range exotics that appear in the iNat regional pool (zoo,
+# classroom, and pet records) but are not realistic field targets. Mirrors the
+# _EXCLUDE_FROM_MAMMALS approach.
+_EXCLUDE_FROM_AMPHIBIANS = {
+    21121,  # Green-and-black Poison Dart Frog
+    21217,  # Golden Poison Dart Frog
+    23702,  # Red-eyed Tree Frog
+    25457,  # African Clawed Frog
+    26777,  # Axolotl
+    66278,  # Strawberry Poison Dart Frog
+}
+
+
+def amphibian_gap(amphibians, n=30):
+    """Regional amphibians not yet recorded here, ranked by regional frequency.
+
+    Deliberately non-seasonal: amphibians are strongly spring-peaked, so a
+    single-month slice surfaces almost nothing in summer. We rank by overall
+    regional frequency and drop obvious captive/non-native pool records.
+    """
+    gap = _region_gap(amphibians, "region_amphibian_taxa",
+                      n=n + len(_EXCLUDE_FROM_AMPHIBIANS))
+    gap["missing"] = gap["missing"][
+        ~gap["missing"]["taxon_id"].isin(_EXCLUDE_FROM_AMPHIBIANS)
+    ].head(n)
+    return gap
+
+
 # --- moths ("After Dark") ---------------------------------------------------
 def load_moths():
     """Moth roster (Lepidoptera minus butterflies) with representative photos."""

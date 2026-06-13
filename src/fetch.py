@@ -1,8 +1,8 @@
 """Incremental sync of property and county observations into SQLite."""
 
 import inat_api
-from config import (BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID, LEPIDOPTERA_TAXON_ID,
-                    MAMMALIA_TAXON_ID, PLANTAE_TAXON_ID,
+from config import (AMPHIBIA_TAXON_ID, BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID,
+                    LEPIDOPTERA_TAXON_ID, MAMMALIA_TAXON_ID, PLANTAE_TAXON_ID,
                     PROPERTY_PROJECT_ID, REGION_RADIUS_KM)
 from db import connect, max_id, record_sync
 
@@ -276,6 +276,28 @@ def sync_region_plants():
                      lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
                      taxon_id=PLANTAE_TAXON_ID)
     print(f"[region-plants] {n} plant species within {REGION_RADIUS_KM} km")
+    return n, 0
+
+
+def sync_amphibians():
+    """Amphibian roster for the project."""
+    n = _sync_roster("amphibian_taxa", "obs_count",
+                     project_id=PROPERTY_PROJECT_ID,
+                     taxon_id=AMPHIBIA_TAXON_ID)
+    print(f"[amphibians] {n} amphibian species")
+    return n, 0
+
+
+def sync_region_amphibians():
+    """Amphibians recorded within REGION_RADIUS_KM of the property."""
+    lat, lng = _property_center()
+    if lat is None:
+        print("[region-amphibians] no property coordinates yet; skipping")
+        return 0, 0
+    n = _sync_roster("region_amphibian_taxa", "region_count",
+                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                     taxon_id=AMPHIBIA_TAXON_ID)
+    print(f"[region-amphibians] {n} amphibian species within {REGION_RADIUS_KM} km")
     return n, 0
 
 

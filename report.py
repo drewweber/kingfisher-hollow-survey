@@ -532,6 +532,28 @@ def mammal_gap_body(gap):
     return lead + _gap_photo_grid(gap["missing"], placeholder="🦌")
 
 
+def amphibian_found_body(found):
+    """Amphibians recorded on the property — photo grid, most-recorded first."""
+    if found is None or found.empty:
+        return ('<p class="text-center text-white/50 py-8">Amphibian roster not '
+                'synced yet.</p>')
+    return _gap_photo_grid(found, placeholder="🐸")
+
+
+def amphibian_gap_body(gap):
+    """Regional amphibians not yet documented — photo grid."""
+    if not gap or gap.get("missing_count", 0) == 0:
+        return '<p class="text-center text-white/50">No gap data yet.</p>'
+    miles = round(gap.get("region_radius_km", 80) / 1.609)
+    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+            f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
+            f'<strong class="text-hollow-300">{gap["region_total"]}</strong> amphibian species recorded within '
+            f'~{miles} miles have turned up here. '
+            f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
+            f'are documented in the surrounding region but not yet here — ranked by how common they are nearby.</p>')
+    return lead + _gap_photo_grid(gap["missing"], placeholder="🐸")
+
+
 def plant_gap_body(gap):
     """Regional plants not yet documented — photo grid."""
     if not gap or gap.get("missing_count", 0) == 0:
@@ -921,6 +943,7 @@ def nav():
                   ("#moth-calendar", "Calendar")]
     mammal_links = [("#mammals", "Overview"), ("#mammal-gap", "Gap List")]
     plant_links = [("#plants", "Overview"), ("#plant-gap", "Gap List")]
+    amphibian_links = [("#amphibians", "Found"), ("#amphibian-gap", "Gap List")]
     log_links = [("#log-journal", "Field Journal")]
 
     def links_html(links, item_cls):
@@ -932,12 +955,14 @@ def nav():
         f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
         f'<span class="links-mammals hidden items-center gap-6">{links_html(mammal_links, desk_cls)}</span>'
         f'<span class="links-plants hidden items-center gap-6">{links_html(plant_links, desk_cls)}</span>'
+        f'<span class="links-amphibians hidden items-center gap-6">{links_html(amphibian_links, desk_cls)}</span>'
         f'<span class="links-log hidden items-center gap-6">{links_html(log_links, desk_cls)}</span>')
     mob_links = (
         f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
         f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
         f'<div class="links-mammals hidden flex-col gap-3">{links_html(mammal_links, mob_cls)}</div>'
         f'<div class="links-plants hidden flex-col gap-3">{links_html(plant_links, mob_cls)}</div>'
+        f'<div class="links-amphibians hidden flex-col gap-3">{links_html(amphibian_links, mob_cls)}</div>'
         f'<div class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</div>')
     toggle = """
       <div class="mode-toggle flex items-center rounded-full p-0.5 bg-white/10 border border-white/15" role="group" aria-label="Switch view">
@@ -945,6 +970,7 @@ def nav():
         <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
         <button class="mode-btn" data-mode="mammals" aria-pressed="false">Mammals</button>
         <button class="mode-btn" data-mode="plants" aria-pressed="false">Plants</button>
+        <button class="mode-btn" data-mode="amphibians" aria-pressed="false">Amphibians</button>
         <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
       </div>"""
     return f"""
@@ -965,6 +991,7 @@ def nav():
       <button class="mode-btn" data-mode="moths" aria-pressed="false">Moths</button>
       <button class="mode-btn" data-mode="mammals" aria-pressed="false">Mammals</button>
       <button class="mode-btn" data-mode="plants" aria-pressed="false">Plants</button>
+      <button class="mode-btn" data-mode="amphibians" aria-pressed="false">Amphibians</button>
       <button class="mode-btn" data-mode="log" aria-pressed="false">Log</button>
     </div>
     {mob_links}
@@ -1059,7 +1086,7 @@ SCRIPTS = """
 
   // Mode toggle: All life / Moths / Mammals / Plants / Log — one page, five views.
   (function(){
-    const MODES=['all','moths','mammals','plants','log'];
+    const MODES=['all','moths','mammals','plants','amphibians','log'];
     const views=Object.fromEntries(MODES.map(m=>[m,document.getElementById('view-'+m)]));
     function setMode(mode,force){
       if(!MODES.includes(mode)) mode='all';
@@ -1071,7 +1098,7 @@ SCRIPTS = """
           const on=mode===m;e.classList.toggle('hidden',!on);e.classList.toggle('flex',on);});});
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
-      const hashes={moths:'#moths',mammals:'#mammals',plants:'#plants',log:'#log'};
+      const hashes={moths:'#moths',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
       history.replaceState(null,'',hashes[mode]||location.pathname);
       updateNav&&updateNav();
       if(force){
@@ -1083,7 +1110,7 @@ SCRIPTS = """
       setMode(b.dataset.mode,true);window.scrollTo({top:0,behavior:'smooth'});
       document.getElementById('mob').classList.add('hidden');}));
     const h=location.hash;
-    const fromHash={['#moths']:'moths',['#mammals']:'mammals',['#plants']:'plants',['#log']:'log'};
+    const fromHash={['#moths']:'moths',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
     setMode(fromHash[h]||'all', h in fromHash);
   })();
 </script></body></html>"""
@@ -1318,6 +1345,41 @@ def plants_view(df, stats):
     return "".join(out)
 
 
+def amphibians_view(df, stats):
+    """Dark amphibians view: what's been found + the regional gap list."""
+    amphibians = analyze.load_amphibians()
+    gap = analyze.amphibian_gap(amphibians, n=30)
+    found = analyze.amphibian_found(df, amphibians) if not amphibians.empty else amphibians
+    asum = (analyze.amphibian_summary(df, amphibians) if not amphibians.empty
+            else {"species": 0, "records": 0, "top_month": ""})
+    stats_band = (
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
+        + _dark_divider().join([
+            _dark_stat(str(asum["species"]), "amphibian species"),
+            _dark_stat(str(asum["records"]), "total records"),
+            _dark_stat(asum.get("top_month") or "—", "peak month"),
+        ]) + '</div>')
+    out = []
+    out.append(section(
+        "amphibians", "At the Water's Edge",
+        'The <em class="text-hollow-300">Amphibians</em>',
+        stats_band + amphibian_found_body(found),
+        intro="Frogs and salamanders are the truest test of a stream. They breathe through wet skin, "
+              "breed in the creek and its seeps, and vanish when water quality slips — so every species here "
+              "says Michigan Creek is still clean. The count below is low for this habitat, and that gap is "
+              "about survey effort, not absence.",
+        dark=True))
+    out.append(section(
+        "amphibian-gap", "Yet to Find",
+        'Amphibian <em class="text-hollow-300">Gap List</em>',
+        amphibian_gap_body(gap),
+        intro="Amphibians recorded within ~50 miles but not yet documented here, ranked by how common they "
+              "are nearby. The stream salamanders near the top are the likeliest finds: flip flat rocks in the "
+              "riffles on a cool, wet night.",
+        dark=True))
+    return "".join(out)
+
+
 def build():
     init_db()
     df = analyze.load_property()
@@ -1460,6 +1522,11 @@ def build():
     parts.append('<div id="view-plants" class="hidden">')
     parts.append(plants_view(df, stats))
     parts.append('</div>')  # /view-plants
+
+    # ── Amphibians view (dark) ───────────────────────────────────────────────
+    parts.append('<div id="view-amphibians" class="hidden">')
+    parts.append(amphibians_view(df, stats))
+    parts.append('</div>')  # /view-amphibians
 
     # ── Log view (light, journal) ────────────────────────────────────────────
     parts.append('<div id="view-log" class="hidden">')

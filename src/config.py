@@ -22,6 +22,7 @@ LEPIDOPTERA_TAXON_ID = 47157
 BUTTERFLY_TAXON_ID = 47224
 MAMMALIA_TAXON_ID = 40151
 PLANTAE_TAXON_ID = 47126
+AMPHIBIA_TAXON_ID = 20978
 
 # Regional reference pool for the moth gap analysis. Tioga County itself is
 # undersampled, so a distance radius (crossing into the better-covered Ithaca
