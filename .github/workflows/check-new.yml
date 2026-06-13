@@ -7,9 +7,9 @@ name: Check for new observations
 # (e.g. an older observation newly *added* to the project, which keeps a lower id).
 on:
   schedule:
-    # Hourly at :23 from 11:00–23:00 UTC (~7am–7pm ET in moth season). Off the
+    # Hourly at :45 all day. Off the
     # top of the hour on purpose — GitHub delays cron heavily at :00 under load.
-    - cron: "23 11-23 * * *"
+    - cron: "45 * * * *"
   workflow_dispatch: {}
 
 # One poll at a time; never cancel an in-flight check.
