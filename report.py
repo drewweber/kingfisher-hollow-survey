@@ -154,7 +154,7 @@ def hero(s, county_firsts):
       Life at <em class="font-normal text-hollow-200" style="font-style:italic;">the Hollow</em>
     </h1>
     <p class="fade-up delay-2 text-white/70 text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12">
-      1,367 species across 30 riparian acres in Tioga County, NY — 314 of them new to the county record. The survey is a year old and still nowhere near done.
+      1,052 species across 30 riparian acres in Tioga County, NY — 314 of them new to the county record. The survey is a year old and still nowhere near done.
     </p>
     <div class="fade-up delay-3 flex flex-wrap items-center justify-center gap-8 md:gap-12">
       {stat(f"{s['species']:,}", "Species")}
@@ -386,11 +386,11 @@ def property_profile_body():
     )
     col3 = (
         '<div class="space-y-3">'
-        + _dark_stat("247 species · 30 acres", "Host Plants")
+        + _dark_stat("210 species · 30 acres", "Host Plants")
         + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
         '2–3× the NY mixed-hardwood baseline. Eastern Lepidoptera are mostly host-plant specialists; '
-        'the math holds: 247 plants × ~1.8 predicted moths per plant species ≈ 445 predicted. '
-        'Observed: 438.'
+        '210 plants × ~1.8 predicted moths per plant species predicts ~378. '
+        'Observed: 489 — the triple-province ecotone accounts for the surplus.'
         '</p></div>'
     )
     return (
@@ -837,9 +837,9 @@ def activity_log_body(log_entries, weather_cache):
 
 # ── head / nav / footer ──────────────────────────────────────────────────────
 def head():
-    desc = ("Biodiversity survey of Kingfisher Hollow — 1,367 species on 30 riparian acres along Michigan Creek, "
+    desc = ("Biodiversity survey of Kingfisher Hollow — 1,052 species on 30 riparian acres along Michigan Creek, "
             "Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / mid-Atlantic junction: "
-            "314 county-first records, 438 moth species, plant diversity 2–3× the NY upland baseline. "
+            "314 county-first records, 489 moth species, plant diversity 2–3× the NY upland baseline. "
             "Data updated nightly.")
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1117,10 +1117,11 @@ def moth_view(df, stats):
     out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
         moth_stats(msum, comp),
-        intro="438 moth species in one field season on 30 acres. Nearly every species ties back to a specific "
-              "plant genus in the canopy, shrub layer, or wetland edge — and the property has 247 plant species. "
+        intro="489 moth species on 30 riparian acres. Nearly every species ties back to a specific "
+              "plant genus in the canopy, shrub layer, or wetland edge — and the property has 210 plant species. "
               "The creek's humidity buffer keeps moths flying on nights too dry and cool for upland sites nearby. "
-              "The diversity below is almost entirely predicted by the diversity above.",
+              "The diversity below tracks the diversity above, then exceeds it: the three-province ecotone adds "
+              "guild diversity that raw plant counts don't predict.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
@@ -1188,11 +1189,12 @@ def moth_view(df, stats):
             f"<strong>{comp['q1']}</strong> have appeared on exactly one night — seen once and not since. "
             f"That single-night rate drives the Chao2 estimate: roughly "
             f"<strong>{comp['estimated']}</strong> species total (95% CI: {comp['low']}–{comp['high']}), "
-            f"putting the survey about <strong>{comp['pct_complete']}%</strong> complete. The regional pool of "
-            f"1,756 species is much larger, but most of those belong to habitats this property doesn't have. "
-            f"The ~700 ceiling is a realistic figure for this specific place. Dozens of real species are "
-            f"already present on the property — they just haven't crossed the sheet yet.", dark=True),
-        intro="438 species confirmed. Statistical modeling puts the true total around 700. Here's the evidence for that gap — and how fast it's closing.",
+            f"putting the survey about <strong>{comp['pct_complete']}%</strong> complete. The regional pool is "
+            f"larger, but most of those species belong to habitats this property doesn't have. "
+            f"The ~700 ceiling is a realistic figure for this specific place. The remaining ~200 undetected "
+            f"species aren't evenly distributed — they're concentrated in micro-moth families that a UV sheet "
+            f"samples poorly. Targeted work on Tortricidae and Gelechiidae would close most of the gap.", dark=True),
+        intro="489 species confirmed. Statistical modeling puts the true total around 700. Here's the evidence for that gap — and how fast it's closing.",
         dark=True))
     out.append(section(
         "moth-diversity", "Diversity",
@@ -1205,8 +1207,9 @@ def moth_view(df, stats):
             "A rank-abundance curve for a degraded habitat drops steeply: one or two species dominate, the "
             "rest are noise. This one doesn't. It slopes gently across hundreds of species — no single "
             "species has crowded out the rest. Ecologists call that high evenness, and it's a reliable "
-            "indicator of structurally complex habitat. The gentle slope across 438 species is what you'd "
-            "predict from a site with 247 plant species on 30 acres, each supporting distinct moth guilds. "
+            "indicator of structurally complex habitat. The gentle slope across 489 species is what you'd "
+            "predict from a site with 210 plant species on 30 acres, each supporting distinct moth guilds, "
+            "with the three-province ecotone adding guild diversity on top. "
             "The long flat tail on the right — all the once-or-twice-seen species — is the frontier of "
             "what's still being found.", dark=True),
         intro="Is the moth community dominated by a handful of species, or is it broadly distributed? The diversity metrics give an unusually clear answer.",
@@ -1235,10 +1238,11 @@ def moth_view(df, stats):
                      dark=True)
         + takeaway(
             "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
-            "The faint line reaches its earliest and latest confirmed dates. Read all 438 rows together and "
-            "you get the season's shape: sparse in April, dense in June and July, a long plateau through "
-            "August, fading through October. After one year these windows are first drafts; they'll sharpen "
-            "as more nights accumulate.", dark=True)
+            "The faint line reaches its earliest and latest confirmed dates. Read all 489 rows together and "
+            "you get the season's shape: sparse in April, a sharp peak in June, a gap in July where the "
+            "lights weren't running, a full second plateau through August, fading through September and "
+            "October. After one field season these windows are first drafts; they'll sharpen as more nights "
+            "accumulate.", dark=True)
         + chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
                      note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
                      dark=True)
@@ -1303,7 +1307,7 @@ def plants_view(df, stats):
         "plants", "Green World",
         'The <em class="text-hollow-300">Plants</em>',
         stats_band,
-        intro="247 plant species on 30 acres. Each genus recorded here is a potential host for specialist moth and insect guilds — the plant list is the structural explanation for the moth list.",
+        intro="210 plant species on 30 acres. Each genus recorded here is a potential host for specialist moth and insect guilds — the plant list is the structural explanation for the moth list.",
         dark=True))
     out.append(section(
         "plant-gap", "What's Unrecorded?",
@@ -1350,9 +1354,9 @@ def build():
             "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
             "show a curve that flattens within the first season; this one hasn't. The steepest runs coincide "
             "with nights at the mothing lights — each new plant genus documented on the property opens a "
-            "potential new set of specialist feeders, and 247 plant species on 30 acres keeps that process "
+            "potential new set of specialist feeders, and 210 plant species on 30 acres keeps that process "
             "running."),
-        intro="1,367 steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
+        intro="1,052 steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
     parts.append(section(
@@ -1403,7 +1407,7 @@ def build():
             "observations before dawn. The taxonomic breakdown shows what that effort turns up: insects account "
             "for the large majority of species, with moths alone outnumbering every other non-insect group "
             "combined. That's not a survey artifact. It's what lives in a riparian Appalachian forest with "
-            "247 plant species on 30 acres.",),
+            "210 plant species on 30 acres.",),
         intro="Daily observation totals and a taxonomic breakdown — how the effort is distributed and what it's actually finding.",
         tint="bg-stone-100"))
     parts.append(section(
