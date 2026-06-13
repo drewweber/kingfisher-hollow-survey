@@ -7,7 +7,18 @@ on:
     # to capture the morning's mothing uploads. GitHub cron is UTC only (no DST),
     # so it drifts to 8:30 AM ET in winter. GitHub may also delay scheduled runs.
     - cron: "30 13 * * *"
-  workflow_dispatch: {}        # allow manual runs from the Actions tab
+  workflow_dispatch: {}        # allow manual runs + the check-new.yml trigger
+  # Rebuild + redeploy whenever the report/pipeline code changes on main.
+  # Path-filtered so the keep-alive commit (LAST_UPDATED.txt, also [skip ci])
+  # and doc-only edits don't trigger a rebuild.
+  push:
+    branches: [main]
+    paths:
+      - "report.py"
+      - "sync.py"
+      - "src/**"
+      - "requirements.txt"
+      - ".github/workflows/update.yml"
 
 # Avoid overlapping runs if one is slow.
 concurrency:

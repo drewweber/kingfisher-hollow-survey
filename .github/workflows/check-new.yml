@@ -1,0 +1,70 @@
+name: Check for new observations
+
+# Cheap, frequent poll: ask iNaturalist whether the project has any observation
+# newer than what the last full run already ingested. If so, dispatch the heavy
+# update.yml (sync + build + deploy); otherwise do nothing. The nightly schedule
+# in update.yml remains the backstop that catches anything this poll misses
+# (e.g. an older observation newly *added* to the project, which keeps a lower id).
+on:
+  schedule:
+    # Hourly at :23 from 11:00–23:00 UTC (~7am–7pm ET in moth season). Off the
+    # top of the hour on purpose — GitHub delays cron heavily at :00 under load.
+    - cron: "23 11-23 * * *"
+  workflow_dispatch: {}
+
+# One poll at a time; never cancel an in-flight check.
+concurrency:
+  group: check-new
+  cancel-in-progress: false
+
+# actions:write lets us dispatch update.yml via the GITHUB_TOKEN. workflow_dispatch
+# is one of the two events that *can* be triggered by GITHUB_TOKEN, so this works.
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Read-only restore of the latest DB cache written by update.yml. Using the
+      # restore-only action means this job never writes a cache entry, so it can't
+      # race the heavy job's cache.
+      - name: Restore database cache (read-only)
+        uses: actions/cache/restore@v4
+        with:
+          path: data/inat.db
+          key: inat-db-check-${{ github.run_id }}
+          restore-keys: |
+            inat-db-
+
+      - name: Compare iNat latest observation id to local DB
+        id: cmp
+        run: |
+          set -euo pipefail
+          PROJECT_ID=249580
+          LATEST=$(curl -s --max-time 30 \
+            "https://api.inaturalist.org/v1/observations?project_id=${PROJECT_ID}&order_by=id&order=desc&per_page=1" \
+            | jq '.results[0].id // 0')
+          if [ -f data/inat.db ]; then
+            HAVE=$(sqlite3 data/inat.db "SELECT COALESCE(MAX(id),0) FROM property_obs" 2>/dev/null || echo 0)
+          else
+            HAVE=0
+          fi
+          HAVE=${HAVE:-0}
+          echo "iNat latest obs id: $LATEST   |   already ingested: $HAVE"
+          if [ "${LATEST:-0}" -gt "${HAVE:-0}" ]; then
+            echo "New observations detected → will trigger full update."
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Nothing new → skipping full update."
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger full update when new data exists
+        if: steps.cmp.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run update.yml --ref main
