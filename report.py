@@ -152,7 +152,7 @@ def hero(s, county_firsts):
     <img src="{HERO_PHOTO}" class="absolute inset-0 w-full h-full object-cover" alt="Aerial view of Kingfisher Hollow">
     <div class="hero-overlay absolute inset-0"></div>
   </div>
-  <div class="relative z-10 text-center px-6 max-w-4xl mx-auto pt-24">
+  <div class="relative z-10 text-center px-6 max-w-4xl mx-auto pt-24 md:pt-36">
     <p class="fade-up text-hollow-300 font-medium tracking-[0.35em] uppercase text-xs md:text-sm mb-5">Biodiversity Survey · {esc(rng)}</p>
     <h1 class="fade-up delay-1 font-serif text-5xl md:text-7xl text-white font-bold leading-[1.05] mb-6">
       Life at <em class="font-normal text-hollow-200" style="font-style:italic;">the Hollow</em>
@@ -957,6 +957,11 @@ tailwind.config = {{ theme: {{ extend: {{
   /* Mode-toggle button text: dark on light nav backgrounds (all life scrolled + log), white in moths */
   body:not([data-mode="moths"]) #navbar.nav-solid .mode-btn:not(.mode-active),
   body[data-mode="log"] #navbar .mode-btn:not(.mode-active) {{ color:rgba(13,34,28,0.55); }}
+  /* Section nav: secondary bar separator line */
+  #section-bar {{ border-top: 1px solid rgba(255,255,255,0.12); }}
+  #navbar.nav-solid #section-bar {{ border-top: 1px solid rgba(0,0,0,0.07); }}
+  body[data-mode="moths"] #navbar.nav-solid #section-bar {{ border-top: 1px solid rgba(255,255,255,0.08); }}
+  body[data-mode="log"] #navbar #section-bar {{ border-top: 1px solid rgba(0,0,0,0.07) !important; }}
   .log-rarity {{ color:#2e735c; font-size:.78rem; font-weight:500; }}
   .log-moth-label {{ color:#57534e; font-size:.8rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }}
 </style></head>
@@ -1019,14 +1024,20 @@ def nav():
     return f"""
 <a href="#whats-new" class="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-1 focus:rounded">Skip to content</a>
 <nav id="navbar" class="nav-transparent fixed top-0 inset-x-0 z-50 transition-all duration-300">
-  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-    <a href="{SITE}" class="flex items-center gap-2.5">{LOGO}
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+    <a href="{SITE}" class="flex items-center gap-2.5 shrink-0">{LOGO}
       <span id="nav-brand" class="font-serif text-white text-xl font-semibold tracking-wide transition-colors">Kingfisher Hollow</span></a>
-    <div class="hidden md:flex flex-wrap items-center justify-end gap-x-5 gap-y-2 pl-4">{desktop_links}{toggle}
-      <a href="{SITE}" class="text-white/70 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">← Main site</a>
+    <div class="hidden md:flex items-center gap-4">
+      {toggle}
+      <a href="{SITE}" class="text-white/60 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">← Main site</a>
     </div>
     <button onclick="document.getElementById('mob').classList.toggle('hidden')" class="md:hidden text-white p-1" aria-label="Menu">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  </div>
+  <div id="section-bar" class="hidden md:block">
+    <div class="max-w-6xl mx-auto px-6 py-1.5 flex items-center gap-6">
+      {desktop_links}
+    </div>
   </div>
   <div id="mob" class="hidden md:hidden bg-hollow-950/95 px-6 py-4 flex flex-col gap-4 border-t border-white/10">
     <div class="mode-toggle flex flex-wrap gap-2" role="group" aria-label="Switch view">{mode_buttons()}</div>
