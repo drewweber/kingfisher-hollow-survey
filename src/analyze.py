@@ -7,6 +7,22 @@ from config import REGION_RADIUS_KM, SPECIES_RANKS
 from db import connect
 
 
+def _join_taxonomy(df):
+    """Merge order_name/family_name/family_common from taxon_meta into df.
+
+    Used to enable taxonomic sorting in found-species grids. Rows with no
+    taxon_meta entry get empty strings so sort order is stable.
+    """
+    with connect() as conn:
+        meta = pd.read_sql_query(
+            "SELECT taxon_id, order_name, family_name, family_common FROM taxon_meta",
+            conn)
+    df = df.merge(meta, on="taxon_id", how="left")
+    for col in ("order_name", "family_name", "family_common"):
+        df[col] = df[col].fillna("")
+    return df
+
+
 def _session_dates(sub, cutoff_hour=12):
     """Return a Series of session dates for mothing analysis.
 
@@ -435,7 +451,7 @@ _EXCLUDE_FROM_MAMMALS = {43584}  # Homo sapiens
 
 
 def mammal_found(df, mammals):
-    """Recorded mammals as a gap-grid-shaped DataFrame (label/ref_count/photo)."""
+    """Recorded mammals sorted taxonomically (order → family → species)."""
     if mammals.empty:
         return mammals
     found = mammals[~mammals["taxon_id"].isin(_EXCLUDE_FROM_MAMMALS)].copy()
@@ -443,7 +459,8 @@ def mammal_found(df, mammals):
               .groupby("taxon_id").size())
     found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
     found["label"] = found["common_name"].fillna(found["taxon_name"])
-    return found.sort_values("ref_count", ascending=False)
+    found = _join_taxonomy(found)
+    return found.sort_values(["order_name", "family_name", "taxon_name"])
 
 
 def mammal_gap(mammals, n=30, target_months=None):
@@ -471,7 +488,7 @@ def plant_summary(df, plants):
 
 
 def plant_found(df, plants):
-    """Recorded plants as a gap-grid-shaped DataFrame (label/ref_count/photo)."""
+    """Recorded plants sorted taxonomically (order → family → species)."""
     if plants.empty:
         return plants
     found = plants.copy()
@@ -479,7 +496,8 @@ def plant_found(df, plants):
               .groupby("taxon_id").size())
     found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
     found["label"] = found["common_name"].fillna(found["taxon_name"])
-    return found.sort_values("ref_count", ascending=False)
+    found = _join_taxonomy(found)
+    return found.sort_values(["order_name", "family_name", "taxon_name"])
 
 
 def plant_gap(plants, n=50, target_months=None):
@@ -503,11 +521,7 @@ def amphibian_summary(df, amphibians):
 
 
 def amphibian_found(df, amphibians):
-    """Recorded amphibians as a gap-grid-shaped DataFrame (label/ref_count/photo).
-
-    Lets the 'findings' grid reuse the same photo-card renderer as the gap list,
-    with ref_count = how many times each species has been recorded here.
-    """
+    """Recorded amphibians sorted taxonomically (order → family → species)."""
     if amphibians.empty:
         return amphibians
     found = amphibians.copy()
@@ -515,7 +529,8 @@ def amphibian_found(df, amphibians):
               .groupby("taxon_id").size())
     found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
     found["label"] = found["common_name"].fillna(found["taxon_name"])
-    return found.sort_values("ref_count", ascending=False)
+    found = _join_taxonomy(found)
+    return found.sort_values(["order_name", "family_name", "taxon_name"])
 
 
 # Captive / out-of-range exotics that appear in the iNat regional pool (zoo,
@@ -563,7 +578,7 @@ def butterfly_summary(df, butterflies):
 
 
 def butterfly_found(df, butterflies):
-    """Recorded butterflies as a gap-grid-shaped DataFrame (label/ref_count/photo)."""
+    """Recorded butterflies sorted taxonomically (family → species)."""
     if butterflies.empty:
         return butterflies
     found = butterflies.copy()
@@ -571,7 +586,8 @@ def butterfly_found(df, butterflies):
               .groupby("taxon_id").size())
     found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
     found["label"] = found["common_name"].fillna(found["taxon_name"])
-    return found.sort_values("ref_count", ascending=False)
+    found = _join_taxonomy(found)
+    return found.sort_values(["family_name", "taxon_name"])
 
 
 def butterfly_gap(butterflies, n=30):
@@ -582,6 +598,54 @@ def butterfly_gap(butterflies, n=30):
     a thin single-month slice.
     """
     return _region_gap(butterflies, "region_butterfly_taxa", n=n)
+
+
+# --- reptiles ----------------------------------------------------------------
+def load_reptiles():
+    with connect() as conn:
+        return pd.read_sql_query("SELECT * FROM reptile_taxa", conn)
+
+
+def reptile_summary(df, reptiles):
+    ids = set(reptiles["taxon_id"].dropna())
+    sub = df[df["taxon_id"].isin(ids)]
+    return {
+        "species": int(reptiles["taxon_id"].nunique()),
+        "records": int(len(sub)),
+        "top_month": _peak_month(sub) if not sub.empty else "",
+    }
+
+
+def reptile_found(df, reptiles):
+    """Recorded reptiles sorted taxonomically (order → family → species)."""
+    if reptiles.empty:
+        return reptiles
+    found = reptiles.copy()
+    counts = (df[df["taxon_id"].isin(set(found["taxon_id"].dropna()))]
+              .groupby("taxon_id").size())
+    found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
+    found["label"] = found["common_name"].fillna(found["taxon_name"])
+    found = _join_taxonomy(found)
+    return found.sort_values(["order_name", "family_name", "taxon_name"])
+
+
+_EXCLUDE_FROM_REPTILES = {
+    39952,  # Red-eared Slider (common captive release)
+}
+
+
+def reptile_gap(reptiles, n=30):
+    """Regional reptiles not yet recorded here, ranked by regional frequency.
+
+    Non-seasonal: reptile activity windows vary widely by order, so overall
+    regional frequency is a better guide than a single-month slice.
+    """
+    gap = _region_gap(reptiles, "region_reptile_taxa",
+                      n=n + len(_EXCLUDE_FROM_REPTILES))
+    gap["missing"] = gap["missing"][
+        ~gap["missing"]["taxon_id"].isin(_EXCLUDE_FROM_REPTILES)
+    ].head(n)
+    return gap
 
 
 # --- moths ("After Dark") ---------------------------------------------------

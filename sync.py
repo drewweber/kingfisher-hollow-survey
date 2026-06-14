@@ -34,18 +34,20 @@ def main():
                     help="refresh plant roster + regional pool")
     ap.add_argument("--amphibians", action="store_true",
                     help="refresh amphibian roster + regional pool")
+    ap.add_argument("--reptiles", action="store_true",
+                    help="refresh reptile roster + regional pool")
     ap.add_argument("--stats", action="store_true", help="refresh uniqueness stats")
     ap.add_argument("--taxonomy", action="store_true",
                     help="enrich order/family for new species")
     ap.add_argument("--weather", action="store_true",
                     help="fetch/update weather cache for all observation dates")
     ap.add_argument("--all", action="store_true",
-                    help="property + county + moths + butterflies + mammals + plants + amphibians + taxonomy + stats + weather")
+                    help="property + county + moths + butterflies + mammals + plants + amphibians + reptiles + taxonomy + stats + weather")
     args = ap.parse_args()
 
     flags = [args.property, args.county, args.moths, args.butterflies, args.mammals,
-             args.plants, args.amphibians, args.taxonomy, args.stats, args.weather,
-             args.all]
+             args.plants, args.amphibians, args.reptiles, args.taxonomy, args.stats,
+             args.weather, args.all]
     if not any(flags):
         ap.print_help()
         return
@@ -71,6 +73,9 @@ def main():
     if args.all or args.amphibians:
         fetch.sync_amphibians()
         fetch.sync_region_amphibians()
+    if args.all or args.reptiles:
+        fetch.sync_reptiles()
+        fetch.sync_region_reptiles()
     if args.all or args.taxonomy:
         fetch.sync_taxonomy()
     if args.all or args.stats:

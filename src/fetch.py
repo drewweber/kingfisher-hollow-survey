@@ -3,7 +3,7 @@
 import inat_api
 from config import (AMPHIBIA_TAXON_ID, BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID,
                     LEPIDOPTERA_TAXON_ID, MAMMALIA_TAXON_ID, PLANTAE_TAXON_ID,
-                    PROPERTY_PROJECT_ID, REGION_RADIUS_KM)
+                    PROPERTY_PROJECT_ID, REGION_RADIUS_KM, REPTILIA_TAXON_ID)
 from db import connect, max_id, record_sync
 
 
@@ -311,6 +311,28 @@ def sync_region_amphibians():
                      lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
                      taxon_id=AMPHIBIA_TAXON_ID)
     print(f"[region-amphibians] {n} amphibian species within {REGION_RADIUS_KM} km")
+    return n, 0
+
+
+def sync_reptiles():
+    """Reptile roster for the project."""
+    n = _sync_roster("reptile_taxa", "obs_count",
+                     project_id=PROPERTY_PROJECT_ID,
+                     taxon_id=REPTILIA_TAXON_ID)
+    print(f"[reptiles] {n} reptile species")
+    return n, 0
+
+
+def sync_region_reptiles():
+    """Reptiles recorded within REGION_RADIUS_KM of the property."""
+    lat, lng = _property_center()
+    if lat is None:
+        print("[region-reptiles] no property coordinates yet; skipping")
+        return 0, 0
+    n = _sync_roster("region_reptile_taxa", "region_count",
+                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                     taxon_id=REPTILIA_TAXON_ID)
+    print(f"[region-reptiles] {n} reptile species within {REGION_RADIUS_KM} km")
     return n, 0
 
 

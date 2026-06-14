@@ -140,6 +140,22 @@ CREATE TABLE IF NOT EXISTS region_amphibian_taxa (
     photo_url    TEXT
 );
 
+CREATE TABLE IF NOT EXISTS reptile_taxa (
+    taxon_id    INTEGER PRIMARY KEY,
+    taxon_name  TEXT,
+    common_name TEXT,
+    obs_count   INTEGER,
+    photo_url   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS region_reptile_taxa (
+    taxon_id     INTEGER PRIMARY KEY,
+    taxon_name   TEXT,
+    common_name  TEXT,
+    region_count INTEGER,
+    photo_url    TEXT
+);
+
 CREATE TABLE IF NOT EXISTS region_plant_taxa (
     taxon_id     INTEGER PRIMARY KEY,
     taxon_name   TEXT,

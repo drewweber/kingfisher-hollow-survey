@@ -451,52 +451,79 @@ def moth_showcase(highlights):
             + "".join(cards) + "</div>") if cards else ""
 
 
-def _gap_photo_grid(missing, placeholder="?"):
-    """Shared photo grid for any taxa gap list DataFrame."""
+_GRID_CLASSES = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+
+
+def _taxa_card(r, placeholder, gmax):
+    cc = int(r["ref_count"])
+    bar_pct = max(4, round(100 * cc / gmax))
+    taxon_id = r.get("taxon_id")
+    common = r["label"]
+    sci = r.get("taxon_name", "")
+    photo_url = r.get("photo_url") or ""
+    inat_url = f"https://www.inaturalist.org/taxa/{taxon_id}" if taxon_id else "#"
+    if photo_url:
+        photo_html = (
+            f'<img src="{esc(photo_url)}" alt="{esc(common)}" loading="lazy" '
+            f'class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">'
+        )
+    else:
+        photo_html = (
+            f'<div class="w-full h-full flex items-center justify-center">'
+            f'<span class="text-white/20 text-3xl">{placeholder}</span></div>'
+        )
+    return (
+        f'<a href="{inat_url}" target="_blank" rel="noopener" '
+        f'class="group relative block rounded-xl overflow-hidden bg-white/[0.04] '
+        f'border border-white/10 hover:border-hollow-400/60 transition-colors">'
+        f'  <div class="aspect-square overflow-hidden bg-white/5">{photo_html}</div>'
+        f'  <div class="p-2.5">'
+        f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
+        f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
+        f'    <div class="mt-2 flex items-center justify-between gap-1">'
+        f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
+        f'        <div class="h-1 rounded-full" style="width:{bar_pct}%;background:#8ec8b1"></div>'
+        f'      </div>'
+        f'      <span class="text-[0.65rem] text-hollow-300 font-medium ml-1.5 whitespace-nowrap">{cc}×</span>'
+        f'    </div>'
+        f'  </div>'
+        f'</a>'
+    )
+
+
+def _gap_photo_grid(missing, placeholder="?", group_by=None):
+    """Shared photo grid for any taxa DataFrame.
+
+    When group_by is set (e.g. "family_name"), renders each taxonomic group
+    with a small header label and its own sub-grid, using family_common as
+    the display name (falling back to family_name when unavailable).
+    """
     if missing is None or missing.empty:
         return '<p class="text-center text-white/50 py-8">No gap data yet.</p>'
     gmax = max(int(r["ref_count"]) for _, r in missing.iterrows()) or 1
-    cards = []
-    for _, r in missing.iterrows():
-        cc = int(r["ref_count"])
-        bar_pct = max(4, round(100 * cc / gmax))
-        taxon_id = r.get("taxon_id")
-        common = r["label"]
-        sci = r.get("taxon_name", "")
-        photo_url = r.get("photo_url") or ""
-        inat_url = f"https://www.inaturalist.org/taxa/{taxon_id}" if taxon_id else "#"
-        if photo_url:
-            photo_html = (
-                f'<img src="{esc(photo_url)}" alt="{esc(common)}" loading="lazy" '
-                f'class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">'
-            )
+
+    if not group_by or group_by not in missing.columns:
+        cards = [_taxa_card(r, placeholder, gmax) for _, r in missing.iterrows()]
+        return f'<div class="{_GRID_CLASSES}">' + "".join(cards) + "</div>"
+
+    parts = []
+    for key, group in missing.groupby(group_by, sort=False):
+        label_col = "family_common" if "family_common" in missing.columns else group_by
+        raw_label = group.iloc[0].get(label_col) or key or ""
+        # Show "Scientific · Common" when both available, otherwise whichever exists
+        sci_label = key if group_by == "family_name" else ""
+        if sci_label and raw_label and raw_label != sci_label:
+            header_text = f"{sci_label} · {raw_label}"
         else:
-            photo_html = (
-                f'<div class="w-full h-full flex items-center justify-center">'
-                f'<span class="text-white/20 text-3xl">{placeholder}</span></div>'
-            )
-        cards.append(
-            f'<a href="{inat_url}" target="_blank" rel="noopener" '
-            f'class="group relative block rounded-xl overflow-hidden bg-white/[0.04] '
-            f'border border-white/10 hover:border-hollow-400/60 transition-colors">'
-            f'  <div class="aspect-square overflow-hidden bg-white/5">{photo_html}</div>'
-            f'  <div class="p-2.5">'
-            f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
-            f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
-            f'    <div class="mt-2 flex items-center justify-between gap-1">'
-            f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
-            f'        <div class="h-1 rounded-full" style="width:{bar_pct}%;background:#8ec8b1"></div>'
-            f'      </div>'
-            f'      <span class="text-[0.65rem] text-hollow-300 font-medium ml-1.5 whitespace-nowrap">{cc}×</span>'
-            f'    </div>'
-            f'  </div>'
-            f'</a>'
+            header_text = raw_label or sci_label
+        header = (
+            f'<p class="text-[0.7rem] font-semibold tracking-[0.12em] uppercase '
+            f'text-white/35 mt-5 mb-2 first:mt-0">{esc(header_text)}</p>'
         )
-    return (
-        '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">'
-        + "".join(cards)
-        + "</div>"
-    )
+        cards = [_taxa_card(r, placeholder, gmax) for _, r in group.iterrows()]
+        parts.append(header + f'<div class="{_GRID_CLASSES}">' + "".join(cards) + "</div>")
+
+    return "".join(parts)
 
 
 def moth_gap_body(gap):
@@ -537,11 +564,11 @@ def mammal_gap_body(gap):
 
 
 def amphibian_found_body(found):
-    """Amphibians recorded on the property — photo grid, most-recorded first."""
+    """Amphibians recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
         return ('<p class="text-center text-white/50 py-8">Amphibian roster not '
                 'synced yet.</p>')
-    return _gap_photo_grid(found, placeholder="🐸")
+    return _gap_photo_grid(found, placeholder="🐸", group_by="family_name")
 
 
 def amphibian_gap_body(gap):
@@ -559,11 +586,11 @@ def amphibian_gap_body(gap):
 
 
 def butterfly_found_body(found):
-    """Butterflies recorded on the property — photo grid, most-recorded first."""
+    """Butterflies recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
         return ('<p class="text-center text-white/50 py-8">Butterfly roster not '
                 'synced yet.</p>')
-    return _gap_photo_grid(found, placeholder="🦋")
+    return _gap_photo_grid(found, placeholder="🦋", group_by="family_name")
 
 
 def butterfly_gap_body(gap):
@@ -581,19 +608,41 @@ def butterfly_gap_body(gap):
 
 
 def mammal_found_body(found):
-    """Mammals recorded on the property — photo grid, most-recorded first."""
+    """Mammals recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
         return ('<p class="text-center text-white/50 py-8">Mammal roster not '
                 'synced yet.</p>')
-    return _gap_photo_grid(found, placeholder="🦊")
+    return _gap_photo_grid(found, placeholder="🦊", group_by="family_name")
 
 
 def plant_found_body(found):
-    """Plants recorded on the property — photo grid, most-recorded first."""
+    """Plants recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
         return ('<p class="text-center text-white/50 py-8">Plant roster not '
                 'synced yet.</p>')
-    return _gap_photo_grid(found, placeholder="🌿")
+    return _gap_photo_grid(found, placeholder="🌿", group_by="family_name")
+
+
+def reptile_found_body(found):
+    """Reptiles recorded on the property — photo grid, grouped by family."""
+    if found is None or found.empty:
+        return ('<p class="text-center text-white/50 py-8">Reptile roster not '
+                'synced yet.</p>')
+    return _gap_photo_grid(found, placeholder="🐍", group_by="family_name")
+
+
+def reptile_gap_body(gap):
+    """Regional reptiles not yet documented — photo grid."""
+    if not gap or gap.get("missing_count", 0) == 0:
+        return '<p class="text-center text-white/50">No gap data yet.</p>'
+    miles = round(gap.get("region_radius_km", 80) / 1.609)
+    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+            f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
+            f'<strong class="text-hollow-300">{gap["region_total"]}</strong> reptile species recorded within '
+            f'~{miles} miles have turned up here. '
+            f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
+            f'are documented in the surrounding region but not yet here — ranked by how common they are nearby.</p>')
+    return lead + _gap_photo_grid(gap["missing"], placeholder="🐍")
 
 
 def plant_gap_body(gap):
@@ -998,14 +1047,14 @@ def nav():
                     ("#mammal-methods", "Find More")]
     plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
                    ("#plant-methods", "Find More")]
-    amphibian_links = [("#amphibians", "Found"), ("#amphibian-gap", "Gap List"),
-                       ("#amphibian-methods", "Find More")]
+    amphibian_links = [("#amphibians", "Amphibians"), ("#reptiles-found", "Reptiles"),
+                       ("#amphibian-gap", "Gap List"), ("#amphibian-methods", "Find More")]
     log_links = [("#log-journal", "Field Journal")]
 
     # One source of truth for the view switcher, used by both toggles.
     modes = [("all", "All life"), ("moths", "Moths"), ("butterflies", "Butterflies"),
              ("mammals", "Mammals"), ("plants", "Plants"),
-             ("amphibians", "Amphibians"), ("log", "Log")]
+             ("amphibians", "Herps"), ("log", "Log")]
 
     def mode_buttons():
         return "".join(
@@ -1454,52 +1503,65 @@ def plants_view(df, stats):
 
 
 def amphibians_view(df, stats):
-    """Dark amphibians view: what's been found + the regional gap list."""
+    """Dark herps view: amphibians + reptiles found + combined gap list."""
     amphibians = analyze.load_amphibians()
-    gap = analyze.amphibian_gap(amphibians, n=30)
-    found = analyze.amphibian_found(df, amphibians) if not amphibians.empty else amphibians
+    reptiles = analyze.load_reptiles()
+    amp_gap = analyze.amphibian_gap(amphibians, n=25)
+    rep_gap = analyze.reptile_gap(reptiles, n=25)
+    amp_found = analyze.amphibian_found(df, amphibians) if not amphibians.empty else amphibians
+    rep_found = analyze.reptile_found(df, reptiles) if not reptiles.empty else reptiles
     asum = (analyze.amphibian_summary(df, amphibians) if not amphibians.empty
+            else {"species": 0, "records": 0, "top_month": ""})
+    rsum = (analyze.reptile_summary(df, reptiles) if not reptiles.empty
             else {"species": 0, "records": 0, "top_month": ""})
     stats_band = (
         '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
         + _dark_divider().join([
             _dark_stat(str(asum["species"]), "amphibian species"),
-            _dark_stat(str(asum["records"]), "total records"),
-            _dark_stat(asum.get("top_month") or "—", "peak month"),
+            _dark_stat(str(rsum["species"]), "reptile species"),
+            _dark_stat(str(asum["records"] + rsum["records"]), "total records"),
         ]) + '</div>')
     out = []
     out.append(section(
         "amphibians", "At the Water's Edge",
         'The <em class="text-hollow-300">Amphibians</em>',
-        stats_band
-        + takeaway(
+        takeaway(
             "Ten species is already a well-rounded cross-section for an incidental list: three frog families "
             "and three of the four salamander families, including two woodland Plethodon and the vernal-pool "
             "spotted salamander documented breeding this spring. Northern slimy salamander, a mesic-slope "
             "species that's harder to log, reached research grade last fall and signals good forest-floor "
             "quality. What's missing tells the rest of the story: no stream salamanders despite ideal riffles, "
             "which is a gap in effort, not absence.", dark=True)
-        + amphibian_found_body(found),
+        + amphibian_found_body(amp_found),
         intro="Frogs and salamanders are the truest test of a stream. They breathe through wet skin, "
               "breed in the creek and its seeps, and vanish when water quality slips — so every species here "
               "says Michigan Creek is still clean. The count below is low for this habitat, and that gap is "
               "about survey effort, not absence.",
         dark=True))
     out.append(section(
+        "reptiles-found", "Sun & Scale",
+        'The <em class="text-hollow-300">Reptiles</em>',
+        stats_band + reptile_found_body(rep_found),
+        intro="Snakes, turtles, and lizards are all present but rarely the focus of an iNat walk. "
+              "Most records here are incidental — a garter snake on the trail, a painted turtle on a log. "
+              "A few slow surveys along the creek and forest edges would add several species quickly.",
+        dark=True))
+    out.append(section(
         "amphibian-gap", "Yet to Find",
-        'Amphibian <em class="text-hollow-300">Gap List</em>',
-        amphibian_gap_body(gap),
-        intro="Amphibians recorded within ~50 miles but not yet documented here, ranked by how common they "
-              "are nearby. The stream salamanders near the top are the likeliest finds: flip flat rocks in the "
-              "riffles on a cool, wet night.",
+        'Herp <em class="text-hollow-300">Gap List</em>',
+        '<h3 class="text-sm font-semibold tracking-widest uppercase text-white/40 mb-3">Amphibians</h3>'
+        + amphibian_gap_body(amp_gap)
+        + '<h3 class="text-sm font-semibold tracking-widest uppercase text-white/40 mt-8 mb-3">Reptiles</h3>'
+        + reptile_gap_body(rep_gap),
+        intro="Species recorded within ~50 miles but not yet documented here, ranked by how common they "
+              "are nearby.",
         dark=True))
     out.append(section(
         "amphibian-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(AMPHIBIAN_METHODS),
-        intro="Ten species, almost all of it incidental. Targeted stream and vernal-pool work is how the "
-              "salamanders get added, and most of it is daytime rock-flipping. Where, when, and what each "
-              "method turns up.",
+        intro="Most herp records here are incidental. Targeted stream, rock-flipping, and basking-spot "
+              "surveys are how the list grows. Where, when, and what each method turns up.",
         dark=True))
     return "".join(out)
 
