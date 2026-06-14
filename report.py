@@ -506,8 +506,9 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
         cards = [_taxa_card(r, placeholder, gmax) for _, r in missing.iterrows()]
         return f'<div class="{_GRID_CLASSES}">' + "".join(cards) + "</div>"
 
-    # Single flat grid — col-span-full headers act as inline row-breaks so cards
-    # stay in uniform columns while families are visually separated.
+    # Single continuous grid — family label sits above the first card of each
+    # group inside the same grid slot so items flow across family boundaries
+    # and every column fills uniformly. items-start keeps rows top-aligned.
     items = []
     for key, group in missing.groupby(group_by, sort=False):
         label_col = "family_common" if "family_common" in missing.columns else group_by
@@ -517,14 +518,20 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
             header_text = f"{sci_label} · {raw_label}"
         else:
             header_text = raw_label or sci_label
-        items.append(
-            f'<div class="col-span-full pt-5 first:pt-0 pb-1 text-[0.68rem] font-semibold '
-            f'tracking-[0.14em] uppercase text-white/35 border-t border-white/[0.06] '
-            f'first:border-t-0">{esc(header_text)}</div>'
-        )
-        items.extend(_taxa_card(r, placeholder, gmax) for _, r in group.iterrows())
+        for i, (_, r) in enumerate(group.iterrows()):
+            card = _taxa_card(r, placeholder, gmax)
+            if i == 0 and header_text:
+                items.append(
+                    f'<div class="flex flex-col gap-1">'
+                    f'<div class="text-[0.62rem] font-semibold tracking-[0.1em] uppercase '
+                    f'text-white/30 truncate">{esc(header_text)}</div>'
+                    + card +
+                    f'</div>'
+                )
+            else:
+                items.append(card)
 
-    return f'<div class="{_GRID_CLASSES}">' + "".join(items) + "</div>"
+    return f'<div class="{_GRID_CLASSES} items-start">' + "".join(items) + "</div>"
 
 
 def moth_gap_body(gap):
