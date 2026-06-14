@@ -580,6 +580,22 @@ def butterfly_gap_body(gap):
     return lead + _gap_photo_grid(gap["missing"], placeholder="🦋")
 
 
+def mammal_found_body(found):
+    """Mammals recorded on the property — photo grid, most-recorded first."""
+    if found is None or found.empty:
+        return ('<p class="text-center text-white/50 py-8">Mammal roster not '
+                'synced yet.</p>')
+    return _gap_photo_grid(found, placeholder="🦊")
+
+
+def plant_found_body(found):
+    """Plants recorded on the property — photo grid, most-recorded first."""
+    if found is None or found.empty:
+        return ('<p class="text-center text-white/50 py-8">Plant roster not '
+                'synced yet.</p>')
+    return _gap_photo_grid(found, placeholder="🌿")
+
+
 def plant_gap_body(gap):
     """Regional plants not yet documented — photo grid."""
     if not gap or gap.get("missing_count", 0) == 0:
@@ -978,9 +994,9 @@ def nav():
                   ("#moth-calendar", "Calendar"), ("#moth-methods", "Find More")]
     butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List"),
                        ("#butterfly-methods", "Find More")]
-    mammal_links = [("#mammals", "Overview"), ("#mammal-gap", "Gap List"),
+    mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
                     ("#mammal-methods", "Find More")]
-    plant_links = [("#plants", "Overview"), ("#plant-gap", "Gap List"),
+    plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
                    ("#plant-methods", "Find More")]
     amphibian_links = [("#amphibians", "Found"), ("#amphibian-gap", "Gap List"),
                        ("#amphibian-methods", "Find More")]
@@ -1341,12 +1357,13 @@ def moth_view(df, stats):
 
 
 def mammals_view(df, stats):
-    """Dark mammals view: stats band + regional gap list."""
+    """Dark mammals view: stats band + found grid + regional gap list."""
     import datetime as _dt
     mammals = analyze.load_mammals()
     _today = _dt.date.today()
     target_months = sorted({_today.month, (_today + _dt.timedelta(days=14)).month})
     gap = analyze.mammal_gap(mammals, n=30, target_months=target_months)
+    found = analyze.mammal_found(df, mammals) if not mammals.empty else mammals
     msum = analyze.mammal_summary(df, mammals) if not mammals.empty else {"species": 0, "records": 0, "top_month": ""}
     stats_band = (
         '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
@@ -1366,7 +1383,8 @@ def mammals_view(df, stats):
             "on a parcel this small is the mark of the Michigan Creek corridor working as a travel route, with "
             "the stream-tied fisher and mink the most-documented of them. Groundhog and red squirrel both "
             "landed this June as first property records, and the rarest holding stays the eastern woodland "
-            "jumping mouse, a riparian-forest indicator with only two records in all of Tioga County.", dark=True),
+            "jumping mouse, a riparian-forest indicator with only two records in all of Tioga County.", dark=True)
+        + mammal_found_body(found),
         intro="Many of the property's mammals leave traces — tracks, scat, camera — before they appear in iNaturalist. The species count here understates what's actually present.",
         dark=True))
     out.append(section(
@@ -1386,12 +1404,13 @@ def mammals_view(df, stats):
 
 
 def plants_view(df, stats):
-    """Dark plants view: stats band + regional gap list."""
+    """Dark plants view: stats band + found grid + regional gap list."""
     import datetime as _dt
     plants = analyze.load_plants()
     _today = _dt.date.today()
     target_months = sorted({_today.month, (_today + _dt.timedelta(days=14)).month})
     gap = analyze.plant_gap(plants, n=50, target_months=target_months)
+    found = analyze.plant_found(df, plants) if not plants.empty else plants
     psum = analyze.plant_summary(df, plants) if not plants.empty else {"species": 0, "records": 0, "top_month": ""}
     stats_band = (
         '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
@@ -1411,7 +1430,8 @@ def plants_view(df, stats):
             "blue flag iris. Two genera that should be the property's strongest insect hosts are still nearly "
             "blank, though, with Salix unrecorded and Carex down to a single species. Both are expected along "
             "Michigan Creek and undersampled rather than absent, so the plant list still has room to grow where "
-            "it would matter most.", dark=True),
+            "it would matter most.", dark=True)
+        + plant_found_body(found),
         intro="220 plant species on 30 acres, and the signature is woody-genus depth: four oaks and three "
               "hickories, the two genera that anchor northeastern caterpillar diversity. Each genus recorded "
               "here is a potential host for specialist moth and insect guilds, which makes the plant list the "

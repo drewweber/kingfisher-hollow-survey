@@ -434,6 +434,18 @@ def mammal_summary(df, mammals):
 _EXCLUDE_FROM_MAMMALS = {43584}  # Homo sapiens
 
 
+def mammal_found(df, mammals):
+    """Recorded mammals as a gap-grid-shaped DataFrame (label/ref_count/photo)."""
+    if mammals.empty:
+        return mammals
+    found = mammals[~mammals["taxon_id"].isin(_EXCLUDE_FROM_MAMMALS)].copy()
+    counts = (df[df["taxon_id"].isin(set(found["taxon_id"].dropna()))]
+              .groupby("taxon_id").size())
+    found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
+    found["label"] = found["common_name"].fillna(found["taxon_name"])
+    return found.sort_values("ref_count", ascending=False)
+
+
 def mammal_gap(mammals, n=30, target_months=None):
     gap = _region_gap(mammals, "region_mammal_taxa", n=n + 5, target_months=target_months)
     gap["missing"] = gap["missing"][
@@ -456,6 +468,18 @@ def plant_summary(df, plants):
         "records": int(len(sub)),
         "top_month": _peak_month(sub) if not sub.empty else "",
     }
+
+
+def plant_found(df, plants):
+    """Recorded plants as a gap-grid-shaped DataFrame (label/ref_count/photo)."""
+    if plants.empty:
+        return plants
+    found = plants.copy()
+    counts = (df[df["taxon_id"].isin(set(found["taxon_id"].dropna()))]
+              .groupby("taxon_id").size())
+    found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
+    found["label"] = found["common_name"].fillna(found["taxon_name"])
+    return found.sort_values("ref_count", ascending=False)
 
 
 def plant_gap(plants, n=50, target_months=None):
