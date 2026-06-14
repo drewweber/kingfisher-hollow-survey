@@ -506,24 +506,25 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
         cards = [_taxa_card(r, placeholder, gmax) for _, r in missing.iterrows()]
         return f'<div class="{_GRID_CLASSES}">' + "".join(cards) + "</div>"
 
-    parts = []
+    # Single flat grid — col-span-full headers act as inline row-breaks so cards
+    # stay in uniform columns while families are visually separated.
+    items = []
     for key, group in missing.groupby(group_by, sort=False):
         label_col = "family_common" if "family_common" in missing.columns else group_by
-        raw_label = group.iloc[0].get(label_col) or key or ""
-        # Show "Scientific · Common" when both available, otherwise whichever exists
+        raw_label = group.iloc[0].get(label_col) or ""
         sci_label = key if group_by == "family_name" else ""
         if sci_label and raw_label and raw_label != sci_label:
             header_text = f"{sci_label} · {raw_label}"
         else:
             header_text = raw_label or sci_label
-        header = (
-            f'<p class="text-[0.7rem] font-semibold tracking-[0.12em] uppercase '
-            f'text-white/35 mt-5 mb-2 first:mt-0">{esc(header_text)}</p>'
+        items.append(
+            f'<div class="col-span-full pt-5 first:pt-0 pb-1 text-[0.68rem] font-semibold '
+            f'tracking-[0.14em] uppercase text-white/35 border-t border-white/[0.06] '
+            f'first:border-t-0">{esc(header_text)}</div>'
         )
-        cards = [_taxa_card(r, placeholder, gmax) for _, r in group.iterrows()]
-        parts.append(header + f'<div class="{_GRID_CLASSES}">' + "".join(cards) + "</div>")
+        items.extend(_taxa_card(r, placeholder, gmax) for _, r in group.iterrows())
 
-    return "".join(parts)
+    return f'<div class="{_GRID_CLASSES}">' + "".join(items) + "</div>"
 
 
 def moth_gap_body(gap):
