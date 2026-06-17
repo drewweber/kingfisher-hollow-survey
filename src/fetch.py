@@ -280,15 +280,19 @@ def _restore_plant_groups(table):
     import contextlib
     @contextlib.contextmanager
     def _ctx():
+        # Ensure column exists (fresh CI database won't have it)
+        with connect() as conn:
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN plant_group TEXT")
+            except Exception:
+                pass  # already exists
+
         # 1. Save current mappings
         saved = {}
-        try:
-            with connect() as conn:
-                for row in conn.execute(
-                        f"SELECT taxon_id, plant_group FROM {table} WHERE plant_group IS NOT NULL"):
-                    saved[row[0]] = row[1]
-        except Exception:
-            pass
+        with connect() as conn:
+            for row in conn.execute(
+                    f"SELECT taxon_id, plant_group FROM {table} WHERE plant_group IS NOT NULL"):
+                saved[row[0]] = row[1]
 
         yield  # sync runs here
 
