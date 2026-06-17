@@ -1141,34 +1141,65 @@ def nav():
 </nav>"""
 
 
-def _git_date():
-    """Last commit date of the repo (when the code last changed), MM/DD/YYYY."""
+def _fmt_dt(dt):
+    """Format a datetime as 'Jun 17 · 8:13am' — no leading zeros, lowercase am/pm."""
+    h = dt.hour % 12 or 12
+    ampm = "am" if dt.hour < 12 else "pm"
+    return f"{dt.strftime('%b')} {dt.day} · {h}:{dt.strftime('%M')}{ampm}"
+
+
+def _code_updated():
+    """Last commit to report.py or src/ that isn't a nightly CI chore or agent-copy commit."""
     try:
         out = subprocess.run(
-            ["git", "-C", str(Path(__file__).resolve().parent), "log", "-1", "--format=%cI"],
+            ["git", "-C", str(Path(__file__).resolve().parent),
+             "log", "--format=%cI\t%s", "--", "report.py", "src/"],
+            capture_output=True, text=True, timeout=10)
+        for line in (out.stdout or "").splitlines():
+            iso, _, subject = line.partition("\t")
+            if not iso.strip():
+                continue
+            if "[skip ci]" in subject or "Co-Authored-By" in subject:
+                continue
+            return _fmt_dt(datetime.fromisoformat(iso.strip()).astimezone())
+    except (subprocess.SubprocessError, ValueError, OSError):
+        pass
+    return _fmt_dt(datetime.fromtimestamp(Path(__file__).stat().st_mtime).astimezone())
+
+
+def _insights_updated():
+    """Last commit where an AI agent wrote or refreshed content (Co-Authored-By: Claude)."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(Path(__file__).resolve().parent),
+             "log", "-1", "--format=%cI", "--grep=Co-Authored-By: Claude"],
             capture_output=True, text=True, timeout=10)
         iso = (out.stdout or "").strip()
         if iso:
-            return datetime.fromisoformat(iso).strftime("%m/%d/%Y")
+            return _fmt_dt(datetime.fromisoformat(iso).astimezone())
     except (subprocess.SubprocessError, ValueError, OSError):
         pass
-    # Fallback: this file's modification time.
-    return datetime.fromtimestamp(Path(__file__).stat().st_mtime).strftime("%m/%d/%Y")
+    return "—"
 
 
 def data_updated_date():
-    """When the data was last refreshed — the most recent sync, MM/DD/YYYY UTC."""
+    """When the iNat data was last synced."""
     try:
         with connect() as conn:
             row = conn.execute("SELECT MAX(synced_at) AS t FROM sync_log").fetchone()
         if row and row["t"]:
-            return datetime.fromisoformat(row["t"].replace(" ", "T")).strftime("%m/%d/%Y")
+            return _fmt_dt(datetime.fromisoformat(row["t"].replace(" ", "T")).astimezone())
     except Exception:
         pass
-    return datetime.now(timezone.utc).strftime("%m/%d/%Y")
+    return _fmt_dt(datetime.now(timezone.utc).astimezone())
 
 
-def footer(code_updated, data_updated):
+def footer(code_updated, insights_updated, data_updated):
+    def ts(label, value):
+        return (f'<span class="flex flex-col items-center gap-0.5">'
+                f'<span class="text-white/25 text-[0.6rem] uppercase tracking-[0.15em]">{label}</span>'
+                f'<strong class="text-white/60 font-medium">{value}</strong>'
+                f'</span>')
     return f"""
 <footer class="bg-hollow-950 py-12 px-6">
   <div class="max-w-6xl mx-auto">
@@ -1181,10 +1212,12 @@ def footer(code_updated, data_updated):
         <a href="{PROJECT_URL}" target="_blank" rel="noopener" class="hover:text-white/75 transition-colors">iNaturalist project ↗</a>
       </nav>
     </div>
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-1 text-white/40 text-xs tracking-wide mb-2">
-      <span>Data last updated <strong class="text-white/60">{data_updated}</strong></span>
-      <span class="hidden sm:inline text-white/20">·</span>
-      <span>Code last updated <strong class="text-white/60">{code_updated}</strong></span>
+    <div class="flex flex-wrap items-start justify-center gap-x-8 gap-y-3 text-xs tracking-wide mb-4">
+      {ts("Data synced", data_updated)}
+      <span class="hidden sm:inline text-white/15 self-center">·</span>
+      {ts("Insights updated", insights_updated)}
+      <span class="hidden sm:inline text-white/15 self-center">·</span>
+      {ts("Code updated", code_updated)}
     </div>
     <p class="text-center text-white/25 text-xs tracking-wide">Data from iNaturalist · Photos © their respective observers · Survey ongoing June 2025–2026</p>
   </div>
@@ -1974,7 +2007,7 @@ def build():
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
     parts.append('</div>')  # /view-log
 
-    parts.append(footer(_git_date(), data_updated_date()))
+    parts.append(footer(_code_updated(), _insights_updated(), data_updated_date()))
     parts.append(SCRIPTS)
 
     html = "".join(parts)
