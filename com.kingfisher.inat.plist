@@ -8,11 +8,11 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data/run.sh</string>
+        <string>/Users/ajw293/Documents/Development/kingfisher-hollow-sites/inat-data/run.sh</string>
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data</string>
+    <string>/Users/ajw293/Documents/Development/kingfisher-hollow-sites/inat-data</string>
 
     <!-- Run daily at 05:10 local time. launchd will run a missed job once
          the Mac next wakes, so overnight discoveries are still picked up. -->
@@ -23,8 +23,8 @@
     </dict>
 
     <key>StandardOutPath</key>
-    <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data/logs/run.out.log</string>
+    <string>/Users/ajw293/Documents/Development/kingfisher-hollow-sites/inat-data/logs/run.out.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/ajw293/Documents/Development/claude-code-working-dir/inat-data/logs/run.err.log</string>
+    <string>/Users/ajw293/Documents/Development/kingfisher-hollow-sites/inat-data/logs/run.err.log</string>
 </dict>
 </plist>
