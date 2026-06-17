@@ -132,7 +132,7 @@ def takeaway(text, dark=False):
     else:
         border, badge, body = "border-hollow-500", "text-hollow-600", "text-stone-600"
         bg = "bg-hollow-50"
-    return (f'<div class="mt-6 max-w-2xl mx-auto border-l-2 {border} {bg} rounded-r-lg px-5 py-4">'
+    return (f'<div class="mt-6 mb-10 max-w-2xl mx-auto border-l-2 {border} {bg} rounded-r-lg px-5 py-4">'
             f'<span class="{badge} text-[0.62rem] font-semibold tracking-[0.18em] uppercase">'
             f'What this shows</span>'
             f'<p class="{body} text-[0.97rem] leading-relaxed mt-1.5">{text}</p></div>')
@@ -390,11 +390,11 @@ def property_profile_body():
     )
     col3 = (
         '<div class="space-y-3">'
-        + _dark_stat("220 species · 30 acres", "Host Plants")
+        + _dark_stat("250 species · 30 acres", "Host Plants")
         + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
         '2–3× the NY mixed-hardwood baseline. Eastern Lepidoptera are mostly host-plant specialists; '
-        '220 plants × ~1.8 predicted moths per plant species predicts ~396. '
-        'Observed: 510 — the triple-province ecotone accounts for the surplus.'
+        '250 plants × ~1.8 predicted moths per plant species predicts ~450. '
+        'Observed: 529 — the creek concentrates the high-value host genera, which pushes the count above the prediction.'
         '</p></div>'
     )
     return (
@@ -506,9 +506,10 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
         cards = [_taxa_card(r, placeholder, gmax) for _, r in missing.iterrows()]
         return f'<div class="{_GRID_CLASSES}">' + "".join(cards) + "</div>"
 
-    # Single continuous grid — family label sits above the first card of each
-    # group inside the same grid slot so items flow across family boundaries
-    # and every column fills uniformly. items-start keeps rows top-aligned.
+    # Every cell gets an identical fixed-height label slot so the grid stays
+    # aligned. The first card of each family shows the label text; all others
+    # get an invisible placeholder of the same height.
+    LABEL_SLOT = '<div class="h-4 mb-1"></div>'
     items = []
     for key, group in missing.groupby(group_by, sort=False):
         label_col = "family_common" if "family_common" in missing.columns else group_by
@@ -519,19 +520,15 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
         else:
             header_text = raw_label or sci_label
         for i, (_, r) in enumerate(group.iterrows()):
-            card = _taxa_card(r, placeholder, gmax)
             if i == 0 and header_text:
-                items.append(
-                    f'<div class="flex flex-col gap-1">'
-                    f'<div class="text-[0.62rem] font-semibold tracking-[0.1em] uppercase '
-                    f'text-white/30 truncate">{esc(header_text)}</div>'
-                    + card +
-                    f'</div>'
-                )
+                label = (f'<div class="h-4 mb-1 text-[0.62rem] font-semibold '
+                         f'tracking-[0.1em] uppercase text-white/30 truncate">'
+                         f'{esc(header_text)}</div>')
             else:
-                items.append(card)
+                label = LABEL_SLOT
+            items.append(f'<div class="flex flex-col">{label}{_taxa_card(r, placeholder, gmax)}</div>')
 
-    return f'<div class="{_GRID_CLASSES} items-start">' + "".join(items) + "</div>"
+    return f'<div class="{_GRID_CLASSES}">' + "".join(items) + "</div>"
 
 
 def moth_gap_body(gap):
@@ -624,11 +621,34 @@ def mammal_found_body(found):
 
 
 def plant_found_body(found):
-    """Plants recorded on the property — photo grid, grouped by family."""
+    """Plants recorded on the property — four major group sections, each family-grouped."""
     if found is None or found.empty:
         return ('<p class="text-center text-white/50 py-8">Plant roster not '
                 'synced yet.</p>')
-    return _gap_photo_grid(found, placeholder="🌿", group_by="family_name")
+
+    GROUP_META = [
+        ("Angiosperm",        "Angiosperms",              "Flowering seed plants — the largest group on Earth, encompassing all broadleaf trees, shrubs, wildflowers, and grasses. Seeds are enclosed inside a fruit or ovary."),
+        ("Seedless Vascular", "Seedless Vascular Plants", "Plants with vascular tissue (xylem and phloem) that reproduce by spores rather than seeds. Ferns and horsetails."),
+        ("Gymnosperm",        "Gymnosperms",              "Non-flowering seed plants with \"naked\" seeds not enclosed in an ovary. Conifers — pines, hemlocks, redcedar."),
+        ("Bryophyte",         "Bryophytes",               "Non-vascular plants — mosses, liverworts, hornworts. No true roots or vascular tissue; absorb water by osmosis and reproduce by spores."),
+    ]
+
+    has_group = "plant_group" in found.columns
+    parts = []
+    for key, label, desc in GROUP_META:
+        grp = found[found["plant_group"] == key] if has_group else found
+        if grp.empty:
+            continue
+        count = len(grp)
+        header = (
+            f'<div class="mt-10 mb-4 border-t border-white/10 pt-6">'
+            f'<h3 class="text-hollow-300 text-xs font-semibold tracking-[0.18em] '
+            f'uppercase mb-1">{esc(label)} <span class="text-white/30">· {count} species</span></h3>'
+            f'<p class="text-white/45 text-xs max-w-2xl leading-relaxed">{esc(desc)}</p>'
+            f'</div>'
+        )
+        parts.append(header + _gap_photo_grid(grp, placeholder="🌿", group_by="family_name"))
+    return "".join(parts)
 
 
 def reptile_found_body(found):
@@ -960,7 +980,7 @@ def activity_log_body(log_entries, weather_cache):
 def head(s, county_firsts):
     desc = (f"Biodiversity survey of Kingfisher Hollow — {s['species']:,} species on 30 riparian acres along Michigan Creek, "
             "Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / mid-Atlantic junction: "
-            f"{county_firsts:,} county-first records, 510 moth species, plant diversity 2–3× the NY upland baseline. "
+            f"{county_firsts:,} county-first records, 529 moth species, plant diversity 2–3× the NY upland baseline. "
             "Data updated nightly.")
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1265,11 +1285,13 @@ def moth_view(df, stats):
     out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
         moth_stats(msum, comp),
-        intro="510 moth species on 30 riparian acres, and 213 of them are first iNaturalist records for "
-              "Tioga County. That concentration of range-edge rarity is the property's signature: the three-province "
-              "ecotone and Michigan Creek's humidity buffer let species from different directions co-occur on nights "
-              "too dry and cool for upland sites nearby. Nearly every one ties back to a specific plant genus in the "
-              "canopy, shrub layer, or wetland edge, and the property has 220 plant species to feed them.",
+        intro="529 moth species on 30 riparian acres, and 228 of them — 43% — are first iNaturalist records for "
+              "Tioga County. That proportion isn't shrinking as the list grows: of the most recent additions, the "
+              "majority are county firsts, which means the site is still producing genuine novelty rather than "
+              "filling in common species. The three-province ecotone and Michigan Creek's humidity buffer let "
+              "range-edge species from different directions co-occur on nights too dry and cool for upland sites "
+              "nearby. Nearly every one ties back to a specific plant genus in the canopy, shrub layer, or wetland "
+              "edge, and the property has 250 plant species to feed them.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
@@ -1307,7 +1329,7 @@ def moth_view(df, stats):
             "Nepticulidae together account for a majority of temperate moth diversity, but they need methods "
             "a UV sheet can't provide: different trap heights, sugar bait, day-beating of foliage, and often "
             "genitalic dissection to confirm an ID. Tortricidae has now reached 63 species here, so the leaf-roller "
-            "gap is starting to close. Most of the estimated 210 still-undiscovered species are probably "
+            "gap is starting to close. Most of the roughly 190 still-undiscovered species are probably "
             "micro-moths, and targeted work on them would push the total past 700.", dark=True),
         intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried; others have barely been touched. The undiscovered species are concentrated in specific groups.",
         dark=True))
@@ -1340,10 +1362,10 @@ def moth_view(df, stats):
             f"<strong>{comp['estimated']}</strong> species total (95% CI: {comp['low']}–{comp['high']}), "
             f"putting the survey about <strong>{comp['pct_complete']}%</strong> complete. The regional pool is "
             f"larger, but most of those species belong to habitats this property doesn't have. "
-            f"The ~720 ceiling is a realistic figure for this specific place. The roughly 210 undetected "
+            f"The ~720 ceiling is a realistic figure for this specific place. The roughly 190 undetected "
             f"species aren't evenly distributed; they're concentrated in micro-moth families that a UV sheet "
             f"samples poorly. Targeted work on Tortricidae and Gelechiidae would close most of the gap.", dark=True),
-        intro="510 species confirmed. Statistical modeling puts the true total around 720. Here's the evidence for that gap — and how fast it's closing.",
+        intro="529 species confirmed. Statistical modeling puts the true total around 720. Here's the evidence for that gap — and how fast it's closing.",
         dark=True))
     out.append(section(
         "moth-diversity", "Diversity",
@@ -1356,8 +1378,8 @@ def moth_view(df, stats):
             "A rank-abundance curve for a degraded habitat drops steeply: one or two species dominate, the "
             "rest are noise. This one doesn't. It slopes gently across hundreds of species — no single "
             "species has crowded out the rest. Ecologists call that high evenness, and it's a reliable "
-            "indicator of structurally complex habitat. The gentle slope across 510 species is what you'd "
-            "predict from a site with 220 plant species on 30 acres, each supporting distinct moth guilds, "
+            "indicator of structurally complex habitat. The gentle slope across 529 species is what you'd "
+            "predict from a site with 250 plant species on 30 acres, each supporting distinct moth guilds, "
             "with the three-province ecotone adding guild diversity on top. "
             "The long flat tail on the right — all the once-or-twice-seen species — is the frontier of "
             "what's still being found.", dark=True),
@@ -1387,7 +1409,7 @@ def moth_view(df, stats):
                      dark=True)
         + takeaway(
             "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
-            "The faint line reaches its earliest and latest confirmed dates. Read all 510 rows together and "
+            "The faint line reaches its earliest and latest confirmed dates. Read all 529 rows together and "
             "you get the season's shape: sparse in April, a sharp peak in June, a gap in July where the "
             "lights weren't running, a full second plateau through August, fading through September and "
             "October. After one field season these windows are first drafts; they'll sharpen as more nights "
@@ -1406,7 +1428,7 @@ def moth_view(df, stats):
         "moth-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MOTH_METHODS),
-        intro="510 species came almost entirely from a UV sheet, which selects for large, photo-positive "
+        intro="529 species came almost entirely from a UV sheet, which selects for large, photo-positive "
               "moths. These are the methods that reach the rest: the micro-moths, the bait-feeders, and the "
               "canopy and cold-season fliers the sheet never sees.",
         dark=True))
@@ -1435,12 +1457,12 @@ def mammals_view(df, stats):
         'The <em class="text-hollow-300">Mammals</em>',
         stats_band
         + takeaway(
-            "What stands out in 21 species is the carnivore set: nine carnivores on 30 acres, including all "
+            "What stands out in 22 species is the carnivore set: ten carnivores on 30 acres, including all "
             "three native mustelids, both foxes, and the full black bear, coyote, and bobcat trio. That density "
             "on a parcel this small is the mark of the Michigan Creek corridor working as a travel route, with "
-            "the stream-tied fisher and mink the most-documented of them. Groundhog and red squirrel both "
-            "landed this June as first property records, and the rarest holding stays the eastern woodland "
-            "jumping mouse, a riparian-forest indicator with only two records in all of Tioga County.", dark=True)
+            "the stream-tied fisher and mink the most-documented of them. Eastern cottontail is the newest "
+            "first record, logged this June. The rarest holding stays the eastern woodland jumping mouse, a "
+            "riparian-forest indicator with only two records in all of Tioga County.", dark=True)
         + mammal_found_body(found),
         intro="Many of the property's mammals leave traces — tracks, scat, camera — before they appear in iNaturalist. The species count here understates what's actually present.",
         dark=True))
@@ -1454,7 +1476,7 @@ def mammals_view(df, stats):
         "mammal-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MAMMAL_METHODS),
-        intro="21 species, and not one bat. These methods target the guilds a trail camera never catches: "
+        intro="22 species, and not one bat. These methods target the guilds a trail camera never catches: "
               "the acoustic fliers, the small mammals in the leaf litter, and the swimmers along the creek.",
         dark=True))
     return "".join(out)
@@ -1469,12 +1491,24 @@ def plants_view(df, stats):
     gap = analyze.plant_gap(plants, n=50, target_months=target_months)
     found = analyze.plant_found(df, plants) if not plants.empty else plants
     psum = analyze.plant_summary(df, plants) if not plants.empty else {"species": 0, "records": 0, "top_month": ""}
+    # Per-group counts for the secondary band
+    grp_counts = {}
+    if not plants.empty and "plant_group" in plants.columns:
+        grp_counts = plants["plant_group"].value_counts().to_dict()
     stats_band = (
-        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-4">'
         + _dark_divider().join([
             _dark_stat(str(psum["species"]), "plant species"),
             _dark_stat(str(psum["records"]), "total records"),
             _dark_stat(psum.get("top_month") or "—", "peak month"),
+        ]) + '</div>'
+        + '<div class="flex flex-wrap items-start justify-center gap-6 md:gap-10 mb-8 '
+        + 'border-t border-white/10 pt-4">'
+        + _dark_divider().join([
+            _dark_stat(str(grp_counts.get("Angiosperm", 0)),        "angiosperms",        "flowering plants"),
+            _dark_stat(str(grp_counts.get("Seedless Vascular", 0)), "seedless vascular",  "ferns &amp; allies"),
+            _dark_stat(str(grp_counts.get("Gymnosperm", 0)),        "gymnosperms",        "conifers"),
+            _dark_stat(str(grp_counts.get("Bryophyte", 0)),         "bryophytes",         "mosses &amp; allies"),
         ]) + '</div>')
     out = []
     out.append(section(
@@ -1482,14 +1516,15 @@ def plants_view(df, stats):
         'The <em class="text-hollow-300">Plants</em>',
         stats_band
         + takeaway(
-            "The oak-and-hickory backbone is what the rest of the inventory hangs on. Shagbark hickory just "
-            "completed the three-hickory set, and the creek adds the riparian layer: grape, red-osier dogwood, "
-            "blue flag iris. Two genera that should be the property's strongest insect hosts are still nearly "
-            "blank, though, with Salix unrecorded and Carex down to a single species. Both are expected along "
-            "Michigan Creek and undersampled rather than absent, so the plant list still has room to grow where "
-            "it would matter most.", dark=True)
+            "The oak-and-hickory backbone is what the rest of the inventory hangs on. The most recent pass "
+            "also filled in the aquatic layer: bur-reed, watershield, and pondweed confirmed the creek's "
+            "backwater pockets for the first time, and Cornus is now at four species — the full expected "
+            "dogwood complement. Two genera that should be the property's strongest insect hosts are still "
+            "nearly blank: Salix is down to one species (shining willow) against 26 in the regional pool, "
+            "and Carex stands at two against 108. Both run along Michigan Creek and are undersampled rather "
+            "than absent.", dark=True)
         + plant_found_body(found),
-        intro="220 plant species on 30 acres, and the signature is woody-genus depth: four oaks and three "
+        intro="250 plant species on 30 acres, and the signature is woody-genus depth: four oaks and three "
               "hickories, the two genera that anchor northeastern caterpillar diversity. Each genus recorded "
               "here is a potential host for specialist moth and insect guilds, which makes the plant list the "
               "structural explanation for the moth list.",
@@ -1504,8 +1539,8 @@ def plants_view(df, stats):
         "plant-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(PLANT_METHODS),
-        intro="220 species, with whole genera still blank: no willows, a single sedge against 107 in the "
-              "regional pool. These passes target the gaps, each timed to when the group is identifiable.",
+        intro="250 species, with key genera still thin: one willow against 26 in the regional pool, two "
+              "sedges against 108. These passes target the gaps, each timed to when the group is identifiable.",
         dark=True))
     return "".join(out)
 
@@ -1595,7 +1630,7 @@ def butterflies_view(df, stats):
         'The <em class="text-hollow-300">Butterflies</em>',
         stats_band + butterfly_found_body(found),
         intro="Butterflies are the daytime half of the property's Lepidoptera, and so far the barely-sampled "
-              "half. 17 species recorded against 510 moths, the same order with the same dependence on specific "
+              "half. 18 species recorded against 529 moths, the same order with the same dependence on specific "
               "host plants, but almost no targeted daytime effort yet. Most of the gap closes on a sunny "
               "afternoon with a net and a camera.",
         dark=True))
@@ -1611,7 +1646,7 @@ def butterflies_view(df, stats):
         "butterfly-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(BUTTERFLY_METHODS),
-        intro="Seventeen species is a barely-started list. A net, some fermented-fruit bait, and a few sunny "
+        intro="Eighteen species is a barely-started list. A net, some fermented-fruit bait, and a few sunny "
               "afternoons across the season would multiply it. Where, when, and what each method adds.",
         dark=True))
     return "".join(out)
@@ -1804,12 +1839,12 @@ def build():
         "discovery", "The Story So Far",
         'A Growing <em class="text-hollow-600">Life List</em>',
         chart_card(viz.discovery_curve(firsts),
-                   note="Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after 3,000+ observations indicates a long way still to go.")
+                   note="Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after 4,500+ observations indicates a long way still to go.")
         + takeaway(
             "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
             "show a curve that flattens within the first season; this one hasn't. The steepest runs coincide "
             "with nights at the mothing lights — each new plant genus documented on the property opens a "
-            "potential new set of specialist feeders, and 220 plant species on 30 acres keeps that process "
+            "potential new set of specialist feeders, and 250 plant species on 30 acres keeps that process "
             "running."),
         intro=f"{s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
@@ -1862,7 +1897,7 @@ def build():
             "observations before dawn. The taxonomic breakdown shows what that effort turns up: insects account "
             "for the large majority of species, with moths alone outnumbering every other non-insect group "
             "combined. That's not a survey artifact. It's what lives in a riparian Appalachian forest with "
-            "220 plant species on 30 acres.",),
+            "250 plant species on 30 acres.",),
         intro="Daily observation totals and a taxonomic breakdown — how the effort is distributed and what it's actually finding.",
         tint="bg-stone-100"))
     parts.append(section(
