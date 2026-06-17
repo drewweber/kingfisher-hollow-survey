@@ -270,11 +270,86 @@ def sync_region_mammals():
     return n, 0
 
 
+def _restore_plant_groups(table):
+    """Re-apply plant_group classifications after a roster sync wipes the column.
+
+    Saves the existing (taxon_id → plant_group) mapping before the sync runs,
+    restores it after, and classifies any new taxa via the iNat ancestry API.
+    Returns a context manager that wraps the sync call.
+    """
+    import contextlib
+    @contextlib.contextmanager
+    def _ctx():
+        # 1. Save current mappings
+        saved = {}
+        try:
+            with connect() as conn:
+                for row in conn.execute(
+                        f"SELECT taxon_id, plant_group FROM {table} WHERE plant_group IS NOT NULL"):
+                    saved[row[0]] = row[1]
+        except Exception:
+            pass
+
+        yield  # sync runs here
+
+        # 2. Restore saved mappings
+        if saved:
+            with connect() as conn:
+                conn.executemany(
+                    f"UPDATE {table} SET plant_group = ? WHERE taxon_id = ?",
+                    [(g, tid) for tid, g in saved.items()])
+
+        # 3. Classify any new taxa that have no plant_group yet
+        _classify_new_plant_taxa(table, saved)
+
+    return _ctx()
+
+
+def _classify_new_plant_taxa(table, already_classified):
+    """Fetch iNat ancestry for taxa missing plant_group and classify them."""
+    TRACHEOPHYTA = 211194
+    ANGIOSPERM   = 47125
+    CONIFER      = 136329
+
+    with connect() as conn:
+        unclassified = [row[0] for row in conn.execute(
+            f"SELECT taxon_id FROM {table} WHERE plant_group IS NULL")]
+    if not unclassified:
+        return
+
+    def classify(ancestry_str):
+        ids = {int(x) for x in ancestry_str.split("/") if x}
+        if TRACHEOPHYTA not in ids:
+            return "Bryophyte"
+        if ANGIOSPERM in ids:
+            return "Angiosperm"
+        if CONIFER in ids:
+            return "Gymnosperm"
+        return "Seedless Vascular"
+
+    BATCH = 30
+    updates = []
+    for i in range(0, len(unclassified), BATCH):
+        try:
+            taxa = inat_api.fetch_taxa(unclassified[i:i + BATCH])
+        except Exception:
+            continue
+        for t in taxa:
+            grp = classify(t.get("ancestry") or "")
+            updates.append((grp, t["id"]))
+
+    if updates:
+        with connect() as conn:
+            conn.executemany(
+                f"UPDATE {table} SET plant_group = ? WHERE taxon_id = ?", updates)
+
+
 def sync_plants():
     """Plant roster for the project."""
-    n = _sync_roster("plant_taxa", "obs_count",
-                     project_id=PROPERTY_PROJECT_ID,
-                     taxon_id=PLANTAE_TAXON_ID)
+    with _restore_plant_groups("plant_taxa"):
+        n = _sync_roster("plant_taxa", "obs_count",
+                         project_id=PROPERTY_PROJECT_ID,
+                         taxon_id=PLANTAE_TAXON_ID)
     print(f"[plants] {n} plant species")
     return n, 0
 
@@ -285,9 +360,10 @@ def sync_region_plants():
     if lat is None:
         print("[region-plants] no property coordinates yet; skipping")
         return 0, 0
-    n = _sync_roster("region_plant_taxa", "region_count",
-                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
-                     taxon_id=PLANTAE_TAXON_ID)
+    with _restore_plant_groups("region_plant_taxa"):
+        n = _sync_roster("region_plant_taxa", "region_count",
+                         lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                         taxon_id=PLANTAE_TAXON_ID)
     print(f"[region-plants] {n} plant species within {REGION_RADIUS_KM} km")
     return n, 0
 

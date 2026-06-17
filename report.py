@@ -1141,11 +1141,15 @@ def nav():
 </nav>"""
 
 
+_EASTERN = __import__("zoneinfo").ZoneInfo("America/New_York")
+
+
 def _fmt_dt(dt):
-    """Format a datetime as 'Jun 17 · 8:13am' — no leading zeros, lowercase am/pm."""
-    h = dt.hour % 12 or 12
-    ampm = "am" if dt.hour < 12 else "pm"
-    return f"{dt.strftime('%b')} {dt.day} · {h}:{dt.strftime('%M')}{ampm}"
+    """Format a datetime as 'Jun 17 · 8:13am ET' — Eastern time, no leading zeros."""
+    et = dt.astimezone(_EASTERN)
+    h = et.hour % 12 or 12
+    ampm = "am" if et.hour < 12 else "pm"
+    return f"{et.strftime('%b')} {et.day} · {h}:{et.strftime('%M')}{ampm}"
 
 
 def _code_updated():
