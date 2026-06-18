@@ -17,3 +17,6 @@ data/inat.db-shm
 
 # Original CSV exports — superseded by the live API; kept locally as an archive.
 *.csv
+
+# Wrangler cache — contains Cloudflare account ID; not needed in version control.
+.wrangler/
