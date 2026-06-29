@@ -184,7 +184,7 @@ def whats_new_body(recent):
                 'the last couple of days.</p>')
     new_species = recent[recent["is_new_for_property"]]
     cards = []
-    for _, r in new_species.head(6).iterrows():
+    for _, r in new_species.head(8).iterrows():
         name = esc(sval(r.get("common_name")) or sval(r.get("taxon_name")) or "Unidentified")
         sci = esc(r.get("taxon_name"))
         who = esc(sval(r.get("user_name")) or sval(r.get("user_login")))
@@ -195,9 +195,9 @@ def whats_new_body(recent):
         elif state_n == state_n and state_n is not None and state_n <= 25:
             flag = f'<span class="badge badge-green">{int(state_n)} in NY</span>'
         photo = r.get("photo_url")
-        img = (f'<img src="{esc(photo)}" class="w-full h-40 object-cover" alt="{name}">'
+        img = (f'<img src="{esc(photo)}" class="w-full aspect-square object-cover" alt="{name}">'
                if photo == photo and photo else
-               '<div class="w-full h-40 bg-hollow-100 flex items-center justify-center text-hollow-400 text-3xl">🪶</div>')
+               '<div class="w-full aspect-square bg-hollow-100 flex items-center justify-center text-hollow-400 text-3xl">🪶</div>')
         cards.append(f"""
         <a href="{esc(r.get('url') or '#')}" target="_blank" rel="noopener" class="lift block bg-white border border-stone-100 rounded-2xl overflow-hidden shadow-sm">
           <div class="relative">{img}<div class="absolute top-3 left-3">{flag}</div></div>
@@ -214,7 +214,7 @@ def whats_new_body(recent):
     if not cards:
         return lead + ('<p class="text-center text-stone-400">No brand-new '
                        'species in this batch — but the count keeps climbing.</p>')
-    return lead + ('<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">'
+    return lead + ('<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">'
                    + "".join(cards) + "</div>")
 
 
