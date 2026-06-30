@@ -250,7 +250,7 @@ def uniqueness_scatter(stats):
             x=standouts["state_obs_count"], y=standouts["property_obs_count"],
             mode="text", text=standouts["label"], textposition="middle right",
             textfont=dict(size=10, color=INK), hoverinfo="skip", showlegend=False)
-    fig.update_xaxes(type="log", title=dict(
+    fig.update_xaxes(type="log", range=[0, 6], title=dict(
         text="Observations in New York (log scale) →", font=dict(size=11, color=MUTED)))
     fig.update_yaxes(title=dict(
         text="Your observations here", font=dict(size=11, color=MUTED)))
@@ -301,7 +301,7 @@ def obs_map(df, dark=False):
         mapbox=dict(style="carto-darkmatter" if dark else "carto-positron",
                     center=dict(lat=pts["latitude"].mean(),
                                 lon=pts["longitude"].mean()),
-                    zoom=13.5),
+                    zoom=15),
         height=560, margin=dict(l=0, r=0, t=0, b=0),
         showlegend=True,
         font=dict(family=FONT, color=DARK_INK if dark else INK),

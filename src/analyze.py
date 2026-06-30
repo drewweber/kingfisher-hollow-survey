@@ -679,7 +679,7 @@ def moth_seasonal(df, moths, min_obs=3, max_species=42):
     return _seasonal_agg(df[df["taxon_id"].isin(ids)], min_obs, max_species)
 
 
-def moth_highlights(moths, stats, n=12):
+def moth_highlights(moths, stats, df=None, n=12):
     """A showcase of standout moths: rarest in New York where we know it, topped
     up with the most-recorded species so the gallery is always full. Each keeps
     its representative photo."""
@@ -701,7 +701,15 @@ def moth_highlights(moths, stats, n=12):
                  .sort_values("obs_count", ascending=False)
                  .head(n - len(chosen)))
         chosen = pd.concat([chosen, extra], ignore_index=True)
-    return chosen.head(n)
+    chosen = chosen.head(n)
+    if df is not None and not df.empty and "id" in df.columns:
+        first = (df.dropna(subset=["taxon_id", "id"])
+                   .sort_values("observed_on")
+                   .groupby("taxon_id")["id"].first()
+                   .reset_index()
+                   .rename(columns={"id": "first_obs_id"}))
+        chosen = chosen.merge(first, on="taxon_id", how="left")
+    return chosen
 
 
 # --- moth-scoped scientific analyses ----------------------------------------

@@ -435,8 +435,14 @@ def moth_showcase(highlights):
         img = (f'<img src="{esc(photo)}" class="photo-img w-full h-full object-cover" alt="{name}" loading="lazy">'
                if photo == photo and photo else
                '<div class="w-full h-full bg-hollow-800 flex items-center justify-center text-3xl">🦋</div>')
+        oid = sval(r.get("first_obs_id"))
         tid = sval(r.get("taxon_id"))
-        href = f"{TAXON_URL}{int(tid)}" if tid not in ("", None) and tid == tid else "#"
+        if oid not in ("", None) and oid == oid:
+            href = f"{OBS_URL}{int(float(oid))}"
+        elif tid not in ("", None) and tid == tid:
+            href = f"{TAXON_URL}{int(tid)}"
+        else:
+            href = "#"
         cards.append(f"""
         <a href="{href}" target="_blank" rel="noopener" class="photo-card relative rounded-2xl overflow-hidden ring-1 ring-white/10 block" style="height:240px;">
           <div class="absolute inset-0 overflow-hidden">{img}</div>
@@ -1322,13 +1328,12 @@ def moth_view(df, stats):
     out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
         moth_stats(msum, comp),
-        intro="576 moth species on 30 riparian acres, and 228 of them — 40% — are first iNaturalist records for "
-              "Tioga County. That proportion hasn't collapsed as the list has grown: 84 of the most recent 200 "
-              "additions are county firsts, which means the site is still producing genuine novelty rather than "
-              "filling in common species. The three-province ecotone and Michigan Creek's humidity buffer let "
-              "range-edge species from different directions co-occur on nights too dry and cool for upland sites "
-              "nearby. Nearly every one ties back to a specific plant genus in the canopy, shrub layer, or wetland "
-              "edge, and the property has 253 plant species to feed them.",
+        intro="576 moth species on 30 riparian acres, and 228 of them are first iNaturalist records for "
+              "Tioga County. That says two things at once: the county has been thinly sampled, and this stretch "
+              "of Michigan Creek is a real moth engine. The regional comparison is shaped by heavy Tompkins "
+              "County effort, especially on micromoths, so the gap list is a target list rather than a verdict. "
+              "The strongest KH signal is ecological: humid creek nights, oak-hickory and northern-hardwood "
+              "canopy, wetland edges, and 253 recorded plant species supporting many host-linked guilds.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
@@ -1346,12 +1351,13 @@ def moth_view(df, stats):
         moth_gap_body(gap)
         + takeaway(
             f"Filtered to species with county records in {_months_label} — the flight window covering the next two weeks. "
-            "Tioga County's moth records are thin, so this list draws from the regional pool extending ~50 miles, "
-            "south into Pennsylvania and east toward Ithaca. Species at the top are seen dozens of times nearby "
-            "in these same weeks; their absence here is a survey gap. "
+            "Tioga County's moth records are thin, and many nearby records come from well-worked Tompkins County, "
+            "so this list draws from the ~50-mile regional pool with that bias in mind. Species at the top are "
+            "seen repeatedly nearby in these same weeks; their absence here is usually a survey-method gap, not "
+            "evidence that the property lacks the habitat. "
             "Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
             "Different gaps need different methods.", dark=True),
-        intro=f"Moth species recorded within ~50 miles but not yet found on the property, ranked by how often they appear in {_months_label} county records. These are the most plausible next finds in the coming weeks.",
+        intro=f"Moth species recorded within ~50 miles but not yet found on the property, ranked by how often they appear in {_months_label} county records. Tompkins County effort inflates some regional frequencies, especially for micros, so treat this as a practical field queue.",
         dark=True))
     out.append(section(
         "moth-families", "By Family",
@@ -1363,18 +1369,18 @@ def moth_view(df, stats):
             "The large, conspicuous families — Noctuidae (owlet moths), Geometridae (geometers), Erebidae "
             "(tiger moths and kin) — are well represented because they're big enough to identify at the sheet. "
             "The micro-moth families tell a different story. Tortricidae, Gelechiidae, Coleophoridae, and "
-            "Nepticulidae together account for a majority of temperate moth diversity, but they need methods "
-            "a UV sheet can't provide: different trap heights, sugar bait, day-beating of foliage, and often "
-            "genitalic dissection to confirm an ID. Tortricidae has now reached 71 species here, so the leaf-roller "
-            "gap is starting to close. Most of the roughly 200 still-undiscovered species are probably "
-            "micro-moths, and targeted work on them would push the total past 780.", dark=True),
-        intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried; others have barely been touched. The undiscovered species are concentrated in specific groups.",
+            "Nepticulidae hold a large share of temperate moth diversity, but many records require leaf-mine "
+            "work, host association, expert review, or collection-level evidence. KH should prioritize the "
+            "photo-workable and host-informative micros, not chase every dissection-only species. Tortricidae "
+            "has now reached 71 species here, so the leaf-roller gap is starting to close; the remaining "
+            "undetected fauna is concentrated in methods the standard UV sheet barely samples.", dark=True),
+        intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried by the current approach; others are mostly visible only through host-plant work, bait, canopy sampling, or expert micro review.",
         dark=True))
     out.append(section(
         "moth-standouts", "Standouts",
-        'Rare &amp; <em class="text-hollow-300">Remarkable</em>',
-        moth_showcase(analyze.moth_highlights(moths, stats)),
-        intro="Moths from Kingfisher Hollow with almost no other NY records — species this survey is among the few to document in the state.",
+        'Rare &amp; <em class="text-hollow-300">Notable</em>',
+        moth_showcase(analyze.moth_highlights(moths, stats, df=df)),
+        intro="Moths from Kingfisher Hollow with few iNaturalist records in New York. Some are truly notable; others are under-documented micros or hard IDs that need context from MPG, BAMONA, BugGuide, GBIF, and collections before anyone calls them rare.",
         dark=True))
 
     # Headline diagnostic: species detected on only one or two nights.
@@ -1398,11 +1404,12 @@ def moth_view(df, stats):
             f"That single-night rate drives the Chao2 estimate: roughly "
             f"<strong>{comp['estimated']}</strong> species total (95% CI: {comp['low']}–{comp['high']}), "
             f"putting the survey about <strong>{comp['pct_complete']}%</strong> complete. The regional pool is "
-            f"larger, but most of those species belong to habitats this property doesn't have. "
+            f"larger, and many records in it come from better-sampled Tompkins County or from habitats this property doesn't have. "
             f"The ~780 ceiling is a realistic figure for this specific place — and Chao2 is a lower bound, so "
             f"it may be conservative. The roughly {comp['remaining']} undetected "
-            f"species aren't evenly distributed; they're concentrated in micro-moth families that a UV sheet "
-            f"samples poorly. Targeted work on Tortricidae and Gelechiidae would close most of the gap.", dark=True),
+            f"species aren't evenly distributed; they're concentrated in cold-season moths, bait-feeders, canopy "
+            f"species, and micro-moth families that a UV sheet samples poorly. Targeted work on the photo-workable "
+            f"Tortricidae and host-linked micros would close the most useful part of the gap.", dark=True),
         intro="576 species confirmed. Statistical modeling puts the true total around 780. Here's the evidence for that gap — and how fast it's closing.",
         dark=True))
     out.append(section(
@@ -1467,8 +1474,9 @@ def moth_view(df, stats):
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MOTH_METHODS),
         intro="576 species came almost entirely from a UV sheet, which selects for large, photo-positive "
-              "moths. These are the methods that reach the rest: the micro-moths, the bait-feeders, and the "
-              "canopy and cold-season fliers the sheet never sees.",
+              "moths. These are the methods that reach the rest: bait-feeders, day and dusk fliers, canopy "
+              "species, cold-season moths, and the host-linked micros worth documenting without turning the "
+              "survey into a collection project.",
         dark=True))
     return "".join(out)
 
@@ -1503,20 +1511,21 @@ def mammals_view(df, stats):
             "rarest holding stays the eastern woodland jumping mouse, a riparian-forest indicator with only "
             "two records in all of Tioga County.", dark=True)
         + mammal_found_body(found),
-        intro="Many of the property's mammals leave traces — tracks, scat, camera — before they appear in iNaturalist. The species count here understates what's actually present.",
+        intro="The mammal list is detection-limited. Trail cameras and incidental tracks show the mid-sized corridor users well, but bats, shrews, voles, mice, moles, and semi-aquatic mammals need their own methods. Michigan Creek is the reason a 30-acre property can carry this much carnivore traffic.",
         dark=True))
     out.append(section(
         "mammal-gap", "Who's Missing?",
         'Mammal <em class="text-hollow-300">Gap List</em>',
         mammal_gap_body(gap),
-        intro="Mammals confirmed within ~50 miles but not yet recorded at Kingfisher Hollow — ranked by how often they turn up in county records this time of year.",
+        intro="Mammals confirmed within ~50 miles but not yet recorded at Kingfisher Hollow. The useful targets are not the most photographed regional mammals; they're the ones that fit the creek corridor, wet margins, forest floor, and night sky.",
         dark=True))
     out.append(section(
         "mammal-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MAMMAL_METHODS),
-        intro="22 species, and not one bat. These methods target the guilds a trail camera never catches: "
-              "the acoustic fliers, the small mammals in the leaf litter, and the swimmers along the creek.",
+        intro="22 species, and not one bat. These methods target the guilds a trail camera misses: acoustic "
+              "fliers over the creek, small mammals in leaf litter, and semi-aquatic mammals moving through "
+              "culverts, riffles, and log crossings.",
         dark=True))
     return "".join(out)
 
@@ -1555,31 +1564,31 @@ def plants_view(df, stats):
         'The <em class="text-hollow-300">Plants</em>',
         stats_band
         + takeaway(
-            "The oak-and-hickory backbone is what the rest of the inventory hangs on. The most recent pass "
-            "also filled in the aquatic layer: bur-reed, watershield, and pondweed confirmed the creek's "
-            "backwater pockets for the first time, and Cornus is now at four species — the full expected "
-            "dogwood complement. Two genera that should be the property's strongest insect hosts are still "
-            "nearly blank: Salix is down to one species (shining willow) against 26 in the regional pool, "
-            "and Carex stands at two against 108. Both run along Michigan Creek and are undersampled rather "
-            "than absent.", dark=True)
+            "The plant list now reads like a compact Tioga County cross-section: oak-hickory upland, "
+            "northern-hardwood slope, hemlock shade, wet meadow, pond edge, and creek corridor all packed into "
+            "30 acres. The oak-and-hickory backbone explains much of the caterpillar richness, while alder, "
+            "willow, dogwoods, viburnum, grape, goldenrods, asters, sedges, and wetland forbs point to the next "
+            "wave of insect records. Two high-value groups are still thin: Salix is down to one species "
+            "(shining willow) against a large regional pool, and Carex stands at two. Those are survey gaps, "
+            "not ecological absences.", dark=True)
         + plant_found_body(found),
-        intro="253 plant species on 30 acres, and the signature is woody-genus depth: four oaks and three "
-              "hickories, the two genera that anchor northeastern caterpillar diversity. Each genus recorded "
-              "here is a potential host for specialist moth and insect guilds, which makes the plant list the "
-              "structural explanation for the moth list.",
+        intro="253 plant species on 30 acres, with a transition-zone signature: Appalachian ravine plants, "
+              "northern hardwoods, wetland/riparian flora, old-field edge, and southern-edge woody possibilities "
+              "all close together. Each native genus recorded here is potential structure, food, or larval host "
+              "for the rest of the survey.",
         dark=True))
     out.append(section(
         "plant-gap", "What's Unrecorded?",
         'Plant <em class="text-hollow-300">Gap List</em>',
         plant_gap_body(gap),
-        intro="Plants confirmed within ~50 miles but not yet documented at Kingfisher Hollow — ranked by how often they turn up nearby this month.",
+        intro="Plants confirmed within ~50 miles but not yet documented at Kingfisher Hollow. Treat this as a field checklist filtered by habitat: spring rich woods, seep and pond edge, acidic upland, creek corridor, and sunny old-field margins.",
         dark=True))
     out.append(section(
         "plant-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(PLANT_METHODS),
-        intro="253 species, with key genera still thin: one willow against 26 in the regional pool, two "
-              "sedges against 108. These passes target the gaps, each timed to when the group is identifiable.",
+        intro="253 species, with spring ephemerals, sedges, willows, grasses, aquatics, and cryptogams still "
+              "under-sampled. These passes target the gaps when each group is actually identifiable.",
         dark=True))
     return "".join(out)
 
@@ -1608,25 +1617,25 @@ def amphibians_view(df, stats):
         "amphibians", "At the Water's Edge",
         'The <em class="text-hollow-300">Amphibians</em>',
         takeaway(
-            "Ten species is already a well-rounded cross-section for an incidental list: three frog families "
-            "and three of the four salamander families, including two woodland Plethodon and the vernal-pool "
-            "spotted salamander documented breeding this spring. Northern slimy salamander, a mesic-slope "
-            "species that's harder to log, reached research grade last fall and signals good forest-floor "
-            "quality. What's missing tells the rest of the story: no stream salamanders despite ideal riffles, "
-            "which is a gap in effort, not absence.", dark=True)
+            "Ten amphibian species is a strong incidental list, but the habitat says there is more to find. "
+            "The confirmed set includes spring peeper, American toad, gray treefrog, pickerel frog, eastern "
+            "newt, red-backed salamander, northern slimy salamander, and spotted salamander, so the forest, "
+            "pond, seep, and vernal-pool signals are all present. The obvious hole is stream salamanders: "
+            "riffles and seepage zones should be checked for two-lined, dusky, and spring salamanders before "
+            "the site is treated as well sampled.", dark=True)
         + amphibian_found_body(amp_found),
-        intro="Frogs and salamanders are the truest test of a stream. They breathe through wet skin, "
-              "breed in the creek and its seeps, and vanish when water quality slips — so every species here "
-              "says Michigan Creek is still clean. The count below is low for this habitat, and that gap is "
-              "about survey effort, not absence.",
+        intro="Frogs and salamanders are method- and season-dependent. The current list already points to "
+              "clean water, wet forest floor, and breeding wetlands, but it is still mostly incidental. Rainy "
+              "nights, spring egg-mass checks, and careful creek rock surveys are the missing effort.",
         dark=True))
     out.append(section(
         "reptiles-found", "Sun & Scale",
         'The <em class="text-hollow-300">Reptiles</em>',
         stats_band + reptile_found_body(rep_found),
-        intro="Snakes, turtles, and lizards are all present but rarely the focus of an iNat walk. "
-              "Most records here are incidental — a garter snake on the trail, a painted turtle on a log. "
-              "A few slow surveys along the creek and forest edges would add several species quickly.",
+        intro="Seven reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
+              "milksnake, DeKay's brownsnake, and gray ratsnake. Most records are incidental. Slow basking "
+              "checks, cover-board work, and creek-edge walks should add the small secretive snakes and clarify "
+              "how turtles use the pond and Michigan Creek.",
         dark=True))
     out.append(section(
         "amphibian-gap", "Yet to Find",
@@ -1635,15 +1644,15 @@ def amphibians_view(df, stats):
         + amphibian_gap_body(amp_gap)
         + '<h3 class="text-sm font-semibold tracking-widest uppercase text-white/40 mt-8 mb-3">Reptiles</h3>'
         + reptile_gap_body(rep_gap),
-        intro="Species recorded within ~50 miles but not yet documented here, ranked by how common they "
-              "are nearby.",
+        intro="Species recorded within ~50 miles but not yet documented here. For herps, regional frequency matters less than timing: rainy migration nights, spring chorus windows, cover objects, basking logs, and stream-rock checks decide what appears.",
         dark=True))
     out.append(section(
         "amphibian-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(AMPHIBIAN_METHODS),
-        intro="Most herp records here are incidental. Targeted stream, rock-flipping, and basking-spot "
-              "surveys are how the list grows. Where, when, and what each method turns up.",
+        intro="Most herp records here are incidental. Targeted audio, egg-mass, stream, cover-object, and "
+              "basking surveys are how the list grows. Replace cover exactly as found and treat sensitive "
+              "locations carefully.",
         dark=True))
     return "".join(out)
 
@@ -1668,25 +1677,26 @@ def butterflies_view(df, stats):
         "butterflies", "By Day",
         'The <em class="text-hollow-300">Butterflies</em>',
         stats_band + butterfly_found_body(found),
-        intro="Butterflies are the daytime half of the property's Lepidoptera, and so far the barely-sampled "
-              "half. 18 species recorded against 576 moths, the same order with the same dependence on specific "
-              "host plants, but almost no targeted daytime effort yet. Most of the gap closes on a sunny "
-              "afternoon with a net and a camera.",
+        intro="Butterflies are the daytime half of the property's Lepidoptera, and this list is still "
+              "effort-limited. Eighteen species against 576 moths says more about survey timing than habitat. "
+              "The plants are already here for many missing species: violets, nettles, willows, oaks, hickories, "
+              "cherries, sedges, turtlehead, milkweeds, asters, and goldenrods.",
         dark=True))
     out.append(section(
         "butterfly-gap", "Yet to Find",
         'Butterfly <em class="text-hollow-300">Gap List</em>',
         butterfly_gap_body(gap),
-        intro="Butterflies recorded within ~50 miles but not yet found here, ranked by how common they are "
-              "nearby. The skippers and hairstreaks near the top are the easy wins: common in old-field and "
-              "creek-edge habitat, and on the wing all summer.",
+        intro="Butterflies recorded within ~50 miles but not yet found here. The first wins are daytime method "
+              "gaps: skippers in grass and wet edges, hairstreaks around oak-hickory canopy and shrub edges, "
+              "and conspicuous brushfoots that need repeated sunny walks.",
         dark=True))
     out.append(section(
         "butterfly-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(BUTTERFLY_METHODS),
-        intro="Eighteen species is a barely-started list. A net, some fermented-fruit bait, and a few sunny "
-              "afternoons across the season would multiply it. Where, when, and what each method adds.",
+        intro="Eighteen species is a barely-started list. Repeated sunny transects, dorsal and ventral photos, "
+              "fruit bait, puddling checks, and host-plant searches across spring, midsummer, and fall would "
+              "multiply it quickly.",
         dark=True))
     return "".join(out)
 
@@ -1872,7 +1882,7 @@ def build():
     parts.append(section(
         "whats-new", "Latest", 'What\'s <em class="text-hollow-600">New</em>',
         whats_new_body(analyze.whats_new(df, stats)),
-        intro="Species recorded at Kingfisher Hollow for the first time — some of them new to all of Tioga County.",
+        intro="Species recorded at Kingfisher Hollow for the first time. Some are also first iNaturalist records for Tioga County, which makes them important additions to the public record even when the species is probably present elsewhere nearby.",
         tint="bg-stone-100"))
     parts.append(section(
         "discovery", "The Story So Far",
@@ -1882,9 +1892,9 @@ def build():
         + takeaway(
             "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
             "show a curve that flattens within the first season; this one hasn't. The steepest runs coincide "
-            "with nights at the mothing lights — each new plant genus documented on the property opens a "
-            "potential new set of specialist feeders, and 253 plant species on 30 acres keeps that process "
-            "running."),
+            "with nights at the mothing lights, but the same pattern shows up in plants, herps, and mammals "
+            "when the right method is used. Each plant genus documented on the property opens potential host "
+            "links for insects, and each new survey method reaches a different slice of the site."),
         intro=f"{s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
@@ -1893,20 +1903,22 @@ def build():
         'County <em class="text-hollow-300">Firsts</em>',
         showcase_body(analyze.county_first_showcase(df, stats))
         + takeaway(
-            f"{county_firsts:,} county firsts means Kingfisher Hollow has extended the documented range of {county_firsts:,} species into "
-            "Tioga County. Tioga sits at the meeting point of three floristic provinces — Appalachian highlands, "
-            "northern hardwood, and mid-Atlantic — and gets range-edge arrivals from all three directions. "
-            "That's why the count is high, and why it keeps growing: the property is positioned to pick up "
-            "species pushing in from multiple fronts.", dark=True),
-        intro="For each of these species, Kingfisher Hollow holds the first-ever Tioga County record. That goes into the county's scientific baseline and stays there.",
+            f"{county_firsts:,} county-first iNaturalist records means Kingfisher Hollow has added {county_firsts:,} species "
+            "to Tioga County's public, photo-vouchered baseline. That is not the same as proving each species "
+            "was absent from the county before. Tioga is under-sampled, while nearby Tompkins County has heavy "
+            "naturalist and entomology effort. The right reading is still powerful: KH is turning private "
+            "regional likelihood into documented county evidence, especially for moths and plants tied to "
+            "Michigan Creek's transition-zone habitats.", dark=True),
+        intro="For each of these species, Kingfisher Hollow currently holds the first iNaturalist record in Tioga County. That strengthens the county baseline and flags records worth checking against other sources when they look unusual.",
         dark=True))
     rarity_body = (
         chart_card(viz.uniqueness_scatter(stats),
-                   note="Each dot is one species. X-axis: NY rarity (further left = fewer statewide records). Y-axis: frequency at Kingfisher Hollow. Terracotta: county firsts — first record anywhere in Tioga County.")
+                   note="Each dot is one species. X-axis: NY public-record scarcity (further left = fewer statewide records). Y-axis: frequency at Kingfisher Hollow. Terracotta: first iNaturalist record for Tioga County.")
         + takeaway(
-            "Upper-left is the most interesting territory on this chart: scarce across New York, but showing "
-            "up reliably here. Ecologists call that a 'priority site indicator.' It's pointing at something "
-            "specific about this stretch of Michigan Creek.")
+            "Upper-left is the territory to investigate: few public New York records, but repeated records here. "
+            "Some dots may be genuinely notable; others are under-documented groups, hard IDs, or observer-bias "
+            "artifacts. The expert move is to check evidence quality, host plant, habitat, and outside sources "
+            "before turning a low iNaturalist count into a rarity claim.")
         + '<h3 class="font-serif text-2xl font-bold text-stone-900 text-center mt-14 mb-6">'
           'The rarest of them</h3>'
         + rarest_body(analyze.rarest_finds(df, stats)))
@@ -1914,7 +1926,7 @@ def build():
         "uniqueness", "The Big Picture",
         'Common Here, <em class="text-hollow-600">Rare There</em>',
         rarity_body,
-        intro="Each dot is a species, plotted by NY rarity against frequency here. The upper-left corner — rare statewide, common at this property — is where the site earns its keep.",
+        intro="Each dot is a species, plotted by public New York record scarcity against frequency here. The upper-left corner is where the site may be saying something real, but it needs expert context before it becomes a rarity claim.",
         tint="bg-stone-100"))
 
     parts.append(section(
@@ -1932,11 +1944,11 @@ def build():
         'Activity &amp; <em class="text-hollow-600">Taxa</em>',
         two_up
         + takeaway(
-            "The tall spikes are nights at the mothing lights — a well-run session generates 50 to 100 "
-            "observations before dawn. The taxonomic breakdown shows what that effort turns up: insects account "
-            "for the large majority of species, with moths alone outnumbering every other non-insect group "
-            "combined. That's not a survey artifact. It's what lives in a riparian Appalachian forest with "
-            "253 plant species on 30 acres.",),
+            "The tall spikes are nights at the mothing lights; a well-run session can generate 50 to 100 "
+            "observations before dawn. That effort reveals a real insect-heavy fauna, but it also exposes the "
+            "survey's bias. Plants need seasonal ID passes, butterflies need sunny transects, mammals need "
+            "cameras and acoustics, and herps need wet-night and stream methods. The site is rich, and the "
+            "method mix still decides what becomes visible.",),
         intro="Daily observation totals and a taxonomic breakdown — how the effort is distributed and what it's actually finding.",
         tint="bg-stone-100"))
     parts.append(section(
@@ -1947,7 +1959,8 @@ def build():
         + takeaway(
             "Read across any row: one species' warm-up, peak, and fade. Read down any column: the community "
             "active in that month. The bright diagonal moving from spring to autumn is the year itself, "
-            "written in species."),
+            "written in species. Sparse months are both biology and effort: some taxa are truly seasonal, "
+            "and some simply have not been searched for at the right time."),
         intro="The 24 most-recorded species across the calendar year — each one's seasonal rhythm in a single row."))
     parts.append(section(
         "observers", "Credit Where Due",
@@ -1969,9 +1982,10 @@ def build():
         chart_card(viz.obs_map(df))
         + takeaway(
             "The heaviest clusters follow the stream corridor and the mothing-light stations. The sparser "
-            "areas aren't empty — they're under-walked. A day of transects through the upland forest edge "
-            "would almost certainly add species. iNaturalist automatically obscures coordinates for rare or "
-            "sensitive species."),
+            "areas aren't empty; they're under-walked or need different methods. Upland edge transects, wetland "
+            "plant passes, creek rock surveys, and camera or acoustic stations would all move records into "
+            "currently blank-looking parts of the map. iNaturalist automatically obscures coordinates for rare "
+            "or sensitive species."),
         intro="Every GPS-tagged observation on the 30 acres. The clusters show where effort has been concentrated; the gaps show what's still unwalked."))
     parts.append('</div>')  # /view-all
 
