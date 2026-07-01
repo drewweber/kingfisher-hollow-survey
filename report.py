@@ -170,10 +170,6 @@ def hero(s, county_firsts):
       {stat(f"{county_firsts:,}", "County firsts")}
     </div>
   </div>
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-white/40 animate-bounce">
-    <span class="text-[10px] tracking-[0.25em] uppercase">Explore</span>
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-  </div>
 </section>"""
 
 
@@ -827,6 +823,7 @@ def activity_log_body(log_entries, weather_cache):
 
     html_parts = ['<div class="max-w-3xl mx-auto">']
     current_year = None
+    update_control_added = False
 
     for entry in reversed(log_entries):
         d = entry["date"]
@@ -834,10 +831,22 @@ def activity_log_body(log_entries, weather_cache):
 
         if year != current_year:
             current_year = year
+            update_control = ""
+            if not update_control_added:
+                update_control_added = True
+                update_control = (
+                    '<button id="trigger-update" type="button" '
+                    'class="self-start text-xs text-stone-400 underline underline-offset-4 '
+                    'transition hover:text-hollow-700 focus:outline-none focus:ring-2 '
+                    'focus:ring-hollow-300 rounded-sm">Check for updates...</button>'
+                    '<span id="trigger-update-status" class="text-xs text-stone-400" '
+                    'role="status" aria-live="polite"></span>'
+                )
             html_parts.append(
                 f'<div class="flex items-center gap-4 mt-12 mb-6 first:mt-0">'
                 f'<span class="font-serif text-3xl font-bold text-stone-900">{year}</span>'
-                f'<span class="flex-1 h-px bg-stone-200"></span></div>'
+                f'<span class="flex-1 flex flex-col gap-1.5">{update_control}'
+                f'<span class="h-px bg-stone-200"></span></span></div>'
             )
 
         has_morning = entry.get("has_morning", False)
@@ -980,24 +989,6 @@ def activity_log_body(log_entries, weather_cache):
 
     html_parts.append("</div>")
     return "".join(html_parts)
-
-
-def log_update_control():
-    """Small admin affordance for triggering the GitHub Actions data refresh."""
-    return """
-<div class="max-w-3xl mx-auto mb-10 rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-      <h3 class="font-serif text-xl font-bold text-stone-900">Refresh survey data</h3>
-      <p class="text-sm text-stone-500 mt-1">Starts the GitHub Actions workflow that syncs iNaturalist, rebuilds this report, and deploys it.</p>
-    </div>
-    <button id="trigger-update" type="button"
-      class="inline-flex items-center justify-center rounded-full bg-hollow-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-hollow-800 focus:outline-none focus:ring-2 focus:ring-hollow-300">
-      Run update
-    </button>
-  </div>
-  <p id="trigger-update-status" class="text-sm text-stone-400 mt-3" role="status" aria-live="polite"></p>
-</div>"""
 
 
 # ── head / nav / footer ──────────────────────────────────────────────────────
@@ -1323,7 +1314,7 @@ SCRIPTS = """
     const workflowUrl='https://github.com/drewweber/kingfisher-hollow-survey/actions/workflows/update.yml';
     function setStatus(msg,kind){
       status.textContent=msg;
-      status.className='text-sm mt-3 '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-stone-500');
+      status.className='text-xs '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-stone-400');
     }
     btn.addEventListener('click',async()=>{
       let key=localStorage.getItem('khUpdateKey')||'';
@@ -1340,7 +1331,7 @@ SCRIPTS = """
         const data=await res.json().catch(()=>({}));
         if(res.status===401){
           localStorage.removeItem('khUpdateKey');
-          throw new Error('That update key was not accepted. Click Run update and try again.');
+          throw new Error('That update key was not accepted. Try again.');
         }
         if(!res.ok) throw new Error(data.detail||data.error||'The update could not be started.');
         setStatus('Update started. GitHub Actions will sync, rebuild, and deploy in a few minutes. '+workflowUrl,'ok');
@@ -2077,8 +2068,7 @@ def build():
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
-        log_update_control()
-        + activity_log_body(log_entries, weather_cache)
+        activity_log_body(log_entries, weather_cache)
         + id_changes_body(id_changes),
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
     parts.append('</div>')  # /view-log

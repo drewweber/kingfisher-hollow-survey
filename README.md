@@ -76,9 +76,9 @@ One-time setup (the only steps that need your credentials):
 Then trigger the workflow once from the Actions tab (**Run workflow**) to verify.
 The GitHub cron is in UTC; `09:10 UTC` ≈ `05:10 ET`.
 
-### Manual update button on the Log view
+### Manual update link on the Log view
 
-The Log view includes a **Run update** button. It calls a Cloudflare Pages
+The Log view includes a small **Check for updates...** link. It calls a Cloudflare Pages
 Function at `/api/update`, which triggers the same GitHub Actions workflow as
 the nightly job. The browser never receives a GitHub token.
 
@@ -91,7 +91,7 @@ project:
   **Actions: Read and write** permission, used only by the Pages Function to
   call `workflow_dispatch` on `.github/workflows/update.yml`.
 
-Without those variables, the button is visible but the endpoint returns a
+Without those variables, the link is visible but the endpoint returns a
 configuration error instead of starting a workflow.
 
 ## Layout
