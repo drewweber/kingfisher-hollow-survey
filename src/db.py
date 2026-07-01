@@ -25,7 +25,10 @@ CREATE TABLE IF NOT EXISTS property_obs (
     created_at    TEXT,
     photo_url     TEXT,
     photo_attribution TEXT,
-    photo_license TEXT
+    photo_license TEXT,
+    captive       INTEGER,
+    taxon_native  INTEGER,
+    taxon_introduced INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_property_taxon ON property_obs(taxon_id);
 CREATE INDEX IF NOT EXISTS idx_property_observed ON property_obs(observed_on);
@@ -38,7 +41,8 @@ CREATE TABLE IF NOT EXISTS county_obs (
     common_name   TEXT,
     iconic_taxon  TEXT,
     quality_grade TEXT,
-    user_login    TEXT
+    user_login    TEXT,
+    captive       INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_county_taxon ON county_obs(taxon_id);
 
@@ -121,7 +125,10 @@ CREATE TABLE IF NOT EXISTS plant_taxa (
     taxon_name  TEXT,
     common_name TEXT,
     obs_count   INTEGER,
-    photo_url   TEXT
+    photo_url   TEXT,
+    establishment_means TEXT,
+    native      INTEGER,
+    introduced  INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS amphibian_taxa (
@@ -161,7 +168,10 @@ CREATE TABLE IF NOT EXISTS region_plant_taxa (
     taxon_name   TEXT,
     common_name  TEXT,
     region_count INTEGER,
-    photo_url    TEXT
+    photo_url    TEXT,
+    establishment_means TEXT,
+    native       INTEGER,
+    introduced   INTEGER
 );
 
 -- Higher taxonomy per property species, for readable group labels.
@@ -213,7 +223,25 @@ def connect():
 
 # Columns added after the first schema shipped; applied to existing DBs.
 _MIGRATIONS = {
-    "property_obs": ["photo_url TEXT", "photo_attribution TEXT", "photo_license TEXT"],
+    "property_obs": [
+        "photo_url TEXT",
+        "photo_attribution TEXT",
+        "photo_license TEXT",
+        "captive INTEGER",
+        "taxon_native INTEGER",
+        "taxon_introduced INTEGER",
+    ],
+    "county_obs": ["captive INTEGER"],
+    "plant_taxa": [
+        "establishment_means TEXT",
+        "native INTEGER",
+        "introduced INTEGER",
+    ],
+    "region_plant_taxa": [
+        "establishment_means TEXT",
+        "native INTEGER",
+        "introduced INTEGER",
+    ],
     "weather_cache": [
         "temp_f_9pm    INTEGER",
         "humidity_9pm  INTEGER",

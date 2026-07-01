@@ -44,6 +44,20 @@ def _first_photo(obs):
     return url, p.get("attribution"), p.get("license_code")
 
 
+def _bool_int(value):
+    if value is None:
+        return None
+    return 1 if bool(value) else 0
+
+
+def _taxon_establishment(taxon):
+    means = taxon.get("preferred_establishment_means")
+    if means:
+        return means
+    establishment = taxon.get("establishment_means") or {}
+    return establishment.get("establishment_means")
+
+
 def _property_row(obs):
     taxon = obs.get("taxon") or {}
     user = obs.get("user") or {}
@@ -69,6 +83,9 @@ def _property_row(obs):
         photo_url,
         photo_attr,
         photo_lic,
+        _bool_int(obs.get("captive")),
+        _bool_int(taxon.get("native")),
+        _bool_int(taxon.get("introduced")),
     )
 
 
@@ -84,6 +101,7 @@ def _county_row(obs):
         taxon.get("iconic_taxon_name"),
         obs.get("quality_grade"),
         user.get("login"),
+        _bool_int(obs.get("captive")),
     )
 
 
@@ -91,15 +109,16 @@ PROPERTY_INSERT = (
     "INSERT OR REPLACE INTO property_obs "
     "(id, uuid, observed_on, observed_at, taxon_id, taxon_name, common_name, "
     " iconic_taxon, rank, quality_grade, user_login, user_name, latitude, "
-    " longitude, url, created_at, photo_url, photo_attribution, photo_license) "
-    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    " longitude, url, created_at, photo_url, photo_attribution, photo_license, "
+    " captive, taxon_native, taxon_introduced) "
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 )
 
 COUNTY_INSERT = (
     "INSERT OR REPLACE INTO county_obs "
     "(id, observed_on, taxon_id, taxon_name, common_name, iconic_taxon, "
-    " quality_grade, user_login) "
-    "VALUES (?,?,?,?,?,?,?,?)"
+    " quality_grade, user_login, captive) "
+    "VALUES (?,?,?,?,?,?,?,?,?)"
 )
 
 
@@ -155,7 +174,7 @@ def sync_county():
     return added, 0
 
 
-def _sync_roster(table, count_col, **params):
+def _sync_roster(table, count_col, include_establishment=False, **params):
     """Refresh a species roster table from /observations/species_counts.
 
     Stores (taxon_id, taxon_name, common_name, <count_col>, photo_url) for every
@@ -166,14 +185,28 @@ def _sync_roster(table, count_col, **params):
     for row in inat_api.iter_species_counts(rank="species", **params):
         t = row.get("taxon") or {}
         photo = (t.get("default_photo") or {}).get("medium_url")
-        rows.append((t.get("id"), t.get("name"),
-                     t.get("preferred_common_name"), row.get("count"), photo))
+        base = [t.get("id"), t.get("name"),
+                t.get("preferred_common_name"), row.get("count"), photo]
+        if include_establishment:
+            base.extend([
+                _taxon_establishment(t),
+                _bool_int(t.get("native")),
+                _bool_int(t.get("introduced")),
+            ])
+        rows.append(tuple(base))
     with connect() as conn:
         conn.execute(f"DELETE FROM {table}")
-        conn.executemany(
-            f"INSERT OR REPLACE INTO {table} "
-            f"(taxon_id, taxon_name, common_name, {count_col}, photo_url) "
-            "VALUES (?,?,?,?,?)", rows)
+        if include_establishment:
+            conn.executemany(
+                f"INSERT OR REPLACE INTO {table} "
+                f"(taxon_id, taxon_name, common_name, {count_col}, photo_url, "
+                "establishment_means, native, introduced) "
+                "VALUES (?,?,?,?,?,?,?,?)", rows)
+        else:
+            conn.executemany(
+                f"INSERT OR REPLACE INTO {table} "
+                f"(taxon_id, taxon_name, common_name, {count_col}, photo_url) "
+                "VALUES (?,?,?,?,?)", rows)
     return len(rows)
 
 
@@ -349,17 +382,23 @@ def _classify_new_plant_taxa(table, already_classified):
 
 
 def sync_plants():
-    """Plant roster for the project."""
+    """Wild/naturalized plant roster for the project.
+
+    iNaturalist uses captive=false for plants that are not marked cultivated,
+    which keeps planted ornamentals from inflating the property plant baseline.
+    """
     with _restore_plant_groups("plant_taxa"):
         n = _sync_roster("plant_taxa", "obs_count",
                          project_id=PROPERTY_PROJECT_ID,
-                         taxon_id=PLANTAE_TAXON_ID)
-    print(f"[plants] {n} plant species")
+                         taxon_id=PLANTAE_TAXON_ID,
+                         captive="false",
+                         include_establishment=True)
+    print(f"[plants] {n} wild/established plant species")
     return n, 0
 
 
 def sync_region_plants():
-    """Plants recorded within REGION_RADIUS_KM of the property."""
+    """Wild/naturalized plants recorded within REGION_RADIUS_KM of the property."""
     lat, lng = _property_center()
     if lat is None:
         print("[region-plants] no property coordinates yet; skipping")
@@ -367,8 +406,10 @@ def sync_region_plants():
     with _restore_plant_groups("region_plant_taxa"):
         n = _sync_roster("region_plant_taxa", "region_count",
                          lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
-                         taxon_id=PLANTAE_TAXON_ID)
-    print(f"[region-plants] {n} plant species within {REGION_RADIUS_KM} km")
+                         taxon_id=PLANTAE_TAXON_ID,
+                         captive="false",
+                         include_establishment=True)
+    print(f"[region-plants] {n} wild/established plant species within {REGION_RADIUS_KM} km")
     return n, 0
 
 

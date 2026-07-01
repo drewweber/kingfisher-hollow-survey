@@ -407,6 +407,7 @@ def _region_gap(taxa, region_table, n=30, target_months=None):
             rows = conn.execute(
                 f"SELECT taxon_id, COUNT(*) AS cnt FROM county_obs "
                 f"WHERE taxon_id IS NOT NULL "
+                f"AND (captive IS NULL OR captive = 0) "
                 f"AND strftime('%m', observed_on) IN ({month_strs}) "
                 f"GROUP BY taxon_id"
             ).fetchall()
@@ -501,7 +502,9 @@ def plant_found(df, plants):
 
 
 def plant_gap(plants, n=50, target_months=None):
-    return _region_gap(plants, "region_plant_taxa", n=n, target_months=target_months)
+    gap = _region_gap(plants, "region_plant_taxa", n=n, target_months=target_months)
+    gap["wild_only"] = True
+    return gap
 
 
 # --- amphibians --------------------------------------------------------------

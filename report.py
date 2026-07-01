@@ -365,8 +365,15 @@ def _dark_divider():
     return '<div class="w-px h-12 bg-white/15"></div>'
 
 
-def property_profile_body():
+def property_profile_body(plant_count=0):
     """Three-column ecological explanation of why Michigan Creek drives moth diversity."""
+    plant_label = f"{plant_count:,} species · 30 acres" if plant_count else "Plant-rich · 30 acres"
+    plant_sentence = (
+        f"{plant_count:,} wild/established plants × ~1.8 predicted moths per plant species predicts "
+        f"~{round(plant_count * 1.8):,}. "
+        if plant_count else
+        "The recorded plant base predicts a large moth fauna because Eastern Lepidoptera are mostly host-plant specialists. "
+    )
     col1 = (
         '<div class="space-y-3">'
         + _dark_stat("35–50% richer", "Creek Ecotone")
@@ -386,10 +393,10 @@ def property_profile_body():
     )
     col3 = (
         '<div class="space-y-3">'
-        + _dark_stat("253 species · 30 acres", "Host Plants")
+        + _dark_stat(plant_label, "Host Plants")
         + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
         '2–3× the NY mixed-hardwood baseline. Eastern Lepidoptera are mostly host-plant specialists; '
-        '253 plants × ~1.8 predicted moths per plant species predicts ~455. '
+        f'{plant_sentence}'
         'Observed: 576 — the creek concentrates the high-value host genera, which pushes the count above the prediction.'
         '</p></div>'
     )
@@ -462,6 +469,14 @@ def _taxa_card(r, placeholder, gmax):
     taxon_id = r.get("taxon_id")
     common = r["label"]
     sci = r.get("taxon_name", "")
+    establishment = r.get("establishment_means", "")
+    establishment = "" if establishment is None or str(establishment) == "nan" else str(establishment)
+    if establishment == "native":
+        establishment_html = '<div class="mt-1 text-[0.62rem] text-hollow-300 uppercase tracking-[0.12em]">native</div>'
+    elif establishment == "introduced":
+        establishment_html = '<div class="mt-1 text-[0.62rem] text-amber-200/80 uppercase tracking-[0.12em]">established introduced</div>'
+    else:
+        establishment_html = ""
     photo_url = r.get("photo_url") or ""
     inat_url = f"https://www.inaturalist.org/taxa/{taxon_id}" if taxon_id else "#"
     if photo_url:
@@ -482,6 +497,7 @@ def _taxa_card(r, placeholder, gmax):
         f'  <div class="p-2.5">'
         f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
         f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
+        f'    {establishment_html}'
         f'    <div class="mt-2 flex items-center justify-between gap-1">'
         f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
         f'        <div class="h-1 rounded-full" style="width:{bar_pct}%;background:#8ec8b1"></div>'
@@ -684,6 +700,7 @@ def plant_gap_body(gap):
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
             f'<strong class="text-hollow-300">{gap["region_total"]}</strong> plant species documented within '
             f'~{miles} miles have been recorded here. '
+            f'This list uses iNaturalist wild/naturalized records only, excluding observations marked cultivated. '
             f'The ~{miles}-mile regional pool includes many habitat types the property doesn\'t have, '
             f'so the raw completeness figure understates how thoroughly the property flora is known. '
             f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
@@ -1354,6 +1371,8 @@ def moth_view(df, stats):
                        '<p class="text-center text-white/60">Moth roster not synced '
                        'yet.</p>', dark=True)
     msum = analyze.moth_summary(df, moths)
+    plants = analyze.load_plants()
+    plant_count = int(plants["taxon_id"].nunique()) if not plants.empty else 0
     comp = analyze.moth_completeness(df, moths)
     import datetime as _dt
     _today = _dt.date.today()
@@ -1367,7 +1386,7 @@ def moth_view(df, stats):
     out = []
     out.append(section(
         'moth-why-here', 'Riparian Context', 'Why <em class="text-hollow-300">Here</em>',
-        property_profile_body(),
+        property_profile_body(plant_count),
         intro='Michigan Creek explains the moth numbers. Here is why.',
         dark=True))
     out.append(section(
@@ -1378,7 +1397,7 @@ def moth_view(df, stats):
               "of Michigan Creek is a real moth engine. The regional comparison is shaped by heavy Tompkins "
               "County effort, especially on micromoths, so the gap list is a target list rather than a verdict. "
               "The strongest KH signal is ecological: humid creek nights, oak-hickory and northern-hardwood "
-              "canopy, wetland edges, and 253 recorded plant species supporting many host-linked guilds.",
+              f"canopy, wetland edges, and {plant_count:,} recorded wild/established plant species supporting many host-linked guilds.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
@@ -1469,7 +1488,7 @@ def moth_view(df, stats):
             "rest are noise. This one doesn't. It slopes gently across hundreds of species — no single "
             "species has crowded out the rest. Ecologists call that high evenness, and it's a reliable "
             "indicator of structurally complex habitat. The gentle slope across 576 species is what you'd "
-            "predict from a site with 253 plant species on 30 acres, each supporting distinct moth guilds, "
+            f"predict from a site with {plant_count:,} wild/established plant species on 30 acres, each supporting distinct moth guilds, "
             "with the three-province ecotone adding guild diversity on top. "
             "The long flat tail on the right — all the once-or-twice-seen species — is the frontier of "
             "what's still being found.", dark=True),
@@ -1617,10 +1636,10 @@ def plants_view(df, stats):
             "(shining willow) against a large regional pool, and Carex stands at two. Those are survey gaps, "
             "not ecological absences.", dark=True)
         + plant_found_body(found),
-        intro="253 plant species on 30 acres, with a transition-zone signature: Appalachian ravine plants, "
-              "northern hardwoods, wetland/riparian flora, old-field edge, and southern-edge woody possibilities "
-              "all close together. Each native genus recorded here is potential structure, food, or larval host "
-              "for the rest of the survey.",
+        intro=f"{psum['species']:,} wild/established plant species on 30 acres, with a transition-zone signature: "
+              "Appalachian ravine plants, northern hardwoods, wetland/riparian flora, old-field edge, and "
+              "southern-edge woody possibilities all close together. Each native or established genus recorded "
+              "here is potential structure, food, or larval host for the rest of the survey.",
         dark=True))
     out.append(section(
         "plant-gap", "What's Unrecorded?",
@@ -1632,8 +1651,9 @@ def plants_view(df, stats):
         "plant-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(PLANT_METHODS),
-        intro="253 species, with spring ephemerals, sedges, willows, grasses, aquatics, and cryptogams still "
-              "under-sampled. These passes target the gaps when each group is actually identifiable.",
+        intro=f"{psum['species']:,} wild/established species, with spring ephemerals, sedges, willows, grasses, "
+              "aquatics, and cryptogams still under-sampled. These passes target the gaps when each group is "
+              "actually identifiable.",
         dark=True))
     return "".join(out)
 
