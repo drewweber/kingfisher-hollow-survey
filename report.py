@@ -700,7 +700,7 @@ def plant_gap_body(gap):
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
             f'<strong class="text-hollow-300">{gap["region_total"]}</strong> plant species documented within '
             f'~{miles} miles have been recorded here. '
-            f'This list uses iNaturalist wild/naturalized records only, excluding observations marked cultivated. '
+            f'This list uses iNaturalist wild records only, excluding observations marked cultivated and taxa listed as introduced in New York. '
             f'The ~{miles}-mile regional pool includes many habitat types the property doesn\'t have, '
             f'so the raw completeness figure understates how thoroughly the property flora is known. '
             f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '

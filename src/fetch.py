@@ -3,7 +3,8 @@
 import inat_api
 from config import (AMPHIBIA_TAXON_ID, BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID,
                     LEPIDOPTERA_TAXON_ID, MAMMALIA_TAXON_ID, PLANTAE_TAXON_ID,
-                    PROPERTY_PROJECT_ID, REGION_RADIUS_KM, REPTILIA_TAXON_ID)
+                    PROPERTY_PROJECT_ID, REGION_RADIUS_KM, REPTILIA_TAXON_ID,
+                    STATE_PLACE_ID)
 from db import connect, max_id, record_sync
 
 
@@ -56,6 +57,12 @@ def _taxon_establishment(taxon):
         return means
     establishment = taxon.get("establishment_means") or {}
     return establishment.get("establishment_means")
+
+
+def _establishment_flags(means):
+    if not means:
+        return None, None
+    return _bool_int(means in ("native", "endemic")), _bool_int(means == "introduced")
 
 
 def _property_row(obs):
@@ -188,10 +195,12 @@ def _sync_roster(table, count_col, include_establishment=False, **params):
         base = [t.get("id"), t.get("name"),
                 t.get("preferred_common_name"), row.get("count"), photo]
         if include_establishment:
+            means = _taxon_establishment(t)
+            native, introduced = _establishment_flags(means)
             base.extend([
-                _taxon_establishment(t),
-                _bool_int(t.get("native")),
-                _bool_int(t.get("introduced")),
+                means,
+                native if native is not None else _bool_int(t.get("native")),
+                introduced if introduced is not None else _bool_int(t.get("introduced")),
             ])
         rows.append(tuple(base))
     with connect() as conn:
@@ -208,6 +217,58 @@ def _sync_roster(table, count_col, include_establishment=False, **params):
                 f"(taxon_id, taxon_name, common_name, {count_col}, photo_url) "
                 "VALUES (?,?,?,?,?)", rows)
     return len(rows)
+
+
+_STATE_PLANT_ESTABLISHMENT = None
+
+
+def _state_plant_establishment_map():
+    """New York establishment status keyed by taxon_id.
+
+    Radius-based species_counts do not consistently include establishment
+    status, so plant gap filtering needs a separate state-checklist pass.
+    """
+    global _STATE_PLANT_ESTABLISHMENT
+    if _STATE_PLANT_ESTABLISHMENT is not None:
+        return _STATE_PLANT_ESTABLISHMENT
+
+    status = {}
+    for row in inat_api.iter_species_counts(
+            rank="species",
+            place_id=STATE_PLACE_ID,
+            taxon_id=PLANTAE_TAXON_ID,
+            captive="false"):
+        t = row.get("taxon") or {}
+        means = _taxon_establishment(t)
+        if means and t.get("id"):
+            status[t.get("id")] = means
+    _STATE_PLANT_ESTABLISHMENT = status
+    return status
+
+
+def _apply_state_plant_establishment(table):
+    """Backfill New York native/introduced flags for plant roster tables."""
+    with connect() as conn:
+        ids = {row["taxon_id"] for row in conn.execute(
+            f"SELECT taxon_id FROM {table} WHERE taxon_id IS NOT NULL"
+        ).fetchall()}
+    if not ids:
+        return
+
+    status = _state_plant_establishment_map()
+    updates = []
+    for taxon_id in ids:
+        means = status.get(taxon_id)
+        if not means:
+            continue
+        native, introduced = _establishment_flags(means)
+        updates.append((means, native, introduced, taxon_id))
+    if updates:
+        with connect() as conn:
+            conn.executemany(
+                f"UPDATE {table} SET establishment_means = ?, native = ?, introduced = ? "
+                "WHERE taxon_id = ?",
+                updates)
 
 
 def sync_moths():
@@ -393,6 +454,7 @@ def sync_plants():
                          taxon_id=PLANTAE_TAXON_ID,
                          captive="false",
                          include_establishment=True)
+    _apply_state_plant_establishment("plant_taxa")
     print(f"[plants] {n} wild/established plant species")
     return n, 0
 
@@ -409,6 +471,7 @@ def sync_region_plants():
                          taxon_id=PLANTAE_TAXON_ID,
                          captive="false",
                          include_establishment=True)
+    _apply_state_plant_establishment("region_plant_taxa")
     print(f"[region-plants] {n} wild/established plant species within {REGION_RADIUS_KM} km")
     return n, 0
 

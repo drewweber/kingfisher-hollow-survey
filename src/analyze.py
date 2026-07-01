@@ -502,8 +502,20 @@ def plant_found(df, plants):
 
 
 def plant_gap(plants, n=50, target_months=None):
-    gap = _region_gap(plants, "region_plant_taxa", n=n, target_months=target_months)
+    gap = _region_gap(plants, "region_plant_taxa", n=n * 3, target_months=target_months)
+    missing = gap["missing"]
+    if not missing.empty:
+        introduced = missing.get("introduced")
+        means = missing.get("establishment_means")
+        keep = pd.Series(True, index=missing.index)
+        if introduced is not None:
+            keep &= introduced.fillna(0).astype(int) != 1
+        if means is not None:
+            keep &= means.fillna("") != "introduced"
+        gap["missing"] = missing[keep].head(n)
+        gap["missing_count"] = int(keep.sum())
     gap["wild_only"] = True
+    gap["exclude_introduced"] = True
     return gap
 
 

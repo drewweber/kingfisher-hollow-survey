@@ -97,10 +97,9 @@ configuration error instead of starting a workflow.
 ### Plant gap list filtering
 
 Plant roster syncs use iNaturalist's `captive=false` filter, so the property
-plant list and regional plant gap list are based on wild or naturalized records,
-not observations marked cultivated/planted. Where iNaturalist returns an
-establishment status, the report can label plants as native or established
-introduced.
+plant list and regional plant pool are based on records not marked
+cultivated/planted. The gap list also enriches plants with New York
+establishment status and excludes taxa listed as introduced in New York.
 
 ## Layout
 ```
