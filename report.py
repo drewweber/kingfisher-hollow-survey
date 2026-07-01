@@ -836,8 +836,7 @@ def activity_log_body(log_entries, weather_cache):
                 update_control_added = True
                 update_control = (
                     '<button id="trigger-update" type="button" '
-                    'class="self-start text-xs text-stone-400 underline underline-offset-4 '
-                    'transition hover:text-hollow-700 focus:outline-none focus:ring-2 '
+                    'class="self-center text-xs text-stone-400 transition hover:text-hollow-700 focus:outline-none focus:ring-2 '
                     'focus:ring-hollow-300 rounded-sm">Check for updates...</button>'
                     '<span id="trigger-update-status" class="text-xs text-stone-400" '
                     'role="status" aria-live="polite"></span>'
