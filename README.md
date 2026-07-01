@@ -76,6 +76,24 @@ One-time setup (the only steps that need your credentials):
 Then trigger the workflow once from the Actions tab (**Run workflow**) to verify.
 The GitHub cron is in UTC; `09:10 UTC` ≈ `05:10 ET`.
 
+### Manual update button on the Log view
+
+The Log view includes a **Run update** button. It calls a Cloudflare Pages
+Function at `/api/update`, which triggers the same GitHub Actions workflow as
+the nightly job. The browser never receives a GitHub token.
+
+Add these Cloudflare Pages environment variables for the `kingfisher-survey`
+project:
+
+- `UPDATE_TRIGGER_KEY` — a private passphrase you type into the browser when the
+  button asks for the update key.
+- `GITHUB_DISPATCH_TOKEN` — a GitHub fine-grained token for this repository with
+  **Actions: Read and write** permission, used only by the Pages Function to
+  call `workflow_dispatch` on `.github/workflows/update.yml`.
+
+Without those variables, the button is visible but the endpoint returns a
+configuration error instead of starting a workflow.
+
 ## Layout
 ```
 src/config.py   IDs and paths         sync.py     fetch CLI

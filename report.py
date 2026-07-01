@@ -982,6 +982,24 @@ def activity_log_body(log_entries, weather_cache):
     return "".join(html_parts)
 
 
+def log_update_control():
+    """Small admin affordance for triggering the GitHub Actions data refresh."""
+    return """
+<div class="max-w-3xl mx-auto mb-10 rounded-2xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h3 class="font-serif text-xl font-bold text-stone-900">Refresh survey data</h3>
+      <p class="text-sm text-stone-500 mt-1">Starts the GitHub Actions workflow that syncs iNaturalist, rebuilds this report, and deploys it.</p>
+    </div>
+    <button id="trigger-update" type="button"
+      class="inline-flex items-center justify-center rounded-full bg-hollow-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-hollow-800 focus:outline-none focus:ring-2 focus:ring-hollow-300">
+      Run update
+    </button>
+  </div>
+  <p id="trigger-update-status" class="text-sm text-stone-400 mt-3" role="status" aria-live="polite"></p>
+</div>"""
+
+
 # ── head / nav / footer ──────────────────────────────────────────────────────
 def head(s, county_firsts):
     desc = (f"Biodiversity survey of Kingfisher Hollow — {s['species']:,} species on 30 riparian acres along Michigan Creek, "
@@ -1296,6 +1314,43 @@ SCRIPTS = """
     const h=location.hash;
     const fromHash={['#moths']:'moths',['#butterflies']:'butterflies',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
     setMode(fromHash[h]||'all', h in fromHash);
+  })();
+
+  // Log view: trigger the GitHub Actions data refresh through a server-side Pages Function.
+  (function(){
+    const btn=document.getElementById('trigger-update'),status=document.getElementById('trigger-update-status');
+    if(!btn||!status) return;
+    const workflowUrl='https://github.com/drewweber/kingfisher-hollow-survey/actions/workflows/update.yml';
+    function setStatus(msg,kind){
+      status.textContent=msg;
+      status.className='text-sm mt-3 '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-stone-500');
+    }
+    btn.addEventListener('click',async()=>{
+      let key=localStorage.getItem('khUpdateKey')||'';
+      if(!key){
+        key=window.prompt('Update key');
+        if(!key) return;
+        localStorage.setItem('khUpdateKey',key);
+      }
+      btn.disabled=true;
+      btn.classList.add('opacity-60','cursor-wait');
+      setStatus('Starting update…','pending');
+      try{
+        const res=await fetch('/api/update',{method:'POST',headers:{'x-kh-update-key':key}});
+        const data=await res.json().catch(()=>({}));
+        if(res.status===401){
+          localStorage.removeItem('khUpdateKey');
+          throw new Error('That update key was not accepted. Click Run update and try again.');
+        }
+        if(!res.ok) throw new Error(data.detail||data.error||'The update could not be started.');
+        setStatus('Update started. GitHub Actions will sync, rebuild, and deploy in a few minutes. '+workflowUrl,'ok');
+      }catch(err){
+        setStatus(err.message||'The update could not be started.','error');
+      }finally{
+        btn.disabled=false;
+        btn.classList.remove('opacity-60','cursor-wait');
+      }
+    });
   })();
 </script></body></html>"""
 
@@ -2022,7 +2077,8 @@ def build():
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
-        activity_log_body(log_entries, weather_cache)
+        log_update_control()
+        + activity_log_body(log_entries, weather_cache)
         + id_changes_body(id_changes),
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
     parts.append('</div>')  # /view-log
