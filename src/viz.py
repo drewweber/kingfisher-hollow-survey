@@ -115,8 +115,8 @@ def per_day(daily):
     fig = go.Figure()
     fig.add_bar(x=daily["observed_on"], y=daily["observations"],
                 marker_color="rgba(94,171,141,0.45)",
-                hovertemplate="%{x|%b %e, %Y}<br>%{y} obs<extra></extra>",
-                name="Observations")
+                hovertemplate="%{x|%b %e, %Y}<br>%{y} records<extra></extra>",
+                name="Records")
     fig.add_scatter(x=daily["observed_on"], y=daily["rolling_30d"],
                     mode="lines", line=dict(color=HOLLOW[3], width=2.5),
                     hoverinfo="skip", name="30-day average")

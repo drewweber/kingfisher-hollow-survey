@@ -92,7 +92,7 @@ def _load_table(name):
 # their order's common name (so people can tell a harvestman from a moth).
 ICONIC_LABELS = {
     "Plantae": "Plants", "Fungi": "Fungi", "Mammalia": "Mammals",
-    "Amphibia": "Amphibians", "Reptilia": "Reptiles",
+    "Aves": "Birds", "Amphibia": "Amphibians", "Reptilia": "Reptiles",
     "Actinopterygii": "Fish", "Mollusca": "Molluscs", "Animalia": "Other animals",
     "Protozoa": "Protozoans", "Chromista": "Chromists",
 }
@@ -130,7 +130,7 @@ def _group_inputs():
     if not meta.empty:
         for _, r in meta.iterrows():
             oc = r.get("order_common") or r.get("order_name")
-            if oc:
+            if oc and not pd.isna(oc):
                 order_common[int(r["taxon_id"])] = oc
     return moth_ids, butterfly_ids, order_common
 
@@ -678,6 +678,42 @@ def bird_summary(birds):
         "checklists": int(birds["sub_id"].nunique()),
         "exotics": int((birds["exotic"].fillna("") != "").sum()),
     }
+
+
+def overview_observations(property_df, birds):
+    """Combined life-list records for all public overview charts.
+
+    The iNaturalist property table remains the source for non-bird groups. Birds
+    are represented by one eBird life-list row per countable species so overview
+    species totals, accumulation, group bars, life list, phenology, and daily
+    records all include the bird taxa tracked for the site.
+    """
+    if birds is None or birds.empty:
+        return property_df.copy()
+    bird_rows = []
+    for idx, r in birds.reset_index(drop=True).iterrows():
+        taxon_order = r.get("taxon_order")
+        try:
+            synthetic_taxon_id = -900000000 - int(taxon_order)
+        except (TypeError, ValueError):
+            synthetic_taxon_id = -901000000 - idx
+        sub_id = r.get("sub_id") or f"ebird-{idx}"
+        bird_rows.append({
+            "id": f"ebird-{sub_id}",
+            "taxon_id": synthetic_taxon_id,
+            "common_name": r.get("common_name"),
+            "taxon_name": r.get("taxon_name"),
+            "iconic_taxon": "Aves",
+            "rank": "species",
+            "observed_on": r.get("date"),
+            "created_at": pd.NaT,
+            "user_login": pd.NA,
+            "quality_grade": "",
+        })
+    bird_df = pd.DataFrame(bird_rows)
+    combined = pd.concat([property_df, bird_df], ignore_index=True, sort=False)
+    combined["observed_on"] = pd.to_datetime(combined["observed_on"], errors="coerce")
+    return combined
 
 
 def bird_recent(birds, n=12):

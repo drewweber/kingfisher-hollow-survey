@@ -90,8 +90,14 @@ def taxon_link(taxon_id, text, cls=""):
     tid = sval(taxon_id)
     if tid in ("", None) or tid != tid:
         return esc(text)
+    try:
+        tid_int = int(float(tid))
+        if tid_int <= 0:
+            return esc(text)
+    except (TypeError, ValueError):
+        return esc(text)
     cls_attr = f' class="{cls}"' if cls else ""
-    return (f'<a href="{TAXON_URL}{int(tid)}" target="_blank" rel="noopener"'
+    return (f'<a href="{TAXON_URL}{tid_int}" target="_blank" rel="noopener"'
             f'{cls_attr}>{esc(text)}</a>')
 
 
@@ -170,7 +176,7 @@ def hero(s, county_firsts):
     <div class="fade-up delay-3 flex flex-wrap items-center justify-center gap-8 md:gap-12">
       {stat(f"{s['species']:,}", "Species")}
       <div class="w-px h-12 bg-white/20"></div>
-      {stat(f"{s['observations']:,}", "Observations")}
+      {stat(f"{s['observations']:,}", "Records")}
       <div class="w-px h-12 bg-white/20"></div>
       {stat(f"{s['observers']:,}", "iNat observers")}
       <div class="w-px h-12 bg-white/20"></div>
@@ -2134,13 +2140,12 @@ def build():
     if not stats.empty:
         stats = stats[stats["taxon_id"].isin(set(df["taxon_id"].dropna()))]
 
-    s = analyze.summary(df)
     birds_for_totals = analyze.load_birds()
-    bird_species_total = analyze.bird_summary(birds_for_totals).get("species", 0)
-    public_s = dict(s)
-    public_s["species"] = s["species"] + bird_species_total
-    life = analyze.life_list(df)
-    firsts = analyze.firsts_timeline(df)
+    overview_df = analyze.overview_observations(df, birds_for_totals)
+    s = analyze.summary(df)
+    public_s = analyze.summary(overview_df)
+    life = analyze.life_list(overview_df)
+    firsts = analyze.firsts_timeline(overview_df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
     parts = [head(public_s, county_firsts), nav()]
@@ -2157,14 +2162,14 @@ def build():
         "discovery", "The Story So Far",
         'A Growing <em class="text-hollow-600">Life List</em>',
         chart_card(viz.discovery_curve(firsts),
-                   note="Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after 4,500+ observations indicates a long way still to go.")
+                   note=f"Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after {public_s['observations']:,} records indicates a long way still to go.")
         + takeaway(
             "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
             "show a curve that flattens within the first season; this one hasn't. The steepest runs coincide "
             "with nights at the mothing lights, but the same pattern shows up in plants, herps, and mammals "
             "when the right method is used. Each plant genus documented on the property opens potential host "
             "links for insects, and each new survey method reaches a different slice of the site."),
-        intro=f"{s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
+        intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
     parts.append(section(
@@ -2202,10 +2207,10 @@ def build():
         "life-list", "The Full Roll",
         'The <em class="text-hollow-600">Life List</em>',
         life_list_body(life),
-        intro="Every species confirmed at Kingfisher Hollow — insects, plants, fungi, mammals, and more. Search by name or filter by group. Birds are tracked on eBird."))
+        intro="Every species confirmed at Kingfisher Hollow — insects, birds, plants, fungi, mammals, and more. Search by name or filter by group."))
     two_up = (
         '<div class="grid lg:grid-cols-2 gap-6">'
-        + chart_card(viz.per_day(analyze.obs_per_day(df)))
+        + chart_card(viz.per_day(analyze.obs_per_day(overview_df)))
         + chart_card(viz.taxa_bar(life))
         + '</div>')
     parts.append(section(
@@ -2218,12 +2223,12 @@ def build():
             "survey's bias. Plants need seasonal ID passes, butterflies need sunny transects, mammals need "
             "cameras and acoustics, and herps need wet-night and stream methods. The site is rich, and the "
             "method mix still decides what becomes visible.",),
-        intro="Daily observation totals and a taxonomic breakdown — how the effort is distributed and what it's actually finding.",
+        intro="Daily record totals and a taxonomic breakdown — how the effort is distributed and what it's actually finding.",
         tint="bg-stone-100"))
     parts.append(section(
         "phenology", "Phenology",
         'When Things <em class="text-hollow-600">Appear</em>',
-        chart_card(viz.phenology(analyze.phenology(df, top=24), normalize=True),
+        chart_card(viz.phenology(analyze.phenology(overview_df, top=24), normalize=True),
                    note="Each row is normalized to its own peak, so a species seen 5 times reads as vividly as one seen 500 times — rare species' patterns show up alongside common ones. Hover for raw counts.")
         + takeaway(
             "Read across any row: one species' warm-up, peak, and fade. Read down any column: the community "
