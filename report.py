@@ -1248,7 +1248,8 @@ def nav():
     all_links = [("#whats-new", "What's New"), ("#discovery", "Discovery"),
                  ("#unique", "Unique Finds"), ("#life-list", "Life List"),
                  ("#gallery", "Gallery")]
-    moth_links = [("#moth-why-here", "Why Here"), ("#moth-gap", "Gap List"),
+    moth_links = [("#moths", "Overview"), ("#moth-gallery", "Recent"),
+                  ("#moth-gap", "Gap List"),
                   ("#moth-families", "Families"), ("#moth-standouts", "Standouts"),
                   ("#moth-completeness", "Inventory"), ("#moth-diversity", "Diversity"),
                   ("#moth-calendar", "Calendar"), ("#moth-methods", "Find More")]
@@ -1541,13 +1542,9 @@ def moth_view(df, stats):
 
     out = []
     out.append(section(
-        'moth-why-here', 'Riparian Context', 'Why <em class="text-hollow-300">Here</em>',
-        property_profile_body(plant_count),
-        intro='Michigan Creek explains the moth numbers. Here is why.',
-        dark=True))
-    out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
-        moth_stats(msum, comp),
+        moth_stats(msum, comp)
+        + property_profile_body(plant_count),
         intro="576 moth species on 30 riparian acres, and 228 of them are first iNaturalist records for "
               "Tioga County. That says two things at once: the county has been thinly sampled, and this stretch "
               "of Michigan Creek is a real moth engine. The regional comparison is shaped by heavy Tompkins "
@@ -1837,7 +1834,8 @@ def amphibians_view(df, stats):
     out.append(section(
         "amphibians", "At the Water's Edge",
         'The <em class="text-hollow-300">Amphibians</em>',
-        takeaway(
+        stats_band
+        + takeaway(
             "Ten amphibian species is a strong incidental list, but the habitat says there is more to find. "
             "The confirmed set includes spring peeper, American toad, gray treefrog, pickerel frog, eastern "
             "newt, red-backed salamander, northern slimy salamander, and spotted salamander, so the forest, "
@@ -1852,7 +1850,7 @@ def amphibians_view(df, stats):
     out.append(section(
         "reptiles-found", "Sun & Scale",
         'The <em class="text-hollow-300">Reptiles</em>',
-        stats_band + reptile_found_body(rep_found),
+        reptile_found_body(rep_found),
         intro="Seven reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
               "milksnake, DeKay's brownsnake, and gray ratsnake. Most records are incidental. Slow basking "
               "checks, cover-board work, and creek-edge walks should add the small secretive snakes and clarify "
@@ -2147,10 +2145,11 @@ def build():
     firsts = analyze.firsts_timeline(df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
-    parts = [head(public_s, county_firsts), nav(), hero(public_s, county_firsts)]
+    parts = [head(public_s, county_firsts), nav()]
 
     # ── All-life view (light) ────────────────────────────────────────────────
     parts.append('<div id="view-all">')
+    parts.append(hero(public_s, county_firsts))
     parts.append(section(
         "whats-new", "Latest", 'What\'s <em class="text-hollow-600">New</em>',
         whats_new_body(analyze.whats_new(df, stats)),
