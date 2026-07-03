@@ -378,7 +378,7 @@ def _dark_divider():
     return '<div class="w-px h-12 bg-white/15"></div>'
 
 
-def property_profile_body(plant_count=0):
+def property_profile_body(plant_count=0, moth_count=0):
     """Three-column ecological explanation of why Michigan Creek drives moth diversity."""
     plant_label = f"{plant_count:,} species · 30 acres" if plant_count else "Plant-rich · 30 acres"
     plant_sentence = (
@@ -410,7 +410,7 @@ def property_profile_body(plant_count=0):
         + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
         '2–3× the NY mixed-hardwood baseline. Eastern Lepidoptera are mostly host-plant specialists; '
         f'{plant_sentence}'
-        'Observed: 576 — the creek concentrates the high-value host genera, which pushes the count above the prediction.'
+        f'Observed: {moth_count:,} — the creek concentrates the high-value host genera, which pushes the count above the prediction.'
         '</p></div>'
     )
     return (
@@ -428,7 +428,7 @@ def moth_stats(msum, comp):
         ci = (f"Chao2 estimate; 95% CI {comp['low']}–{comp['high']}"
               if comp.get("high", 0) > comp.get("low", 0) else "Chao2 estimate")
         tiles.append(_dark_stat(f"{comp['pct_complete']}%", "Est. complete",
-                                "of the ~780 species estimated on this site (Chao2)"))
+                                f"of the ~{comp['estimated']:,} species estimated on this site (Chao2)"))
         tiles.append(_dark_stat(f"~{comp['estimated']:,}", "Likely total", ci))
     if msum.get("top_month"):
         tiles.append(_dark_stat(esc(msum["top_month"]), "Peak month"))
@@ -1166,10 +1166,11 @@ def activity_log_body(log_entries, weather_cache):
 
 
 # ── head / nav / footer ──────────────────────────────────────────────────────
-def head(s, county_firsts):
+def head(s, county_firsts, moth_species=None):
+    moth_phrase = f"{moth_species:,} moth species, " if moth_species else ""
     desc = (f"Biodiversity survey of Kingfisher Hollow — {s['species']:,} species on 30 riparian acres along Michigan Creek, "
             "Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / mid-Atlantic junction: "
-            f"{county_firsts:,} county-first records, 576 moth species, plant diversity 2–3× the NY upland baseline. "
+            f"{county_firsts:,} county-first records, {moth_phrase}plant diversity 2–3× the NY upland baseline. "
             "Data updated nightly.")
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1544,13 +1545,17 @@ def moth_view(df, stats):
     div = analyze.moth_diversity(df, moths)
     eff = analyze.moth_effort(df, moths)
     moth_sub = analyze.moth_obs(df, moths)
+    moth_ids = set(moths["taxon_id"].dropna().astype(int))
+    moth_county_firsts = int(
+        ((stats["is_county_first"] == 1) & (stats["taxon_id"].isin(moth_ids))).sum()
+    ) if not stats.empty else 0
 
     out = []
     out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
         moth_stats(msum, comp)
-        + property_profile_body(plant_count),
-        intro="576 moth species on 30 riparian acres, and 228 of them are first iNaturalist records for "
+        + property_profile_body(plant_count, msum["species"]),
+        intro=f"{msum['species']:,} moth species on 30 riparian acres, and {moth_county_firsts:,} of them are first iNaturalist records for "
               "Tioga County. That says two things at once: the county has been thinly sampled, and this stretch "
               "of Michigan Creek is a real moth engine. The regional comparison is shaped by heavy Tompkins "
               "County effort, especially on micromoths, so the gap list is a target list rather than a verdict. "
@@ -1576,7 +1581,8 @@ def moth_view(df, stats):
             "Tioga County's moth records are thin, and many nearby records come from well-worked Tompkins County, "
             "so this list draws from the ~50-mile regional pool with that bias in mind. Species at the top are "
             "seen repeatedly nearby in these same weeks; their absence here is usually a survey-method gap, not "
-            "evidence that the property lacks the habitat. "
+            "evidence that the property lacks the habitat. Current host-plant clues keep pointing at grape, "
+            "dogwood, willow, oak, hickory, basswood, jewelweed, and wetland composites. "
             "Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
             "Different gaps need different methods.", dark=True),
         intro=f"Moth species recorded within ~50 miles but not yet found on the property, ranked by how often they appear in {_months_label} county records. Tompkins County effort inflates some regional frequencies, especially for micros, so treat this as a practical field queue.",
@@ -1627,12 +1633,12 @@ def moth_view(df, stats):
             f"<strong>{comp['estimated']}</strong> species total (95% CI: {comp['low']}–{comp['high']}), "
             f"putting the survey about <strong>{comp['pct_complete']}%</strong> complete. The regional pool is "
             f"larger, and many records in it come from better-sampled Tompkins County or from habitats this property doesn't have. "
-            f"The ~780 ceiling is a realistic figure for this specific place — and Chao2 is a lower bound, so "
+            f"The ~{comp['estimated']:,} ceiling is a realistic figure for this specific place — and Chao2 is a lower bound, so "
             f"it may be conservative. The roughly {comp['remaining']} undetected "
             f"species aren't evenly distributed; they're concentrated in cold-season moths, bait-feeders, canopy "
             f"species, and micro-moth families that a UV sheet samples poorly. Targeted work on the photo-workable "
             f"Tortricidae and host-linked micros would close the most useful part of the gap.", dark=True),
-        intro="576 species confirmed. Statistical modeling puts the true total around 780. Here's the evidence for that gap — and how fast it's closing.",
+        intro=f"{comp['observed']:,} species confirmed. Statistical modeling puts the true total around {comp['estimated']:,}. Here's the evidence for that gap — and how fast it's closing.",
         dark=True))
     out.append(section(
         "moth-diversity", "Diversity",
@@ -1645,7 +1651,7 @@ def moth_view(df, stats):
             "A rank-abundance curve for a degraded habitat drops steeply: one or two species dominate, the "
             "rest are noise. This one doesn't. It slopes gently across hundreds of species — no single "
             "species has crowded out the rest. Ecologists call that high evenness, and it's a reliable "
-            "indicator of structurally complex habitat. The gentle slope across 576 species is what you'd "
+            f"indicator of structurally complex habitat. The gentle slope across {msum['species']:,} species is what you'd "
             f"predict from a site with {plant_count:,} wild/established plant species on 30 acres, each supporting distinct moth guilds, "
             "with the three-province ecotone adding guild diversity on top. "
             "The long flat tail on the right — all the once-or-twice-seen species — is the frontier of "
@@ -1676,7 +1682,7 @@ def moth_view(df, stats):
                      dark=True)
         + takeaway(
             "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
-            "The faint line reaches its earliest and latest confirmed dates. Read all 576 rows together and "
+            f"The faint line reaches its earliest and latest confirmed dates. Read all {msum['species']:,} rows together and "
             "you get the season's shape: sparse in April, a sharp peak in June, a gap in July where the "
             "lights weren't running, a full second plateau through August, fading through September and "
             "October. After one field season these windows are first drafts; they'll sharpen as more nights "
@@ -1695,7 +1701,7 @@ def moth_view(df, stats):
         "moth-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MOTH_METHODS),
-        intro="576 species came almost entirely from a UV sheet, which selects for large, photo-positive "
+        intro=f"{msum['species']:,} species came mostly from night lighting, which selects for large, photo-positive "
               "moths. These are the methods that reach the rest: bait-feeders, day and dusk fliers, canopy "
               "species, cold-season moths, and the host-linked micros worth documenting without turning the "
               "survey into a collection project.",
@@ -1733,7 +1739,7 @@ def mammals_view(df, stats):
             "rarest holding stays the eastern woodland jumping mouse, a riparian-forest indicator with only "
             "two records in all of Tioga County.", dark=True)
         + mammal_found_body(found),
-        intro="The mammal list is detection-limited. Trail cameras and incidental tracks show the mid-sized corridor users well, but bats, shrews, voles, mice, moles, and semi-aquatic mammals need their own methods. Michigan Creek is the reason a 30-acre property can carry this much carnivore traffic.",
+        intro="The mammal list is detection-limited. Trail cameras and incidental tracks show the mid-sized corridor users well, but bats, shrews, voles, mice, moles, and semi-aquatic mammals need their own methods. July is prime time for bat acoustics over Michigan Creek and careful checks for otter, skunk, porcupine, and small-mammal sign.",
         dark=True))
     out.append(section(
         "mammal-gap", "Who's Missing?",
@@ -1745,7 +1751,7 @@ def mammals_view(df, stats):
         "mammal-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MAMMAL_METHODS),
-        intro="22 species, and not one bat. These methods target the guilds a trail camera misses: acoustic "
+        intro=f"{msum['species']} species, and not one bat. These methods target the guilds a trail camera misses: acoustic "
               "fliers over the creek, small mammals in leaf litter, and semi-aquatic mammals moving through "
               "culverts, riffles, and log crossings.",
         dark=True))
@@ -1790,7 +1796,10 @@ def plants_view(df, stats):
             "northern-hardwood slope, hemlock shade, wet meadow, pond edge, and creek corridor all packed into "
             "30 acres. The oak-and-hickory backbone explains much of the caterpillar richness, while alder, "
             "willow, dogwoods, viburnum, grape, goldenrods, asters, sedges, and wetland forbs point to the next "
-            "wave of insect records. Two high-value groups are still thin: Salix is down to one species "
+            "wave of insect records. The latest plant pass added useful host structure — silky dogwood, "
+            "red-osier dogwood, nannyberry, crookedstem aster, marsh bedstraw, and tearthumb — while the moth "
+            "records still argue for targeted searches for sunflowers, cattails, burdock, black locust, "
+            "cottonwood, and wood nettle. Two high-value groups are still thin: Salix is down to one species "
             "(shining willow) against a large regional pool, and Carex stands at two. Those are survey gaps, "
             "not ecological absences.", dark=True)
         + plant_found_body(found),
@@ -1809,9 +1818,9 @@ def plants_view(df, stats):
         "plant-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(PLANT_METHODS),
-        intro=f"{psum['species']:,} wild/established species, with spring ephemerals, sedges, willows, grasses, "
-              "aquatics, and cryptogams still under-sampled. These passes target the gaps when each group is "
-              "actually identifiable.",
+        intro=f"{psum['species']:,} wild/established species, with sedges, willows, grasses, aquatics, "
+              "late-season composites, and cryptogams still under-sampled. These passes target the gaps when "
+              "each group is actually identifiable.",
         dark=True))
     return "".join(out)
 
@@ -1849,17 +1858,18 @@ def amphibians_view(df, stats):
             "the site is treated as well sampled.", dark=True)
         + amphibian_found_body(amp_found),
         intro="Frogs and salamanders are method- and season-dependent. The current list already points to "
-              "clean water, wet forest floor, and breeding wetlands, but it is still mostly incidental. Rainy "
-              "nights, spring egg-mass checks, and careful creek rock surveys are the missing effort.",
+              "clean water, wet forest floor, and breeding wetlands, but it is still mostly incidental. In "
+              "July, careful creek and seep checks are the useful next step for stream salamanders, while "
+              "warm evenings keep frogs visible around the pond and wet margins.",
         dark=True))
     out.append(section(
         "reptiles-found", "Sun & Scale",
         'The <em class="text-hollow-300">Reptiles</em>',
         reptile_found_body(rep_found),
-        intro="Seven reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
-              "milksnake, DeKay's brownsnake, and gray ratsnake. Most records are incidental. Slow basking "
-              "checks, cover-board work, and creek-edge walks should add the small secretive snakes and clarify "
-              "how turtles use the pond and Michigan Creek.",
+        intro="Eight reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
+              "milksnake, DeKay's brownsnake, and Central Ratsnake. Most records are incidental. July favors "
+              "slow basking checks, pond-edge turtle scans, and careful cover-object work for small secretive "
+              "snakes.",
         dark=True))
     out.append(section(
         "amphibian-gap", "Yet to Find",
@@ -1889,6 +1899,7 @@ def butterflies_view(df, stats):
              else butterflies)
     bsum = (analyze.butterfly_summary(df, butterflies) if not butterflies.empty
             else {"species": 0, "records": 0, "top_month": ""})
+    moth_species = analyze.moth_summary(df, analyze.load_moths())["species"]
     stats_band = (
         '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
         + _dark_divider().join([
@@ -1902,9 +1913,11 @@ def butterflies_view(df, stats):
         'The <em class="text-hollow-300">Butterflies</em>',
         stats_band + butterfly_found_body(found),
         intro="Butterflies are the daytime half of the property's Lepidoptera, and this list is still "
-              "effort-limited. Eighteen species against 576 moths says more about survey timing than habitat. "
+              f"effort-limited. {bsum['species']} species against {moth_species:,} moths says more about survey timing than habitat. "
               "The plants are already here for many missing species: violets, nettles, willows, oaks, hickories, "
-              "cherries, sedges, turtlehead, milkweeds, asters, and goldenrods.",
+              "cherries, sedges, turtlehead, milkweeds, asters, and goldenrods. July should be treated as a "
+              "butterfly catch-up window: skippers, hairstreaks, swallowtails, and brushfoots need repeated "
+              "sunny walks, not more night effort.",
         dark=True))
     out.append(section(
         "butterfly-gap", "Yet to Find",
@@ -1918,7 +1931,7 @@ def butterflies_view(df, stats):
         "butterfly-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(BUTTERFLY_METHODS),
-        intro="Eighteen species is a barely-started list. Repeated sunny transects, dorsal and ventral photos, "
+        intro=f"{bsum['species']} species are a barely-started list. Repeated sunny transects, dorsal and ventral photos, "
               "fruit bait, puddling checks, and host-plant searches across spring, midsummer, and fall would "
               "multiply it quickly.",
         dark=True))
@@ -1945,7 +1958,9 @@ def birds_view():
             "The bird list reflects the full shape of the property: creek, pond, wet meadow, "
             "hemlock-hardwood slope, shrub edge, and open sky. Waterbirds and shorebirds turn up along "
             "Michigan Creek, forest songbirds use the hollow, flycatchers and swallows work the openings, "
-            "and migrants follow the corridor in spring and fall.",
+            "and migrants follow the corridor in spring and fall. July records should shift from simple "
+            "presence toward breeding evidence: singing territories, fledglings, food carrying, and repeated "
+            "use of the same creek, shrub, or forest patch.",
             dark=True)
         + bird_life_list_body(birds),
         intro="Birds recorded at the Michigan Hollow, silo house eBird location, shown alongside the rest of the Kingfisher Hollow biodiversity survey.",
@@ -1960,7 +1975,7 @@ def birds_view():
         "bird-gap", "County Context",
         'Bird <em class="text-hollow-300">Gap Review</em>',
         bird_gap_body(gap),
-        intro="Likely seasonal misses from Tioga and Tompkins County eBird patterns, compared with the Kingfisher Hollow location list.",
+        intro="Likely seasonal misses from Tioga and Tompkins County bird patterns, compared with the Kingfisher Hollow location list. Tioga is the closer county signal; Tompkins adds useful coverage but overweights Cayuga Lake birds.",
         dark=True))
     return "".join(out)
 
@@ -2142,7 +2157,8 @@ def build():
     firsts = analyze.firsts_timeline(overview_df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
-    parts = [head(public_s, county_firsts), nav()]
+    moth_head_count = analyze.moth_summary(df, analyze.load_moths())["species"]
+    parts = [head(public_s, county_firsts, moth_head_count), nav()]
 
     # ── All-life view (light) ────────────────────────────────────────────────
     parts.append('<div id="view-all">')
