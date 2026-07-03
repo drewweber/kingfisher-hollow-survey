@@ -152,6 +152,7 @@ def phenology(matrix, dark=False, normalize=False):
     if matrix.empty:
         return "<p class='chart-empty'>No phenology data.</p>"
     raw = matrix.values
+    hover_counts = matrix.fillna(0).astype(int).astype(str).values.tolist()
     if normalize:
         row_max = matrix.max(axis=1).replace(0, 1)
         z = matrix.div(row_max, axis=0).values
@@ -161,11 +162,11 @@ def phenology(matrix, dark=False, normalize=False):
         cbar_title = ""
     fig = go.Figure(go.Heatmap(
         z=z, x=MONTHS, y=matrix.index.tolist(),
-        customdata=raw,
+        text=hover_counts,
         colorscale=_palette(dark)["green_scale"], showscale=True,
         colorbar=dict(title=dict(text=cbar_title, font=dict(size=10)),
                       thickness=10, len=0.6, outlinewidth=0),
-        hovertemplate="%{y}<br>%{x}: %{customdata} obs<extra></extra>",
+        hovertemplate="%{y}<br>%{x}: %{text} obs<extra></extra>",
         xgap=2, ygap=2,
     ))
     fig.update_yaxes(autorange="reversed", showgrid=False)
