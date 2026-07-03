@@ -729,8 +729,8 @@ def bird_gap_body(gap):
         return (
             '<div class="max-w-4xl mx-auto">'
             '<p class="text-center text-white/60 max-w-2xl mx-auto">'
-            'eBird barchart data could not be read during this build. Use the county barcharts below as the '
-            'manual gap-review source until the next successful refresh.</p>'
+            'The county comparison is temporarily unavailable here. The eBird barcharts below still show the '
+            'regional context for Kingfisher Hollow, Tioga County, and nearby Tompkins County.</p>'
             + link_grid + '</div>'
         )
     missing = gap.get("missing")
@@ -1480,11 +1480,10 @@ SCRIPTS = """
     setMode(fromHash[h]||'all', h in fromHash);
   })();
 
-  // Log view: trigger the GitHub Actions data refresh through a server-side Pages Function.
+  // Log view: trigger a private survey data refresh.
   (function(){
     const btn=document.getElementById('trigger-update'),status=document.getElementById('trigger-update-status');
     if(!btn||!status) return;
-    const workflowUrl='https://github.com/drewweber/kingfisher-hollow-survey/actions/workflows/update.yml';
     function setStatus(msg,kind){
       status.textContent=msg;
       status.className='text-xs '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-stone-400');
@@ -1507,7 +1506,7 @@ SCRIPTS = """
           throw new Error('That update key was not accepted. Try again.');
         }
         if(!res.ok) throw new Error(data.detail||data.error||'The update could not be started.');
-        setStatus('Update started. GitHub Actions will sync, rebuild, and deploy in a few minutes. '+workflowUrl,'ok');
+        setStatus('Update started. New survey data should appear here in a few minutes.','ok');
       }catch(err){
         setStatus(err.message||'The update could not be started.','error');
       }finally{
@@ -1937,14 +1936,13 @@ def birds_view():
         'The <em class="text-hollow-300">Birds</em>',
         stats_band
         + takeaway(
-            "The bird list is already broader than the iNaturalist survey because it comes from eBird, where "
-            "birds belong. Creek, pond, wet meadow, hemlock-hardwood slope, shrub edge, and open sky all show "
-            "up in the roster: waterbirds and shorebirds along Michigan Creek, breeding forest songbirds in "
-            "the hollow, flycatchers and swallows over the openings, and migrants using the corridor. The "
-            "right next step is regular eBird maintenance, not forcing birds into the iNaturalist pipeline.",
+            "The bird list reflects the full shape of the property: creek, pond, wet meadow, "
+            "hemlock-hardwood slope, shrub edge, and open sky. Waterbirds and shorebirds turn up along "
+            "Michigan Creek, forest songbirds use the hollow, flycatchers and swallows work the openings, "
+            "and migrants follow the corridor in spring and fall.",
             dark=True)
         + bird_life_list_body(birds),
-        intro="Birds are tracked from the eBird location life list for Michigan Hollow, silo house. This keeps the bird section aligned with the standard bird-recording system while the rest of the survey remains iNaturalist-based.",
+        intro="Birds recorded at the Michigan Hollow, silo house eBird location, shown alongside the rest of the Kingfisher Hollow biodiversity survey.",
         dark=True))
     out.append(section(
         "bird-recent", "New Additions",
@@ -1956,13 +1954,13 @@ def birds_view():
         "bird-gap", "County Context",
         'Bird <em class="text-hollow-300">Gap Review</em>',
         bird_gap_body(gap),
-        intro="Likely seasonal misses, generated from Tioga and Tompkins County eBird barcharts and filtered against the Kingfisher Hollow location list.",
+        intro="Likely seasonal misses from Tioga and Tompkins County eBird patterns, compared with the Kingfisher Hollow location list.",
         dark=True))
     out.append(section(
         "bird-source", "Reference",
         'eBird <em class="text-hollow-300">Barchart</em>',
         bird_source_body(bsum),
-        intro="The barchart stays on eBird. The survey site links to it and uses the exported location life list as the local snapshot.",
+        intro="The eBird barchart shows the seasonal pattern for birds recorded at Kingfisher Hollow.",
         dark=True))
     return "".join(out)
 
