@@ -705,7 +705,7 @@ def bird_life_list_body(birds):
     )
 
 
-def bird_gap_body():
+def bird_gap_body(gap):
     links = [
         ("Kingfisher Hollow location", EBIRD_BARCHART_URL,
          "The property list. Use this as the confirmed bird roster for the site."),
@@ -724,14 +724,61 @@ def bird_gap_body():
             f'<div class="text-hollow-300 text-xs uppercase tracking-[0.14em] mt-4">Open barchart</div>'
             '</a>'
         )
+    link_grid = '<div class="grid md:grid-cols-3 gap-3 mt-8">' + "".join(cards) + '</div>'
+    if not gap or gap.get("failed"):
+        return (
+            '<div class="max-w-4xl mx-auto">'
+            '<p class="text-center text-white/60 max-w-2xl mx-auto">'
+            'eBird barchart data could not be read during this build. Use the county barcharts below as the '
+            'manual gap-review source until the next successful refresh.</p>'
+            + link_grid + '</div>'
+        )
+    missing = gap.get("missing")
+    if missing is None or missing.empty:
+        return (
+            '<div class="max-w-4xl mx-auto">'
+            '<p class="text-center text-white/60 max-w-2xl mx-auto">'
+            'No seasonal eBird gap candidates are available right now.</p>'
+            + link_grid + '</div>'
+        )
+    rows = []
+    max_score = max(float(missing["score"].max()), 1)
+    for _, r in missing.iterrows():
+        common = sval(r.get("common_name"))
+        sci = sval(r.get("taxon_name"))
+        code = sval(r.get("species_code"))
+        href = f"https://ebird.org/species/{esc(code)}" if code else EBIRD_BARCHART_URL
+        width = max(8, round(100 * float(r.get("score", 0)) / max_score))
+        rows.append(
+            '<tr class="border-b border-white/10 align-top">'
+            f'<td class="py-3 pr-4"><a href="{href}" target="_blank" rel="noopener" '
+            f'class="font-medium text-white hover:text-hollow-300">{esc(common)}</a>'
+            f'<span class="block text-white/35 italic text-sm">{esc(sci)}</span></td>'
+            f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tioga_signal")))}</td>'
+            f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tompkins_signal")))}</td>'
+            f'<td class="py-3 pl-3 text-white/45 text-sm">{esc(sval(r.get("context")))}</td>'
+            f'<td class="py-3 pl-4 w-32"><div class="h-1.5 rounded-full bg-white/10">'
+            f'<div class="h-1.5 rounded-full bg-hollow-300" style="width:{width}%"></div>'
+            '</div></td>'
+            '</tr>'
+        )
+    table = (
+        '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7 max-w-5xl mx-auto overflow-x-auto">'
+        '<table class="w-full text-[0.95rem]"><thead class="text-white/35 text-xs uppercase tracking-wider border-b-2 border-white/10">'
+        '<tr><th class="text-left pb-2 font-semibold">Species</th>'
+        '<th class="text-left pb-2 px-3 font-semibold">Tioga</th>'
+        '<th class="text-left pb-2 px-3 font-semibold">Tompkins</th>'
+        '<th class="text-left pb-2 pl-3 font-semibold">Context</th>'
+        '<th class="text-left pb-2 pl-4 font-semibold">Signal</th></tr>'
+        '</thead><tbody>' + "".join(rows) + '</tbody></table></div>'
+    )
     return (
         '<div class="max-w-4xl mx-auto">'
         '<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
-        'The next bird gap list should come from eBird, not iNaturalist: compare the property location list '
-        'against Tioga County for realistic local gaps, then use Tompkins County as a broader regional check. '
-        'Tompkins is better covered, but Cayuga Lake inflates waterbird and shoreline expectations.</p>'
-        '<div class="grid md:grid-cols-3 gap-3">' + "".join(cards) + '</div>'
-        '</div>'
+        f'These are the strongest seasonal eBird barchart signals absent from the Kingfisher Hollow location list. '
+        f'Tioga County is the main comparison; Tompkins County adds nearby coverage, but Cayuga Lake can overstate '
+        f'waterbird and shoreline targets.</p></div>'
+        + table + link_grid
     )
 
 
@@ -1880,6 +1927,7 @@ def birds_view():
     birds = analyze.load_birds()
     bsum = analyze.bird_summary(birds)
     recent = analyze.bird_recent(birds, n=12)
+    gap = analyze.bird_gap_from_ebird_barcharts(birds, n=40)
     stats_band = (
         '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
         + _dark_divider().join([
@@ -1909,8 +1957,8 @@ def birds_view():
     out.append(section(
         "bird-gap", "County Context",
         'Bird <em class="text-hollow-300">Gap Review</em>',
-        bird_gap_body(),
-        intro="Use eBird county barcharts to compare Kingfisher Hollow against nearby bird records by season.",
+        bird_gap_body(gap),
+        intro="Likely seasonal misses, generated from Tioga and Tompkins County eBird barcharts and filtered against the Kingfisher Hollow location list.",
         dark=True))
     out.append(section(
         "bird-source", "Reference",

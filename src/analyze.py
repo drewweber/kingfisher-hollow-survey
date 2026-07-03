@@ -1,9 +1,20 @@
 """pandas analyses over the SQLite tables. Each function returns a DataFrame
 (or dict) that viz.py turns into a chart, keeping data and presentation apart."""
 
-import pandas as pd
+from datetime import datetime
+from html.parser import HTMLParser
 
-from config import EBIRD_LIFE_LIST_CSV, REGION_RADIUS_KM, SPECIES_RANKS
+import pandas as pd
+import requests
+
+from config import (
+    EBIRD_LIFE_LIST_CSV,
+    EBIRD_TIOGA_BARCHART_URL,
+    EBIRD_TOMPKINS_BARCHART_URL,
+    REGION_RADIUS_KM,
+    SPECIES_RANKS,
+    USER_AGENT,
+)
 from db import connect
 
 
@@ -673,6 +684,193 @@ def bird_recent(birds, n=12):
     if birds.empty:
         return birds
     return birds.sort_values(["date", "taxon_order"], ascending=[False, True]).head(n)
+
+
+class _EbirdBarchartParser(HTMLParser):
+    """Extract species rows and 48 four-week frequency bins from eBird barcharts."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.rows = []
+        self._in_row = False
+        self._current = None
+        self._species_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        classes = set(attrs.get("class", "").split())
+        if tag == "tr" and "rC" in classes:
+            self._in_row = True
+            self._current = {"species_code": "", "common_name": "", "bars": []}
+            return
+        if not self._in_row or self._current is None:
+            return
+        if tag == "a" and attrs.get("data-species-code"):
+            self._current["species_code"] = attrs.get("data-species-code", "")
+            self._species_depth = 1
+            return
+        if self._species_depth:
+            self._species_depth += 1
+        if tag == "div":
+            for cls in classes:
+                if cls == "sp":
+                    self._current["bars"].append(0)
+                elif cls.startswith("b") and cls[1:].isdigit():
+                    self._current["bars"].append(int(cls[1:]))
+
+    def handle_endtag(self, tag):
+        if self._species_depth:
+            self._species_depth -= 1
+        if tag == "tr" and self._in_row and self._current is not None:
+            if self._current.get("species_code") and self._current.get("common_name"):
+                self.rows.append(self._current)
+            self._in_row = False
+            self._current = None
+            self._species_depth = 0
+
+    def handle_data(self, data):
+        if self._species_depth and self._current is not None:
+            name = " ".join(data.split())
+            if name:
+                current = self._current.get("common_name", "")
+                self._current["common_name"] = f"{current} {name}".strip()
+
+
+def _fetch_ebird_text(url):
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    })
+    resp = session.get(url, timeout=45, allow_redirects=True)
+    resp.raise_for_status()
+    return resp.text
+
+
+def _parse_ebird_barchart(html):
+    parser = _EbirdBarchartParser()
+    parser.feed(html)
+    rows = []
+    for row in parser.rows:
+        bars = row.get("bars", [])
+        if len(bars) >= 48:
+            rows.append({
+                "species_code": row["species_code"],
+                "common_name": row["common_name"],
+                "bars": bars[:48],
+            })
+    return pd.DataFrame(rows)
+
+
+def _load_ebird_barchart(url):
+    try:
+        return _parse_ebird_barchart(_fetch_ebird_text(url))
+    except requests.exceptions.RequestException:
+        return pd.DataFrame(columns=["species_code", "common_name", "bars"])
+
+
+def _load_ebird_taxonomy():
+    url = "https://api.ebird.org/v2/ref/taxonomy/ebird?fmt=json&locale=en"
+    try:
+        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=45)
+        resp.raise_for_status()
+        taxa = pd.DataFrame(resp.json())
+    except (requests.exceptions.RequestException, ValueError):
+        return pd.DataFrame(columns=["species_code", "common_name", "taxon_name", "category", "taxon_order"])
+    if taxa.empty:
+        return pd.DataFrame(columns=["species_code", "common_name", "taxon_name", "category", "taxon_order"])
+    taxa = taxa.rename(columns={
+        "speciesCode": "species_code",
+        "comName": "common_name",
+        "sciName": "taxon_name",
+        "taxonOrder": "taxon_order",
+    })
+    keep = ["species_code", "common_name", "taxon_name", "category", "taxon_order"]
+    return taxa[[c for c in keep if c in taxa.columns]]
+
+
+def _season_window_score(bars, when=None):
+    if when is None:
+        when = datetime.now()
+    if not isinstance(bars, list) or not bars:
+        return 0
+    month = max(1, min(12, int(when.month)))
+    week_in_month = max(0, min(3, (int(when.day) - 1) // 8))
+    start = (month - 1) * 4 + week_in_month
+    values = [bars[(start + i) % 48] for i in range(4)]
+    return int(max(values)) if values else 0
+
+
+def _signal_label(score):
+    if score >= 11:
+        return "very high"
+    if score >= 7:
+        return "high"
+    if score >= 4:
+        return "moderate"
+    if score > 0:
+        return "low"
+    return "none"
+
+
+def bird_gap_from_ebird_barcharts(birds, n=40, when=None):
+    """Likely seasonal bird gaps from Tioga and Tompkins eBird barcharts.
+
+    Scores are derived from eBird's 48 four-week barchart bins. Tioga gets
+    priority; Tompkins is a stronger regional context but has a Cayuga Lake bias.
+    """
+    have_common = set(birds["common_name"].dropna().str.lower()) if not birds.empty else set()
+    have_sci = set(birds["taxon_name"].dropna().str.lower()) if not birds.empty else set()
+
+    tioga = _load_ebird_barchart(EBIRD_TIOGA_BARCHART_URL)
+    tompkins = _load_ebird_barchart(EBIRD_TOMPKINS_BARCHART_URL)
+    taxonomy = _load_ebird_taxonomy()
+
+    if tioga.empty and tompkins.empty:
+        return {"missing": pd.DataFrame(), "source_count": 0, "have": len(have_common), "failed": True}
+
+    tioga = tioga.rename(columns={"common_name": "tioga_common", "bars": "tioga_bars"})
+    tompkins = tompkins.rename(columns={"common_name": "tompkins_common", "bars": "tompkins_bars"})
+    merged = pd.merge(tioga, tompkins, on="species_code", how="outer")
+    if not taxonomy.empty:
+        merged = merged.merge(taxonomy, on="species_code", how="left")
+    else:
+        merged["common_name"] = merged["tioga_common"].fillna(merged["tompkins_common"])
+        merged["taxon_name"] = ""
+        merged["category"] = "species"
+        merged["taxon_order"] = None
+
+    merged["common_name"] = merged["common_name"].fillna(merged["tioga_common"]).fillna(merged["tompkins_common"])
+    merged["taxon_name"] = merged["taxon_name"].fillna("")
+    merged["category"] = merged["category"].fillna("species")
+    merged = merged[merged["category"] == "species"].copy()
+
+    merged["tioga_score"] = merged["tioga_bars"].apply(lambda bars: _season_window_score(bars, when))
+    merged["tompkins_score"] = merged["tompkins_bars"].apply(lambda bars: _season_window_score(bars, when))
+    merged["score"] = (
+        merged["tioga_score"].astype(float)
+        + 0.35 * merged["tompkins_score"].astype(float)
+        + 0.15 * merged[["tioga_score", "tompkins_score"]].min(axis=1).astype(float)
+    )
+    merged = merged[merged["score"] > 0].copy()
+    merged = merged[
+        ~merged["common_name"].str.lower().isin(have_common)
+        & ~merged["taxon_name"].str.lower().isin(have_sci)
+    ].copy()
+
+    merged["tioga_signal"] = merged["tioga_score"].apply(_signal_label)
+    merged["tompkins_signal"] = merged["tompkins_score"].apply(_signal_label)
+    merged["context"] = "Tioga + Tompkins"
+    merged.loc[(merged["tioga_score"] > 0) & (merged["tompkins_score"] == 0), "context"] = "Tioga only"
+    merged.loc[(merged["tioga_score"] == 0) & (merged["tompkins_score"] > 0), "context"] = "Tompkins only"
+    merged.loc[merged["tompkins_score"] >= merged["tioga_score"] + 4, "context"] = "Tompkins-weighted"
+    merged = merged.sort_values(["score", "tioga_score", "tompkins_score", "taxon_order"], ascending=[False, False, False, True])
+    return {
+        "missing": merged.head(n),
+        "source_count": int(len(merged)),
+        "have": len(have_common),
+        "failed": False,
+    }
 
 
 def bird_gap_from_inat(birds, n=40):

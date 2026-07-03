@@ -112,7 +112,10 @@ list from eBird, replace that CSV, rebuild with `report.py`, and push.
 Bird gaps should be evaluated from eBird, not iNaturalist. The site links to the
 Tioga County barchart as the relevant local comparison and Tompkins County as a
 better-covered regional comparison, with the caveat that Cayuga Lake biases
-Tompkins toward waterbirds and shoreline species.
+Tompkins toward waterbirds and shoreline species. During report builds, the
+Birds view reads those two barcharts, scores the current four-week seasonal
+window, removes birds already on the Kingfisher Hollow eBird life list, and
+renders a no-photo gap table sorted by likelihood.
 
 ## Layout
 ```
