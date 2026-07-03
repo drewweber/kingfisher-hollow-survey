@@ -101,6 +101,18 @@ plant list and regional plant pool are based on records not marked
 cultivated/planted. The gap list also enriches plants with New York
 establishment status and excludes taxa listed as introduced in New York.
 
+### Bird page source
+
+Birds are tracked from eBird rather than iNaturalist. The Birds view reads the
+checked-in eBird location life-list snapshot at
+`data/ebird_L41961519_life_list.csv` and links to the live eBird barchart for
+location `L41961519`. To refresh the local bird page, export a new location life
+list from eBird, replace that CSV, rebuild with `report.py`, and push.
+
+The bird gap list is intentionally weaker than the other taxa gap lists: it is a
+cross-check against Tioga County iNaturalist bird records, not a substitute for
+eBird.
+
 ## Layout
 ```
 src/config.py   IDs and paths         sync.py     fetch CLI

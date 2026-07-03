@@ -3,7 +3,7 @@
 
 import pandas as pd
 
-from config import REGION_RADIUS_KM, SPECIES_RANKS
+from config import EBIRD_LIFE_LIST_CSV, REGION_RADIUS_KM, SPECIES_RANKS
 from db import connect
 
 
@@ -613,6 +613,102 @@ def butterfly_gap(butterflies, n=30):
     a thin single-month slice.
     """
     return _region_gap(butterflies, "region_butterfly_taxa", n=n)
+
+
+# --- birds -------------------------------------------------------------------
+_BIRD_COLUMNS = [
+    "taxon_order", "category", "common_name", "taxon_name", "max_count", "count_text",
+    "location", "region", "date", "loc_id", "sub_id", "exotic", "countable",
+    "label",
+]
+
+
+def load_birds(countable_only=True):
+    """eBird location life list snapshot for Kingfisher Hollow.
+
+    Birds are deliberately kept separate from the iNaturalist property totals.
+    The source file is the eBird location life-list CSV for L41961519.
+    """
+    if not EBIRD_LIFE_LIST_CSV.exists():
+        return pd.DataFrame(columns=_BIRD_COLUMNS)
+    birds = pd.read_csv(EBIRD_LIFE_LIST_CSV, dtype=str, keep_default_na=False)
+    birds = birds.rename(columns={
+        "Taxon Order": "taxon_order",
+        "Category": "category",
+        "Common Name": "common_name",
+        "Scientific Name": "taxon_name",
+        "Count": "count_text",
+        "Location": "location",
+        "S/P": "region",
+        "Date": "date",
+        "LocID": "loc_id",
+        "SubID": "sub_id",
+        "Exotic": "exotic",
+        "Countable": "countable",
+    })
+    birds["date"] = pd.to_datetime(birds["date"], errors="coerce", format="mixed")
+    birds["taxon_order"] = pd.to_numeric(birds["taxon_order"], errors="coerce")
+    birds["count_text"] = birds["count_text"].fillna("").astype(str)
+    birds["max_count"] = pd.to_numeric(birds["count_text"], errors="coerce").fillna(0).astype(int)
+    birds["countable"] = pd.to_numeric(birds["countable"], errors="coerce").fillna(0).astype(int)
+    birds["label"] = birds["common_name"].fillna(birds["taxon_name"])
+    if countable_only:
+        birds = birds[(birds["category"] == "species") & (birds["countable"] == 1)].copy()
+    return birds.sort_values(["taxon_order", "common_name"])
+
+
+def bird_summary(birds):
+    if birds.empty:
+        return {"species": 0, "latest": "", "earliest": "", "checklists": 0, "exotics": 0}
+    return {
+        "species": int(len(birds)),
+        "latest": birds["date"].max(),
+        "earliest": birds["date"].min(),
+        "checklists": int(birds["sub_id"].nunique()),
+        "exotics": int((birds["exotic"].fillna("") != "").sum()),
+    }
+
+
+def bird_recent(birds, n=12):
+    if birds.empty:
+        return birds
+    return birds.sort_values(["date", "taxon_order"], ascending=[False, True]).head(n)
+
+
+def bird_gap_from_inat(birds, n=40):
+    """Birds in Tioga iNaturalist data but absent from the eBird location list.
+
+    This is intentionally a weak, sparse gap signal. eBird is the bird source of
+    truth; iNaturalist only supplies a rough list of nearby photo-vouchered birds.
+    """
+    have = set(birds["taxon_name"].dropna().str.lower()) if not birds.empty else set()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT taxon_id, taxon_name, common_name, COUNT(*) AS ref_count "
+            "FROM county_obs "
+            "WHERE iconic_taxon = 'Aves' "
+            "AND taxon_id IS NOT NULL "
+            "AND (captive IS NULL OR captive = 0) "
+            "GROUP BY taxon_id, taxon_name, common_name"
+        ).fetchall()
+    county = pd.DataFrame([dict(r) for r in rows])
+    if county.empty:
+        return {"county_total": 0, "have": len(have), "pct": 0,
+                "missing_count": 0, "missing": county}
+    county = county[county["taxon_name"].fillna("").str.contains(" ")].copy()
+    county["label"] = county["common_name"].fillna(county["taxon_name"])
+    county["photo_url"] = None
+    county_total = int(county["taxon_id"].nunique())
+    county_have = int(county["taxon_name"].str.lower().isin(have).sum())
+    missing = county[~county["taxon_name"].str.lower().isin(have)].copy()
+    missing = missing.sort_values("ref_count", ascending=False)
+    return {
+        "county_total": county_total,
+        "have": county_have,
+        "pct": round(100 * county_have / county_total) if county_total else 0,
+        "missing_count": int(len(missing)),
+        "missing": missing.head(n),
+    }
 
 
 # --- reptiles ----------------------------------------------------------------

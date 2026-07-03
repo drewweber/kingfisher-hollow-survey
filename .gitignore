@@ -17,6 +17,7 @@ data/inat.db-shm
 
 # Original CSV exports — superseded by the live API; kept locally as an archive.
 *.csv
+!data/ebird_L41961519_life_list.csv
 
 # Wrangler cache — contains Cloudflare account ID; not needed in version control.
 .wrangler/

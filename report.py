@@ -19,7 +19,7 @@ import analyze  # noqa: E402
 import inat_api  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
-from config import MY_USERNAME, PROPERTY_PROJECT_ID, PUBLIC_DIR  # noqa: E402
+from config import EBIRD_BARCHART_URL, MY_USERNAME, PROPERTY_PROJECT_ID, PUBLIC_DIR  # noqa: E402
 from db import connect, init_db  # noqa: E402
 
 PLOTLY_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
@@ -630,6 +630,92 @@ def butterfly_gap_body(gap):
     return lead + _gap_photo_grid(gap["missing"], placeholder="🦋")
 
 
+def bird_source_body(summary):
+    species = summary.get("species", 0)
+    latest = fdate(summary.get("latest"))
+    earliest = fdate(summary.get("earliest"))
+    return (
+        '<div class="max-w-3xl mx-auto bg-white/[0.04] border border-white/10 rounded-2xl p-6 md:p-8">'
+        '<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5">'
+        '<div>'
+        '<div class="text-hollow-300 text-xs font-semibold tracking-[0.18em] uppercase mb-2">eBird source</div>'
+        f'<p class="text-white/70 leading-relaxed">This page uses the eBird location life-list CSV for '
+        f'<strong class="text-hollow-300">L41961519</strong>. The current snapshot has '
+        f'<strong class="text-hollow-300">{species}</strong> countable bird species, with listed dates from '
+        f'{esc(earliest)} to {esc(latest)}.</p>'
+        '</div>'
+        f'<a href="{EBIRD_BARCHART_URL}" target="_blank" rel="noopener" '
+        'class="inline-flex items-center justify-center rounded-full bg-hollow-300 text-hollow-950 '
+        'px-5 py-2.5 text-sm font-semibold whitespace-nowrap hover:bg-white transition-colors">'
+        'Open eBird barchart ↗</a>'
+        '</div>'
+        '</div>'
+    )
+
+
+def bird_recent_body(recent):
+    if recent is None or recent.empty:
+        return '<p class="text-center text-white/50 py-8">No eBird rows loaded yet.</p>'
+    cards = []
+    for _, r in recent.iterrows():
+        checklist = f'https://ebird.org/checklist/{esc(r.get("sub_id"))}' if r.get("sub_id") else EBIRD_BARCHART_URL
+        count = sval(r.get("count_text"))
+        count_html = f'<span class="text-white/35"> · {esc(count)} counted</span>' if count else ""
+        cards.append(
+            f'<a href="{checklist}" target="_blank" rel="noopener" '
+            f'class="block rounded-xl border border-white/10 bg-white/[0.04] p-4 hover:border-hollow-400/60 transition-colors">'
+            f'<div class="text-sm font-medium text-white leading-tight">{esc(r.get("common_name"))}</div>'
+            f'<div class="text-[0.75rem] text-white/40 italic mt-1">{esc(r.get("taxon_name"))}</div>'
+            f'<div class="text-[0.7rem] text-hollow-300 mt-3 uppercase tracking-[0.12em]">'
+            f'{esc(fdate(r.get("date")))}{count_html}</div>'
+            '</a>'
+        )
+    return '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">' + "".join(cards) + "</div>"
+
+
+def bird_life_list_body(birds):
+    if birds is None or birds.empty:
+        return '<p class="text-center text-white/50 py-8">No eBird life-list CSV loaded yet.</p>'
+    rows = []
+    for _, r in birds.iterrows():
+        checklist = f'https://ebird.org/checklist/{esc(r.get("sub_id"))}' if r.get("sub_id") else EBIRD_BARCHART_URL
+        exotic = sval(r.get("exotic"))
+        exotic_html = (f'<span class="ml-2 text-[0.6rem] uppercase tracking-[0.12em] text-hollow-300">'
+                       f'{esc(exotic)}</span>') if exotic else ""
+        rows.append(
+            '<tr class="border-b border-white/10">'
+            f'<td class="py-2.5 pr-4"><a href="{checklist}" target="_blank" rel="noopener" '
+            f'class="font-medium text-white hover:text-hollow-300">{esc(r.get("common_name"))}</a>'
+            f'{exotic_html}<span class="block sm:inline sm:ml-2 text-white/35 italic text-sm">'
+            f'{esc(r.get("taxon_name"))}</span></td>'
+            f'<td class="py-2.5 pr-4 text-white/45 text-sm text-right">{esc(sval(r.get("count_text")) or "—")}</td>'
+            f'<td class="py-2.5 text-white/40 text-sm whitespace-nowrap text-right">{esc(fdate(r.get("date"), "%b %Y"))}</td>'
+            '</tr>'
+        )
+    return (
+        '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7 max-h-[620px] overflow-y-auto">'
+        '<table class="w-full text-[0.95rem]"><thead class="text-white/35 text-xs uppercase tracking-wider border-b-2 border-white/10">'
+        '<tr><th class="text-left pb-2 font-semibold">Species</th>'
+        '<th class="text-right pb-2 font-semibold">High count</th>'
+        '<th class="text-right pb-2 font-semibold">Listed date</th></tr>'
+        '</thead><tbody>' + "".join(rows) + '</tbody></table></div>'
+    )
+
+
+def bird_gap_body(gap):
+    if not gap or gap.get("missing_count", 0) == 0:
+        return '<p class="text-center text-white/50">No iNaturalist bird gap data yet.</p>'
+    lead = (
+        f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+        f'iNaturalist has <strong class="text-hollow-300">{gap["county_total"]}</strong> bird species in '
+        f'Tioga County, and <strong class="text-hollow-300">{gap["have"]}</strong> overlap the current eBird '
+        f'location list. The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below are '
+        f'photo-vouchered somewhere in the county but absent from the eBird snapshot. This is a weak signal: '
+        f'eBird remains the bird source of truth, and iNaturalist bird coverage is sparse.</p>'
+    )
+    return lead + _gap_photo_grid(gap["missing"], placeholder="🪶")
+
+
 def mammal_found_body(found):
     """Mammals recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
@@ -1102,6 +1188,8 @@ def nav():
                   ("#moth-calendar", "Calendar"), ("#moth-methods", "Find More")]
     butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List"),
                        ("#butterfly-methods", "Find More")]
+    bird_links = [("#birds", "Found"), ("#bird-recent", "Recent"),
+                  ("#bird-gap", "iNat Gap"), ("#bird-source", "eBird")]
     mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
                     ("#mammal-methods", "Find More")]
     plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
@@ -1112,7 +1200,7 @@ def nav():
 
     # One source of truth for the view switcher, used by both toggles.
     modes = [("all", "All life"), ("moths", "Moths"), ("butterflies", "Butterflies"),
-             ("mammals", "Mammals"), ("plants", "Plants"),
+             ("birds", "Birds"), ("mammals", "Mammals"), ("plants", "Plants"),
              ("amphibians", "Herps"), ("log", "Log")]
 
     def mode_buttons():
@@ -1129,6 +1217,7 @@ def nav():
         f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
         f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
         f'<span class="links-butterflies hidden items-center gap-6">{links_html(butterfly_links, desk_cls)}</span>'
+        f'<span class="links-birds hidden items-center gap-6">{links_html(bird_links, desk_cls)}</span>'
         f'<span class="links-mammals hidden items-center gap-6">{links_html(mammal_links, desk_cls)}</span>'
         f'<span class="links-plants hidden items-center gap-6">{links_html(plant_links, desk_cls)}</span>'
         f'<span class="links-amphibians hidden items-center gap-6">{links_html(amphibian_links, desk_cls)}</span>'
@@ -1137,6 +1226,7 @@ def nav():
         f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
         f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
         f'<div class="links-butterflies hidden flex-col gap-3">{links_html(butterfly_links, mob_cls)}</div>'
+        f'<div class="links-birds hidden flex-col gap-3">{links_html(bird_links, mob_cls)}</div>'
         f'<div class="links-mammals hidden flex-col gap-3">{links_html(mammal_links, mob_cls)}</div>'
         f'<div class="links-plants hidden flex-col gap-3">{links_html(plant_links, mob_cls)}</div>'
         f'<div class="links-amphibians hidden flex-col gap-3">{links_html(amphibian_links, mob_cls)}</div>'
@@ -1293,9 +1383,9 @@ SCRIPTS = """
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-  // Mode toggle: All life / Moths / Mammals / Plants / Log — one page, five views.
+  // Mode toggle: one page, multiple focused views.
   (function(){
-    const MODES=['all','moths','butterflies','mammals','plants','amphibians','log'];
+    const MODES=['all','moths','butterflies','birds','mammals','plants','amphibians','log'];
     const views=Object.fromEntries(MODES.map(m=>[m,document.getElementById('view-'+m)]));
     function setMode(mode,force){
       if(!MODES.includes(mode)) mode='all';
@@ -1307,7 +1397,7 @@ SCRIPTS = """
           const on=mode===m;e.classList.toggle('hidden',!on);e.classList.toggle('flex',on);});});
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
-      const hashes={moths:'#moths',butterflies:'#butterflies',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
+      const hashes={moths:'#moths',butterflies:'#butterflies',birds:'#birds',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
       history.replaceState(null,'',hashes[mode]||location.pathname);
       updateNav&&updateNav();
       if(force){
@@ -1319,7 +1409,7 @@ SCRIPTS = """
       setMode(b.dataset.mode,true);window.scrollTo({top:0,behavior:'smooth'});
       document.getElementById('mob').classList.add('hidden');}));
     const h=location.hash;
-    const fromHash={['#moths']:'moths',['#butterflies']:'butterflies',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
+    const fromHash={['#moths']:'moths',['#butterflies']:'butterflies',['#birds']:'birds',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
     setMode(fromHash[h]||'all', h in fromHash);
   })();
 
@@ -1766,6 +1856,56 @@ def butterflies_view(df, stats):
     return "".join(out)
 
 
+def birds_view():
+    """Dark bird view driven by the eBird location life-list snapshot."""
+    birds = analyze.load_birds()
+    bsum = analyze.bird_summary(birds)
+    recent = analyze.bird_recent(birds, n=12)
+    gap = analyze.bird_gap_from_inat(birds, n=40)
+    latest = fdate(bsum.get("latest"), "%b %Y") or "—"
+    stats_band = (
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
+        + _dark_divider().join([
+            _dark_stat(str(bsum["species"]), "eBird species"),
+            _dark_stat(str(bsum["checklists"]), "source checklists"),
+            _dark_stat(latest, "latest listed date"),
+        ]) + '</div>')
+    out = []
+    out.append(section(
+        "birds", "On eBird",
+        'The <em class="text-hollow-300">Birds</em>',
+        stats_band
+        + takeaway(
+            "The bird list is already broader than the iNaturalist survey because it comes from eBird, where "
+            "birds belong. Creek, pond, wet meadow, hemlock-hardwood slope, shrub edge, and open sky all show "
+            "up in the roster: waterbirds and shorebirds along Michigan Creek, breeding forest songbirds in "
+            "the hollow, flycatchers and swallows over the openings, and migrants using the corridor. The "
+            "right next step is regular eBird maintenance, not forcing birds into the iNaturalist pipeline.",
+            dark=True)
+        + bird_life_list_body(birds),
+        intro="Birds are tracked from the eBird location life list for Michigan Hollow, silo house. This keeps the bird section aligned with the standard bird-recording system while the rest of the survey remains iNaturalist-based.",
+        dark=True))
+    out.append(section(
+        "bird-recent", "Latest Rows",
+        'Recent <em class="text-hollow-300">eBird Records</em>',
+        bird_recent_body(recent),
+        intro="The newest dated rows in the current eBird life-list CSV. These link back to their eBird checklists when a checklist ID is present.",
+        dark=True))
+    out.append(section(
+        "bird-gap", "Weak Signal",
+        'Bird <em class="text-hollow-300">Gap List</em>',
+        bird_gap_body(gap),
+        intro="A sparse cross-check against Tioga County iNaturalist bird records. Use this as a prompt for eBird review, not as a serious completeness estimate.",
+        dark=True))
+    out.append(section(
+        "bird-source", "Reference",
+        'eBird <em class="text-hollow-300">Barchart</em>',
+        bird_source_body(bsum),
+        intro="The barchart stays on eBird. The survey site links to it and uses the exported location life list as the local snapshot.",
+        dark=True))
+    return "".join(out)
+
+
 def survey_methods_body(methods):
     """Field-method cards — how to expand a taxon's list: where, when, what it adds.
     Responsive grid (1 col on phones, up to 3 on desktop)."""
@@ -2063,6 +2203,11 @@ def build():
     parts.append('<div id="view-butterflies" class="hidden">')
     parts.append(butterflies_view(df, stats))
     parts.append('</div>')  # /view-butterflies
+
+    # ── Birds view (dark, eBird-backed) ──────────────────────────────────────
+    parts.append('<div id="view-birds" class="hidden">')
+    parts.append(birds_view())
+    parts.append('</div>')  # /view-birds
 
     # ── Mammals view (dark) ──────────────────────────────────────────────────
     parts.append('<div id="view-mammals" class="hidden">')
