@@ -44,6 +44,8 @@ LOGS_DIR = ROOT / "logs"
 DB_PATH = DATA_DIR / "inat.db"
 EBIRD_LIFE_LIST_CSV = DATA_DIR / "ebird_L41961519_life_list.csv"
 EBIRD_BARCHART_URL = "https://ebird.org/barchart?byr=1900&bmo=1&emo=12&r=L41961519"
+EBIRD_TIOGA_BARCHART_URL = "https://ebird.org/barchart?r=US-NY-107"
+EBIRD_TOMPKINS_BARCHART_URL = "https://ebird.org/barchart?r=US-NY-109"
 
 # --- Behaviour ---------------------------------------------------------------
 # Ranks counted as "species level" — species and anything finer. Coarser IDs

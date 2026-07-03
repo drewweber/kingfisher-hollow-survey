@@ -109,9 +109,10 @@ checked-in eBird location life-list snapshot at
 location `L41961519`. To refresh the local bird page, export a new location life
 list from eBird, replace that CSV, rebuild with `report.py`, and push.
 
-The bird gap list is intentionally weaker than the other taxa gap lists: it is a
-cross-check against Tioga County iNaturalist bird records, not a substitute for
-eBird.
+Bird gaps should be evaluated from eBird, not iNaturalist. The site links to the
+Tioga County barchart as the relevant local comparison and Tompkins County as a
+better-covered regional comparison, with the caveat that Cayuga Lake biases
+Tompkins toward waterbirds and shoreline species.
 
 ## Layout
 ```

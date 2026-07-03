@@ -19,7 +19,14 @@ import analyze  # noqa: E402
 import inat_api  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
-from config import EBIRD_BARCHART_URL, MY_USERNAME, PROPERTY_PROJECT_ID, PUBLIC_DIR  # noqa: E402
+from config import (  # noqa: E402
+    EBIRD_BARCHART_URL,
+    EBIRD_TIOGA_BARCHART_URL,
+    EBIRD_TOMPKINS_BARCHART_URL,
+    MY_USERNAME,
+    PROPERTY_PROJECT_ID,
+    PUBLIC_DIR,
+)
 from db import connect, init_db  # noqa: E402
 
 PLOTLY_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
@@ -165,7 +172,7 @@ def hero(s, county_firsts):
       <div class="w-px h-12 bg-white/20"></div>
       {stat(f"{s['observations']:,}", "Observations")}
       <div class="w-px h-12 bg-white/20"></div>
-      {stat(f"{s['observers']:,}", "Observers")}
+      {stat(f"{s['observers']:,}", "iNat observers")}
       <div class="w-px h-12 bg-white/20"></div>
       {stat(f"{county_firsts:,}", "County firsts")}
     </div>
@@ -639,8 +646,8 @@ def bird_source_body(summary):
         '<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5">'
         '<div>'
         '<div class="text-hollow-300 text-xs font-semibold tracking-[0.18em] uppercase mb-2">eBird source</div>'
-        f'<p class="text-white/70 leading-relaxed">This page uses the eBird location life-list CSV for '
-        f'<strong class="text-hollow-300">L41961519</strong>. The current snapshot has '
+        f'<p class="text-white/70 leading-relaxed">This page follows the eBird location life list for '
+        f'<strong class="text-hollow-300">Michigan Hollow, silo house</strong>. The current location list has '
         f'<strong class="text-hollow-300">{species}</strong> countable bird species, with listed dates from '
         f'{esc(earliest)} to {esc(latest)}.</p>'
         '</div>'
@@ -659,15 +666,13 @@ def bird_recent_body(recent):
     cards = []
     for _, r in recent.iterrows():
         checklist = f'https://ebird.org/checklist/{esc(r.get("sub_id"))}' if r.get("sub_id") else EBIRD_BARCHART_URL
-        count = sval(r.get("count_text"))
-        count_html = f'<span class="text-white/35"> · {esc(count)} counted</span>' if count else ""
         cards.append(
             f'<a href="{checklist}" target="_blank" rel="noopener" '
             f'class="block rounded-xl border border-white/10 bg-white/[0.04] p-4 hover:border-hollow-400/60 transition-colors">'
             f'<div class="text-sm font-medium text-white leading-tight">{esc(r.get("common_name"))}</div>'
             f'<div class="text-[0.75rem] text-white/40 italic mt-1">{esc(r.get("taxon_name"))}</div>'
             f'<div class="text-[0.7rem] text-hollow-300 mt-3 uppercase tracking-[0.12em]">'
-            f'{esc(fdate(r.get("date")))}{count_html}</div>'
+            f'{esc(fdate(r.get("date")))}</div>'
             '</a>'
         )
     return '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">' + "".join(cards) + "</div>"
@@ -675,7 +680,7 @@ def bird_recent_body(recent):
 
 def bird_life_list_body(birds):
     if birds is None or birds.empty:
-        return '<p class="text-center text-white/50 py-8">No eBird life-list CSV loaded yet.</p>'
+        return '<p class="text-center text-white/50 py-8">No eBird life list loaded yet.</p>'
     rows = []
     for _, r in birds.iterrows():
         checklist = f'https://ebird.org/checklist/{esc(r.get("sub_id"))}' if r.get("sub_id") else EBIRD_BARCHART_URL
@@ -688,7 +693,6 @@ def bird_life_list_body(birds):
             f'class="font-medium text-white hover:text-hollow-300">{esc(r.get("common_name"))}</a>'
             f'{exotic_html}<span class="block sm:inline sm:ml-2 text-white/35 italic text-sm">'
             f'{esc(r.get("taxon_name"))}</span></td>'
-            f'<td class="py-2.5 pr-4 text-white/45 text-sm text-right">{esc(sval(r.get("count_text")) or "—")}</td>'
             f'<td class="py-2.5 text-white/40 text-sm whitespace-nowrap text-right">{esc(fdate(r.get("date"), "%b %Y"))}</td>'
             '</tr>'
         )
@@ -696,24 +700,39 @@ def bird_life_list_body(birds):
         '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7 max-h-[620px] overflow-y-auto">'
         '<table class="w-full text-[0.95rem]"><thead class="text-white/35 text-xs uppercase tracking-wider border-b-2 border-white/10">'
         '<tr><th class="text-left pb-2 font-semibold">Species</th>'
-        '<th class="text-right pb-2 font-semibold">High count</th>'
         '<th class="text-right pb-2 font-semibold">Listed date</th></tr>'
         '</thead><tbody>' + "".join(rows) + '</tbody></table></div>'
     )
 
 
-def bird_gap_body(gap):
-    if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No iNaturalist bird gap data yet.</p>'
-    lead = (
-        f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
-        f'iNaturalist has <strong class="text-hollow-300">{gap["county_total"]}</strong> bird species in '
-        f'Tioga County, and <strong class="text-hollow-300">{gap["have"]}</strong> overlap the current eBird '
-        f'location list. The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below are '
-        f'photo-vouchered somewhere in the county but absent from the eBird snapshot. This is a weak signal: '
-        f'eBird remains the bird source of truth, and iNaturalist bird coverage is sparse.</p>'
+def bird_gap_body():
+    links = [
+        ("Kingfisher Hollow location", EBIRD_BARCHART_URL,
+         "The property list. Use this as the confirmed bird roster for the site."),
+        ("Tioga County", EBIRD_TIOGA_BARCHART_URL,
+         "The relevant county comparison for likely local misses and seasonal targets."),
+        ("Tompkins County", EBIRD_TOMPKINS_BARCHART_URL,
+         "A much better-covered neighboring county, useful context with a Cayuga Lake bias."),
+    ]
+    cards = []
+    for title, url, text in links:
+        cards.append(
+            f'<a href="{url}" target="_blank" rel="noopener" '
+            f'class="block rounded-xl border border-white/10 bg-white/[0.04] p-5 hover:border-hollow-400/60 transition-colors">'
+            f'<div class="text-sm font-semibold text-white">{esc(title)}</div>'
+            f'<p class="text-white/50 text-sm leading-relaxed mt-2">{esc(text)}</p>'
+            f'<div class="text-hollow-300 text-xs uppercase tracking-[0.14em] mt-4">Open barchart</div>'
+            '</a>'
+        )
+    return (
+        '<div class="max-w-4xl mx-auto">'
+        '<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+        'The next bird gap list should come from eBird, not iNaturalist: compare the property location list '
+        'against Tioga County for realistic local gaps, then use Tompkins County as a broader regional check. '
+        'Tompkins is better covered, but Cayuga Lake inflates waterbird and shoreline expectations.</p>'
+        '<div class="grid md:grid-cols-3 gap-3">' + "".join(cards) + '</div>'
+        '</div>'
     )
-    return lead + _gap_photo_grid(gap["missing"], placeholder="🪶")
 
 
 def mammal_found_body(found):
@@ -1189,7 +1208,7 @@ def nav():
     butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List"),
                        ("#butterfly-methods", "Find More")]
     bird_links = [("#birds", "Found"), ("#bird-recent", "Recent"),
-                  ("#bird-gap", "iNat Gap"), ("#bird-source", "eBird")]
+                  ("#bird-gap", "County Gaps"), ("#bird-source", "eBird")]
     mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
                     ("#mammal-methods", "Find More")]
     plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
@@ -1861,14 +1880,10 @@ def birds_view():
     birds = analyze.load_birds()
     bsum = analyze.bird_summary(birds)
     recent = analyze.bird_recent(birds, n=12)
-    gap = analyze.bird_gap_from_inat(birds, n=40)
-    latest = fdate(bsum.get("latest"), "%b %Y") or "—"
     stats_band = (
         '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
         + _dark_divider().join([
             _dark_stat(str(bsum["species"]), "eBird species"),
-            _dark_stat(str(bsum["checklists"]), "source checklists"),
-            _dark_stat(latest, "latest listed date"),
         ]) + '</div>')
     out = []
     out.append(section(
@@ -1886,16 +1901,16 @@ def birds_view():
         intro="Birds are tracked from the eBird location life list for Michigan Hollow, silo house. This keeps the bird section aligned with the standard bird-recording system while the rest of the survey remains iNaturalist-based.",
         dark=True))
     out.append(section(
-        "bird-recent", "Latest Rows",
+        "bird-recent", "New Additions",
         'Recent <em class="text-hollow-300">eBird Records</em>',
         bird_recent_body(recent),
-        intro="The newest dated rows in the current eBird life-list CSV. These link back to their eBird checklists when a checklist ID is present.",
+        intro="The newest species added to the Kingfisher Hollow eBird location list. Records link back to their eBird checklists when available.",
         dark=True))
     out.append(section(
-        "bird-gap", "Weak Signal",
-        'Bird <em class="text-hollow-300">Gap List</em>',
-        bird_gap_body(gap),
-        intro="A sparse cross-check against Tioga County iNaturalist bird records. Use this as a prompt for eBird review, not as a serious completeness estimate.",
+        "bird-gap", "County Context",
+        'Bird <em class="text-hollow-300">Gap Review</em>',
+        bird_gap_body(),
+        intro="Use eBird county barcharts to compare Kingfisher Hollow against nearby bird records by season.",
         dark=True))
     out.append(section(
         "bird-source", "Reference",
@@ -2076,11 +2091,15 @@ def build():
         stats = stats[stats["taxon_id"].isin(set(df["taxon_id"].dropna()))]
 
     s = analyze.summary(df)
+    birds_for_totals = analyze.load_birds()
+    bird_species_total = analyze.bird_summary(birds_for_totals).get("species", 0)
+    public_s = dict(s)
+    public_s["species"] = s["species"] + bird_species_total
     life = analyze.life_list(df)
     firsts = analyze.firsts_timeline(df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
-    parts = [head(s, county_firsts), nav(), hero(s, county_firsts)]
+    parts = [head(public_s, county_firsts), nav(), hero(public_s, county_firsts)]
 
     # ── All-life view (light) ────────────────────────────────────────────────
     parts.append('<div id="view-all">')
