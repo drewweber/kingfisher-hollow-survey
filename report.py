@@ -1262,7 +1262,7 @@ def nav():
     butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List"),
                        ("#butterfly-methods", "Find More")]
     bird_links = [("#birds", "Found"), ("#bird-recent", "Recent"),
-                  ("#bird-gap", "County Gaps"), ("#bird-source", "eBird")]
+                  ("#bird-gap", "County Gaps")]
     mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
                     ("#mammal-methods", "Find More")]
     plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
@@ -1961,12 +1961,6 @@ def birds_view():
         'Bird <em class="text-hollow-300">Gap Review</em>',
         bird_gap_body(gap),
         intro="Likely seasonal misses from Tioga and Tompkins County eBird patterns, compared with the Kingfisher Hollow location list.",
-        dark=True))
-    out.append(section(
-        "bird-source", "Reference",
-        'eBird <em class="text-hollow-300">Barchart</em>',
-        bird_source_body(bsum),
-        intro="The eBird barchart shows the seasonal pattern for birds recorded at Kingfisher Hollow.",
         dark=True))
     return "".join(out)
 
