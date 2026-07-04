@@ -2,10 +2,14 @@
 county and across New York State? Cached in species_stats with a TTL so
 nightly runs only hit the API for new or stale taxa."""
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import inat_api
 from config import (COUNTY_PLACE_ID, SPECIES_RANKS, STATE_PLACE_ID,
                     STATS_TTL_DAYS)
 from db import connect
+
+DEFAULT_STATS_WORKERS = 4
 
 
 def _stale_or_missing(conn):
@@ -42,50 +46,67 @@ UPSERT = (
 )
 
 
-def refresh_stats(verbose=True):
+def _stats_for_taxon(row):
+    tid = row["taxon_id"]
+    county_count, county_first = inat_api.count_and_first_observed_date(
+        taxon_id=tid, place_id=COUNTY_PLACE_ID
+    )
+    state_count, state_first = inat_api.count_and_first_observed_date(
+        taxon_id=tid, place_id=STATE_PLACE_ID
+    )
+    prop_first = row["property_first_date"]
+    is_county_first = bool(
+        prop_first and county_first and prop_first <= county_first
+    )
+    return (
+        tid,
+        row["taxon_name"],
+        row["common_name"],
+        county_count,
+        state_count,
+        county_first,
+        state_first,
+        prop_first,
+        row["property_obs_count"],
+        int(is_county_first),
+        state_count,
+    )
+
+
+def refresh_stats(verbose=True, workers=DEFAULT_STATS_WORKERS):
     """Refresh uniqueness stats for stale/new property taxa. Returns count."""
     with connect() as conn:
         todo = _stale_or_missing(conn)
 
-    refreshed = 0
-    for row in todo:
-        tid = row["taxon_id"]
-        county_count = inat_api.count(taxon_id=tid, place_id=COUNTY_PLACE_ID)
-        state_count = inat_api.count(taxon_id=tid, place_id=STATE_PLACE_ID)
-        county_first = inat_api.first_observed_date(
-            taxon_id=tid, place_id=COUNTY_PLACE_ID
-        )
-        state_first = inat_api.first_observed_date(
-            taxon_id=tid, place_id=STATE_PLACE_ID
-        )
-        prop_first = row["property_first_date"]
-        # A county first record: nobody in the county recorded it before us.
-        is_county_first = bool(
-            prop_first and county_first and prop_first <= county_first
-        )
-        with connect() as conn:
-            conn.execute(
-                UPSERT,
-                (
-                    tid,
-                    row["taxon_name"],
-                    row["common_name"],
-                    county_count,
-                    state_count,
-                    county_first,
-                    state_first,
-                    prop_first,
-                    row["property_obs_count"],
-                    int(is_county_first),
-                    state_count,  # state_rarity_rank: low total == rare in NY
-                ),
-            )
-        refreshed += 1
+    if not todo:
         if verbose:
-            flag = " *COUNTY FIRST*" if is_county_first else ""
-            print(f"[stats] {row['taxon_name']}: county={county_count} "
-                  f"state={state_count}{flag}")
+            print("[stats] refreshed 0 taxa (0 were stale/new)")
+        return 0
+
+    workers = max(1, int(workers or 1))
+    rows = []
+    if workers == 1 or len(todo) == 1:
+        for row in todo:
+            rows.append(_stats_for_taxon(row))
+            if verbose:
+                flag = " *COUNTY FIRST*" if rows[-1][9] else ""
+                print(f"[stats] {rows[-1][1]}: county={rows[-1][3]} "
+                      f"state={rows[-1][4]}{flag}")
+    else:
+        with ThreadPoolExecutor(max_workers=min(workers, len(todo))) as pool:
+            futures = [pool.submit(_stats_for_taxon, row) for row in todo]
+            for future in as_completed(futures):
+                result = future.result()
+                rows.append(result)
+                if verbose:
+                    flag = " *COUNTY FIRST*" if result[9] else ""
+                    print(f"[stats] {result[1]}: county={result[3]} "
+                          f"state={result[4]}{flag}")
+
+    with connect() as conn:
+        conn.executemany(UPSERT, rows)
+
     if verbose:
-        print(f"[stats] refreshed {refreshed} taxa "
+        print(f"[stats] refreshed {len(rows)} taxa "
               f"({len(todo)} were stale/new)")
-    return refreshed
+    return len(rows)

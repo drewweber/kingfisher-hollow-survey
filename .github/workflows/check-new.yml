@@ -56,15 +56,15 @@ jobs:
           HAVE=${HAVE:-0}
           echo "iNat latest obs id: $LATEST   |   already ingested: $HAVE"
           if [ "${LATEST:-0}" -gt "${HAVE:-0}" ]; then
-            echo "New observations detected → will trigger full update."
+            echo "New observations detected → will trigger daily update."
             echo "new=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Nothing new → skipping full update."
+            echo "Nothing new → skipping daily update."
             echo "new=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Trigger full update when new data exists
+      - name: Trigger daily update when new data exists
         if: steps.cmp.outputs.new == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run update.yml --ref main
+        run: gh workflow run update.yml --ref main -f refresh_scope=daily

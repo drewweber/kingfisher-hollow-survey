@@ -7,7 +7,18 @@ on:
     # to capture the morning's mothing uploads. GitHub cron is UTC only (no DST),
     # so it drifts to 8:30 AM ET in winter. GitHub may also delay scheduled runs.
     - cron: "30 13 * * *"
-  workflow_dispatch: {}        # allow manual runs + the check-new.yml trigger
+    # Weekly full refresh of slower regional reference pools used by gap lists.
+    - cron: "30 14 * * 0"
+  workflow_dispatch:
+    inputs:
+      refresh_scope:
+        description: "Daily is faster; full also refreshes regional reference pools."
+        type: choice
+        required: true
+        default: daily
+        options:
+          - daily
+          - full
   # Rebuild + redeploy whenever the report/pipeline code changes on main.
   # Path-filtered so the keep-alive commit (LAST_UPDATED.txt, also [skip ci])
   # and doc-only edits don't trigger a rebuild.
@@ -17,6 +28,7 @@ on:
       - "report.py"
       - "sync.py"
       - "src/**"
+      - "functions/**"
       - "requirements.txt"
       - ".github/workflows/update.yml"
 
@@ -40,6 +52,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "requirements.txt"
 
       # Persist the SQLite DB across runs. On a cache miss the pipeline simply
       # re-pulls from the API (idempotent), so this is an optimisation, not a
@@ -55,8 +69,25 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Choose refresh scope
+        id: scope
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "30 14 * * 0" ]; then
+            echo "scope=full" >> "$GITHUB_OUTPUT"
+          else
+            echo "scope=${{ github.event.inputs.refresh_scope || 'daily' }}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Refresh scope: $(tail -n 1 "$GITHUB_OUTPUT" | cut -d= -f2)"
+
       - name: Sync observations and uniqueness stats
-        run: python sync.py --all
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.scope.outputs.scope }}" = "full" ]; then
+            python sync.py --all
+          else
+            python sync.py --daily
+          fi
 
       - name: Build report
         run: python report.py

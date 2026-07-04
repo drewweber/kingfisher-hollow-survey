@@ -48,7 +48,7 @@ export async function onRequestPost({ request, env }) {
       "user-agent": "kingfisher-hollow-survey-update-button",
       "x-github-api-version": "2022-11-28",
     },
-    body: JSON.stringify({ ref: REF }),
+    body: JSON.stringify({ ref: REF, inputs: { refresh_scope: "daily" } }),
   });
 
   if (!response.ok) {

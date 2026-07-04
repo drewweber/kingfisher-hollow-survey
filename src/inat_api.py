@@ -1,6 +1,7 @@
 """Thin iNaturalist API v1 client: a throttled requests session plus the two
 access patterns this pipeline needs (count-only and full cursor pagination)."""
 
+import threading
 import time
 
 import requests
@@ -9,8 +10,17 @@ from config import PER_PAGE, REQUEST_PAUSE, USER_AGENT
 
 BASE = "https://api.inaturalist.org/v1"
 
-_session = requests.Session()
-_session.headers["User-Agent"] = USER_AGENT
+_thread_local = threading.local()
+
+
+def _session():
+    """Thread-local session for safe bounded parallel API work."""
+    session = getattr(_thread_local, "session", None)
+    if session is None:
+        session = requests.Session()
+        session.headers["User-Agent"] = USER_AGENT
+        _thread_local.session = session
+    return session
 
 
 def _get(path, **params):
@@ -24,7 +34,7 @@ def _get(path, **params):
     last_exc = None
     for attempt in range(6):
         try:
-            resp = _session.get(url, params=params, timeout=60)
+            resp = _session().get(url, params=params, timeout=60)
         except requests.exceptions.RequestException as exc:
             last_exc = exc
             time.sleep(min(2 ** attempt, 30))
@@ -66,6 +76,24 @@ def first_observed_date(**params):
     )
     results = data["results"]
     return results[0].get("observed_on") if results else None
+
+
+def count_and_first_observed_date(**params):
+    """Return (total_results, earliest observed_on) for a query.
+
+    The API includes total_results on normal observation searches, so this
+    combines the previous count-only and earliest-record requests into one call.
+    """
+    data = _get(
+        "observations",
+        per_page=1,
+        order_by="observed_on",
+        order="asc",
+        **params,
+    )
+    results = data["results"]
+    first = results[0].get("observed_on") if results else None
+    return data["total_results"], first
 
 
 def iter_species_counts(**params):

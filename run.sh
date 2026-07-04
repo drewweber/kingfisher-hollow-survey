@@ -9,6 +9,6 @@ PY="./.venv/bin/python"
 
 TS=$(date "+%Y-%m-%d %H:%M:%S")
 echo "=== run.sh start $TS ==="
-"$PY" sync.py --all
+"$PY" sync.py --daily
 "$PY" report.py
 echo "=== run.sh done $(date '+%Y-%m-%d %H:%M:%S') ==="

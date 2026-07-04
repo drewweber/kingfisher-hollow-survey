@@ -27,7 +27,7 @@ python3 -m venv .venv
 
 ## Usage
 ```sh
-.venv/bin/python sync.py --all      # property + county + uniqueness stats
+.venv/bin/python sync.py --daily    # fast daily refresh for new survey records
 .venv/bin/python report.py          # build public/index.html
 open public/index.html
 ```
@@ -36,6 +36,14 @@ every property species (~90 min, one time). Later runs are incremental: only new
 observations are fetched, and uniqueness stats refresh on a 30-day TTL (new
 property species are always refreshed immediately), so nightly runs take a few
 minutes.
+
+`sync.py` prints per-stage timings so slow refreshes show which step is taking
+time. Uniqueness stats run with four bounded workers by default; tune that with
+`--stats-workers N` or use `--stats-workers 1` for fully serial API lookups.
+
+Use `sync.py --all` for a full refresh, including slower regional reference
+pools used by gap lists. Use `sync.py --reference` to refresh only those
+regional/county reference pools.
 
 Granular commands: `sync.py --property`, `--county`, `--stats`.
 
@@ -53,8 +61,11 @@ Runs `run.sh` daily at 05:10 (logs in `logs/`). To stop:
 ## Hosting on the web (Cloudflare Pages + GitHub Actions)
 The report is published to **survey.kingfisher-hollow.com** by a nightly GitHub
 Actions workflow (`.github/workflows/update.yml`) — independent of the existing
-homepage on `www`. The job runs `sync.py --all` + `report.py`, then deploys the
+homepage on `www`. The job runs `sync.py` + `report.py`, then deploys the
 `public/` directory to a dedicated Cloudflare Pages project (`kingfisher-survey`).
+Normal scheduled runs and the Log view update button use the faster daily
+refresh; a weekly scheduled run refreshes the full regional reference pools for
+gap-list context.
 The SQLite DB is persisted between runs via Actions cache (a cache miss just
 re-pulls from the API, since sync is idempotent), so nothing binary is committed.
 A tiny `LAST_UPDATED.txt` marker is committed each run so the repo stays active —
@@ -79,8 +90,8 @@ The GitHub cron is in UTC; `09:10 UTC` ≈ `05:10 ET`.
 ### Manual update link on the Log view
 
 The Log view includes a small **Check for updates...** link. It calls a Cloudflare Pages
-Function at `/api/update`, which triggers the same GitHub Actions workflow as
-the nightly job. The browser never receives a GitHub token.
+Function at `/api/update`, which triggers the fast daily GitHub Actions refresh.
+The browser never receives a GitHub token.
 
 Add these Cloudflare Pages environment variables for the `kingfisher-survey`
 project:
