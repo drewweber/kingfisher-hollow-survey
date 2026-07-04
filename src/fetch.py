@@ -219,43 +219,48 @@ def _sync_roster(table, count_col, include_establishment=False, **params):
     return len(rows)
 
 
-_STATE_PLANT_ESTABLISHMENT = None
+_STATE_PLANT_ESTABLISHMENT = {}
 
 
-def _state_plant_establishment_map():
-    """New York establishment status keyed by taxon_id.
+def _state_plant_establishment_map(taxon_ids):
+    """New York establishment status for the requested taxon ids.
 
     Radius-based species_counts do not consistently include establishment
-    status, so plant gap filtering needs a separate state-checklist pass.
+    status, so plant gap filtering needs a state-checklist pass. Keep it
+    targeted to the current table instead of sweeping every New York plant.
     """
-    global _STATE_PLANT_ESTABLISHMENT
-    if _STATE_PLANT_ESTABLISHMENT is not None:
-        return _STATE_PLANT_ESTABLISHMENT
-
-    status = {}
-    for row in inat_api.iter_species_counts(
-            rank="species",
-            place_id=STATE_PLACE_ID,
-            taxon_id=PLANTAE_TAXON_ID,
-            captive="false"):
-        t = row.get("taxon") or {}
-        means = _taxon_establishment(t)
-        if means and t.get("id"):
-            status[t.get("id")] = means
-    _STATE_PLANT_ESTABLISHMENT = status
-    return status
+    todo = [tid for tid in taxon_ids
+            if tid is not None and tid not in _STATE_PLANT_ESTABLISHMENT]
+    BATCH = 100
+    for i in range(0, len(todo), BATCH):
+        batch = todo[i:i + BATCH]
+        for row in inat_api.iter_species_counts(
+                rank="species",
+                place_id=STATE_PLACE_ID,
+                taxon_id=",".join(str(tid) for tid in batch),
+                captive="false"):
+            t = row.get("taxon") or {}
+            tid = t.get("id")
+            means = _taxon_establishment(t)
+            if tid:
+                _STATE_PLANT_ESTABLISHMENT[tid] = means or ""
+        for tid in batch:
+            _STATE_PLANT_ESTABLISHMENT.setdefault(tid, "")
+    return _STATE_PLANT_ESTABLISHMENT
 
 
 def _apply_state_plant_establishment(table):
     """Backfill New York native/introduced flags for plant roster tables."""
     with connect() as conn:
-        ids = {row["taxon_id"] for row in conn.execute(
-            f"SELECT taxon_id FROM {table} WHERE taxon_id IS NOT NULL"
-        ).fetchall()}
+        ids = [row["taxon_id"] for row in conn.execute(
+            f"SELECT taxon_id FROM {table} "
+            "WHERE taxon_id IS NOT NULL "
+            "AND (establishment_means IS NULL OR native IS NULL OR introduced IS NULL)"
+        ).fetchall()]
     if not ids:
         return
 
-    status = _state_plant_establishment_map()
+    status = _state_plant_establishment_map(ids)
     updates = []
     for taxon_id in ids:
         means = status.get(taxon_id)
@@ -364,38 +369,50 @@ def sync_region_mammals():
     return n, 0
 
 
-def _restore_plant_groups(table):
-    """Re-apply plant_group classifications after a roster sync wipes the column.
+def _restore_plant_metadata(table):
+    """Re-apply cached plant metadata after a roster sync wipes the rows.
 
-    Saves the existing (taxon_id → plant_group) mapping before the sync runs,
-    restores it after, and classifies any new taxa via the iNat ancestry API.
-    Returns a context manager that wraps the sync call.
+    Saves plant group and establishment fields before the sync runs, restores
+    them after, and classifies any new taxa via the iNat ancestry API. This
+    keeps daily plant refreshes from re-fetching stable metadata.
     """
     import contextlib
     @contextlib.contextmanager
     def _ctx():
-        # Ensure column exists (fresh CI database won't have it)
+        # Ensure columns exist (fresh CI database won't have plant_group)
         with connect() as conn:
             try:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN plant_group TEXT")
             except Exception:
                 pass  # already exists
 
-        # 1. Save current mappings
+        # 1. Save current metadata
         saved = {}
         with connect() as conn:
             for row in conn.execute(
-                    f"SELECT taxon_id, plant_group FROM {table} WHERE plant_group IS NOT NULL"):
-                saved[row[0]] = row[1]
+                    f"SELECT taxon_id, plant_group, establishment_means, native, introduced "
+                    f"FROM {table}"):
+                saved[row["taxon_id"]] = (
+                    row["plant_group"],
+                    row["establishment_means"],
+                    row["native"],
+                    row["introduced"],
+                )
 
         yield  # sync runs here
 
-        # 2. Restore saved mappings
+        # 2. Restore saved metadata without overwriting fresh non-null values
         if saved:
             with connect() as conn:
                 conn.executemany(
-                    f"UPDATE {table} SET plant_group = ? WHERE taxon_id = ?",
-                    [(g, tid) for tid, g in saved.items()])
+                    f"UPDATE {table} SET "
+                    "plant_group = COALESCE(plant_group, ?), "
+                    "establishment_means = COALESCE(establishment_means, ?), "
+                    "native = COALESCE(native, ?), "
+                    "introduced = COALESCE(introduced, ?) "
+                    "WHERE taxon_id = ?",
+                    [(group, means, native, introduced, tid)
+                     for tid, (group, means, native, introduced) in saved.items()])
 
         # 3. Classify any new taxa that have no plant_group yet
         _classify_new_plant_taxa(table, saved)
@@ -448,7 +465,7 @@ def sync_plants():
     iNaturalist uses captive=false for plants that are not marked cultivated,
     which keeps planted ornamentals from inflating the property plant baseline.
     """
-    with _restore_plant_groups("plant_taxa"):
+    with _restore_plant_metadata("plant_taxa"):
         n = _sync_roster("plant_taxa", "obs_count",
                          project_id=PROPERTY_PROJECT_ID,
                          taxon_id=PLANTAE_TAXON_ID,
@@ -465,7 +482,7 @@ def sync_region_plants():
     if lat is None:
         print("[region-plants] no property coordinates yet; skipping")
         return 0, 0
-    with _restore_plant_groups("region_plant_taxa"):
+    with _restore_plant_metadata("region_plant_taxa"):
         n = _sync_roster("region_plant_taxa", "region_count",
                          lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
                          taxon_id=PLANTAE_TAXON_ID,
