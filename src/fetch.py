@@ -136,16 +136,22 @@ def _distinct_taxa(conn, table):
     return {r["taxon_id"] for r in rows}
 
 
-def sync_property():
-    """Pull the full project (small enough that a clean cursor sweep is fine;
-    INSERT OR REPLACE makes it idempotent and self-healing on re-runs)."""
+def sync_property(incremental=False):
+    """Pull property observations.
+
+    Full mode re-sweeps the project and is self-healing. Incremental mode uses
+    id_above for fast daily runs; weekly/full refreshes catch older observations
+    that are newly added to the project or otherwise change below the max id.
+    """
     with connect() as conn:
+        cursor = max_id(conn, "property_obs") if incremental else 0
         before_taxa = _distinct_taxa(conn, "property_obs")
         before_count = conn.execute(
             "SELECT COUNT(*) AS c FROM property_obs"
         ).fetchone()["c"]
         last_created = None
-        for obs in inat_api.iter_all(project_id=PROPERTY_PROJECT_ID):
+        for obs in inat_api.iter_all(project_id=PROPERTY_PROJECT_ID,
+                                     id_above=cursor):
             conn.execute(PROPERTY_INSERT, _property_row(obs))
             last_created = obs.get("created_at") or last_created
         after_count = conn.execute(
@@ -155,7 +161,8 @@ def sync_property():
         added = after_count - before_count
         new_species = len(after_taxa - before_taxa)
         record_sync(conn, "property", last_created, added, new_species)
-    print(f"[property] total {after_count} obs (+{added}), "
+    mode = "incremental" if incremental else "full"
+    print(f"[property:{mode}] total {after_count} obs (+{added}), "
           f"+{new_species} new species")
     return added, new_species
 

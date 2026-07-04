@@ -74,7 +74,7 @@ def main():
     reference = args.all or args.reference
 
     if daily or args.property:
-        timed("property", fetch.sync_property)
+        timed("property", fetch.sync_property, incremental=args.daily and not args.all)
     if daily or args.county:
         timed("county", fetch.sync_county)
     if reference or args.county:

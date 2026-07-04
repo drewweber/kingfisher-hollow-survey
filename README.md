@@ -44,6 +44,9 @@ time. Uniqueness stats run with four bounded workers by default; tune that with
 Use `sync.py --all` for a full refresh, including slower regional reference
 pools used by gap lists. Use `sync.py --reference` to refresh only those
 regional/county reference pools.
+Daily runs use a fast incremental property sync keyed by observation ID. Full
+refreshes still re-sweep the property project, which catches older observations
+that were newly added to the project or changed below the current max ID.
 
 Granular commands: `sync.py --property`, `--county`, `--stats`.
 
