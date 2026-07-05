@@ -27,7 +27,7 @@ def timed(label, func, *args, **kwargs):
         return func(*args, **kwargs)
     finally:
         elapsed = time.monotonic() - start
-        print(f"[timing] {label}: {elapsed:.1f}s")
+        print(f"[timing] {label}: {elapsed:.1f}s", flush=True)
 
 
 def main():

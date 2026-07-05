@@ -39,12 +39,14 @@ def _get(path, **params):
             resp = _session().get(url, params=params, timeout=timeout)
         except requests.exceptions.RequestException as exc:
             last_exc = exc
+            print(f"[inat-api] retry {path} attempt {attempt + 1}/{attempts}: {exc}", flush=True)
             time.sleep(min(2 ** attempt, 30))
             continue
         if resp.status_code == 200:
             time.sleep(REQUEST_PAUSE)
             return resp.json()
         if resp.status_code in (429, 500, 502, 503, 504):
+            print(f"[inat-api] retry {path} attempt {attempt + 1}/{attempts}: HTTP {resp.status_code}", flush=True)
             time.sleep(min(2 ** attempt, 30))
             continue
         resp.raise_for_status()

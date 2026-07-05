@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -86,9 +87,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ steps.scope.outputs.scope }}" = "full" ]; then
-            python sync.py --all
+            timeout 25m python -u sync.py --all
           else
-            python sync.py --daily
+            timeout 8m python -u sync.py --daily
           fi
 
       - name: Build report
