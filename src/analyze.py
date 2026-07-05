@@ -1,6 +1,9 @@
 """pandas analyses over the SQLite tables. Each function returns a DataFrame
 (or dict) that viz.py turns into a chart, keeping data and presentation apart."""
 
+import hashlib
+import json
+import time
 from datetime import datetime
 from html.parser import HTMLParser
 
@@ -8,6 +11,7 @@ import pandas as pd
 import requests
 
 from config import (
+    DATA_DIR,
     EBIRD_LIFE_LIST_CSV,
     EBIRD_TIOGA_BARCHART_URL,
     EBIRD_TOMPKINS_BARCHART_URL,
@@ -16,6 +20,10 @@ from config import (
     USER_AGENT,
 )
 from db import connect
+
+
+EBIRD_CACHE_DIR = DATA_DIR / "cache" / "ebird"
+EBIRD_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60
 
 
 def _join_taxonomy(df):
@@ -772,15 +780,44 @@ class _EbirdBarchartParser(HTMLParser):
                 self._current["common_name"] = f"{current} {name}".strip()
 
 
+def _cache_path(name, suffix):
+    EBIRD_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha1(name.encode("utf-8")).hexdigest()[:16]
+    return EBIRD_CACHE_DIR / f"{digest}.{suffix}"
+
+
+def _is_fresh(path, ttl_seconds=EBIRD_CACHE_TTL_SECONDS):
+    return path.exists() and time.time() - path.stat().st_mtime < ttl_seconds
+
+
+def _read_text(path):
+    return path.read_text(encoding="utf-8")
+
+
+def _write_text(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
 def _fetch_ebird_text(url):
+    cache = _cache_path(f"barchart:{url}", "html")
+    if _is_fresh(cache):
+        return _read_text(cache)
+
     session = requests.Session()
     session.headers.update({
         "User-Agent": USER_AGENT,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     })
-    resp = session.get(url, timeout=45, allow_redirects=True)
-    resp.raise_for_status()
-    return resp.text
+    try:
+        resp = session.get(url, timeout=45, allow_redirects=True)
+        resp.raise_for_status()
+        _write_text(cache, resp.text)
+        return resp.text
+    except requests.exceptions.RequestException:
+        if cache.exists():
+            return _read_text(cache)
+        raise
 
 
 def _parse_ebird_barchart(html):
@@ -807,12 +844,24 @@ def _load_ebird_barchart(url):
 
 def _load_ebird_taxonomy():
     url = "https://api.ebird.org/v2/ref/taxonomy/ebird?fmt=json&locale=en"
+    cache = _cache_path("taxonomy:ebird", "json")
     try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=45)
-        resp.raise_for_status()
-        taxa = pd.DataFrame(resp.json())
+        if _is_fresh(cache):
+            payload = json.loads(_read_text(cache))
+        else:
+            resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=45)
+            resp.raise_for_status()
+            payload = resp.json()
+            _write_text(cache, json.dumps(payload))
+        taxa = pd.DataFrame(payload)
     except (requests.exceptions.RequestException, ValueError):
-        return pd.DataFrame(columns=["species_code", "common_name", "taxon_name", "category", "taxon_order"])
+        if cache.exists():
+            try:
+                taxa = pd.DataFrame(json.loads(_read_text(cache)))
+            except ValueError:
+                return pd.DataFrame(columns=["species_code", "common_name", "taxon_name", "category", "taxon_order"])
+        else:
+            return pd.DataFrame(columns=["species_code", "common_name", "taxon_name", "category", "taxon_order"])
     if taxa.empty:
         return pd.DataFrame(columns=["species_code", "common_name", "taxon_name", "category", "taxon_order"])
     taxa = taxa.rename(columns={

@@ -10,6 +10,8 @@ built by CI — never deploy it by hand."""
 
 import subprocess
 import sys
+import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +22,7 @@ import inat_api  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
 from config import (  # noqa: E402
+    DATA_DIR,
     EBIRD_BARCHART_URL,
     EBIRD_TIOGA_BARCHART_URL,
     EBIRD_TOMPKINS_BARCHART_URL,
@@ -35,6 +38,35 @@ PROJECT_URL = "https://www.inaturalist.org/projects/kingfisher-hollow-biodiversi
 TAXON_URL = "https://www.inaturalist.org/taxa/"   # + taxon_id → species page
 OBS_URL   = "https://www.inaturalist.org/observations/"  # + obs_id → observation
 HERO_PHOTO = f"{SITE}/aerial/dji_fly_20251020_173830_305_1760996794506_photo_optimized.JPG"
+
+
+def _timed(label, func, *args, **kwargs):
+    start = time.monotonic()
+    try:
+        return func(*args, **kwargs)
+    finally:
+        print(f"[report-timing] {label}: {time.monotonic() - start:.1f}s")
+
+
+def _log_timing(label, start):
+    print(f"[report-timing] {label}: {time.monotonic() - start:.1f}s")
+
+
+def _load_id_changes():
+    cache = DATA_DIR / "cache" / "inat_id_changes.json"
+    if cache.exists() and time.time() - cache.stat().st_mtime < 12 * 60 * 60:
+        return json.loads(cache.read_text(encoding="utf-8"))
+    try:
+        changes = inat_api.fetch_id_changes(PROPERTY_PROJECT_ID, MY_USERNAME)
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(changes), encoding="utf-8")
+        return changes
+    except Exception as exc:
+        if cache.exists():
+            print(f"[report-warning] using cached id changes after API error: {exc}")
+            return json.loads(cache.read_text(encoding="utf-8"))
+        print(f"[report-warning] skipping id changes after API error: {exc}")
+        return []
 
 # Belted Kingfisher mark, lifted from the main site for visual continuity.
 LOGO = """<svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 40 40" fill="none">
@@ -2137,9 +2169,10 @@ AMPHIBIAN_METHODS = [
 
 
 def build():
+    build_start = time.monotonic()
     init_db()
-    df = analyze.load_property()
-    stats = analyze.load_stats()
+    df = _timed("load-property", analyze.load_property)
+    stats = _timed("load-stats", analyze.load_stats)
     if df.empty:
         print("No property observations yet — run sync.py --property first.")
         return None
@@ -2149,18 +2182,20 @@ def build():
     if not stats.empty:
         stats = stats[stats["taxon_id"].isin(set(df["taxon_id"].dropna()))]
 
-    birds_for_totals = analyze.load_birds()
-    overview_df = analyze.overview_observations(df, birds_for_totals)
-    s = analyze.summary(df)
-    public_s = analyze.summary(overview_df)
-    life = analyze.life_list(overview_df)
-    firsts = analyze.firsts_timeline(overview_df)
+    birds_for_totals = _timed("load-birds", analyze.load_birds)
+    overview_df = _timed("overview-observations", analyze.overview_observations, df, birds_for_totals)
+    s = _timed("summary-property", analyze.summary, df)
+    public_s = _timed("summary-overview", analyze.summary, overview_df)
+    life = _timed("life-list", analyze.life_list, overview_df)
+    firsts = _timed("firsts-timeline", analyze.firsts_timeline, overview_df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
-    moth_head_count = analyze.moth_summary(df, analyze.load_moths())["species"]
+    moths_for_header = _timed("load-moths-header", analyze.load_moths)
+    moth_head_count = _timed("moth-summary-header", analyze.moth_summary, df, moths_for_header)["species"]
     parts = [head(public_s, county_firsts, moth_head_count), nav()]
 
     # ── All-life view (light) ────────────────────────────────────────────────
+    section_start = time.monotonic()
     parts.append('<div id="view-all">')
     parts.append(hero(public_s, county_firsts))
     parts.append(section(
@@ -2272,42 +2307,43 @@ def build():
             "or sensitive species."),
         intro="Every GPS-tagged observation on the 30 acres. The clusters show where effort has been concentrated; the gaps show what's still unwalked."))
     parts.append('</div>')  # /view-all
+    _log_timing("all-life-view", section_start)
 
     # ── Moths view (dark) ────────────────────────────────────────────────────
     parts.append('<div id="view-moths" class="hidden">')
-    parts.append(moth_view(df, stats))
+    parts.append(_timed("moth-view", moth_view, df, stats))
     parts.append('</div>')  # /view-moths
 
     # ── Butterflies view (dark) ──────────────────────────────────────────────
     parts.append('<div id="view-butterflies" class="hidden">')
-    parts.append(butterflies_view(df, stats))
+    parts.append(_timed("butterflies-view", butterflies_view, df, stats))
     parts.append('</div>')  # /view-butterflies
 
     # ── Birds view (dark, eBird-backed) ──────────────────────────────────────
     parts.append('<div id="view-birds" class="hidden">')
-    parts.append(birds_view())
+    parts.append(_timed("birds-view", birds_view))
     parts.append('</div>')  # /view-birds
 
     # ── Mammals view (dark) ──────────────────────────────────────────────────
     parts.append('<div id="view-mammals" class="hidden">')
-    parts.append(mammals_view(df, stats))
+    parts.append(_timed("mammals-view", mammals_view, df, stats))
     parts.append('</div>')  # /view-mammals
 
     # ── Plants view (dark) ───────────────────────────────────────────────────
     parts.append('<div id="view-plants" class="hidden">')
-    parts.append(plants_view(df, stats))
+    parts.append(_timed("plants-view", plants_view, df, stats))
     parts.append('</div>')  # /view-plants
 
     # ── Amphibians view (dark) ───────────────────────────────────────────────
     parts.append('<div id="view-amphibians" class="hidden">')
-    parts.append(amphibians_view(df, stats))
+    parts.append(_timed("amphibians-view", amphibians_view, df, stats))
     parts.append('</div>')  # /view-amphibians
 
     # ── Log view (light, journal) ────────────────────────────────────────────
     parts.append('<div id="view-log" class="hidden">')
-    log_entries = analyze.activity_log(df, stats)
-    weather_cache = weather.load_weather()
-    id_changes = inat_api.fetch_id_changes(PROPERTY_PROJECT_ID, MY_USERNAME)
+    log_entries = _timed("activity-log", analyze.activity_log, df, stats)
+    weather_cache = _timed("load-weather", weather.load_weather)
+    id_changes = _timed("id-changes", _load_id_changes)
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
@@ -2324,6 +2360,7 @@ def build():
     out = PUBLIC_DIR / "index.html"
     out.write_text(html, encoding="utf-8")
     print(f"Wrote {out}  ({out.stat().st_size // 1024} KB)")
+    _log_timing("report-total", build_start)
     return out
 
 

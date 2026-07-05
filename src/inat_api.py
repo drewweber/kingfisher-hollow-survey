@@ -31,10 +31,12 @@ def _get(path, **params):
     the whole run.
     """
     url = f"{BASE}/{path}"
+    attempts = params.pop("_attempts", 6)
+    timeout = params.pop("_timeout", 60)
     last_exc = None
-    for attempt in range(6):
+    for attempt in range(attempts):
         try:
-            resp = _session().get(url, params=params, timeout=60)
+            resp = _session().get(url, params=params, timeout=timeout)
         except requests.exceptions.RequestException as exc:
             last_exc = exc
             time.sleep(min(2 ** attempt, 30))
@@ -118,7 +120,7 @@ def iter_species_counts(**params):
         page += 1
 
 
-def fetch_id_changes(project_id, username, n=40):
+def fetch_id_changes(project_id, username, n=40, attempts=3, timeout=15):
     """Return recent identifications on `username`'s project observations where
     another user changed or improved the taxon (category 'improving' or 'maverick').
 
@@ -143,6 +145,8 @@ def fetch_id_changes(project_id, username, n=40):
             order="desc",
             per_page=PER_PAGE,
             page=page,
+            _attempts=attempts,
+            _timeout=timeout,
         )
         results = data.get("results", [])
         if not results:

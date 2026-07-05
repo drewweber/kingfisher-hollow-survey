@@ -61,7 +61,9 @@ jobs:
       - name: Restore database cache
         uses: actions/cache@v4
         with:
-          path: data/inat.db
+          path: |
+            data/inat.db
+            data/cache
           key: inat-db-${{ github.run_id }}
           restore-keys: |
             inat-db-
@@ -92,6 +94,16 @@ jobs:
       - name: Build report
         run: python report.py
 
+      - name: Cache Wrangler install
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: wrangler-${{ runner.os }}-v3
+          restore-keys: |
+            wrangler-${{ runner.os }}-
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
@@ -100,9 +112,21 @@ jobs:
           command: pages deploy public --project-name=kingfisher-survey --commit-dirty=true
 
       # GitHub disables scheduled workflows after 60 days of no repo commits.
-      # A tiny dated marker each run keeps the schedule alive indefinitely.
+      # Refresh the marker monthly, and only from scheduled runs, so pushes and
+      # manual updates do not create extra remote commits.
       - name: Keep schedule alive
+        if: github.event_name == 'schedule'
         run: |
+          set -euo pipefail
+          if [ -f LAST_UPDATED.txt ]; then
+            last_date=$(cut -c1-10 LAST_UPDATED.txt)
+            last_epoch=$(date -u -d "$last_date" +%s 2>/dev/null || echo 0)
+            cutoff_epoch=$(date -u -d "30 days ago" +%s)
+            if [ "$last_epoch" -ge "$cutoff_epoch" ]; then
+              echo "LAST_UPDATED.txt is recent; skipping keep-alive commit."
+              exit 0
+            fi
+          fi
           date -u +"%Y-%m-%dT%H:%M:%SZ" > LAST_UPDATED.txt
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

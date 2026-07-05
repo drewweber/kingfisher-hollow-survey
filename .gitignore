@@ -14,6 +14,7 @@ public/
 data/inat.db
 data/inat.db-wal
 data/inat.db-shm
+data/cache/
 
 # Original CSV exports — superseded by the live API; kept locally as an archive.
 *.csv
