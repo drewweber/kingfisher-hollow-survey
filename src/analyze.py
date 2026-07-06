@@ -1321,8 +1321,11 @@ def activity_log(df, stats):
     moth_ids, butterfly_ids, order_common = _group_inputs()
     labeler = group_labeler(moth_ids, butterfly_ids, order_common)
 
-    sub = df.dropna(subset=["taxon_id", "observed_on"]).sort_values("observed_on")
-    sub = sub.copy()
+    sub = df.dropna(subset=["taxon_id", "observed_on"]).copy()
+    sub["_observed_at_sort"] = sub["observed_at"].fillna(
+        sub["observed_on"].dt.strftime("%Y-%m-%dT23:59:59")
+    )
+    sub = sub.sort_values(["observed_on", "_observed_at_sort", "id"])
     sub["session"] = _session_dates(sub)   # evening date (morning obs rolled back)
     sub["cal_date"] = sub["observed_on"].dt.date
     # is_morning: observation rolled back from the calendar day after the session
@@ -1368,8 +1371,8 @@ def activity_log(df, stats):
             county_obs = s.get("county_obs_count")
             state_obs = s.get("state_obs_count")
             is_cf = bool(s.get("is_county_first") == 1)
-            is_moth = tid in moth_ids
             grp = labeler(tid, row.get("iconic_taxon"))
+            is_moth = tid in moth_ids or grp == "Moths"
             cn = row.get("common_name")
             tn = row.get("taxon_name")
             cn = None if (cn is None or (cn != cn)) else cn
