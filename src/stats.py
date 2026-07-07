@@ -12,12 +12,19 @@ from db import connect
 DEFAULT_STATS_WORKERS = 4
 
 
-def _stale_or_missing(conn):
-    """Property taxa whose cached stats are absent or older than the TTL.
+def _stale_or_missing(conn, include_stale=True):
+    """Property taxa whose cached stats are absent, optionally including stale.
 
     Returns rows of (taxon_id, taxon_name, common_name, property_first_date,
     property_obs_count) computed from the local property_obs table.
     """
+    freshness_clause = "s.taxon_id IS NULL"
+    params = list(SPECIES_RANKS)
+    if include_stale:
+        freshness_clause = (
+            "(s.taxon_id IS NULL OR s.cached_at < datetime('now', ?))"
+        )
+        params.append(f"-{STATS_TTL_DAYS} days")
     return conn.execute(
         """
         SELECT p.taxon_id,
@@ -29,11 +36,13 @@ def _stale_or_missing(conn):
         LEFT JOIN species_stats s ON s.taxon_id = p.taxon_id
         WHERE p.taxon_id IS NOT NULL
           AND p.rank IN ({placeholders})
-          AND (s.taxon_id IS NULL
-               OR s.cached_at < datetime('now', ?))
+          AND {freshness_clause}
         GROUP BY p.taxon_id
-        """.format(placeholders=",".join("?" * len(SPECIES_RANKS))),
-        (*SPECIES_RANKS, f"-{STATS_TTL_DAYS} days"),
+        """.format(
+            placeholders=",".join("?" * len(SPECIES_RANKS)),
+            freshness_clause=freshness_clause,
+        ),
+        tuple(params),
     ).fetchall()
 
 
@@ -73,14 +82,15 @@ def _stats_for_taxon(row):
     )
 
 
-def refresh_stats(verbose=True, workers=DEFAULT_STATS_WORKERS):
-    """Refresh uniqueness stats for stale/new property taxa. Returns count."""
+def refresh_stats(verbose=True, workers=DEFAULT_STATS_WORKERS, include_stale=True):
+    """Refresh uniqueness stats for missing/new taxa, optionally stale taxa."""
     with connect() as conn:
-        todo = _stale_or_missing(conn)
+        todo = _stale_or_missing(conn, include_stale=include_stale)
 
     if not todo:
         if verbose:
-            print("[stats] refreshed 0 taxa (0 were stale/new)")
+            scope = "stale/new" if include_stale else "new"
+            print(f"[stats] refreshed 0 taxa (0 were {scope})")
         return 0
 
     workers = max(1, int(workers or 1))
@@ -107,6 +117,7 @@ def refresh_stats(verbose=True, workers=DEFAULT_STATS_WORKERS):
         conn.executemany(UPSERT, rows)
 
     if verbose:
+        scope = "stale/new" if include_stale else "new"
         print(f"[stats] refreshed {len(rows)} taxa "
-              f"({len(todo)} were stale/new)")
+              f"({len(todo)} were {scope})")
     return len(rows)

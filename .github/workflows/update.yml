@@ -94,9 +94,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ steps.scope.outputs.scope }}" = "full" ]; then
-            timeout 25m python -u sync.py --all
+            timeout 25m python -u sync.py --all --stats-workers 1
           else
-            timeout 8m python -u sync.py --daily
+            timeout 8m python -u sync.py --daily --stats-workers 1
           fi
 
       - name: Build report

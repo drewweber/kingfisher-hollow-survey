@@ -105,7 +105,10 @@ def main():
     if daily or args.taxonomy:
         timed("taxonomy", fetch.sync_taxonomy)
     if daily or args.stats:
-        timed("stats", stats.refresh_stats, workers=args.stats_workers)
+        include_stale_stats = args.all or args.reference or (args.stats and not args.daily)
+        timed("stats", stats.refresh_stats,
+              workers=args.stats_workers,
+              include_stale=include_stale_stats)
     if daily or args.weather:
         timed("weather", weather.sync_weather, fetch.observation_dates())
 

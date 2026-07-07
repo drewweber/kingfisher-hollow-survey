@@ -13,6 +13,18 @@ BASE = "https://api.inaturalist.org/v1"
 _thread_local = threading.local()
 
 
+def _retry_delay(resp, attempt):
+    retry_after = resp.headers.get("Retry-After") if resp is not None else None
+    if retry_after:
+        try:
+            return min(max(float(retry_after), 1), 120)
+        except ValueError:
+            pass
+    if resp is not None and resp.status_code == 429:
+        return min(10 * (attempt + 1), 120)
+    return min(2 ** attempt, 30)
+
+
 def _session():
     """Thread-local session for safe bounded parallel API work."""
     session = getattr(_thread_local, "session", None)
@@ -47,7 +59,7 @@ def _get(path, **params):
             return resp.json()
         if resp.status_code in (429, 500, 502, 503, 504):
             print(f"[inat-api] retry {path} attempt {attempt + 1}/{attempts}: HTTP {resp.status_code}", flush=True)
-            time.sleep(min(2 ** attempt, 30))
+            time.sleep(_retry_delay(resp, attempt))
             continue
         resp.raise_for_status()
     if last_exc:
