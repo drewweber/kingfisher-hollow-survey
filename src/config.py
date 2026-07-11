@@ -20,6 +20,7 @@ MY_USERNAME = "drewweber"
 # iNat taxa for the moth section: moths = Lepidoptera minus the butterflies.
 LEPIDOPTERA_TAXON_ID = 47157
 BUTTERFLY_TAXON_ID = 47224
+ODONATA_TAXON_ID = 47792
 MAMMALIA_TAXON_ID = 40151
 PLANTAE_TAXON_ID = 47126
 AMPHIBIA_TAXON_ID = 20978

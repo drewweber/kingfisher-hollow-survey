@@ -2,7 +2,8 @@
 
 import inat_api
 from config import (AMPHIBIA_TAXON_ID, BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID,
-                    LEPIDOPTERA_TAXON_ID, MAMMALIA_TAXON_ID, PLANTAE_TAXON_ID,
+                    LEPIDOPTERA_TAXON_ID, MAMMALIA_TAXON_ID,
+                    ODONATA_TAXON_ID, PLANTAE_TAXON_ID,
                     PROPERTY_PROJECT_ID, REGION_RADIUS_KM, REPTILIA_TAXON_ID,
                     STATE_PLACE_ID)
 from db import connect, max_id, record_sync
@@ -313,6 +314,28 @@ def sync_region_butterflies():
                      lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
                      taxon_id=BUTTERFLY_TAXON_ID)
     print(f"[region-butterflies] {n} butterfly species within {REGION_RADIUS_KM} km")
+    return n, 0
+
+
+def sync_odonates():
+    """Dragonfly and damselfly roster (Odonata) for the property."""
+    n = _sync_roster("odonate_taxa", "obs_count",
+                     project_id=PROPERTY_PROJECT_ID,
+                     taxon_id=ODONATA_TAXON_ID)
+    print(f"[odonates] {n} dragonfly and damselfly species")
+    return n, 0
+
+
+def sync_region_odonates():
+    """Odonata recorded within REGION_RADIUS_KM of the property."""
+    lat, lng = _property_center()
+    if lat is None:
+        print("[region-odonates] no property coordinates yet; skipping")
+        return 0, 0
+    n = _sync_roster("region_odonate_taxa", "region_count",
+                     lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
+                     taxon_id=ODONATA_TAXON_ID)
+    print(f"[region-odonates] {n} Odonata species within {REGION_RADIUS_KM} km")
     return n, 0
 
 

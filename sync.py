@@ -39,6 +39,8 @@ def main():
                     help="refresh moth roster")
     ap.add_argument("--butterflies", action="store_true",
                     help="refresh butterfly roster + regional pool")
+    ap.add_argument("--odonates", action="store_true",
+                    help="refresh dragonfly/damselfly roster + regional pool")
     ap.add_argument("--mammals", action="store_true",
                     help="refresh mammal roster + regional pool")
     ap.add_argument("--plants", action="store_true",
@@ -62,7 +64,7 @@ def main():
                     help="daily refresh + slower regional/county reference pools")
     args = ap.parse_args()
 
-    flags = [args.property, args.county, args.moths, args.butterflies, args.mammals,
+    flags = [args.property, args.county, args.moths, args.butterflies, args.odonates, args.mammals,
              args.plants, args.amphibians, args.reptiles, args.taxonomy, args.stats,
              args.weather, args.daily, args.reference, args.all]
     if not any(flags):
@@ -86,6 +88,12 @@ def main():
         timed("butterflies", fetch.sync_butterflies)
     if reference or args.butterflies:
         timed("region-butterflies", fetch.sync_region_butterflies)
+    if daily or args.odonates:
+        timed("odonates", fetch.sync_odonates)
+    # Small enough to keep current daily, and ensures the focused page has a
+    # gap list even when CI starts from a fresh database cache.
+    if daily or reference or args.odonates:
+        timed("region-odonates", fetch.sync_region_odonates)
     if daily or args.mammals:
         timed("mammals", fetch.sync_mammals)
     if reference or args.mammals:

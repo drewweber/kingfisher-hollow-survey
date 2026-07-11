@@ -675,6 +675,29 @@ def butterfly_gap_body(gap):
     return lead + _gap_photo_grid(gap["missing"], placeholder="🦋")
 
 
+def odonate_found_body(found):
+    """Dragonflies and damselflies recorded on the property, grouped by family."""
+    if found is None or found.empty:
+        return ('<p class="text-center text-white/50 py-8">Dragonfly and damselfly '
+                'roster not synced yet.</p>')
+    return _gap_photo_grid(found, placeholder="✦", group_by="family_name")
+
+
+def odonate_gap_body(gap):
+    """Regional Odonata not yet documented, ranked by nearby frequency."""
+    if not gap or gap.get("missing_count", 0) == 0:
+        return '<p class="text-center text-white/50">No gap data yet.</p>'
+    miles = round(gap.get("region_radius_km", 80) / 1.609)
+    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
+            f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
+            f'<strong class="text-hollow-300">{gap["region_total"]}</strong> dragonfly and damselfly species '
+            f'recorded within ~{miles} miles have turned up here. The '
+            f'<strong class="text-hollow-300">{len(gap["missing"])}</strong> species below are the most '
+            f'frequently documented nearby. Pond, creek, seep, and wet-meadow associations still decide which '
+            f'ones are realistic targets on these 30 acres.</p>')
+    return lead + _gap_photo_grid(gap["missing"], placeholder="✦")
+
+
 def bird_source_body(summary):
     species = summary.get("species", 0)
     latest = fdate(summary.get("latest"))
@@ -1294,6 +1317,8 @@ def nav():
                   ("#moth-calendar", "Calendar"), ("#moth-methods", "Find More")]
     butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List"),
                        ("#butterfly-methods", "Find More")]
+    odonate_links = [("#odonates", "Found"), ("#odonate-gap", "Gap List"),
+                     ("#odonate-methods", "Find More")]
     bird_links = [("#birds", "Found"), ("#bird-recent", "Recent"),
                   ("#bird-gap", "County Gaps")]
     mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
@@ -1306,6 +1331,7 @@ def nav():
 
     # One source of truth for the view switcher, used by both toggles.
     modes = [("all", "All life"), ("moths", "Moths"), ("butterflies", "Butterflies"),
+             ("odonates", "Dragonflies"),
              ("birds", "Birds"), ("mammals", "Mammals"), ("plants", "Plants"),
              ("amphibians", "Herps"), ("log", "Log")]
 
@@ -1323,6 +1349,7 @@ def nav():
         f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
         f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
         f'<span class="links-butterflies hidden items-center gap-6">{links_html(butterfly_links, desk_cls)}</span>'
+        f'<span class="links-odonates hidden items-center gap-6">{links_html(odonate_links, desk_cls)}</span>'
         f'<span class="links-birds hidden items-center gap-6">{links_html(bird_links, desk_cls)}</span>'
         f'<span class="links-mammals hidden items-center gap-6">{links_html(mammal_links, desk_cls)}</span>'
         f'<span class="links-plants hidden items-center gap-6">{links_html(plant_links, desk_cls)}</span>'
@@ -1332,6 +1359,7 @@ def nav():
         f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
         f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
         f'<div class="links-butterflies hidden flex-col gap-3">{links_html(butterfly_links, mob_cls)}</div>'
+        f'<div class="links-odonates hidden flex-col gap-3">{links_html(odonate_links, mob_cls)}</div>'
         f'<div class="links-birds hidden flex-col gap-3">{links_html(bird_links, mob_cls)}</div>'
         f'<div class="links-mammals hidden flex-col gap-3">{links_html(mammal_links, mob_cls)}</div>'
         f'<div class="links-plants hidden flex-col gap-3">{links_html(plant_links, mob_cls)}</div>'
@@ -1491,7 +1519,7 @@ SCRIPTS = """
 
   // Mode toggle: one page, multiple focused views.
   (function(){
-    const MODES=['all','moths','butterflies','birds','mammals','plants','amphibians','log'];
+    const MODES=['all','moths','butterflies','odonates','birds','mammals','plants','amphibians','log'];
     const views=Object.fromEntries(MODES.map(m=>[m,document.getElementById('view-'+m)]));
     function setMode(mode,force){
       if(!MODES.includes(mode)) mode='all';
@@ -1503,7 +1531,7 @@ SCRIPTS = """
           const on=mode===m;e.classList.toggle('hidden',!on);e.classList.toggle('flex',on);});});
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
-      const hashes={moths:'#moths',butterflies:'#butterflies',birds:'#birds',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
+      const hashes={moths:'#moths',butterflies:'#butterflies',odonates:'#odonates',birds:'#birds',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
       history.replaceState(null,'',hashes[mode]||location.pathname);
       updateNav&&updateNav();
       if(force){
@@ -1515,7 +1543,7 @@ SCRIPTS = """
       setMode(b.dataset.mode,true);window.scrollTo({top:0,behavior:'smooth'});
       document.getElementById('mob').classList.add('hidden');}));
     const h=location.hash;
-    const fromHash={['#moths']:'moths',['#butterflies']:'butterflies',['#birds']:'birds',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
+    const fromHash={['#moths']:'moths',['#butterflies']:'butterflies',['#odonates']:'odonates',['#birds']:'birds',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
     setMode(fromHash[h]||'all', h in fromHash);
   })();
 
@@ -1970,6 +1998,52 @@ def butterflies_view(df, stats):
     return "".join(out)
 
 
+def odonates_view(df, stats):
+    """Dark Odonata view: recorded species, regional gaps, and field methods."""
+    odonates = analyze.load_odonates()
+    gap = analyze.odonate_gap(odonates, n=30)
+    found = (analyze.odonate_found(df, odonates) if not odonates.empty
+             else odonates)
+    osum = (analyze.odonate_summary(df, odonates) if not odonates.empty
+            else {"species": 0, "records": 0, "top_month": ""})
+    stats_band = (
+        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
+        + _dark_divider().join([
+            _dark_stat(str(osum["species"]), "species"),
+            _dark_stat(str(osum["records"]), "total records"),
+            _dark_stat(osum.get("top_month") or "—", "peak month"),
+        ]) + '</div>')
+    out = []
+    out.append(section(
+        "odonates", "On the Wing",
+        'Dragonflies <em class="text-hollow-300">&amp; Damselflies</em>',
+        stats_band + odonate_found_body(found),
+        intro=f"{osum['species']} species already divide the property into distinct waters. Ebony Jewelwing follows "
+              "shaded moving water along Michigan Creek; spreadwings, bluets, forktails, and Aurora Damsel work "
+              "the pond and wet margins; skimmers patrol open water and sunny edges; darners and meadowhawks "
+              "carry the season into fall. The list is strongest from June through August, with Autumn Meadowhawk "
+              "extending it into October. More repeated daytime circuits should add species quickly and show which "
+              "ones are actually breeding here.",
+        dark=True))
+    out.append(section(
+        "odonate-gap", "Yet to Find",
+        'Odonata <em class="text-hollow-300">Gap List</em>',
+        odonate_gap_body(gap),
+        intro="The regional list is a starting point, not a promise. Prioritize species tied to small ponds, "
+              "shaded streams, seep-fed margins, and wet meadow rather than large lakes or broad rivers. Early "
+              "clubtails and baskettails, summer bluets and skimmers, and late darners each need their own survey window.",
+        dark=True))
+    out.append(section(
+        "odonate-methods", "Find More",
+        'How to Find <em class="text-hollow-300">More</em>',
+        survey_methods_body(ODONATE_METHODS),
+        intro="Adults show who visits; exuviae, tenerals, mating pairs, and oviposition show who is breeding. "
+              "Repeat the same pond and creek routes across the whole flight season, and photograph the face, "
+              "thorax, wings, abdomen, and terminal appendages whenever identification is close.",
+        dark=True))
+    return "".join(out)
+
+
 def birds_view():
     """Dark bird view driven by the eBird location life-list snapshot."""
     birds = analyze.load_birds()
@@ -2084,6 +2158,33 @@ BUTTERFLY_METHODS = [
      "where": "Grassy and sedge-dominated floodplain openings and the damp creek-edge meadow.",
      "when": "June–July, late afternoon into early evening when grass-skippers perch low; sunny, calm conditions.",
      "targets": "Cryptic skippers (Poanes, Polites, Wallengrenia, Euphyes) tied to the floodplain graminoids."},
+]
+
+ODONATE_METHODS = [
+    {"method": "Fixed pond circuit",
+     "where": "Walk the full pond margin slowly, including open sunny bank, emergent vegetation, shaded corners, and the wet meadow transition. Pause at recurring perches rather than continually flushing adults.",
+     "when": "Sunny, low-wind days from late May through September, 10 AM–4 PM; repeat every 7–10 days so short flight periods are not missed.",
+     "targets": "Bluets, forktails, spreadwings, pondhawks, skimmers, meadowhawks, and small perchers that disappear between widely spaced visits."},
+    {"method": "Michigan Creek transect",
+     "where": "Survey sunny riffles, shaded glides, gravel bars, seep entries, and quiet backwaters along the creek; approach from downstream and watch repeated patrol routes.",
+     "when": "Late May through August on bright calm days, with separate morning and afternoon passes as light reaches different sections of the channel.",
+     "targets": "Jewelwings, dancers, stream bluets, clubtails, spiketails, and cruising darners associated with moving water rather than the pond."},
+    {"method": "Exuviae and emergence search",
+     "where": "Inspect emergent stems, sedges, shrubs, bridge abutments, exposed roots, and vertical banks at the pond and creek edge, especially just above the waterline.",
+     "when": "Dawn through mid-morning after warm nights from May through July; revisit after synchronized emergence weather.",
+     "targets": "Direct breeding evidence and species that are hard to catch as adults. Photograph each exuvia in place, then dorsal, side, underside, mask, and terminal views with scale."},
+    {"method": "Early-season patrol watch",
+     "where": "Warm pond margins, creek openings, and south-facing woodland edges where newly emerged adults feed before returning to water.",
+     "when": "Mid-May through mid-June, late morning to mid-afternoon, especially the first sunny days after a cool or rainy stretch.",
+     "targets": "Baskettails, early clubtails, spring darners, and first-flight damselflies that are already gone by the survey's stronger midsummer coverage."},
+    {"method": "Late-season meadowhawk and darner pass",
+     "where": "Pond edge, wet meadow, shrub openings, and sheltered sunny forest edge; scan high patrols with binoculars and low perches at knee height.",
+     "when": "Late August through October on warm afternoons, including mild days after the first cool nights.",
+     "targets": "Meadowhawks, mosaic darners, spreadwings, and migratory darners that peak after many summer insects have declined."},
+    {"method": "Net, photograph, and release",
+     "where": "Use a light aerial net only where close approach fails, especially over meadow paths and along low pond-margin perches. Keep individuals shaded and handle wings minimally.",
+     "when": "Calm bright conditions when diagnostic colors are visible; process one individual at a time and release it where captured.",
+     "targets": "Close identifications among bluets, spreadwings, meadowhawks, and female or immature individuals. Photograph face, thoracic stripes, wing bases, abdomen pattern, and terminal appendages."},
 ]
 
 PLANT_METHODS = [
@@ -2318,6 +2419,11 @@ def build():
     parts.append('<div id="view-butterflies" class="hidden">')
     parts.append(_timed("butterflies-view", butterflies_view, df, stats))
     parts.append('</div>')  # /view-butterflies
+
+    # ── Dragonflies and damselflies view (dark) ──────────────────────────────
+    parts.append('<div id="view-odonates" class="hidden">')
+    parts.append(_timed("odonates-view", odonates_view, df, stats))
+    parts.append('</div>')  # /view-odonates
 
     # ── Birds view (dark, eBird-backed) ──────────────────────────────────────
     parts.append('<div id="view-birds" class="hidden">')

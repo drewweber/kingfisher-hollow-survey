@@ -50,6 +50,11 @@ that were newly added to the project or changed below the current max ID.
 
 Granular commands: `sync.py --property`, `--county`, `--stats`.
 
+The Dragonflies & Damselflies view uses a dedicated Odonata property roster and
+an 80 km regional comparison pool. Refresh both directly with
+`sync.py --odonates`. The compact regional roster is also refreshed during the
+daily run so the focused page and its gap list survive a fresh CI cache.
+
 ## Nightly automation (macOS launchd)
 ```sh
 cp com.kingfisher.inat.plist ~/Library/LaunchAgents/

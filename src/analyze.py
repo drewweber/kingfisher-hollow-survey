@@ -634,6 +634,40 @@ def butterfly_gap(butterflies, n=30):
     return _region_gap(butterflies, "region_butterfly_taxa", n=n)
 
 
+# --- dragonflies and damselflies --------------------------------------------
+def load_odonates():
+    with connect() as conn:
+        return pd.read_sql_query("SELECT * FROM odonate_taxa", conn)
+
+
+def odonate_summary(df, odonates):
+    ids = set(odonates["taxon_id"].dropna())
+    sub = df[df["taxon_id"].isin(ids)]
+    return {
+        "species": int(odonates["taxon_id"].nunique()),
+        "records": int(len(sub)),
+        "top_month": _peak_month(sub) if not sub.empty else "",
+    }
+
+
+def odonate_found(df, odonates):
+    """Recorded Odonata sorted by family and scientific name."""
+    if odonates.empty:
+        return odonates
+    found = odonates.copy()
+    counts = (df[df["taxon_id"].isin(set(found["taxon_id"].dropna()))]
+              .groupby("taxon_id").size())
+    found["ref_count"] = found["taxon_id"].map(counts).fillna(0).astype(int)
+    found["label"] = found["common_name"].fillna(found["taxon_name"])
+    found = _join_taxonomy(found)
+    return found.sort_values(["family_name", "taxon_name"])
+
+
+def odonate_gap(odonates, n=30):
+    """Regional Odonata not yet recorded here, ranked by nearby frequency."""
+    return _region_gap(odonates, "region_odonate_taxa", n=n)
+
+
 # --- birds -------------------------------------------------------------------
 _BIRD_COLUMNS = [
     "taxon_order", "category", "common_name", "taxon_name", "max_count", "count_text",
