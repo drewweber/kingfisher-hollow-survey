@@ -802,44 +802,58 @@ def bird_gap_body(gap):
             'No seasonal eBird gap candidates are available right now.</p>'
             + link_grid + '</div>'
         )
-    rows = []
     max_score = max(float(missing["score"].max()), 1)
-    for _, r in missing.iterrows():
-        common = sval(r.get("common_name"))
-        sci = sval(r.get("taxon_name"))
-        code = sval(r.get("species_code"))
-        href = f"https://ebird.org/species/{esc(code)}" if code else EBIRD_BARCHART_URL
-        width = max(8, round(100 * float(r.get("score", 0)) / max_score))
-        rows.append(
-            '<tr class="border-b border-white/10 align-top">'
-            f'<td class="py-3 pr-4"><a href="{href}" target="_blank" rel="noopener" '
-            f'class="font-medium text-white hover:text-hollow-300">{esc(common)}</a>'
-            f'<span class="block text-white/35 italic text-sm">{esc(sci)}</span></td>'
-            f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tioga_signal")))}</td>'
-            f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tompkins_signal")))}</td>'
-            f'<td class="py-3 pl-3 text-white/45 text-sm">{esc(sval(r.get("context")))}</td>'
-            f'<td class="py-3 pl-4 w-32"><div class="h-1.5 rounded-full bg-white/10">'
-            f'<div class="h-1.5 rounded-full bg-hollow-300" style="width:{width}%"></div>'
-            '</div></td>'
-            '</tr>'
+    group_meta = [
+        ("migrant", "Likely migrants and habitat visitors",
+         "Start here. These birds can use the creek corridor, wet meadow, shrub edge, or forest while migrating, and some may linger or breed when the habitat fits."),
+        ("flyover", "Flyovers and brief visitors",
+         "Watch the open sky and check the pond, creek bars, and wet edges after weather changes. Most waterfowl, shorebirds, gulls, terns, and raptors will be brief rather than resident."),
+        ("low_probability", "Lower probability here",
+         "These birds occur regionally, but they usually need larger marshes, grasslands, or early-successional cover that the property does not provide. Keep them as context, not primary survey targets."),
+    ]
+    tables = []
+    for group, title, note in group_meta:
+        subset = missing[missing.get("target_group", "migrant") == group]
+        if subset.empty:
+            continue
+        rows = []
+        for _, r in subset.iterrows():
+            common = sval(r.get("common_name"))
+            sci = sval(r.get("taxon_name"))
+            code = sval(r.get("species_code"))
+            href = f"https://ebird.org/species/{esc(code)}" if code else EBIRD_BARCHART_URL
+            width = max(8, round(100 * float(r.get("score", 0)) / max_score))
+            rows.append(
+                '<tr class="border-b border-white/10 align-top">'
+                f'<td class="py-3 pr-4"><a href="{href}" target="_blank" rel="noopener" '
+                f'class="font-medium text-white hover:text-hollow-300">{esc(common)}</a>'
+                f'<span class="block text-white/35 italic text-sm">{esc(sci)}</span></td>'
+                f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tioga_signal")))}</td>'
+                f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tompkins_signal")))}</td>'
+                f'<td class="py-3 pl-4 w-32"><div class="h-1.5 rounded-full bg-white/10">'
+                f'<div class="h-1.5 rounded-full bg-hollow-300" style="width:{width}%"></div>'
+                '</div></td>'
+                '</tr>'
+            )
+        tables.append(
+            '<section class="max-w-5xl mx-auto mt-10 first:mt-0">'
+            f'<div class="mb-4"><h3 class="font-serif text-2xl text-white">{esc(title)}</h3>'
+            f'<p class="text-white/50 text-sm leading-relaxed max-w-3xl mt-2">{esc(note)}</p></div>'
+            '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7 overflow-x-auto">'
+            '<table class="w-full text-[0.95rem]"><thead class="text-white/35 text-xs uppercase tracking-wider border-b-2 border-white/10">'
+            '<tr><th class="text-left pb-2 font-semibold">Species</th>'
+            '<th class="text-left pb-2 px-3 font-semibold">Tioga</th>'
+            '<th class="text-left pb-2 px-3 font-semibold">Tompkins</th>'
+            '<th class="text-left pb-2 pl-4 font-semibold">Seasonal signal</th></tr>'
+            '</thead><tbody>' + "".join(rows) + '</tbody></table></div></section>'
         )
-    table = (
-        '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7 max-w-5xl mx-auto overflow-x-auto">'
-        '<table class="w-full text-[0.95rem]"><thead class="text-white/35 text-xs uppercase tracking-wider border-b-2 border-white/10">'
-        '<tr><th class="text-left pb-2 font-semibold">Species</th>'
-        '<th class="text-left pb-2 px-3 font-semibold">Tioga</th>'
-        '<th class="text-left pb-2 px-3 font-semibold">Tompkins</th>'
-        '<th class="text-left pb-2 pl-3 font-semibold">Context</th>'
-        '<th class="text-left pb-2 pl-4 font-semibold">Signal</th></tr>'
-        '</thead><tbody>' + "".join(rows) + '</tbody></table></div>'
-    )
     return (
         '<div class="max-w-4xl mx-auto">'
         '<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
-        f'These are the strongest seasonal eBird barchart signals absent from the Kingfisher Hollow location list. '
-        f'Tioga County is the main comparison; Tompkins County adds nearby coverage, but Cayuga Lake can overstate '
-        f'waterbird and shoreline targets.</p></div>'
-        + table + link_grid
+        f'These seasonal gaps are separated by how a bird could realistically occur on the property. '
+        f'Tioga County remains the main comparison; Tompkins County adds nearby coverage, but Cayuga Lake '
+        f'greatly increases its waterbird and shoreline signal.</p></div>'
+        + "".join(tables) + link_grid
     )
 
 
@@ -1320,7 +1334,7 @@ def nav():
     odonate_links = [("#odonates", "Found"), ("#odonate-gap", "Gap List"),
                      ("#odonate-methods", "Find More")]
     bird_links = [("#birds", "Found"), ("#bird-recent", "Recent"),
-                  ("#bird-gap", "County Gaps")]
+                  ("#bird-gap", "Targets")]
     mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
                     ("#mammal-methods", "Find More")]
     plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
@@ -2078,10 +2092,10 @@ def birds_view():
         intro="The newest species added to the Kingfisher Hollow eBird location list. Records link back to their eBird checklists when available.",
         dark=True))
     out.append(section(
-        "bird-gap", "County Context",
-        'Bird <em class="text-hollow-300">Gap Review</em>',
+        "bird-gap", "Seasonal Priorities",
+        'Bird <em class="text-hollow-300">Target Review</em>',
         bird_gap_body(gap),
-        intro="Likely seasonal misses from Tioga and Tompkins County bird patterns, compared with the Kingfisher Hollow location list. Tioga is the closer county signal; Tompkins adds useful coverage but overweights Cayuga Lake birds.",
+        intro="Seasonal possibilities from Tioga and Tompkins County, sorted by how they are most likely to occur here: migrants using the property, birds passing over or stopping briefly, and lower-probability species whose usual habitat is absent.",
         dark=True))
     return "".join(out)
 

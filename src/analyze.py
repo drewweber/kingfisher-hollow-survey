@@ -932,6 +932,44 @@ def _signal_label(score):
     return "none"
 
 
+_BIRD_FLYOVER_TERMS = (
+    "duck", "goose", "swan", "teal", "wigeon", "shoveler", "pintail",
+    "scaup", "scoter", "goldeneye", "merganser", "gull", "tern", "jaeger",
+    "sandpiper", "plover", "yellowlegs", "dowitcher", "turnstone", "avocet",
+    "whimbrel", "phalarope", "willet", "red knot", "sanderling", "snipe", "hawk",
+    "goshawk", "eagle", "falcon", "kestrel", "merlin", "kite", "harrier",
+    "vulture", "osprey", "ibis", "heron", "egret", "loon", "grebe",
+    "cormorant", "pelican", "crane", "swallow", "martin", "swift", "nighthawk",
+)
+
+# These species are regionally relevant, but the site's small pond, wet meadow,
+# creek corridor, and forest do not provide the large marsh, open grassland, or
+# managed early-successional habitat they generally require. Unlike aerial or
+# waterbird migrants, they are also unlikely to be detected merely passing over.
+_BIRD_LOW_PROBABILITY_CODES = {
+    "marwre", "virrai", "sora", "leabit", "amebit", "comgal1", "sedwre1",
+    "graspa", "henspa", "horlar", "norbob", "rinphe1", "rufgro", "normoc",
+    "egygoo", "gragoo", "musduc", "zebfin2",
+}
+
+# A few brief visitors do not have a group name that reveals how they are most
+# likely to occur at Kingfisher Hollow.
+_BIRD_FLYOVER_CODES = {
+    "fiscro", "ycnher", "gloibi", "caster1", "purmar", "cliswa", "y00475",
+}
+
+
+def _bird_target_group(row):
+    """Assign one ecological search context to a seasonal bird gap."""
+    code = str(row.get("species_code") or "").lower()
+    common = str(row.get("common_name") or "").lower()
+    if code in _BIRD_LOW_PROBABILITY_CODES:
+        return "low_probability"
+    if code in _BIRD_FLYOVER_CODES or any(term in common for term in _BIRD_FLYOVER_TERMS):
+        return "flyover"
+    return "migrant"
+
+
 def bird_gap_from_ebird_barcharts(birds, n=40, when=None):
     """Likely seasonal bird gaps from Tioga and Tompkins eBird barcharts.
 
@@ -984,6 +1022,7 @@ def bird_gap_from_ebird_barcharts(birds, n=40, when=None):
     merged.loc[(merged["tioga_score"] == 0) & (merged["tompkins_score"] > 0), "context"] = "Tompkins only"
     merged.loc[merged["tompkins_score"] >= merged["tioga_score"] + 4, "context"] = "Tompkins-weighted"
     merged = merged.sort_values(["score", "tioga_score", "tompkins_score", "taxon_order"], ascending=[False, False, False, True])
+    merged["target_group"] = merged.apply(_bird_target_group, axis=1)
     return {
         "missing": merged.head(n),
         "source_count": int(len(merged)),
