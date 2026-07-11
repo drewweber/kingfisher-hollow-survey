@@ -1,0 +1,3 @@
+CHECK_API_KEY=choose-a-long-private-passphrase
+NTFY_TOPIC=choose-a-long-unguessable-topic
+# NTFY_TOKEN=optional-token-for-a-reserved-or-self-hosted-topic

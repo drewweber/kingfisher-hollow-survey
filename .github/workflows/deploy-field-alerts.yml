@@ -1,0 +1,35 @@
+name: Deploy field alerts
+
+# Deployment uses GitHub Actions, but the running alert monitor does not. The
+# Worker polls iNaturalist directly through a one-minute Cloudflare Cron Trigger.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: field-alerts/package-lock.json
+
+      - name: Install and test
+        working-directory: field-alerts
+        run: |
+          npm ci
+          npm test
+
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: field-alerts
+          command: deploy

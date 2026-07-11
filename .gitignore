@@ -22,3 +22,5 @@ data/cache/
 
 # Wrangler cache — contains Cloudflare account ID; not needed in version control.
 .wrangler/
+field-alerts/.dev.vars
+field-alerts/node_modules/

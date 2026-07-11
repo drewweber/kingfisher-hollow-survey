@@ -108,6 +108,27 @@ project:
 Without those variables, the link is visible but the endpoint returns a
 configuration error instead of starting a workflow.
 
+### Realtime moth field alerts
+
+`field-alerts/` contains a separate Cloudflare Worker for immediate moth
+documentation prompts. It checks Drew's recently uploaded or reidentified moth
+observations every minute and sends an ntfy phone notification when the current
+photographs may document a notable record:
+
+- Red: possible New York or 80 km regional iNaturalist first.
+- Yellow: possible Tioga County iNaturalist first with regional precedent.
+- No alert: new only to Kingfisher Hollow or already known in Tioga County.
+
+The 80 km search includes well-covered Tompkins County and nearby northern
+Pennsylvania. Alerts are rapid screening results, not final rarity claims.
+
+The Worker has its own protected, phone-friendly manual checker and durable
+deduplication. It does not rebuild the report or trigger GitHub Actions. See
+`field-alerts/README.md` for local testing, ntfy setup, Worker secrets, and the
+one-time deployment process. `.github/workflows/deploy-field-alerts.yml` provides
+a manual test-and-deploy action once the Cloudflare token has Workers edit
+permission.
+
 ### Plant gap list filtering
 
 Plant roster syncs use iNaturalist's `captive=false` filter, so the property

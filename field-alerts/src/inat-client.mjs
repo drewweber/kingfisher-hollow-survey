@@ -1,0 +1,91 @@
+const BASE_URL = "https://api.inaturalist.org/v1";
+
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+export class InatClient {
+  constructor(fetchFn = fetch) {
+    // Cloudflare's global fetch throws "Illegal invocation" when it is later
+    // called as an object method (this.fetchFn). Wrap it so the original
+    // function is always invoked without a borrowed `this` value.
+    this.fetchFn = (...args) => fetchFn(...args);
+  }
+
+  async request(path, params = {}) {
+    const url = new URL(`${BASE_URL}/${path.replace(/^\//, "")}`);
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== "") {
+        url.searchParams.set(key, String(value));
+      }
+    }
+
+    let lastError;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await this.fetchFn(url, {
+          headers: { "user-agent": "kingfisher-hollow-field-alerts" },
+          signal: controller.signal,
+        });
+        if (response.ok) return await response.json();
+        if (response.status !== 429 && response.status < 500) {
+          throw new Error(`iNaturalist returned HTTP ${response.status}.`);
+        }
+        const retryAfter = Number.parseInt(response.headers.get("retry-after") || "", 10);
+        lastError = new Error(`iNaturalist temporarily returned HTTP ${response.status}.`);
+        await wait(Number.isFinite(retryAfter)
+          ? Math.min(retryAfter * 1000, 30000)
+          : [2000, 5000, 10000, 20000][attempt]);
+      } catch (error) {
+        lastError = error;
+        if (attempt < 3) await wait([1000, 3000, 7000][attempt]);
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+    throw lastError || new Error("iNaturalist request failed.");
+  }
+
+  async recentMoths(config) {
+    const data = await this.request("observations", {
+      project_id: config.projectId,
+      user_login: config.username,
+      taxon_id: config.lepidopteraTaxonId,
+      without_taxon_id: config.butterflyTaxonId,
+      order_by: "updated_at",
+      order: "desc",
+      per_page: config.recentLimit,
+    });
+    return data.results || [];
+  }
+
+  async projectObservation(observationId, config) {
+    const data = await this.request("observations", {
+      id: observationId,
+      project_id: config.projectId,
+      per_page: 1,
+    });
+    return data.results?.[0] || null;
+  }
+
+  async count(params) {
+    const data = await this.request("observations", { ...params, per_page: 0 });
+    return Number(data.total_results || 0);
+  }
+
+  async countsForTaxon(taxonId, config) {
+    // iNaturalist explicitly discourages bursts. These only run for a taxon
+    // that is new to KH, so a short serial pause is cheap and avoids 429s.
+    const state = await this.count({ taxon_id: taxonId, place_id: config.statePlaceId });
+    if (config.requestPauseMs) await wait(config.requestPauseMs);
+    const regional = await this.count({
+      taxon_id: taxonId,
+      lat: config.propertyLat,
+      lng: config.propertyLng,
+      radius: config.regionRadiusKm,
+    });
+    if (config.requestPauseMs) await wait(config.requestPauseMs);
+    const county = await this.count({ taxon_id: taxonId, place_id: config.countyPlaceId });
+    return { county, state, regional };
+  }
+}

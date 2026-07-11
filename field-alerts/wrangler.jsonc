@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kingfisher-field-alerts",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-07-10",
+  "workers_dev": true,
+  "preview_urls": false,
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ALERT_STATE",
+        "class_name": "AlertState"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["AlertState"]
+    }
+  ],
+  "vars": {
+    "INAT_PROJECT_ID": "249580",
+    "INAT_USERNAME": "drewweber",
+    "INAT_COUNTY_PLACE_ID": "653",
+    "INAT_STATE_PLACE_ID": "48",
+    "INAT_LEPIDOPTERA_TAXON_ID": "47157",
+    "INAT_BUTTERFLY_TAXON_ID": "47224",
+    "KH_LATITUDE": "42.2744",
+    "KH_LONGITUDE": "-76.4926",
+    "REGION_RADIUS_KM": "80",
+    "INAT_REQUEST_PAUSE_MS": "1100",
+    "NTFY_SERVER": "https://ntfy.sh",
+    "ALERT_COOLDOWN_DAYS": "7"
+  }
+}
