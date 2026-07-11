@@ -947,8 +947,8 @@ _BIRD_FLYOVER_TERMS = (
 # managed early-successional habitat they generally require. Unlike aerial or
 # waterbird migrants, they are also unlikely to be detected merely passing over.
 _BIRD_LOW_PROBABILITY_CODES = {
-    "marwre", "virrai", "sora", "leabit", "amebit", "comgal1", "sedwre1",
-    "graspa", "henspa", "horlar", "norbob", "rinphe1", "rufgro", "normoc",
+    "marwre", "virrai", "comgal1", "sedwre1", "graspa", "henspa", "horlar",
+    "norbob", "rinphe1", "rufgro",
     "egygoo", "gragoo", "musduc", "zebfin2",
 }
 
@@ -956,6 +956,7 @@ _BIRD_LOW_PROBABILITY_CODES = {
 # likely to occur at Kingfisher Hollow.
 _BIRD_FLYOVER_CODES = {
     "fiscro", "ycnher", "gloibi", "caster1", "purmar", "cliswa", "y00475",
+    "sora", "leabit", "amebit",
 }
 
 
