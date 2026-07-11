@@ -83,7 +83,17 @@ function evidenceProfile(taxon) {
     ];
   }
 
-  if (/tortrix|leafroller|leaf-roller|leaf miner|leaf-miner|mompha|coleophora|gelechi|micro moth|micromoth/.test(combined)) {
+  if (scientific.startsWith("Eupithecia ") || combined.includes("pug")) {
+    return [
+      "Several sharply focused dorsal photographs with the forewings square to the camera",
+      "Hindwing exposed if practical; small wing markings and fringe pattern may be important",
+      "Close side and head views showing antennae, palps, thorax, and abdomen",
+      "A millimeter ruler or another precise scale reference",
+      "Exact habitat, light type, and time; retain every original full-resolution image for expert review",
+    ];
+  }
+
+  if (scientific.startsWith("Acleris ") || /tortrix|leafroller|leaf-roller|leaf miner|leaf-miner|mompha|coleophora|gelechi|micro moth|micromoth/.test(combined)) {
     return [
       "Multiple magnified dorsal photographs with the wing pattern square to the camera",
       "Side and head views showing palps and antennae",

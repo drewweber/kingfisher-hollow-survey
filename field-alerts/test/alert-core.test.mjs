@@ -80,6 +80,32 @@ test("known KH taxa return immediately without invented regional counts", () => 
   assert.match(assessment.headline, /Already documented/);
 });
 
+test("Acleris and pug alerts request the small details needed for review", () => {
+  const acleris = buildAssessment(observation({
+    taxon: {
+      id: 212342,
+      name: "Acleris maximana",
+      preferred_common_name: "",
+      rank: "species",
+      ancestor_ids: [47157],
+    },
+  }), { state: 1, regional: 1, county: 1 }, config);
+  assert.match(acleris.evidence.join(" "), /millimeter ruler/i);
+  assert.match(acleris.evidence.join(" "), /palps and antennae/i);
+
+  const pug = buildAssessment(observation({
+    taxon: {
+      id: 338318,
+      name: "Sigela brauneata",
+      preferred_common_name: "Brown False Pug",
+      rank: "species",
+      ancestor_ids: [47157],
+    },
+  }), { state: 1, regional: 1, county: 1 }, config);
+  assert.match(pug.evidence.join(" "), /fringe pattern/i);
+  assert.match(pug.evidence.join(" "), /full-resolution image/i);
+});
+
 test("notification requests immediate evidence without claiming confirmed rarity", () => {
   const assessment = buildAssessment(observation(), { state: 1, regional: 1, county: 1 }, config);
   const notification = notificationFor(assessment);
