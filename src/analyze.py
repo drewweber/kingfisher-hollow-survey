@@ -942,13 +942,17 @@ _BIRD_FLYOVER_TERMS = (
     "cormorant", "pelican", "crane", "swallow", "martin", "swift", "nighthawk",
 )
 
+_BIRD_NOCTURNAL_FLYOVER_TERMS = (
+    "bittern", "rail", "sora", "gallinule", "coot",
+)
+
 # These species are regionally relevant, but the site's small pond, wet meadow,
 # creek corridor, and forest do not provide the large marsh, open grassland, or
 # managed early-successional habitat they generally require. Unlike aerial or
 # waterbird migrants, they are also unlikely to be detected merely passing over.
 _BIRD_LOW_PROBABILITY_CODES = {
-    "marwre", "virrai", "comgal1", "sedwre1", "graspa", "henspa", "horlar",
-    "norbob", "rinphe1", "rufgro",
+    "marwre", "sedwre1", "graspa", "henspa", "horlar", "norbob", "rinphe1",
+    "rufgro",
     "egygoo", "gragoo", "musduc", "zebfin2",
 }
 
@@ -964,6 +968,8 @@ def _bird_target_group(row):
     """Assign one ecological search context to a seasonal bird gap."""
     code = str(row.get("species_code") or "").lower()
     common = str(row.get("common_name") or "").lower()
+    if any(term in common for term in _BIRD_NOCTURNAL_FLYOVER_TERMS):
+        return "nocturnal_flyover"
     if code in _BIRD_LOW_PROBABILITY_CODES:
         return "low_probability"
     if code in _BIRD_FLYOVER_CODES or any(term in common for term in _BIRD_FLYOVER_TERMS):

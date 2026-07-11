@@ -806,7 +806,9 @@ def bird_gap_body(gap):
     group_meta = [
         ("migrant", "Likely migrants and habitat visitors",
          "Start here. These birds can use the creek corridor, wet meadow, shrub edge, or forest while migrating, and some may linger or breed when the habitat fits."),
-        ("flyover", "Flyovers and brief visitors",
+        ("nocturnal_flyover", "Nocturnal wetland flyovers",
+         "Rails, gallinules, coots, and bitterns migrate over the hollow at night, but the property lacks the marsh habitat expected to bring them down. Listen for flight calls overhead rather than searching the pond for a stopover."),
+        ("flyover", "Daytime flyovers and brief visitors",
          "Watch the open sky and check the pond, creek bars, and wet edges after weather changes. Most waterfowl, shorebirds, gulls, terns, and raptors will be brief rather than resident."),
         ("low_probability", "Lower probability here",
          "These birds occur regionally, but they usually need larger marshes, grasslands, or early-successional cover that the property does not provide. Keep them as context, not primary survey targets."),
@@ -2095,7 +2097,7 @@ def birds_view():
         "bird-gap", "Seasonal Priorities",
         'Bird <em class="text-hollow-300">Target Review</em>',
         bird_gap_body(gap),
-        intro="Seasonal possibilities from Tioga and Tompkins County, sorted by how they are most likely to occur here: migrants using the property, birds passing over or stopping briefly, and lower-probability species whose usual habitat is absent.",
+        intro="Seasonal possibilities from Tioga and Tompkins County, sorted by how they are most likely to occur here: migrants using the property, nocturnal wetland flyovers, daytime flyovers or brief visitors, and lower-probability species whose usual habitat is absent.",
         dark=True))
     return "".join(out)
 
