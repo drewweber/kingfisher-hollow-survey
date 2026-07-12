@@ -859,6 +859,136 @@ def bird_gap_body(gap):
     )
 
 
+def bird_playbook_body():
+    """Field-literate timing and detection guide for the bird survey."""
+    clock = [
+        ("Before dusk", "Read the night first",
+         "During BirdCast season (March 1–June 15 and August 1–November 15), check the county dashboard and the hourly wind, cloud ceiling, fog, and rain forecast. Spring movement favors warm southerly flow; fall movement often jumps behind a cold front on north or northwest winds. Outside those windows, favor breeding, dispersal, or winter surveys."),
+        ("30–45 min after sunset", "Departures begin",
+         "Start the upward-facing recorder before this window so the whole takeoff is captured. Watch the open sky until it is fully dark for nighthawks, swifts, swallows, herons, and waterfowl. Do not use playback: these are birds in transit."),
+        ("Full dark to 3 AM", "Continuous passage",
+         "Let the recorder run without gaps. Rails, bitterns, cuckoos, thrushes, warblers, sparrows, and other migrants may call at any point, so a short listening session is useful but a full-night recording is far more informative."),
+        ("Two hours before sunrise", "Descent and landfall",
+         "Listen outside for thrushes and sparrows overhead, then begin the creek-to-edge walking route at first light. The first three hours after sunrise are the best chance to turn an overnight passage into birds feeding in the hollow."),
+    ]
+    weather = [
+        ("Spring pulse", "Late April through May",
+         "Prioritize warm nights with southerly tailwinds, especially when a front or rain band approaches from the west. If rain arrives late, survey the creek corridor and sheltered forest edge at dawn for birds forced down nearby."),
+        ("Fall pulse", "Mid-August through October",
+         "Go hard on the first clear, cool night after frontal passage with north or northwest winds. Work the sunny east-facing edges after sunrise, then the shaded creek and hemlock slope as the morning warms."),
+        ("High-call night", "Low cloud, fog, or poor visibility",
+         "Calling can increase when visibility is reduced. Record continuously and turn unnecessary outdoor lights off. Treat a dense call night as a cue for an immediate dawn circuit, not as proof that every caller landed."),
+    ]
+    routes = [
+        ("Creek at first light", "First light–8:30 AM",
+         "Walk upstream slowly, pausing at quiet bends and seep entries. Best for Northern Waterthrush, Acadian Flycatcher, thrushes, Louisiana Waterthrush breeding evidence, and migrant warblers dropping into humid cover."),
+        ("Wet meadow and shrub edge", "Sunrise–10 AM",
+         "Stand still before entering. Listen for Willow Flycatcher, Orchard Oriole, cuckoos, sparrows, and chip notes. Recheck after overnight rain or a heavy BirdCast night."),
+        ("Hemlock-hardwood slope", "7–10 AM",
+         "Climb slowly and stop below mixed flocks. Watch canopy gaps from one position rather than chasing movement. Best for vireos, Blackburnian and Black-throated Green Warblers, Acadian Flycatcher, and quiet fall warblers."),
+        ("Open-sky watch", "Dawn, then 9 AM–2 PM",
+         "Use dawn for waterbirds, gulls, and terns; return when thermals build for raptors. Late August and September add a 30-minute watch before sunset for Common Nighthawk and post-breeding swallows."),
+    ]
+    targets = [
+        ("Willow Flycatcher", "Late May–July · dawn to 10 AM",
+         "Work wet shrubs and low willow clumps. Learn the dry fitz-bew song and whit call; record every empid before trying any stimulus. One brief, low-volume call sequence is enough if the bird is silent and suitable habitat is occupied."),
+        ("Northern Waterthrush", "May and mid-August–September · dawn",
+         "Check muddy creek margins, root tangles, seeps, and pond shade on the morning after migration. Listen for the sharp, metallic spwik call as much as the song; quiet birds often pump the tail while walking the waterline."),
+        ("Northern Mockingbird", "Year-round · dawn and late afternoon",
+         "Scan the silo, wires, tall dead tops, berry shrubs, and open roadside edge. A bird may arrive without singing; repeated tail flashes, exposed perches, and aggressive chases are better search cues outside spring song."),
+        ("Yellow-billed Cuckoo", "Late May–August · humid still mornings",
+         "Listen from the wet meadow edge and mature riparian canopy after caterpillar outbreaks. Wait through long silences: cuckoos can call once and disappear. Use playback only after a full passive listen, never around a suspected nest."),
+        ("Acadian Flycatcher", "Late May–July · early morning",
+         "Stand below the darkest, most open understory over the creek and lower slope. The explosive peet-sah carries farther than the bird. Map repeated song positions; a stable territory is more informative than a single response."),
+        ("Savannah and Clay-colored Sparrows", "April–May and September–October",
+         "Walk the wet-meadow and weedy-edge boundary slowly after sunrise. Watch fence lines and low seed heads. In fall, one soft pish followed by several minutes of silence is more effective than continuous noise."),
+        ("Orchard Oriole", "May–July · first two hours after sunrise",
+         "Scan flowering and fruiting trees at the open riparian edge, especially isolated canopy crowns. Learn the sharp chuck notes; females and young birds are easily passed over when no male is singing."),
+        ("Red-headed Woodpecker", "May–October · morning and mid-day sky watch",
+         "Check standing dead trees and open crowns, then scan high-flying woodpeckers crossing the valley. Listen for the rough queah call. This is more likely to be a brief visitor than a settled bird unless open snag habitat develops."),
+        ("Rails and bitterns", "April–May and August–October · full night",
+         "Treat these strictly as overhead flight-call targets. Record from open sky and verify repeated calls on a spectrogram. Do not play marsh calls at the pond: the property lacks the emergent marsh needed to bring these migrants down."),
+    ]
+
+    def cards(items, columns="lg:grid-cols-4"):
+        rendered = []
+        for timing, title, text in items:
+            rendered.append(
+                '<article class="border-t border-white/15 pt-4">'
+                f'<div class="text-hollow-300 text-[0.65rem] uppercase tracking-[0.16em]">{esc(timing)}</div>'
+                f'<h4 class="font-serif text-xl text-white mt-2">{esc(title)}</h4>'
+                f'<p class="text-white/60 text-sm leading-relaxed mt-2">{esc(text)}</p>'
+                '</article>')
+        return f'<div class="grid sm:grid-cols-2 {columns} gap-x-7 gap-y-8">' + "".join(rendered) + '</div>'
+
+    station = (
+        '<div class="grid md:grid-cols-2 gap-10">'
+        '<div><h4 class="font-serif text-2xl text-white">Set the station once, then repeat it</h4>'
+        '<ol class="mt-5 space-y-3 text-white/65 text-sm leading-relaxed list-decimal pl-5">'
+        '<li>Mount an AudioMoth or other recorder 2–4 m high with the microphone aimed upward into the largest opening in the sky. Keep it away from Michigan Creek roar, roads, buildings, and branches rubbing in wind.</li>'
+        '<li>Record mono WAV at 48 kHz and 16- or 24-bit depth. Run a gain test on a windy and an insect-heavy night; lower gain until loud nearby sounds no longer clip.</li>'
+        '<li>Start 20–30 minutes before sunset and stop after sunrise. Use the same location, settings, and filename pattern every night so call rates can be compared across the season.</li>'
+        '<li>Log temperature, wind, cloud cover, rain, visibility, and the BirdCast forecast. Preserve the untouched original WAV before making clips.</li>'
+        '</ol></div>'
+        '<div><h4 class="font-serif text-2xl text-white">Review without fooling yourself</h4>'
+        '<ol class="mt-5 space-y-3 text-white/65 text-sm leading-relaxed list-decimal pl-5">'
+        '<li>Scan a spectrogram first and listen second. Save each candidate with several seconds of context before and after the call, plus its exact timestamp.</li>'
+        '<li>Use Nighthawk or another detector to triage long files, not to certify records. Retain unknowns; many single chips cannot be identified safely to species.</li>'
+        '<li>Require multiple clear calls or a distinctive pattern for unusual species. Compare against known flight calls, not daytime songs, and note competing identifications.</li>'
+        '<li>Upload useful WAV clips with the eBird checklist. A Merlin suggestion is a lead, not evidence by itself; rare records need the original audio and field context.</li>'
+        '</ol></div></div>')
+
+    playback = (
+        '<div class="grid lg:grid-cols-3 gap-8">'
+        '<article class="border-l-2 border-hollow-400 pl-5"><div class="text-hollow-300 text-xs uppercase tracking-[0.16em]">1 · Passive first</div>'
+        '<h4 class="font-serif text-2xl text-white mt-2">Give silence ten minutes</h4>'
+        '<p class="text-white/65 text-sm leading-relaxed mt-3">Stop, listen, and watch one patch before making any sound. Track chip notes, tail movement, canopy flickers, and mixed-flock leaders. Record naturally given calls before altering behavior.</p></article>'
+        '<article class="border-l-2 border-hollow-400 pl-5"><div class="text-hollow-300 text-xs uppercase tracking-[0.16em]">2 · One-and-wait</div>'
+        '<h4 class="font-serif text-2xl text-white mt-2">Use the smallest stimulus</h4>'
+        '<p class="text-white/65 text-sm leading-relaxed mt-3">For a common, non-sensitive target in suitable habitat, use one 10–15 second sequence at natural volume, then wait 2–3 minutes. A second sequence is the ceiling. For a mixed flock, a few soft pishes followed by silence are preferable to repeated species song.</p></article>'
+        '<article class="border-l-2 border-hollow-400 pl-5"><div class="text-hollow-300 text-xs uppercase tracking-[0.16em]">3 · Stop immediately</div>'
+        '<h4 class="font-serif text-2xl text-white mt-2">A response ends playback</h4>'
+        '<p class="text-white/65 text-sm leading-relaxed mt-3">Stop when a bird approaches, countersings, alarms, changes perch repeatedly, or shows agitation. Never use playback for nocturnal flyovers, rare or sensitive birds, active nests, roosts, repeated visits to one territory, or during heat, cold, or food stress.</p></article>'
+        '</div>'
+        '<div class="mt-7 border-t border-white/10 pt-5 text-white/55 text-sm leading-relaxed">'
+        'Playback, imitation, pishing, and mobbing calls all change detectability. Note their use in checklist comments and tag recordings made after species-specific playback. Do not assign breeding codes from singing, territorial defense, or agitation that you elicited.</div>')
+
+    breeding = (
+        '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">'
+        '<div><div class="text-hollow-300 text-xs uppercase tracking-[0.16em]">Possible</div><p class="text-white/65 text-sm leading-relaxed mt-2">A naturally singing bird in suitable habitat. Record the exact patch and return; one June song is not yet a territory.</p></div>'
+        '<div><div class="text-hollow-300 text-xs uppercase tracking-[0.16em]">Probable</div><p class="text-white/65 text-sm leading-relaxed mt-2">The same singer seven or more days apart, a pair, courtship, nest-site visits, or natural territorial defense.</p></div>'
+        '<div><div class="text-hollow-300 text-xs uppercase tracking-[0.16em]">Confirmed</div><p class="text-white/65 text-sm leading-relaxed mt-2">Nest contents, food or fecal-sac carrying, distraction display, or recently fledged dependent young. Observe without approaching the nest.</p></div>'
+        '<div><div class="text-hollow-300 text-xs uppercase tracking-[0.16em]">Best practice</div><p class="text-white/65 text-sm leading-relaxed mt-2">Repeat the same listening stations weekly in June and July. Complete checklists and negative visits make later breeding claims much stronger.</p></div>'
+        '</div>')
+
+    references = (
+        '<div class="flex flex-wrap gap-x-6 gap-y-3 text-sm">'
+        '<a class="text-hollow-300 hover:text-white" href="https://dashboard.birdcast.info/region/US-NY-107" target="_blank" rel="noopener">Tioga County BirdCast dashboard ↗</a>'
+        '<a class="text-hollow-300 hover:text-white" href="https://birdcast.info/migration-tools/live-migration-maps/" target="_blank" rel="noopener">Live migration map ↗</a>'
+        '<a class="text-hollow-300 hover:text-white" href="https://www.aba.org/aba-code-of-birding-ethics/" target="_blank" rel="noopener">ABA birding ethics ↗</a>'
+        '<a class="text-hollow-300 hover:text-white" href="https://support.ebird.org/en/support/solutions/articles/48000825713-uploading-media" target="_blank" rel="noopener">Archive audio in eBird ↗</a>'
+        '</div>')
+
+    return (
+        '<div class="space-y-16">'
+        '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">The migration clock</div>'
+        '<h3 class="font-serif text-3xl text-white mt-2">Work relative to sunset and sunrise</h3></div>' + cards(clock) + '</section>'
+        '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">Weather triggers</div>'
+        '<h3 class="font-serif text-3xl text-white mt-2">Choose nights that move birds</h3></div>' + cards(weather, "lg:grid-cols-3") + '</section>'
+        '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">Nocturnal flight calls</div>'
+        '<h3 class="font-serif text-3xl text-white mt-2">Build a repeatable listening station</h3></div>' + station + '</section>'
+        '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">Silent migrants</div>'
+        '<h3 class="font-serif text-3xl text-white mt-2">Playback is the last step, not the first</h3></div>' + playback + '</section>'
+        '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">Property circuit</div>'
+        '<h3 class="font-serif text-3xl text-white mt-2">Four routes, four detection windows</h3></div>' + cards(routes) + '</section>'
+        '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">Current targets</div>'
+        '<h3 class="font-serif text-3xl text-white mt-2">Species-specific tricks</h3></div>' + cards(targets, "lg:grid-cols-3") + '</section>'
+        '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">Breeding season</div>'
+        '<h3 class="font-serif text-3xl text-white mt-2">Turn presence into evidence</h3></div>' + breeding + '</section>'
+        '<section class="border-t border-white/10 pt-6"><div class="text-white/40 text-xs uppercase tracking-[0.16em] mb-4">Field references</div>' + references + '</section>'
+        '</div>')
+
+
 def mammal_found_body(found):
     """Mammals recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
@@ -1336,7 +1466,7 @@ def nav():
     odonate_links = [("#odonates", "Found"), ("#odonate-gap", "Gap List"),
                      ("#odonate-methods", "Find More")]
     bird_links = [("#birds", "Found"), ("#bird-recent", "Recent"),
-                  ("#bird-gap", "Targets")]
+                  ("#bird-gap", "Targets"), ("#bird-methods", "Field Guide")]
     mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
                     ("#mammal-methods", "Find More")]
     plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
@@ -2098,6 +2228,12 @@ def birds_view():
         'Bird <em class="text-hollow-300">Target Review</em>',
         bird_gap_body(gap),
         intro="Seasonal possibilities from Tioga and Tompkins County, sorted by how they are most likely to occur here: migrants using the property, nocturnal wetland flyovers, daytime flyovers or brief visitors, and lower-probability species whose usual habitat is absent.",
+        dark=True))
+    out.append(section(
+        "bird-methods", "Field Guide",
+        'How to Find <em class="text-hollow-300">More Birds</em>',
+        bird_playbook_body(),
+        intro="A season-by-season survey playbook for the hollow: when migration is moving, where birds concentrate after landing, how to record nocturnal flight calls, and when a small amount of playback is useful rather than disruptive.",
         dark=True))
     return "".join(out)
 
