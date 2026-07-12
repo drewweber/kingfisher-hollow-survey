@@ -1,7 +1,7 @@
 # Kingfisher Hollow Field Alerts
 
 This Cloudflare Worker watches Drew Weber's moth observations in the Kingfisher
-Hollow iNaturalist project once per minute. It sends an ntfy phone notification
+Hollow iNaturalist project every three minutes. It sends an ntfy phone notification
 when a new or newly identified species crosses the field-documentation threshold:
 
 - **Red:** possible first iNaturalist record for New York State or within 80 km
@@ -18,7 +18,7 @@ MPG, BAMONA, BugGuide, GBIF, and other sources still matter.
 
 ## How it works
 
-- A one-minute Cloudflare Cron Trigger reads the project's most recently updated
+- A three-minute Cloudflare Cron Trigger reads the project's most recently updated
   moth observations, so later identification changes are checked too.
 - A Durable Object remembers handled observation/taxon combinations and prevents
   duplicate alerts.

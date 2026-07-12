@@ -117,7 +117,7 @@ configuration error instead of starting a workflow.
 
 `field-alerts/` contains a separate Cloudflare Worker for immediate moth
 documentation prompts. It checks Drew's recently uploaded or reidentified moth
-observations every minute and sends an ntfy phone notification when the current
+observations every three minutes and sends an ntfy phone notification when the current
 photographs may document a notable record:
 
 - Red: possible New York or 80 km regional iNaturalist first.

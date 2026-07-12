@@ -9,7 +9,7 @@
     "binding": "AI"
   },
   "triggers": {
-    "crons": ["* * * * *"]
+    "crons": ["*/3 * * * *"]
   },
   "durable_objects": {
     "bindings": [
