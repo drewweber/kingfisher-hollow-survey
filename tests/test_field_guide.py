@@ -95,6 +95,13 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertNotIn("caches.match", cache_one)
         self.assertIn('fetch(url, { cache: "no-cache" })', cache_one)
 
+    def test_runtime_reads_only_the_current_versioned_cache(self):
+        worker = (ROOT / "field-guide" / "service-worker.js").read_text(encoding="utf-8")
+        fetch_handler = worker.split('self.addEventListener("fetch"', 1)[1]
+        self.assertIn("const cache = await caches.open(CACHE_NAME)", fetch_handler)
+        self.assertIn("await cache.match(event.request", fetch_handler)
+        self.assertNotIn("await caches.match(event.request", fetch_handler)
+
 
 if __name__ == "__main__":
     unittest.main()

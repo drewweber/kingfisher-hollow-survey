@@ -83,12 +83,12 @@ self.addEventListener("fetch", (event) => {
   if (requestUrl.origin !== scopeUrl.origin || !requestUrl.pathname.startsWith(scopeUrl.pathname)) return;
 
   event.respondWith((async () => {
-    const cached = await caches.match(event.request, { ignoreSearch: true });
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(event.request, { ignoreSearch: true });
     if (cached) return cached;
     try {
       const response = await fetch(event.request);
       if (response.ok && event.request.method === "GET") {
-        const cache = await caches.open(CACHE_NAME);
         await cache.put(event.request, response.clone());
       }
       return response;
