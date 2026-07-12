@@ -88,4 +88,46 @@ export class InatClient {
     const county = await this.count({ taxon_id: taxonId, place_id: config.countyPlaceId });
     return { county, state, regional };
   }
+
+  async identificationContext(taxonId, config) {
+    const details = await this.request(`taxa/${taxonId}`);
+    const taxon = details.results?.[0] || {};
+    const ancestors = taxon.ancestors || [];
+    const genus = ancestors.find((ancestor) => ancestor.rank === "genus")
+      || (taxon.rank === "genus" ? taxon : null);
+    const family = ancestors.find((ancestor) => ancestor.rank === "family") || null;
+    if (!genus?.id) {
+      return {
+        genusName: genus?.name || "",
+        familyName: family?.name || "",
+        regionalCandidates: [],
+      };
+    }
+    if (config.requestPauseMs) await wait(config.requestPauseMs);
+    const counts = await this.request("observations/species_counts", {
+      taxon_id: genus.id,
+      lat: config.propertyLat,
+      lng: config.propertyLng,
+      radius: config.regionRadiusKm,
+      per_page: 30,
+    });
+    const regionalCandidates = (counts.results || [])
+      .filter((entry) => entry.taxon?.id !== taxonId && SPECIES_RANKS_FOR_CONTEXT.has(entry.taxon?.rank))
+      .map((entry) => ({
+        taxonId: entry.taxon.id,
+        scientificName: entry.taxon.name,
+        commonName: entry.taxon.preferred_common_name || "",
+        count: Number(entry.count || 0),
+      }))
+      .slice(0, 20);
+    return {
+      genusName: genus.name || "",
+      familyName: family?.name || "",
+      regionalCandidates,
+    };
+  }
 }
+
+const SPECIES_RANKS_FOR_CONTEXT = new Set([
+  "species", "subspecies", "variety", "form", "hybrid", "subvariety", "subform",
+]);

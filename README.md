@@ -128,7 +128,10 @@ The 80 km search includes well-covered Tompkins County and nearby northern
 Pennsylvania. Alerts are rapid screening results, not final rarity claims.
 
 The Worker has its own protected, phone-friendly manual checker and durable
-deduplication. It does not rebuild the report or trigger GitHub Actions. See
+deduplication. Notable alerts also compare the proposed identification against
+same-genus moths recorded within 80 km, then provide a short lookalike key and
+the specific photographs needed to distinguish them. It does not rebuild the
+report or trigger GitHub Actions. See
 `field-alerts/README.md` for local testing, ntfy setup, Worker secrets, and the
 one-time deployment process. `.github/workflows/deploy-field-alerts.yml` provides
 a manual test-and-deploy action once the Cloudflare token has Workers edit

@@ -217,13 +217,27 @@ export function notificationFor(assessment) {
   const counts = assessment.priorCounts
     ? `Earlier records: Tioga ${assessment.priorCounts.county}; 80 km region ${assessment.priorCounts.regional}; New York ${assessment.priorCounts.state}.`
     : "";
+  const identification = assessment.identification;
+  const fieldGuide = identification
+    ? [
+      ...(identification.comparisons?.length
+        ? ["RULE OUT:", ...identification.comparisons.map((item) => `- ${item.label} — ${item.difference}`)]
+        : []),
+      ...(identification.photoPriorities?.length
+        ? ["DECISIVE PHOTOS:", ...identification.photoPriorities.map((item) => `- ${item}`)]
+        : []),
+      identification.limitation ? `LIMIT: ${identification.limitation}` : "",
+    ].filter(Boolean)
+    : [
+      "Photograph more before release:",
+      ...assessment.evidence.slice(0, 4).map((item) => `- ${item}`),
+    ];
   return {
     title: `${prefix}: ${assessment.headline}`,
     message: [
       name,
       counts,
-      "Photograph more before release:",
-      ...assessment.evidence.slice(0, 4).map((item) => `- ${item}`),
+      ...fieldGuide,
       assessment.caveat,
     ].filter(Boolean).join("\n"),
     priority: assessment.level === "red" ? "5" : "3",

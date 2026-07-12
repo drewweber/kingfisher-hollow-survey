@@ -58,6 +58,42 @@ test("iNaturalist fetch is invoked without borrowing the client as this", async 
   assert.equal(await client.count({ taxon_id: 123 }), 4);
 });
 
+test("identification context finds same-genus moths recorded in the region", async () => {
+  const calls = [];
+  const fetchFn = async (url) => {
+    const parsed = new URL(url);
+    calls.push(parsed);
+    if (parsed.pathname.endsWith("/taxa/212342")) {
+      return response({ results: [{
+        id: 212342,
+        rank: "species",
+        ancestors: [
+          { id: 47155, name: "Tortricidae", rank: "family" },
+          { id: 124620, name: "Acleris", rank: "genus" },
+        ],
+      }] });
+    }
+    if (parsed.pathname.endsWith("/observations/species_counts")) {
+      return response({ results: [
+        { count: 14, taxon: { id: 212349, name: "Acleris robinsoniana", preferred_common_name: "Robinson's Acleris Moth", rank: "species" } },
+        { count: 1, taxon: { id: 212342, name: "Acleris maximana", rank: "species" } },
+      ] });
+    }
+    throw new Error(`Unexpected URL: ${url}`);
+  };
+  const client = new InatClient(fetchFn);
+  const context = await client.identificationContext(212342, {
+    propertyLat: 42.2744,
+    propertyLng: -76.4926,
+    regionRadiusKm: 80,
+    requestPauseMs: 0,
+  });
+  assert.equal(context.genusName, "Acleris");
+  assert.equal(context.familyName, "Tortricidae");
+  assert.deepEqual(context.regionalCandidates.map((item) => item.scientificName), ["Acleris robinsoniana"]);
+  assert.equal(calls[1].searchParams.get("radius"), "80");
+});
+
 test("first poll quietly establishes a baseline", async () => {
   const storage = new MemoryStorage();
   const fetchFn = async (url) => {
@@ -98,6 +134,68 @@ test("new possible state first sends one red ntfy alert", async () => {
   assert.equal(second.alerts, 0);
   assert.equal(ntfyCalls, 1);
   assert.equal(countCalls, 3);
+});
+
+test("notable alert includes AI comparison against regional congeners", async () => {
+  const storage = new MemoryStorage({ "initialized-at": "2026-07-10T11:00:00Z" });
+  const observation = moth(13, 990003);
+  observation.taxon.name = "Acleris maximana";
+  let notificationBody = "";
+  let aiCalls = 0;
+  const env = {
+    ...configEnv,
+    AI: {
+      async run() {
+        aiCalls += 1;
+        return { response: JSON.stringify({
+          comparisons: [{
+            scientific_name: "Acleris robinsoniana",
+            difference: "Target: narrow terminal fascia; alternative: broad dark terminal field.",
+          }],
+          photo_priorities: ["Capture the terminal fascia and costa square-on in one frame."],
+          limitation: "Worn moths may require expert examination.",
+        }) };
+      },
+    },
+  };
+  const fetchFn = async (url, init = {}) => {
+    const parsed = new URL(url);
+    if (parsed.hostname === "ntfy.sh") {
+      notificationBody = init.body;
+      return new Response("ok", { status: 200 });
+    }
+    if (parsed.pathname.endsWith("/observations") && parsed.searchParams.get("per_page") === "30") {
+      return response({ results: [observation] });
+    }
+    if (parsed.pathname.endsWith("/taxa/990003")) {
+      return response({ results: [{ ancestors: [
+        { id: 47155, name: "Tortricidae", rank: "family" },
+        { id: 124620, name: "Acleris", rank: "genus" },
+      ] }] });
+    }
+    if (parsed.pathname.endsWith("/observations/species_counts")) {
+      return response({ results: [{
+        count: 14,
+        taxon: {
+          id: 212349,
+          name: "Acleris robinsoniana",
+          preferred_common_name: "Robinson's Acleris Moth",
+          rank: "species",
+        },
+      }] });
+    }
+    if (parsed.searchParams.get("place_id") === "48") return response({ total_results: 1 });
+    if (parsed.searchParams.get("place_id") === "653") return response({ total_results: 1 });
+    if (parsed.searchParams.get("radius") === "80") return response({ total_results: 1 });
+    throw new Error(`Unexpected URL: ${url}`);
+  };
+
+  const result = await runPoll(storage, env, fetchFn);
+  assert.equal(result.alerts, 1);
+  assert.equal(aiCalls, 1);
+  assert.match(notificationBody, /RULE OUT:/);
+  assert.match(notificationBody, /Robinson's Acleris Moth/);
+  assert.match(notificationBody, /DECISIVE PHOTOS:/);
 });
 
 test("known KH taxa skip all rarity count calls", async () => {

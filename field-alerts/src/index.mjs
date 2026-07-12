@@ -1,6 +1,7 @@
 import { buildAssessment, buildKnownAssessment, isMothObservation, parseObservationId, SPECIES_RANKS } from "./alert-core.mjs";
 import { runtimeConfig } from "./config.mjs";
 import { InatClient } from "./inat-client.mjs";
+import { generateIdentificationGuidance } from "./id-guidance.mjs";
 import { KNOWN_MOTH_IDS } from "./known-moths.mjs";
 import { sendNtfy } from "./notifier.mjs";
 import { checkerPage } from "./ui.mjs";
@@ -16,6 +17,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 const observationKey = (id) => `observation:${id}`;
 const knownTaxonKey = (id) => `known-taxon:${id}`;
 const alertKey = (taxonId, level) => `alert:${taxonId}:${level}`;
+const guidanceKey = (taxonId) => `identification-guidance:v1:${taxonId}`;
 
 function stateStub(env) {
   const id = env.ALERT_STATE.idFromName("kingfisher-hollow");
@@ -42,6 +44,24 @@ export async function assessObservation(observation, config, client) {
   }
   const totals = await client.countsForTaxon(observation.taxon.id, config);
   return buildAssessment(observation, totals, config);
+}
+
+async function addIdentificationGuidance(storage, env, client, observation, assessment, config) {
+  const taxonId = observation.taxon?.id;
+  if (!taxonId || !SPECIES_RANKS.has(observation.taxon?.rank) || !env.AI?.run) return assessment;
+  const key = guidanceKey(taxonId);
+  try {
+    let identification = await storage.get(key);
+    if (!identification) {
+      const context = await client.identificationContext(taxonId, config);
+      identification = await generateIdentificationGuidance(env.AI, observation, context);
+      if (identification) await storage.put(key, identification);
+    }
+    return identification ? { ...assessment, identification } : assessment;
+  } catch (error) {
+    console.error("Identification guidance unavailable", error);
+    return assessment;
+  }
 }
 
 async function recordHandled(storage, observation, assessment, notificationSent) {
@@ -98,10 +118,11 @@ export async function runPoll(storage, env, fetchFn = fetch) {
       continue;
     }
 
-    const assessment = await assessObservation(observation, config, client);
+    let assessment = await assessObservation(observation, config, client);
     assessed += 1;
     let notificationSent = false;
     if (assessment.actionable) {
+      assessment = await addIdentificationGuidance(storage, env, client, observation, assessment, config);
       const previousAlert = await storage.get(alertKey(observation.taxon.id, assessment.level));
       const cooldownMs = config.alertCooldownDays * 24 * 60 * 60 * 1000;
       if (!previousAlert || Date.now() - Number(previousAlert) > cooldownMs) {
@@ -140,9 +161,12 @@ export class AlertState {
         const alreadyKnown = taxonId && (
           KNOWN_MOTH_IDS.has(taxonId) || await this.storage.get(knownTaxonKey(taxonId))
         );
-        const assessment = alreadyKnown
+        let assessment = alreadyKnown
           ? buildKnownAssessment(observation)
           : await assessObservation(observation, config, client);
+        assessment = await addIdentificationGuidance(
+          this.storage, this.env, client, observation, assessment, config,
+        );
         let notificationSent = false;
         if (body.notify && assessment.actionable) {
           await sendNtfy(assessment, config);
@@ -179,6 +203,7 @@ export default {
         ok: true,
         ntfyConfigured: Boolean(env.NTFY_TOPIC),
         checkerConfigured: Boolean(env.CHECK_API_KEY),
+        identificationGuidanceConfigured: Boolean(env.AI),
       });
     }
     if (request.method === "GET" && url.pathname === "/favicon.ico") {

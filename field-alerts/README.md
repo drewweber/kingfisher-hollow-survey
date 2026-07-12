@@ -25,6 +25,12 @@ MPG, BAMONA, BugGuide, GBIF, and other sources still matter.
 - The bundled KH moth roster avoids regional API lookups for familiar species.
 - New taxa receive three parallel iNaturalist counts: Tioga County, New York
   State, and an 80 km radius around the property.
+- For a notable taxon, the Worker retrieves same-genus moths documented within
+  80 km and asks Workers AI for a conservative field comparison. The phone alert
+  names up to three plausible lookalikes, the external differences to check, and
+  the exact photographs needed to separate them. Guidance is cached per taxon;
+  if AI or the comparison lookup is unavailable, the alert falls back to the
+  established family-level evidence checklist rather than delaying the rarity alert.
 - The root page is a phone-friendly manual checker. Paste an iNaturalist URL to
   assess it immediately rather than waiting for the next scheduled poll.
 
@@ -79,6 +85,10 @@ Non-secret defaults live in `wrangler.jsonc`. Runtime secrets are:
 - `CHECK_API_KEY`: required by the manual checker endpoint.
 - `NTFY_TOPIC`: private ntfy topic receiving red/yellow alerts.
 - `NTFY_TOKEN`: optional authorization for a reserved or self-hosted topic.
+
+The `AI` binding is declared in `wrangler.jsonc` and uses
+`@cf/openai/gpt-oss-120b` only for notable new taxa and manual checks. No
+additional API key is required; Workers AI usage is billed through Cloudflare.
 
 `GET /api/health` reports whether the two required secrets are present without
 revealing them.

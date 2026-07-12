@@ -148,8 +148,13 @@ export function checkerPage() {
         <div id="counts" class="counts"></div>
         <h3>Why it was flagged</h3>
         <ul id="reasons"></ul>
-        <h3>Photograph before release</h3>
+        <div id="lookalike-section" hidden>
+          <h3>Rule out these lookalikes</h3>
+          <ul id="lookalikes"></ul>
+        </div>
+        <h3>Decisive photographs to take now</h3>
         <ul id="evidence"></ul>
+        <p id="id-limitation" class="caveat" hidden></p>
         <p id="caveat" class="caveat"></p>
         <a id="obs-link" class="obs-link" target="_blank" rel="noopener">Open observation</a>
       </section>
@@ -204,7 +209,17 @@ export function checkerPage() {
       link.href = assessment.observationUrl;
       fillCounts(assessment.priorCounts);
       fillList("reasons", assessment.reasons);
-      fillList("evidence", assessment.evidence);
+      const identification = assessment.identification;
+      const comparisons = (identification?.comparisons || []).map((item) => item.label + " — " + item.difference);
+      const lookalikeSection = document.getElementById("lookalike-section");
+      lookalikeSection.hidden = comparisons.length === 0;
+      fillList("lookalikes", comparisons);
+      fillList("evidence", identification?.photoPriorities?.length
+        ? identification.photoPriorities
+        : assessment.evidence);
+      const limitation = document.getElementById("id-limitation");
+      limitation.textContent = identification?.limitation || "";
+      limitation.hidden = !identification?.limitation;
       result.hidden = false;
       if (notificationSent) status.textContent = "Assessment complete and phone alert sent.";
       result.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -213,7 +228,7 @@ export function checkerPage() {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       status.className = "status";
-      status.textContent = "Checking regional records...";
+      status.textContent = "Checking regional records and likely lookalikes...";
       result.hidden = true;
       submit.disabled = true;
       if (remember.checked) localStorage.setItem("kh-field-alert-key", keyInput.value);
