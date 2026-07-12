@@ -10,6 +10,7 @@ built by CI — never deploy it by hand."""
 
 import subprocess
 import sys
+import hashlib
 import json
 import time
 from datetime import datetime, timezone
@@ -18,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import analyze  # noqa: E402
+import field_guide  # noqa: E402
 import inat_api  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
@@ -2617,7 +2619,11 @@ def build():
 
     out = PUBLIC_DIR / "index.html"
     out.write_text(html, encoding="utf-8")
+    survey_digest = hashlib.sha256(out.read_bytes()).hexdigest()
     print(f"Wrote {out}  ({out.stat().st_size // 1024} KB)")
+    _timed("field-guide", field_guide.build)
+    if hashlib.sha256(out.read_bytes()).hexdigest() != survey_digest:
+        raise RuntimeError("Field guide build modified the root survey document")
     _log_timing("report-total", build_start)
     return out
 

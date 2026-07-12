@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#18382c">
+  <meta name="color-scheme" content="light">
+  <meta name="application-name" content="Kingfisher Hollow Field Targets">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Field Targets | Kingfisher Hollow</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" sizes="180x180">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#target-list">Skip to targets</a>
+
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="title-block">
+        <p>Kingfisher Hollow</p>
+        <h1>Field Targets</h1>
+      </div>
+
+      <div class="header-meta" aria-label="Data and connection status">
+        <div class="data-stamp">
+          <span>Data</span>
+          <time id="data-date">Loading...</time>
+        </div>
+        <div class="network-state" id="network-state" data-online="true">
+          <span class="network-dot" aria-hidden="true"></span>
+          <span id="network-label">Online</span>
+        </div>
+      </div>
+
+      <div class="offline-panel">
+        <div class="offline-copy">
+          <span class="offline-kicker">Offline copy</span>
+          <span id="offline-status" role="status" aria-live="polite">Checking...</span>
+        </div>
+        <button class="offline-action" id="offline-action" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 20h14"></path>
+          </svg>
+          <span id="offline-action-label">Download offline</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" id="main-content">
+    <section class="controls" aria-label="Find field targets">
+      <form id="target-filters">
+        <fieldset class="group-filter">
+          <legend class="sr-only">Species group</legend>
+          <label class="segment">
+            <input type="radio" name="group" value="all" checked>
+            <span>All</span>
+          </label>
+          <label class="segment">
+            <input type="radio" name="group" value="moths">
+            <span>Moths</span>
+          </label>
+          <label class="segment">
+            <input type="radio" name="group" value="butterflies">
+            <span>Butterflies</span>
+          </label>
+          <label class="segment">
+            <input type="radio" name="group" value="odonates">
+            <span>Dragons</span>
+          </label>
+        </fieldset>
+
+        <div class="search-row">
+          <div class="search-field">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5"></circle>
+              <path d="m16 16 4 4"></path>
+            </svg>
+            <label class="sr-only" for="target-search">Search targets</label>
+            <input id="target-search" type="search" inputmode="search" autocomplete="off"
+              placeholder="Search name, family, or habitat">
+          </div>
+          <button class="filter-toggle" id="filter-toggle" type="button" aria-expanded="false"
+            aria-controls="filter-panel">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16M7 12h10m-7 6h4"></path>
+            </svg>
+            <span>Filters</span>
+            <span class="filter-count" id="filter-count" aria-label="0 active filters" hidden>0</span>
+          </button>
+        </div>
+
+        <div class="filter-panel" id="filter-panel" hidden>
+          <label>
+            <span>Habitat</span>
+            <select id="habitat-filter">
+              <option value="">Any habitat</option>
+            </select>
+          </label>
+          <label>
+            <span>Method</span>
+            <select id="method-filter">
+              <option value="">Any method</option>
+            </select>
+          </label>
+          <button class="clear-button" id="clear-filters" type="button">Clear filters</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="results" aria-labelledby="results-heading">
+      <div class="results-bar">
+        <h2 id="results-heading" tabindex="-1">Targets</h2>
+        <p id="result-count" role="status" aria-live="polite">Loading target list...</p>
+      </div>
+
+      <div class="state-panel loading-state" id="state-panel">
+        <p class="sr-only">Loading target list...</p>
+        <div class="skeleton-grid" aria-hidden="true">
+          <div class="skeleton-card"><span></span><i></i><i></i><i></i></div>
+          <div class="skeleton-card"><span></span><i></i><i></i><i></i></div>
+          <div class="skeleton-card"><span></span><i></i><i></i><i></i></div>
+        </div>
+      </div>
+      <ul class="target-grid" id="target-list" hidden></ul>
+    </section>
+  </main>
+
+  <dialog class="target-dialog" id="target-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-shell">
+      <header class="dialog-bar">
+        <div>
+          <p id="dialog-group">Field target</p>
+          <h2 id="dialog-title">Target details</h2>
+        </div>
+        <button class="icon-button" id="dialog-close" type="button" aria-label="Close target details">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+      </header>
+      <div id="dialog-content"></div>
+    </div>
+  </dialog>
+
+  <noscript>
+    <div class="noscript-message">JavaScript is required to load the field target list.</div>
+  </noscript>
+</body>
+</html>

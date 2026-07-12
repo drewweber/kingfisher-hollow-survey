@@ -76,6 +76,48 @@ def fetch_taxa(ids):
     return _get(path, per_page=len(ids)).get("results", [])
 
 
+def fetch_licensed_photo(taxon_id, license_codes=None):
+    """Return a redistributable representative photo for a taxon.
+
+    Taxon default photos are occasionally all-rights-reserved.  The offline
+    field guide must bundle its media, so in that case we search research-grade
+    observations for a Creative Commons alternative and preserve its source,
+    attribution, and license metadata.
+    """
+    licenses = license_codes or (
+        "cc0", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa",
+        "cc-by-nd", "cc-by-nc-nd",
+    )
+    data = _get(
+        "observations",
+        taxon_id=taxon_id,
+        photos="true",
+        quality_grade="research",
+        photo_license=",".join(licenses),
+        order_by="votes",
+        order="desc",
+        per_page=20,
+    )
+    allowed = set(licenses)
+    for obs in data.get("results", []):
+        for photo in obs.get("photos") or []:
+            code = (photo.get("license_code") or "").casefold()
+            if code not in allowed:
+                continue
+            url = photo.get("url") or ""
+            medium = url.replace("square.", "medium.") if url else ""
+            if not medium:
+                continue
+            return {
+                "id": photo.get("id"),
+                "medium_url": medium,
+                "attribution": photo.get("attribution") or "iNaturalist contributor",
+                "license_code": code,
+                "source_url": f"https://www.inaturalist.org/observations/{obs.get('id')}",
+            }
+    return None
+
+
 def count(**params):
     """total_results for a query, fetched with per_page=0 (no rows returned)."""
     return _get("observations", per_page=0, **params)["total_results"]

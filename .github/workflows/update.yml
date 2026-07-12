@@ -28,6 +28,7 @@ on:
       - "report.py"
       - "sync.py"
       - "src/**"
+      - "field-guide/**"
       - "functions/**"
       - "requirements.txt"
       - ".github/workflows/update.yml"
