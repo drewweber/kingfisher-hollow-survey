@@ -10,7 +10,7 @@ export class InatClient {
     this.fetchFn = (...args) => fetchFn(...args);
   }
 
-  async request(path, params = {}) {
+  async request(path, params = {}, options = {}) {
     const url = new URL(`${BASE_URL}/${path.replace(/^\//, "")}`);
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== "") {
@@ -18,8 +18,9 @@ export class InatClient {
       }
     }
 
+    const attempts = Math.max(1, Number(options.attempts) || 4);
     let lastError;
-    for (let attempt = 0; attempt < 4; attempt += 1) {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
       try {
@@ -33,12 +34,14 @@ export class InatClient {
         }
         const retryAfter = Number.parseInt(response.headers.get("retry-after") || "", 10);
         lastError = new Error(`iNaturalist temporarily returned HTTP ${response.status}.`);
-        await wait(Number.isFinite(retryAfter)
-          ? Math.min(retryAfter * 1000, 30000)
-          : [2000, 5000, 10000, 20000][attempt]);
+        if (attempt < attempts - 1) {
+          await wait(Number.isFinite(retryAfter)
+            ? Math.min(retryAfter * 1000, 30000)
+            : [2000, 5000, 10000, 20000][attempt]);
+        }
       } catch (error) {
         lastError = error;
-        if (attempt < 3) await wait([1000, 3000, 7000][attempt]);
+        if (attempt < attempts - 1) await wait([1000, 3000, 7000][attempt] || 10000);
       } finally {
         clearTimeout(timeout);
       }
@@ -90,7 +93,10 @@ export class InatClient {
   }
 
   async identificationContext(taxonId, config) {
-    const details = await this.request(`taxa/${taxonId}`);
+    // This context enriches an alert but must never delay it through a long
+    // retry cycle. The caller falls back to model knowledge if iNaturalist is
+    // temporarily throttling requests.
+    const details = await this.request(`taxa/${taxonId}`, {}, { attempts: 1 });
     const taxon = details.results?.[0] || {};
     const ancestors = taxon.ancestors || [];
     const genus = ancestors.find((ancestor) => ancestor.rank === "genus")
@@ -110,7 +116,7 @@ export class InatClient {
       lng: config.propertyLng,
       radius: config.regionRadiusKm,
       per_page: 30,
-    });
+    }, { attempts: 1 });
     const regionalCandidates = (counts.results || [])
       .filter((entry) => entry.taxon?.id !== taxonId && SPECIES_RANKS_FOR_CONTEXT.has(entry.taxon?.rank))
       .map((entry) => ({

@@ -65,10 +65,25 @@ If adults cannot be separated reliably from photographs, say so plainly in limit
 }
 
 function parseModelResponse(response) {
-  const value = response?.response ?? response?.output_text ?? response;
+  const value = response?.response
+    ?? response?.choices?.[0]?.message?.parsed
+    ?? response?.choices?.[0]?.message?.content
+    ?? response?.choices?.[0]?.text
+    ?? response?.output_text
+    ?? response;
   if (value && typeof value === "object") return value;
   if (typeof value !== "string") throw new Error("Identification model returned no structured text.");
-  return JSON.parse(value);
+  const json = value.trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+  try {
+    return JSON.parse(json);
+  } catch {
+    const start = json.indexOf("{");
+    const end = json.lastIndexOf("}");
+    if (start === -1 || end <= start) throw new Error("Identification model returned no JSON object.");
+    return JSON.parse(json.slice(start, end + 1));
+  }
 }
 
 function sanitizeGuidance(raw, context) {
@@ -109,17 +124,19 @@ function sanitizeGuidance(raw, context) {
 export async function generateIdentificationGuidance(ai, observation, context) {
   if (!ai?.run) return null;
   const response = await ai.run(ID_GUIDANCE_MODEL, {
-    prompt: identificationPrompt(observation, context),
+    messages: [
+      {
+        role: "system",
+        content: "Return only the requested JSON identification guide. Be conservative and omit any comparison whose visible diagnostic difference you do not know.",
+      },
+      { role: "user", content: identificationPrompt(observation, context) },
+    ],
     response_format: {
       type: "json_schema",
-      json_schema: {
-        name: "moth_identification_guidance",
-        strict: true,
-        schema: GUIDANCE_SCHEMA,
-      },
+      json_schema: GUIDANCE_SCHEMA,
     },
     temperature: 0,
-    max_tokens: 700,
+    max_tokens: 1800,
   });
   return sanitizeGuidance(parseModelResponse(response), context);
 }

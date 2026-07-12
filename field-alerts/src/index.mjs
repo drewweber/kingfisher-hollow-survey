@@ -17,7 +17,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 const observationKey = (id) => `observation:${id}`;
 const knownTaxonKey = (id) => `known-taxon:${id}`;
 const alertKey = (taxonId, level) => `alert:${taxonId}:${level}`;
-const guidanceKey = (taxonId) => `identification-guidance:v1:${taxonId}`;
+const guidanceKey = (taxonId) => `identification-guidance:v4:${taxonId}`;
 
 function stateStub(env) {
   const id = env.ALERT_STATE.idFromName("kingfisher-hollow");
@@ -29,6 +29,15 @@ function observationState(observation) {
     taxonId: observation.taxon?.id || null,
     taxonRank: observation.taxon?.rank || null,
     updatedAt: observation.updated_at || null,
+  };
+}
+
+function fallbackIdentificationContext(observation) {
+  const scientificName = String(observation.taxon?.name || "").trim();
+  return {
+    genusName: scientificName.split(/\s+/)[0] || "",
+    familyName: "",
+    regionalCandidates: [],
   };
 }
 
@@ -53,7 +62,13 @@ async function addIdentificationGuidance(storage, env, client, observation, asse
   try {
     let identification = await storage.get(key);
     if (!identification) {
-      const context = await client.identificationContext(taxonId, config);
+      let context;
+      try {
+        context = await client.identificationContext(taxonId, config);
+      } catch (error) {
+        console.warn("Regional lookalike lookup unavailable; using taxon-only guidance", error);
+        context = fallbackIdentificationContext(observation);
+      }
       identification = await generateIdentificationGuidance(env.AI, observation, context);
       if (identification) await storage.put(key, identification);
     }

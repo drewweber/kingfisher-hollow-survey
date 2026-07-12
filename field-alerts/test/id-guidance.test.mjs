@@ -50,6 +50,8 @@ test("structured guidance keeps regional candidates and exact field differences"
     async run(_model, input) {
       assert.equal(input.temperature, 0);
       assert.equal(input.response_format.type, "json_schema");
+      assert.equal(input.response_format.json_schema.type, "object");
+      assert.equal(input.response_format.json_schema.schema, undefined);
       return {
         response: JSON.stringify({
           comparisons: [

@@ -198,6 +198,52 @@ test("notable alert includes AI comparison against regional congeners", async ()
   assert.match(notificationBody, /DECISIVE PHOTOS:/);
 });
 
+test("iNaturalist throttling does not suppress AI lookalike guidance", async () => {
+  const storage = new MemoryStorage({ "initialized-at": "2026-07-10T11:00:00Z" });
+  const observation = moth(14, 990004);
+  observation.taxon.name = "Sigela brauneata";
+  let notificationBody = "";
+  let aiCalls = 0;
+  const env = {
+    ...configEnv,
+    AI: {
+      async run(_model, input) {
+        aiCalls += 1;
+        assert.match(input.messages[1].content, /Genus: Sigela/);
+        return { response: {
+          comparisons: [{
+            scientific_name: "Eupithecia miserulata",
+            difference: "Target: the forewing postmedial line is evenly scalloped; alternative: the line bends sharply at the costa.",
+          }],
+          photo_priorities: ["Capture the entire forewing postmedial line square-on from costa to inner margin."],
+          limitation: "A worn moth may still require expert examination.",
+        } };
+      },
+    },
+  };
+  const fetchFn = async (url, init = {}) => {
+    const parsed = new URL(url);
+    if (parsed.hostname === "ntfy.sh") {
+      notificationBody = init.body;
+      return new Response("ok", { status: 200 });
+    }
+    if (parsed.pathname.endsWith("/observations") && parsed.searchParams.get("per_page") === "30") {
+      return response({ results: [observation] });
+    }
+    if (parsed.pathname.endsWith("/taxa/990004")) return response({}, 429);
+    if (parsed.searchParams.get("place_id") === "48") return response({ total_results: 1 });
+    if (parsed.searchParams.get("place_id") === "653") return response({ total_results: 1 });
+    if (parsed.searchParams.get("radius") === "80") return response({ total_results: 1 });
+    throw new Error(`Unexpected URL: ${url}`);
+  };
+
+  const result = await runPoll(storage, env, fetchFn);
+  assert.equal(result.alerts, 1);
+  assert.equal(aiCalls, 1);
+  assert.match(notificationBody, /Eupithecia miserulata/);
+  assert.match(notificationBody, /forewing postmedial line/);
+});
+
 test("known KH taxa skip all rarity count calls", async () => {
   const storage = new MemoryStorage({ "initialized-at": "2026-07-10T11:00:00Z" });
   const fetchFn = async (url) => {
