@@ -45,12 +45,11 @@ jobs:
   update:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"
@@ -61,7 +60,7 @@ jobs:
       # correctness requirement. Unique save key + prefix restore = "latest".
       - name: Restore database cache
         id: db-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: data/inat.db
           key: inat-db-${{ github.run_id }}
@@ -69,7 +68,7 @@ jobs:
             inat-db-
 
       - name: Restore report input cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: data/cache
           key: report-inputs-${{ github.run_id }}
@@ -105,7 +104,7 @@ jobs:
       - name: Build report
         run: python report.py
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm

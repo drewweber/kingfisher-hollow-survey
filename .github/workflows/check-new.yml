@@ -27,13 +27,13 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Read-only restore of the latest DB cache written by update.yml. Using the
       # restore-only action means this job never writes a cache entry, so it can't
       # race the heavy job's cache.
       - name: Restore database cache (read-only)
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: data/inat.db
           key: inat-db-check-${{ github.run_id }}
