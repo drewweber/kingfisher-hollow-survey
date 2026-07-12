@@ -52,6 +52,8 @@ def main():
     ap.add_argument("--stats", action="store_true", help="refresh uniqueness stats")
     ap.add_argument("--stats-workers", type=int, default=4,
                     help="parallel workers for uniqueness stats lookups")
+    ap.add_argument("--stats-limit", type=int,
+                    help="maximum stale/missing taxa to refresh in this run")
     ap.add_argument("--taxonomy", action="store_true",
                     help="enrich order/family for new species")
     ap.add_argument("--weather", action="store_true",
@@ -116,7 +118,8 @@ def main():
         include_stale_stats = args.all or args.reference or (args.stats and not args.daily)
         timed("stats", stats.refresh_stats,
               workers=args.stats_workers,
-              include_stale=include_stale_stats)
+              include_stale=include_stale_stats,
+              limit=args.stats_limit)
     if daily or args.weather:
         timed("weather", weather.sync_weather, fetch.observation_dates())
 

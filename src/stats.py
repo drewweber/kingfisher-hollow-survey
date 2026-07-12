@@ -12,7 +12,7 @@ from db import connect
 DEFAULT_STATS_WORKERS = 4
 
 
-def _stale_or_missing(conn, include_stale=True):
+def _stale_or_missing(conn, include_stale=True, limit=None):
     """Property taxa whose cached stats are absent, optionally including stale.
 
     Returns rows of (taxon_id, taxon_name, common_name, property_first_date,
@@ -25,6 +25,13 @@ def _stale_or_missing(conn, include_stale=True):
             "(s.taxon_id IS NULL OR s.cached_at < datetime('now', ?))"
         )
         params.append(f"-{STATS_TTL_DAYS} days")
+    limit_clause = ""
+    if limit is not None:
+        limit = max(0, int(limit))
+        if limit == 0:
+            return []
+        limit_clause = "LIMIT ?"
+        params.append(limit)
     return conn.execute(
         """
         SELECT p.taxon_id,
@@ -38,9 +45,14 @@ def _stale_or_missing(conn, include_stale=True):
           AND p.rank IN ({placeholders})
           AND {freshness_clause}
         GROUP BY p.taxon_id
+        ORDER BY CASE WHEN MAX(s.taxon_id) IS NULL THEN 0 ELSE 1 END,
+                 MIN(s.cached_at) ASC,
+                 p.taxon_id ASC
+        {limit_clause}
         """.format(
             placeholders=",".join("?" * len(SPECIES_RANKS)),
             freshness_clause=freshness_clause,
+            limit_clause=limit_clause,
         ),
         tuple(params),
     ).fetchall()
@@ -82,10 +94,18 @@ def _stats_for_taxon(row):
     )
 
 
-def refresh_stats(verbose=True, workers=DEFAULT_STATS_WORKERS, include_stale=True):
+def _save_rows(rows):
+    if not rows:
+        return
+    with connect() as conn:
+        conn.executemany(UPSERT, rows)
+
+
+def refresh_stats(verbose=True, workers=DEFAULT_STATS_WORKERS,
+                  include_stale=True, limit=None, checkpoint_size=20):
     """Refresh uniqueness stats for missing/new taxa, optionally stale taxa."""
     with connect() as conn:
-        todo = _stale_or_missing(conn, include_stale=include_stale)
+        todo = _stale_or_missing(conn, include_stale=include_stale, limit=limit)
 
     if not todo:
         if verbose:
@@ -94,30 +114,35 @@ def refresh_stats(verbose=True, workers=DEFAULT_STATS_WORKERS, include_stale=Tru
         return 0
 
     workers = max(1, int(workers or 1))
-    rows = []
+    checkpoint_size = max(1, int(checkpoint_size or 1))
+    pending = []
+    refreshed = 0
+
+    def record(result):
+        nonlocal refreshed
+        pending.append(result)
+        refreshed += 1
+        if verbose:
+            flag = " *COUNTY FIRST*" if result[9] else ""
+            print(f"[stats] {result[1]}: county={result[3]} "
+                  f"state={result[4]}{flag}")
+        if len(pending) >= checkpoint_size:
+            _save_rows(pending)
+            pending.clear()
+
     if workers == 1 or len(todo) == 1:
         for row in todo:
-            rows.append(_stats_for_taxon(row))
-            if verbose:
-                flag = " *COUNTY FIRST*" if rows[-1][9] else ""
-                print(f"[stats] {rows[-1][1]}: county={rows[-1][3]} "
-                      f"state={rows[-1][4]}{flag}")
+            record(_stats_for_taxon(row))
     else:
         with ThreadPoolExecutor(max_workers=min(workers, len(todo))) as pool:
             futures = [pool.submit(_stats_for_taxon, row) for row in todo]
             for future in as_completed(futures):
-                result = future.result()
-                rows.append(result)
-                if verbose:
-                    flag = " *COUNTY FIRST*" if result[9] else ""
-                    print(f"[stats] {result[1]}: county={result[3]} "
-                          f"state={result[4]}{flag}")
+                record(future.result())
 
-    with connect() as conn:
-        conn.executemany(UPSERT, rows)
+    _save_rows(pending)
 
     if verbose:
         scope = "stale/new" if include_stale else "new"
-        print(f"[stats] refreshed {len(rows)} taxa "
+        print(f"[stats] refreshed {refreshed} taxa "
               f"({len(todo)} were {scope})")
-    return len(rows)
+    return refreshed

@@ -79,6 +79,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Test pipeline helpers
+        run: python -m unittest discover -s tests
+
       - name: Choose refresh scope
         id: scope
         run: |
@@ -94,7 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ steps.scope.outputs.scope }}" = "full" ]; then
-            timeout 25m python -u sync.py --all --stats-workers 1
+            timeout 25m python -u sync.py --all --stats-workers 1 --stats-limit 300
           else
             timeout 8m python -u sync.py --daily --stats-workers 1
           fi
@@ -102,22 +105,20 @@ jobs:
       - name: Build report
         run: python report.py
 
-      - name: Cache Wrangler install
-        uses: actions/cache@v4
+      - uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.npm
-            node_modules
-          key: wrangler-${{ runner.os }}-v3
-          restore-keys: |
-            wrangler-${{ runner.os }}-
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: field-alerts/package-lock.json
+
+      - name: Install Wrangler
+        run: npm ci --prefix field-alerts --ignore-scripts
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy public --project-name=kingfisher-survey --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: field-alerts/node_modules/.bin/wrangler pages deploy public --project-name=kingfisher-survey --commit-dirty=true
 
       # GitHub disables scheduled workflows after 60 days of no repo commits.
       # Refresh the marker monthly, and only from scheduled runs, so pushes and

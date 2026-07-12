@@ -40,6 +40,9 @@ minutes.
 `sync.py` prints per-stage timings so slow refreshes show which step is taking
 time. Uniqueness stats run with four bounded workers by default; tune that with
 `--stats-workers N` or use `--stats-workers 1` for fully serial API lookups.
+Use `--stats-limit N` to rotate through a bounded number of the oldest cached
+records; the weekly workflow refreshes 300 at a time while new species remain
+uncapped and are always handled by the daily run.
 
 Use `sync.py --all` for a full refresh, including slower regional reference
 pools used by gap lists. Use `sync.py --reference` to refresh only those
@@ -91,6 +94,10 @@ One-time setup (the only steps that need your credentials):
 3. **Add two GitHub repo secrets** (Settings → Secrets and variables → Actions):
    - `CLOUDFLARE_API_TOKEN` — a token with the *Cloudflare Pages: Edit* permission
    - `CLOUDFLARE_ACCOUNT_ID` — from the Cloudflare dashboard URL / overview
+
+The separate field-alert Worker uses `CLOUDFLARE_WORKERS_API_TOKEN`, created
+from Cloudflare's **Edit Cloudflare Workers** token template and restricted to
+the same account. Keeping this separate preserves the narrower Pages token.
 
 Then trigger the workflow once from the Actions tab (**Run workflow**) to verify.
 The GitHub cron is in UTC; `09:10 UTC` ≈ `05:10 ET`.

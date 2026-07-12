@@ -78,6 +78,11 @@ long, unguessable topic name if using the public ntfy service.
 After deployment, the first scheduled run establishes a quiet baseline and does
 not send old observations. Use the manual checker to verify delivery immediately.
 
+For the manual GitHub deployment workflow, add a repository Actions secret named
+`CLOUDFLARE_WORKERS_API_TOKEN`. Create it from Cloudflare's **Edit Cloudflare
+Workers** template, restrict it to the Kingfisher Hollow account, and keep it
+separate from the narrower `CLOUDFLARE_API_TOKEN` used by the Pages site.
+
 ## Configuration
 
 Non-secret defaults live in `wrangler.jsonc`. Runtime secrets are:
