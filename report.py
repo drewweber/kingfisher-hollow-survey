@@ -1750,6 +1750,11 @@ def moth_view(df, stats):
     _window_end = _today + _dt.timedelta(days=14)
     target_months = sorted({_today.month, _window_end.month})
     gap = analyze.moth_county_gap(moths, n=50, target_months=target_months)
+    family_breakdown = analyze.moth_family_breakdown(moths)
+    tortricid_rows = family_breakdown[
+        family_breakdown["label"].str.contains("Tortricid", case=False, na=False)
+    ]
+    tortricid_count = int(tortricid_rows.iloc[0]["recorded"]) if not tortricid_rows.empty else 0
     div = analyze.moth_diversity(df, moths)
     eff = analyze.moth_effort(df, moths)
     moth_sub = analyze.moth_obs(df, moths)
@@ -1762,7 +1767,15 @@ def moth_view(df, stats):
     out.append(section(
         "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
         moth_stats(msum, comp)
-        + property_profile_body(plant_count, msum["species"]),
+        + property_profile_body(plant_count, msum["species"])
+        + takeaway(
+            "Mid-July made the host-plant connection unusually concrete. Greater burdock "
+            "(<em>Arctium lappa</em>) was documented on July 12, and Burdock Conch "
+            "(<em>Aethes rubigana</em>) appeared three days later. Ash Leaf Cone Roller, Willow "
+            "Leafcone Caterpillar Moth, Apple Skeletonizer, and Drab Prominent likewise match "
+            "white ash, shining willow, apple, and the property's cottonwood/aspen hosts. These "
+            "records say more than another rise in the species count: plant inventory and moth "
+            "inventory are beginning to explain each other.", dark=True),
         intro=f"{msum['species']:,} moth species on 30 riparian acres, and {moth_county_firsts:,} of them are first iNaturalist records for "
               "Tioga County. That says two things at once: the county has been thinly sampled, and this stretch "
               "of Michigan Creek is a real moth engine. The regional comparison is shaped by heavy Tompkins "
@@ -1798,7 +1811,7 @@ def moth_view(df, stats):
     out.append(section(
         "moth-families", "By Family",
         'Where the <em class="text-hollow-300">Gaps</em> Are',
-        chart_card(viz.family_breakdown(analyze.moth_family_breakdown(moths)),
+        chart_card(viz.family_breakdown(family_breakdown),
                    note="Solid bar: species recorded here. Faint bar: species known within ~50 miles. Numbers at bar ends show the recorded-to-regional ratio. Sorted by recorded species count.",
                    dark=True)
         + takeaway(
@@ -1808,7 +1821,7 @@ def moth_view(df, stats):
             "Nepticulidae hold a large share of temperate moth diversity, but many records require leaf-mine "
             "work, host association, expert review, or collection-level evidence. KH should prioritize the "
             "photo-workable and host-informative micros, not chase every dissection-only species. Tortricidae "
-            "has now reached 71 species here, so the leaf-roller gap is starting to close; the remaining "
+            f"has now reached {tortricid_count} species here, so the leaf-roller gap is starting to close; the remaining "
             "undetected fauna is concentrated in methods the standard UV sheet barely samples.", dark=True),
         intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried by the current approach; others are mostly visible only through host-plant work, bait, canopy sampling, or expert micro review.",
         dark=True))
@@ -2000,16 +2013,14 @@ def plants_view(df, stats):
         'The <em class="text-hollow-300">Plants</em>',
         stats_band
         + takeaway(
-            "The plant list now reads like a compact Tioga County cross-section: oak-hickory upland, "
-            "northern-hardwood slope, hemlock shade, wet meadow, pond edge, and creek corridor all packed into "
-            "30 acres. The oak-and-hickory backbone explains much of the caterpillar richness, while alder, "
-            "willow, dogwoods, viburnum, grape, goldenrods, asters, sedges, and wetland forbs point to the next "
-            "wave of insect records. The latest plant pass added useful host structure — silky dogwood, "
-            "red-osier dogwood, nannyberry, crookedstem aster, marsh bedstraw, and tearthumb — while the moth "
-            "records still argue for targeted searches for sunflowers, cattails, burdock, black locust, "
-            "cottonwood, and wood nettle. Two high-value groups are still thin: Salix is down to one species "
-            "(shining willow) against a large regional pool, and Carex stands at two. Those are survey gaps, "
-            "not ecological absences.", dark=True)
+            "The plant list reads like a compact Tioga County cross-section: oak-hickory upland, northern-hardwood "
+            "slope, hemlock shade, wet meadow, pond edge, and creek corridor all packed into 30 acres. Mid-July "
+            "closed two especially useful host gaps. Eastern cottonwood and greater burdock were documented, then "
+            "Drab Prominent and Burdock Conch followed. Ash Leaf Cone Roller, Willow Leafcone Caterpillar Moth, and "
+            "Apple Skeletonizer reinforce the same pattern around white ash, shining willow, and apple. The next "
+            "botanical gains should come from similarly focused searches, especially sunflowers, cattails, wood "
+            "nettle, and wet-edge graminoids. <em>Salix</em> still stands at one species and <em>Carex</em> at two; "
+            "those remain survey gaps, not ecological absences.", dark=True)
         + plant_found_body(found),
         intro=f"{psum['species']:,} wild/established plant species on 30 acres, with a transition-zone signature: "
               "Appalachian ravine plants, northern hardwoods, wetland/riparian flora, old-field edge, and "
@@ -2074,7 +2085,7 @@ def amphibians_view(df, stats):
         "reptiles-found", "Sun & Scale",
         'The <em class="text-hollow-300">Reptiles</em>',
         reptile_found_body(rep_found),
-        intro="Eight reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
+        intro=f"{rsum['species']} reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
               "milksnake, DeKay's brownsnake, and Central Ratsnake. Most records are incidental. July favors "
               "slow basking checks, pond-edge turtle scans, and careful cover-object work for small secretive "
               "snakes.",
@@ -2122,10 +2133,11 @@ def butterflies_view(df, stats):
         stats_band + butterfly_found_body(found),
         intro="Butterflies are the daytime half of the property's Lepidoptera, and this list is still "
               f"effort-limited. {bsum['species']} species against {moth_species:,} moths says more about survey timing than habitat. "
-              "The plants are already here for many missing species: violets, nettles, willows, oaks, hickories, "
-              "cherries, sedges, turtlehead, milkweeds, asters, and goldenrods. July should be treated as a "
-              "butterfly catch-up window: skippers, hairstreaks, swallowtails, and brushfoots need repeated "
-              "sunny walks, not more night effort.",
+              "July records now span three useful settings: Appalachian Brown at the sedge-wet edge, Northern "
+              "Pearly-eye in shaded woodland, and Orange Sulphur in open ground. That spread confirms that sunny "
+              "transects are beginning to sample the property rather than one nectar patch. Violets, nettles, "
+              "willows, oaks, hickories, cherries, sedges, turtlehead, milkweeds, asters, and goldenrods still point "
+              "to many missing skippers, hairstreaks, swallowtails, and brushfoots.",
         dark=True))
     out.append(section(
         "butterfly-gap", "Yet to Find",
@@ -2166,12 +2178,12 @@ def odonates_view(df, stats):
         "odonates", "On the Wing",
         'Dragonflies <em class="text-hollow-300">&amp; Damselflies</em>',
         stats_band + odonate_found_body(found),
-        intro=f"{osum['species']} species already divide the property into distinct waters. Ebony Jewelwing follows "
-              "shaded moving water along Michigan Creek; spreadwings, bluets, forktails, and Aurora Damsel work "
-              "the pond and wet margins; skimmers patrol open water and sunny edges; darners and meadowhawks "
-              "carry the season into fall. The list is strongest from June through August, with Autumn Meadowhawk "
-              "extending it into October. More repeated daytime circuits should add species quickly and show which "
-              "ones are actually breeding here.",
+        intro=f"{osum['species']} species already divide the property into distinct waters. The July additions of "
+              "Halloween Pennant and White-faced Meadowhawk strengthen the sunny pond-edge and marshy-margin signal. "
+              "Ebony Jewelwing follows shaded moving water along Michigan Creek; spreadwings, bluets, forktails, and "
+              "Aurora Damsel work the pond and wet margins; skimmers patrol open water and sunny edges; darners and "
+              "meadowhawks carry the season into fall. Repeated daytime circuits should add species quickly, while "
+              "exuviae, tenerals, mating pairs, and oviposition will show which waters are actually producing them.",
         dark=True))
     out.append(section(
         "odonate-gap", "Yet to Find",
@@ -2465,10 +2477,12 @@ def build():
                    note=f"Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after {public_s['observations']:,} records indicates a long way still to go.")
         + takeaway(
             "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
-            "show a curve that flattens within the first season; this one hasn't. The steepest runs coincide "
-            "with nights at the mothing lights, but the same pattern shows up in plants, herps, and mammals "
-            "when the right method is used. Each plant genus documented on the property opens potential host "
-            "links for insects, and each new survey method reaches a different slice of the site."),
+            "show a curve that flattens within the first season; this one hasn't. Mid-July shows why. Host-linked "
+            "micromoths appeared alongside their food plants, sunny passes added a sulphur and two odonates, and "
+            "close inspection exposed beetles, flies, barklice, and leafhoppers that broad surveys overlook. Moth "
+            "lighting still drives the steepest runs, but no single method owns the remaining frontier. Each plant "
+            "genus documented on the property sharpens the insect search, and each new method reaches a different "
+            "slice of the site."),
         intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
@@ -2482,7 +2496,9 @@ def build():
             "was absent from the county before. Tioga is under-sampled, while nearby Tompkins County has heavy "
             "naturalist and entomology effort. The right reading is still powerful: KH is turning private "
             "regional likelihood into documented county evidence, especially for moths and plants tied to "
-            "Michigan Creek's transition-zone habitats.", dark=True),
+            "Michigan Creek's transition-zone habitats. The newest cluster is especially instructive: leafminers, "
+            "leafrollers, small beetles, flies, barklice, and planthoppers dominate it, exactly the groups most likely "
+            "to be missed where close photography and specialist attention are sparse.", dark=True),
         intro="For each of these species, Kingfisher Hollow currently holds the first iNaturalist record in Tioga County. That strengthens the county baseline and flags records worth checking against other sources when they look unusual.",
         dark=True))
     rarity_body = (
