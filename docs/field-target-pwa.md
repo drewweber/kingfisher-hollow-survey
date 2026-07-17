@@ -77,6 +77,28 @@ path-scoped deployment meets the immediate acceptance criteria while retaining
 a strict browser-enforced service-worker boundary. Moving the generated folder
 to a dedicated origin later does not require rewriting the app.
 
+## Update Lifecycle
+
+1. The survey workflow syncs the current iNaturalist property roster into
+   SQLite.
+2. `report.py` rebuilds the three gap selectors and writes a new
+   `/field/targets.json`. A species already present in the matching property
+   table is excluded before target ranking.
+3. The field-guide builder hashes the data, app sources, and complete asset
+   manifest into a new release version. Cloudflare Pages deploys that release
+   with the survey.
+4. On each online app launch, the installed guide checks the service-worker
+   script without using the HTTP cache. A changed worker downloads and verifies
+   the complete new release before deleting the previous cache.
+5. When the new worker takes control, the open app refreshes its visible target
+   data. Browsers that support `WindowClient.navigate` also reload the installed
+   window once, which upgrades sessions still running older app code.
+
+The guide therefore does not change at the moment an observation is submitted.
+It changes after the next successful data sync and deployment. When offline, it
+deliberately retains the last complete release rather than showing a partial
+update.
+
 ## Release Plan
 
 1. Build and validate structured target records and licensed local media.

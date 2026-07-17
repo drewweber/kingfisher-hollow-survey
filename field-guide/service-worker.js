@@ -59,6 +59,14 @@ self.addEventListener("activate", (event) => {
       .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
       .map((name) => caches.delete(name)));
     await self.clients.claim();
+    const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of clients) {
+      if (!client.url.startsWith(self.registration.scope)) continue;
+      client.navigate(client.url).catch(() => {
+        // The app's controllerchange handler still refreshes targets when
+        // WindowClient.navigate is unavailable on the installed browser.
+      });
+    }
   })());
 });
 

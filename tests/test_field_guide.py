@@ -102,6 +102,27 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("await cache.match(event.request", fetch_handler)
         self.assertNotIn("await caches.match(event.request", fetch_handler)
 
+    def test_online_launch_checks_for_a_new_release_without_http_cache(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        self.assertIn('updateViaCache: "none"', app)
+        self.assertIn("await state.registration.update()", app)
+
+    def test_new_release_refreshes_the_visible_target_list(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        controller_change = app.split(
+            'navigator.serviceWorker.addEventListener("controllerchange"', 1
+        )[1].split("try {", 1)[0]
+        self.assertIn("loadTargets()", controller_change)
+        self.assertIn("verifyOfflineCopy()", controller_change)
+
+        worker = (ROOT / "field-guide" / "service-worker.js").read_text(encoding="utf-8")
+        activate = worker.split('self.addEventListener("activate"', 1)[1].split(
+            'self.addEventListener("message"', 1
+        )[0]
+        self.assertIn("await self.clients.claim()", activate)
+        self.assertIn("client.navigate(client.url).catch", activate)
+        self.assertNotIn("await client.navigate(client.url)", activate)
+
 
 if __name__ == "__main__":
     unittest.main()

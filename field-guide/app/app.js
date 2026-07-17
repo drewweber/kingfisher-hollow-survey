@@ -804,9 +804,21 @@
     }
 
     navigator.serviceWorker.addEventListener("message", (event) => handleWorkerMessage(event.data));
-    navigator.serviceWorker.addEventListener("controllerchange", () => verifyOfflineCopy());
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      loadTargets().then(() => verifyOfflineCopy());
+    });
     try {
-      state.registration = await navigator.serviceWorker.register("./service-worker.js", { scope: "./" });
+      state.registration = await navigator.serviceWorker.register("./service-worker.js", {
+        scope: "./",
+        updateViaCache: "none"
+      });
+      if (navigator.onLine) {
+        try {
+          await state.registration.update();
+        } catch (error) {
+          console.warn("Could not check for a newer field guide release", error);
+        }
+      }
       await navigator.serviceWorker.ready;
       verifyOfflineCopy();
     } catch (error) {
