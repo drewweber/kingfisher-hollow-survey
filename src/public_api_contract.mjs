@@ -1,7 +1,67 @@
 import { API_VERSION } from "./public_api_runtime.mjs";
 
 
-const parameter = (name) => ({ $ref: `#/components/parameters/${name}` });
+const PARAMETER_DEFINITIONS = {
+  ObservationId: {
+    name: "observation_id", in: "query",
+    description: "Exact positive iNaturalist observation ID.",
+    schema: { type: "integer", minimum: 1 },
+  },
+  TaxonId: {
+    name: "taxon_id", in: "query",
+    description: "Exact positive iNaturalist taxon ID.",
+    schema: { type: "integer", minimum: 1 },
+  },
+  Family: {
+    name: "family", in: "query",
+    description: "Case-insensitive exact scientific family name, such as Saturniidae.",
+    schema: { type: "string", minLength: 1, maxLength: 200 },
+  },
+  ScientificName: {
+    name: "scientific_name", in: "query",
+    description: "Case-insensitive exact scientific species name.",
+    schema: { type: "string", minLength: 1, maxLength: 200 },
+  },
+  CommonName: {
+    name: "common_name", in: "query",
+    description: "Case-insensitive exact common name.",
+    schema: { type: "string", minLength: 1, maxLength: 200 },
+  },
+  DateFrom: {
+    name: "date_from", in: "query",
+    description: "Inclusive local start date.",
+    schema: { type: "string", format: "date" },
+  },
+  DateTo: {
+    name: "date_to", in: "query",
+    description: "Inclusive local end date.",
+    schema: { type: "string", format: "date" },
+  },
+  Year: {
+    name: "year", in: "query",
+    description: "Four-digit observation year. Intersects with date_from and date_to when combined.",
+    schema: { type: "integer", minimum: 1900, maximum: 2100 },
+  },
+  Limit: {
+    name: "limit", in: "query",
+    description: "Maximum rows returned in this page.",
+    schema: { type: "integer", minimum: 1, maximum: 500, default: 100 },
+  },
+  Offset: {
+    name: "offset", in: "query",
+    description: "Zero-based result offset.",
+    schema: { type: "integer", minimum: 0, default: 0 },
+  },
+  Format: {
+    name: "format", in: "query",
+    description: "Response format.",
+    schema: { type: "string", enum: ["json", "csv"], default: "json" },
+  },
+};
+const parameter = (name) => ({
+  ...PARAMETER_DEFINITIONS[name],
+  schema: { ...PARAMETER_DEFINITIONS[name].schema },
+});
 const jsonResponse = (schema) => ({
   description: "Successful JSON response. Set format=csv for CSV output.",
   content: {
@@ -136,63 +196,6 @@ export const OPENAPI_DOCUMENT = {
     },
   },
   components: {
-    parameters: {
-      ObservationId: {
-        name: "observation_id", in: "query",
-        description: "Exact positive iNaturalist observation ID.",
-        schema: { type: "integer", minimum: 1 },
-      },
-      TaxonId: {
-        name: "taxon_id", in: "query",
-        description: "Exact positive iNaturalist taxon ID.",
-        schema: { type: "integer", minimum: 1 },
-      },
-      Family: {
-        name: "family", in: "query",
-        description: "Case-insensitive exact scientific family name, such as Saturniidae.",
-        schema: { type: "string", minLength: 1, maxLength: 200 },
-      },
-      ScientificName: {
-        name: "scientific_name", in: "query",
-        description: "Case-insensitive exact scientific species name.",
-        schema: { type: "string", minLength: 1, maxLength: 200 },
-      },
-      CommonName: {
-        name: "common_name", in: "query",
-        description: "Case-insensitive exact common name.",
-        schema: { type: "string", minLength: 1, maxLength: 200 },
-      },
-      DateFrom: {
-        name: "date_from", in: "query",
-        description: "Inclusive local start date.",
-        schema: { type: "string", format: "date" },
-      },
-      DateTo: {
-        name: "date_to", in: "query",
-        description: "Inclusive local end date.",
-        schema: { type: "string", format: "date" },
-      },
-      Year: {
-        name: "year", in: "query",
-        description: "Four-digit observation year. Intersects with date_from and date_to when combined.",
-        schema: { type: "integer", minimum: 1900, maximum: 2100 },
-      },
-      Limit: {
-        name: "limit", in: "query",
-        description: "Maximum rows returned in this page.",
-        schema: { type: "integer", minimum: 1, maximum: 500, default: 100 },
-      },
-      Offset: {
-        name: "offset", in: "query",
-        description: "Zero-based result offset.",
-        schema: { type: "integer", minimum: 0, default: 0 },
-      },
-      Format: {
-        name: "format", in: "query",
-        description: "Response format.",
-        schema: { type: "string", enum: ["json", "csv"], default: "json" },
-      },
-    },
     schemas: {
       Observation: {
         type: "object",

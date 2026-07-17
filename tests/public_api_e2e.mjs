@@ -125,6 +125,14 @@ test("OpenAPI exposes exactly four GPT Action operations", async () => {
     "listObservations",
     "listSpecies",
   ]);
+  for (const path of Object.values(body.paths)) {
+    for (const parameter of path.get.parameters) {
+      assert.equal(typeof parameter.name, "string");
+      assert.equal(parameter.in, "query");
+      assert.equal(parameter.$ref, undefined);
+      assert.equal(typeof parameter.schema, "object");
+    }
+  }
 });
 
 test("documentation is actionable and all public operations are read-only", async () => {

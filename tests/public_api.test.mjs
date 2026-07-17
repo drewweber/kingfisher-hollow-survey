@@ -558,8 +558,11 @@ test("OpenAPI and human documentation describe every public endpoint", async () 
 
   const parameterNames = (path) => OPENAPI_DOCUMENT.paths[path].get.parameters
     .map((item) => {
-      const component = item.$ref.split("/").at(-1);
-      return OPENAPI_DOCUMENT.components.parameters[component].name;
+      assert.equal(typeof item.name, "string");
+      assert.equal(item.in, "query");
+      assert.equal(item.$ref, undefined);
+      assert.equal(typeof item.schema, "object");
+      return item.name;
     })
     .sort();
   assert.deepEqual(parameterNames("/api/species"), [

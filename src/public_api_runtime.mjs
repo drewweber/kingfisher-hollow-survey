@@ -1,4 +1,4 @@
-export const API_VERSION = "1.1.0";
+export const API_VERSION = "1.1.1";
 
 const SNAPSHOT_PATH = "/_api-data/moths.json";
 const DEFAULT_LIMIT = 100;
