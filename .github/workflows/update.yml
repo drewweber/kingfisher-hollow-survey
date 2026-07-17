@@ -127,6 +127,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: field-alerts/node_modules/.bin/wrangler pages deploy public --project-name=kingfisher-survey --commit-dirty=true
 
+      - name: Test deployed public API
+        env:
+          API_BASE_URL: https://survey.kingfisher-hollow.com
+        run: node --test tests/public_api_e2e.mjs
+
       # GitHub disables scheduled workflows after 60 days of no repo commits.
       # Refresh the marker monthly, and only from scheduled runs, so pushes and
       # manual updates do not create extra remote commits.

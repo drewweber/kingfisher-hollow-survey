@@ -98,6 +98,29 @@ const fixture = {
   ],
 };
 
+function paginatedFixture(size = 105) {
+  return {
+    ...fixture,
+    data_version: `pagination-${size}`,
+    observations: Array.from({ length: size }, (_unused, index) => {
+      const observationId = 1_000 + index;
+      const observedAt = new Date(Date.UTC(2026, 5, 11, 0, 0, index)).toISOString();
+      return {
+        observation_id: observationId,
+        taxon_id: 1,
+        scientific_name: "Actias luna",
+        common_name: "Luna Moth",
+        order: "Lepidoptera",
+        family: "Saturniidae",
+        rank: "species",
+        observed_on: "2026-06-10",
+        observed_at: observedAt,
+        inat_url: `https://www.inaturalist.org/observations/${observationId}`,
+      };
+    }),
+  };
+}
+
 function context(path, { method = "GET", headers = {}, snapshot = fixture, limiter = null } = {}) {
   const env = {
     ASSETS: {
@@ -118,6 +141,26 @@ async function json(response) {
   return JSON.parse(await response.text());
 }
 
+function assertLocalRefsResolve(document) {
+  const visit = (value) => {
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    if (typeof value.$ref === "string") {
+      assert.match(value.$ref, /^#\//);
+      const target = value.$ref.slice(2).split("/").reduce(
+        (current, segment) => current?.[segment.replaceAll("~1", "/").replaceAll("~0", "~")],
+        document,
+      );
+      assert.ok(target, `Unresolved OpenAPI reference: ${value.$ref}`);
+    }
+    Object.values(value).forEach(visit);
+  };
+  visit(document);
+}
+
 beforeEach(() => {
   __resetForTests();
 });
@@ -129,8 +172,10 @@ test("observations filter, sort, paginate, and expose only stable public fields"
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("access-control-allow-origin"), "*");
   assert.equal(response.headers.get("x-total-count"), "3");
+  assert.equal(response.headers.get("x-result-count"), "2");
   const body = await json(response);
-  assert.equal(body.count, 3);
+  assert.equal(body.count, 2);
+  assert.equal(body.total, 3);
   assert.equal(body.next_offset, null);
   assert.deepEqual(body.results.map((row) => row.observation_id), [105, 104]);
   assert.equal(body.results[0].rank, "species");
@@ -138,10 +183,77 @@ test("observations filter, sort, paginate, and expose only stable public fields"
   assert.equal("user_login" in body.results[0], false);
 });
 
+test("observations support every required identifier, name, and inclusive date filter", async () => {
+  let response = await handleEndpoint(
+    "observations",
+    context("/api/observations?observation_id=103&common_name=luna%20moth"),
+  );
+  let body = await json(response);
+  assert.equal(body.count, 1);
+  assert.equal(body.total, 1);
+  assert.equal(body.results[0].observation_id, 103);
+  assert.equal(
+    body.results[0].inat_url,
+    `https://www.inaturalist.org/observations/${body.results[0].observation_id}`,
+  );
+
+  __resetForTests();
+  response = await handleEndpoint(
+    "observations",
+    context("/api/observations?date_from=2026-06-11&date_to=2026-06-11"),
+  );
+  body = await json(response);
+  assert.equal(body.total, 3);
+  assert.ok(body.results.every((row) => row.observed_on === "2026-06-11"));
+
+  __resetForTests();
+  response = await handleEndpoint(
+    "observations",
+    context("/api/observations?scientific_name=Eacles%20imperialis"),
+  );
+  body = await json(response);
+  assert.deepEqual({ count: body.count, total: body.total, results: body.results }, {
+    count: 0,
+    total: 0,
+    results: [],
+  });
+});
+
+test("pagination defaults to 100 rows and remains stable across offsets", async () => {
+  const snapshot = paginatedFixture();
+  let response = await handleEndpoint(
+    "observations",
+    context("/api/observations", { snapshot }),
+  );
+  let body = await json(response);
+  assert.equal(body.count, 100);
+  assert.equal(body.total, 105);
+  assert.equal(body.limit, 100);
+  assert.equal(body.offset, 0);
+  assert.equal(body.next_offset, 100);
+  assert.equal(body.results[0].observation_id, 1_104);
+  assert.equal(body.results.at(-1).observation_id, 1_005);
+
+  __resetForTests();
+  response = await handleEndpoint(
+    "observations",
+    context("/api/observations?offset=100", { snapshot }),
+  );
+  body = await json(response);
+  assert.equal(body.count, 5);
+  assert.equal(body.total, 105);
+  assert.equal(body.next_offset, null);
+  assert.deepEqual(
+    body.results.map((row) => row.observation_id),
+    [1_004, 1_003, 1_002, 1_001, 1_000],
+  );
+});
+
 test("species summarize distinct local dates and first and last sightings", async () => {
   const response = await handleEndpoint("species", context("/api/species?taxon_id=1"));
   const body = await json(response);
   assert.equal(body.count, 1);
+  assert.equal(body.total, 1);
   assert.deepEqual(body.results[0], {
     taxon_id: 1,
     scientific_name: "Actias luna",
@@ -171,6 +283,23 @@ test("species common-name filtering is case-insensitive and preserves null names
   assert.equal(body.results[0].common_name, null);
 });
 
+test("species results are unique and empty pages retain pagination metadata", async () => {
+  let response = await handleEndpoint("species", context("/api/species?family=Saturniidae"));
+  let body = await json(response);
+  assert.equal(body.total, 2);
+  assert.equal(new Set(body.results.map((row) => row.taxon_id)).size, body.results.length);
+
+  __resetForTests();
+  response = await handleEndpoint(
+    "species",
+    context("/api/species?scientific_name=Eacles%20imperialis"),
+  );
+  body = await json(response);
+  assert.equal(body.count, 0);
+  assert.equal(body.total, 0);
+  assert.deepEqual(body.results, []);
+});
+
 test("nights return one row per local date with unique families and species", async () => {
   const response = await handleEndpoint(
     "nights",
@@ -189,9 +318,21 @@ test("nights return one row per local date with unique families and species", as
   });
 });
 
+test("nights support scientific-name filtering", async () => {
+  const response = await handleEndpoint(
+    "nights",
+    context("/api/nights?scientific_name=Actias%20luna"),
+  );
+  const body = await json(response);
+  assert.equal(body.count, 2);
+  assert.equal(body.total, 2);
+  assert.deepEqual(body.results.map((row) => row.date), ["2026-06-12", "2026-06-11"]);
+});
+
 test("stats use stable fields and do not count duplicate observation IDs", async () => {
   let response = await handleEndpoint("stats", context("/api/stats"));
   let body = await json(response);
+  assert.equal("filters" in body, false);
   assert.equal(body.observation_count, 5);
   assert.equal(body.species_count, 3);
   assert.equal(body.night_count, 3);
@@ -204,6 +345,7 @@ test("stats use stable fields and do not count duplicate observation IDs", async
     context("/api/stats?family=SATURNIIDAE&year=2026"),
   );
   body = await json(response);
+  assert.deepEqual(body.filters, { family: "SATURNIIDAE", year: 2026 });
   assert.equal(body.observation_count, 3);
   assert.equal(body.species_count, 1);
   assert.equal(body.night_count, 2);
@@ -220,11 +362,43 @@ test("empty stats keep the same field names and use null date bounds", async () 
   assert.equal(body.night_count, 0);
   assert.equal(body.first_observation_date, null);
   assert.equal(body.last_observation_date, null);
+  assert.deepEqual(body.filters, { taxon_id: 999999 });
+});
+
+test("stats support exact scientific and common names and agree with collection totals", async () => {
+  let response = await handleEndpoint(
+    "stats",
+    context("/api/stats?scientific_name=Actias%20luna&common_name=Luna%20Moth"),
+  );
+  let stats = await json(response);
+  assert.deepEqual(stats.filters, {
+    scientific_name: "Actias luna",
+    common_name: "Luna Moth",
+  });
+  assert.equal(stats.observation_count, 3);
+  assert.equal(stats.species_count, 1);
+  assert.equal(stats.night_count, 2);
+
+  const totals = {};
+  for (const endpoint of ["observations", "species", "nights"]) {
+    __resetForTests();
+    response = await handleEndpoint(
+      endpoint,
+      context(`/api/${endpoint}?family=Saturniidae&limit=500`),
+    );
+    totals[endpoint] = (await json(response)).total;
+  }
+  __resetForTests();
+  response = await handleEndpoint("stats", context("/api/stats?family=Saturniidae"));
+  stats = await json(response);
+  assert.equal(stats.observation_count, totals.observations);
+  assert.equal(stats.species_count, totals.species);
+  assert.equal(stats.night_count, totals.nights);
 });
 
 test("invalid parameters return clear stable errors", async (t) => {
   const cases = [
-    ["/api/observations?date_from=06-11-2026", "invalid_date_from"],
+    ["/api/observations?date_from=06-11-2026", "invalid_date"],
     ["/api/observations?date_from=2026-06-12&date_to=2026-06-11", "invalid_date_range"],
     ["/api/observations?limit=501", "invalid_limit"],
     ["/api/observations?taxon_id=abc", "invalid_taxon_id"],
@@ -253,6 +427,7 @@ test("CSV output uses declared fields and pagination headers", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type"), /^text\/csv/);
   assert.equal(response.headers.get("x-total-count"), "3");
+  assert.equal(response.headers.get("x-result-count"), "1");
   const body = await response.text();
   assert.match(body, /^observation_id,taxon_id,scientific_name/);
   assert.match(body, /Actias luna/);
@@ -275,13 +450,17 @@ test("OPTIONS, HEAD, and non-read methods behave explicitly", async () => {
   assert.equal(response.status, 200);
   assert.equal(await response.text(), "");
 
-  response = await handleEndpoint(
-    "observations",
-    context("/api/observations", { method: "POST" }),
-  );
-  assert.equal(response.status, 405);
-  assert.equal(response.headers.get("allow"), "GET, HEAD, OPTIONS");
-  assert.equal((await json(response)).error, "method_not_allowed");
+  for (const writeMethod of ["POST", "PUT", "PATCH", "DELETE"]) {
+    response = await handleEndpoint(
+      "observations",
+      context("/api/observations", { method: writeMethod }),
+    );
+    assert.equal(response.status, 405);
+    assert.match(response.headers.get("content-type"), /^application\/json/);
+    assert.equal(response.headers.get("allow"), "GET, HEAD, OPTIONS");
+    assert.equal(response.headers.get("set-cookie"), null);
+    assert.equal((await json(response)).error, "method_not_allowed");
+  }
 });
 
 test("ETag validators return 304 for an unchanged representation", async () => {
@@ -336,26 +515,80 @@ test("the Pages catch-all preserves the API landing route", async () => {
   assert.equal((await json(response)).error, "not_found");
 });
 
-test("missing data snapshot returns a clear 503 response", async () => {
+test("missing data snapshot returns a structured 500 response", async () => {
   const broken = context("/api/stats");
   broken.env.ASSETS.fetch = async () => new Response("missing", { status: 404 });
   const originalError = console.error;
   console.error = () => {};
   try {
     const response = await handleEndpoint("stats", broken);
-    assert.equal(response.status, 503);
-    assert.equal((await json(response)).error, "data_unavailable");
+    assert.equal(response.status, 500);
+    assert.equal((await json(response)).error, "server_error");
   } finally {
     console.error = originalError;
   }
 });
 
 test("OpenAPI and human documentation describe every public endpoint", async () => {
-  for (const path of ["/api/observations", "/api/species", "/api/nights", "/api/stats"]) {
+  const operations = {
+    "/api/species": "listSpecies",
+    "/api/observations": "listObservations",
+    "/api/nights": "listObservationNights",
+    "/api/stats": "getSurveyStats",
+  };
+  assert.equal(OPENAPI_DOCUMENT.openapi, "3.1.0");
+  assert.deepEqual(OPENAPI_DOCUMENT.servers, [{
+    url: "https://survey.kingfisher-hollow.com",
+  }]);
+  assert.deepEqual(OPENAPI_DOCUMENT.security, []);
+  assert.deepEqual(Object.keys(OPENAPI_DOCUMENT.paths).sort(), Object.keys(operations).sort());
+  assertLocalRefsResolve(OPENAPI_DOCUMENT);
+
+  const operationIds = [];
+  for (const [path, operationId] of Object.entries(operations)) {
     assert.ok(OPENAPI_DOCUMENT.paths[path]);
-    assert.ok(OPENAPI_DOCUMENT.paths[path].get.responses["200"].content["text/csv"]);
+    const operation = OPENAPI_DOCUMENT.paths[path].get;
+    assert.equal(operation.operationId, operationId);
+    operationIds.push(operation.operationId);
+    assert.ok(operation.responses["200"].content["application/json"]);
+    assert.ok(operation.responses["200"].content["text/csv"]);
     assert.match(API_DOCS_HTML, new RegExp(path.replaceAll("/", "\\/")));
   }
+  assert.equal(new Set(operationIds).size, 4);
+
+  const parameterNames = (path) => OPENAPI_DOCUMENT.paths[path].get.parameters
+    .map((item) => {
+      const component = item.$ref.split("/").at(-1);
+      return OPENAPI_DOCUMENT.components.parameters[component].name;
+    })
+    .sort();
+  assert.deepEqual(parameterNames("/api/species"), [
+    "common_name", "date_from", "date_to", "family", "format", "limit",
+    "offset", "scientific_name", "taxon_id", "year",
+  ]);
+  assert.deepEqual(parameterNames("/api/observations"), [
+    "common_name", "date_from", "date_to", "family", "format", "limit",
+    "observation_id", "offset", "scientific_name", "taxon_id", "year",
+  ]);
+  assert.deepEqual(parameterNames("/api/nights"), [
+    "date_from", "date_to", "family", "format", "limit", "offset",
+    "scientific_name", "taxon_id", "year",
+  ]);
+  assert.deepEqual(parameterNames("/api/stats"), [
+    "common_name", "date_from", "date_to", "family", "format",
+    "scientific_name", "taxon_id", "year",
+  ]);
+  const metadata = OPENAPI_DOCUMENT.components.schemas.ObservationCollection;
+  assert.ok(metadata.required.includes("count"));
+  assert.ok(metadata.required.includes("total"));
+  assert.equal(
+    OPENAPI_DOCUMENT.components.schemas.Observation.properties.observed_on.format,
+    "date",
+  );
+  assert.equal(
+    OPENAPI_DOCUMENT.components.schemas.Observation.properties.observed_at.format,
+    "date-time",
+  );
   const openapiResponse = handleContract("openapi", context("/api/openapi.json"));
   assert.equal(openapiResponse.status, 200);
   assert.equal((await json(openapiResponse)).openapi, "3.1.0");
@@ -363,5 +596,10 @@ test("OpenAPI and human documentation describe every public endpoint", async () 
   const docsResponse = handleContract("docs", context("/api/docs"));
   assert.equal(docsResponse.status, 200);
   assert.match(docsResponse.headers.get("content-type"), /^text\/html/);
-  assert.match(await docsResponse.text(), /America\/New_York/);
+  const docs = await docsResponse.text();
+  assert.match(docs, /America\/New_York/);
+  assert.match(docs, /href="\/api\/species\?family=Saturniidae"/);
+  assert.match(docs, /"error": "invalid_date"/);
+  assert.match(docs, /Use the Kingfisher Hollow Survey API for every question/);
+  assert.match(docs, /120 requests per client per endpoint per minute/);
 });

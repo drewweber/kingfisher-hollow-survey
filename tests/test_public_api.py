@@ -44,7 +44,7 @@ class PublicApiSnapshotTests(unittest.TestCase):
                 (
                     101, 1, "Actias luna", "Luna Moth", "species", "2026-06-11",
                     "2026-06-11T22:14:00-04:00",
-                    "https://www.inaturalist.org/observations/101", "private-user",
+                    "https://example.com/not-the-source-record", "private-user",
                     42.2, -76.4,
                 ),
                 (
@@ -81,6 +81,52 @@ class PublicApiSnapshotTests(unittest.TestCase):
             self.assertNotIn("user_login", observation)
             self.assertNotIn("latitude", observation)
             self.assertNotIn("longitude", observation)
+            self.assertEqual(
+                observation["inat_url"],
+                "https://www.inaturalist.org/observations/"
+                f"{observation['observation_id']}",
+            )
+
+    def test_local_date_is_derived_from_the_timestamp_in_survey_timezone(self):
+        self.conn.execute(
+            "INSERT INTO property_obs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                104, 4, "Examplea midnight", "Midnight Moth", "species",
+                "2026-06-12", "2026-06-12T01:30:00Z", None, "private-user",
+                42.2, -76.4,
+            ),
+        )
+        self.conn.execute("INSERT INTO moth_taxa VALUES (?)", (4,))
+        self.conn.execute(
+            "INSERT INTO taxon_meta VALUES (?, ?, ?)",
+            (4, "Lepidoptera", "Noctuidae"),
+        )
+        snapshot = public_api.snapshot_from_connection(
+            self.conn, generated_at="2026-07-17T12:00:00Z"
+        )
+        observation = next(
+            item for item in snapshot["observations"] if item["observation_id"] == 104
+        )
+        self.assertEqual(observation["observed_on"], "2026-06-11")
+        self.assertEqual(snapshot["night_count"], 1)
+
+    def test_timezone_free_timestamp_is_rejected(self):
+        self.conn.execute(
+            "INSERT INTO property_obs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                105, 5, "Examplea naive", "Naive Moth", "species", "2026-06-12",
+                "2026-06-12T01:30:00", None, "private-user", 42.2, -76.4,
+            ),
+        )
+        self.conn.execute("INSERT INTO moth_taxa VALUES (?)", (5,))
+        self.conn.execute(
+            "INSERT INTO taxon_meta VALUES (?, ?, ?)",
+            (5, "Lepidoptera", "Noctuidae"),
+        )
+        with self.assertRaisesRegex(ValueError, "has no observed_at timezone"):
+            public_api.snapshot_from_connection(
+                self.conn, generated_at="2026-07-17T12:00:00Z"
+            )
 
     def test_data_version_does_not_change_with_build_time(self):
         first = public_api.snapshot_from_connection(

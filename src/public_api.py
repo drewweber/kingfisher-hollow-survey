@@ -4,6 +4,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from config import PUBLIC_DIR
 from db import connect
@@ -23,9 +24,7 @@ SELECT
     COALESCE(t.order_name, 'Lepidoptera') AS order_name,
     t.family_name AS family,
     p.rank,
-    p.observed_on,
-    p.observed_at,
-    p.url AS inat_url
+    p.observed_at
 FROM property_obs AS p
 JOIN moth_taxa AS m ON m.taxon_id = p.taxon_id
 LEFT JOIN taxon_meta AS t ON t.taxon_id = p.taxon_id
@@ -57,6 +56,22 @@ def _optional_text(value):
     return text or None
 
 
+def _local_observation_date(value, observation_id):
+    observed_at = _required_text(value, "observed_at", observation_id)
+    try:
+        parsed = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ValueError(
+            f"Moth observation {observation_id} has an invalid observed_at timestamp"
+        ) from error
+    if parsed.tzinfo is None:
+        raise ValueError(
+            f"Moth observation {observation_id} has no observed_at timezone"
+        )
+    local_date = parsed.astimezone(ZoneInfo(LOCAL_TIMEZONE)).date().isoformat()
+    return observed_at, local_date
+
+
 def snapshot_from_connection(conn, generated_at=None):
     """Return a deduplicated API snapshot from an open SQLite connection."""
     observations = []
@@ -68,7 +83,9 @@ def snapshot_from_connection(conn, generated_at=None):
             continue
         seen_ids.add(observation_id)
 
-        observed_on = _required_text(row["observed_on"], "observed_on", observation_id)
+        observed_at, observed_on = _local_observation_date(
+            row["observed_at"], observation_id
+        )
         observations.append(
             {
                 "observation_id": observation_id,
@@ -81,11 +98,10 @@ def snapshot_from_connection(conn, generated_at=None):
                 "family": _required_text(row["family"], "family", observation_id),
                 "rank": _required_text(row["rank"], "rank", observation_id),
                 "observed_on": observed_on,
-                "observed_at": _required_text(
-                    row["observed_at"], "observed_at", observation_id
+                "observed_at": observed_at,
+                "inat_url": (
+                    f"https://www.inaturalist.org/observations/{observation_id}"
                 ),
-                "inat_url": _optional_text(row["inat_url"])
-                or f"https://www.inaturalist.org/observations/{observation_id}",
             }
         )
 

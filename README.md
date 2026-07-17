@@ -141,10 +141,17 @@ iNaturalist links. It excludes coordinates, observers, photos, and every other
 private pipeline field.
 
 All API filters use AND semantics. Names and families are case-insensitive exact
-matches. A "night" is `COUNT(DISTINCT observed_on)` in `America/New_York`, not a
-formal trapping-session record. Observation IDs are deduplicated before any
-count is calculated. Collection endpoints default to 100 rows and reject limits
-above 500. Add `format=csv` for CSV output.
+matches. A "night" is a distinct `America/New_York` calendar date derived from
+the timezone-aware observation timestamp, not a formal trapping-session record.
+Observation IDs are deduplicated before any count is calculated. Collection
+endpoints default to 100 rows and reject limits above 500. Their `count` is the
+number of rows in the current page; `total` is the number matching the filters.
+Add `format=csv` for CSV output.
+
+The OpenAPI document exposes exactly four GPT Action operation IDs:
+`listSpecies`, `listObservations`, `listObservationNights`, and
+`getSurveyStats`. `/api/docs` includes clickable examples and the copy-ready GPT
+instructions that require answers to be grounded in API results.
 
 The Functions enforce a lightweight per-client fallback limit of 120 requests
 per minute. If the Pages project later receives an `API_RATE_LIMITER` Cloudflare
@@ -156,6 +163,7 @@ Local checks:
 .venv/bin/python src/public_api.py
 node --test tests/public_api.test.mjs
 field-alerts/node_modules/.bin/wrangler pages dev public
+API_BASE_URL=http://127.0.0.1:8788 node --test tests/public_api_e2e.mjs
 ```
 
 ### Realtime moth field alerts

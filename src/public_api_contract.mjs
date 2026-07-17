@@ -13,8 +13,32 @@ const commonErrors = {
   "400": { $ref: "#/components/responses/BadRequest" },
   "405": { $ref: "#/components/responses/MethodNotAllowed" },
   "429": { $ref: "#/components/responses/RateLimited" },
-  "503": { $ref: "#/components/responses/DataUnavailable" },
+  "500": { $ref: "#/components/responses/ServerError" },
 };
+const collectionSchema = (itemRef) => ({
+  type: "object",
+  required: [
+    "count", "total", "limit", "offset", "next_offset", "results",
+    "generated_at", "timezone", "data_version",
+  ],
+  properties: {
+    count: {
+      type: "integer", minimum: 0,
+      description: "Number of rows in this response page.",
+    },
+    total: {
+      type: "integer", minimum: 0,
+      description: "Total rows matching the filters before pagination.",
+    },
+    limit: { type: "integer", minimum: 1, maximum: 500 },
+    offset: { type: "integer", minimum: 0 },
+    next_offset: { type: ["integer", "null"], minimum: 0 },
+    results: { type: "array", items: { $ref: itemRef } },
+    generated_at: { type: "string", format: "date-time" },
+    timezone: { type: "string", const: "America/New_York" },
+    data_version: { type: "string" },
+  },
+});
 
 export const OPENAPI_DOCUMENT = {
   openapi: "3.1.0",
@@ -28,6 +52,11 @@ export const OPENAPI_DOCUMENT = {
     ].join(" "),
   },
   servers: [{ url: "https://survey.kingfisher-hollow.com" }],
+  security: [],
+  externalDocs: {
+    description: "Kingfisher Hollow Survey API documentation",
+    url: "https://survey.kingfisher-hollow.com/api/docs",
+  },
   tags: [
     { name: "Observations", description: "Observation-level iNaturalist records." },
     { name: "Species", description: "Species summaries derived from matching observations." },
@@ -37,12 +66,15 @@ export const OPENAPI_DOCUMENT = {
   paths: {
     "/api/observations": {
       get: {
+        operationId: "listObservations",
         tags: ["Observations"],
         summary: "List moth observations",
+        description: "Returns only unique, recorded Kingfisher Hollow observations, newest first.",
         parameters: [
-          parameter("TaxonId"), parameter("Family"), parameter("ScientificName"),
-          parameter("DateFrom"), parameter("DateTo"), parameter("Year"),
-          parameter("Limit"), parameter("Offset"), parameter("Format"),
+          parameter("ObservationId"), parameter("TaxonId"), parameter("Family"),
+          parameter("ScientificName"), parameter("CommonName"), parameter("DateFrom"),
+          parameter("DateTo"), parameter("Year"), parameter("Limit"),
+          parameter("Offset"), parameter("Format"),
         ],
         responses: {
           "200": jsonResponse({ $ref: "#/components/schemas/ObservationCollection" }),
@@ -52,8 +84,10 @@ export const OPENAPI_DOCUMENT = {
     },
     "/api/species": {
       get: {
+        operationId: "listSpecies",
         tags: ["Species"],
         summary: "List recorded moth species with occurrence summaries",
+        description: "Use this operation to determine which taxa have actually been recorded. An empty result means no matching recorded taxon was found.",
         parameters: [
           parameter("TaxonId"), parameter("Family"), parameter("ScientificName"),
           parameter("CommonName"), parameter("DateFrom"), parameter("DateTo"),
@@ -68,12 +102,14 @@ export const OPENAPI_DOCUMENT = {
     },
     "/api/nights": {
       get: {
+        operationId: "listObservationNights",
         tags: ["Nights"],
         summary: "List local dates with matching moth observations",
+        description: "Use this operation when the user needs the distinct local dates and per-date details for matching observations.",
         parameters: [
-          parameter("TaxonId"), parameter("Family"), parameter("DateFrom"),
-          parameter("DateTo"), parameter("Year"), parameter("Limit"),
-          parameter("Offset"), parameter("Format"),
+          parameter("TaxonId"), parameter("Family"), parameter("ScientificName"),
+          parameter("DateFrom"), parameter("DateTo"), parameter("Year"),
+          parameter("Limit"), parameter("Offset"), parameter("Format"),
         ],
         responses: {
           "200": jsonResponse({ $ref: "#/components/schemas/NightCollection" }),
@@ -83,11 +119,14 @@ export const OPENAPI_DOCUMENT = {
     },
     "/api/stats": {
       get: {
+        operationId: "getSurveyStats",
         tags: ["Stats"],
         summary: "Return aggregate moth occurrence statistics",
+        description: "Use this operation for counts of unique observations, recorded taxa, or distinct local observation dates. The response echoes any applied filters.",
         parameters: [
-          parameter("TaxonId"), parameter("Family"), parameter("DateFrom"),
-          parameter("DateTo"), parameter("Year"), parameter("Format"),
+          parameter("TaxonId"), parameter("Family"), parameter("ScientificName"),
+          parameter("CommonName"), parameter("DateFrom"), parameter("DateTo"),
+          parameter("Year"), parameter("Format"),
         ],
         responses: {
           "200": jsonResponse({ $ref: "#/components/schemas/Stats" }),
@@ -98,6 +137,11 @@ export const OPENAPI_DOCUMENT = {
   },
   components: {
     parameters: {
+      ObservationId: {
+        name: "observation_id", in: "query",
+        description: "Exact positive iNaturalist observation ID.",
+        schema: { type: "integer", minimum: 1 },
+      },
       TaxonId: {
         name: "taxon_id", in: "query",
         description: "Exact positive iNaturalist taxon ID.",
@@ -206,6 +250,7 @@ export const OPENAPI_DOCUMENT = {
           "timezone", "data_version",
         ],
         properties: {
+          filters: { $ref: "#/components/schemas/AppliedFilters" },
           observation_count: { type: "integer", minimum: 0 },
           species_count: { type: "integer", minimum: 0 },
           night_count: { type: "integer", minimum: 0 },
@@ -216,45 +261,28 @@ export const OPENAPI_DOCUMENT = {
           data_version: { type: "string" },
         },
       },
-      CollectionMetadata: {
+      AppliedFilters: {
         type: "object",
-        required: [
-          "count", "limit", "offset", "next_offset", "results", "generated_at",
-          "timezone", "data_version",
-        ],
+        description: "Normalized filters applied to a statistics request. Omitted when unfiltered.",
+        additionalProperties: false,
         properties: {
-          count: { type: "integer", minimum: 0 },
-          limit: { type: "integer", minimum: 1, maximum: 500 },
-          offset: { type: "integer", minimum: 0 },
-          next_offset: { type: ["integer", "null"], minimum: 0 },
-          generated_at: { type: "string", format: "date-time" },
-          timezone: { type: "string" },
-          data_version: { type: "string" },
+          taxon_id: { type: "integer", minimum: 1 },
+          scientific_name: { type: "string" },
+          common_name: { type: "string" },
+          family: { type: "string" },
+          year: { type: "integer", minimum: 1900, maximum: 2100 },
+          date_from: { type: "string", format: "date" },
+          date_to: { type: "string", format: "date" },
         },
       },
-      ObservationCollection: {
-        allOf: [
-          { $ref: "#/components/schemas/CollectionMetadata" },
-          { type: "object", properties: { results: { type: "array", items: { $ref: "#/components/schemas/Observation" } } } },
-        ],
-      },
-      SpeciesCollection: {
-        allOf: [
-          { $ref: "#/components/schemas/CollectionMetadata" },
-          { type: "object", properties: { results: { type: "array", items: { $ref: "#/components/schemas/Species" } } } },
-        ],
-      },
-      NightCollection: {
-        allOf: [
-          { $ref: "#/components/schemas/CollectionMetadata" },
-          { type: "object", properties: { results: { type: "array", items: { $ref: "#/components/schemas/Night" } } } },
-        ],
-      },
+      ObservationCollection: collectionSchema("#/components/schemas/Observation"),
+      SpeciesCollection: collectionSchema("#/components/schemas/Species"),
+      NightCollection: collectionSchema("#/components/schemas/Night"),
       Error: {
         type: "object",
         required: ["error", "message"],
         properties: {
-          error: { type: "string", example: "invalid_date_from" },
+          error: { type: "string", example: "invalid_date" },
           message: { type: "string", example: "date_from must use YYYY-MM-DD format" },
         },
       },
@@ -272,8 +300,8 @@ export const OPENAPI_DOCUMENT = {
         description: "The request rate was exceeded.",
         content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
       },
-      DataUnavailable: {
-        description: "The generated survey snapshot could not be loaded.",
+      ServerError: {
+        description: "The survey request could not be completed.",
         content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } },
       },
     },
@@ -293,15 +321,16 @@ export const API_DOCS_HTML = `<!doctype html>
     body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     header,main,footer { width:min(920px,calc(100% - 32px)); margin-inline:auto; }
     header { padding:56px 0 28px; border-bottom:1px solid var(--line); }
-    h1,h2 { font-family:Georgia,"Times New Roman",serif; letter-spacing:0; }
+    h1,h2,h3 { font-family:Georgia,"Times New Roman",serif; letter-spacing:0; }
     h1 { margin:0 0 12px; font-size:4rem; line-height:1.05; }
     h2 { margin:44px 0 12px; font-size:1.65rem; }
+    h3 { margin:28px 0 8px; font-size:1.2rem; }
     p { max-width:72ch; }
     a { color:var(--green); text-underline-offset:3px; }
     nav { display:flex; flex-wrap:wrap; gap:18px; margin-top:24px; }
     code,pre { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
     code { font-size:.9em; }
-    p code,.note code { overflow-wrap:anywhere; word-break:break-word; }
+    p code,.note code,td code { overflow-wrap:anywhere; word-break:break-word; }
     pre { overflow:auto; padding:16px; background:#fff; border:1px solid var(--line); border-radius:6px; font-size:.86rem; }
     table { width:100%; border-collapse:collapse; background:#fff; }
     th,td { padding:12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
@@ -323,33 +352,81 @@ export const API_DOCS_HTML = `<!doctype html>
     </nav>
   </header>
   <main>
-    <h2>Endpoints</h2>
+    <h2>Read-only actions</h2>
+    <p>No authentication is required. The four operations accept <code>GET</code> requests and return JSON by default. Names and families use case-insensitive exact matching; combined filters use AND semantics.</p>
     <table>
-      <thead><tr><th>Endpoint</th><th>Returns</th></tr></thead>
+      <thead><tr><th>Action and endpoint</th><th>Returns</th><th>Supported query parameters</th></tr></thead>
       <tbody>
-        <tr><td><a href="/api/observations"><code>/api/observations</code></a></td><td>Observation-level records with dates and iNaturalist links.</td></tr>
-        <tr><td><a href="/api/species"><code>/api/species</code></a></td><td>Species totals, distinct date counts, and first and last dates.</td></tr>
-        <tr><td><a href="/api/nights"><code>/api/nights</code></a></td><td>One row per local calendar date with matching records.</td></tr>
-        <tr><td><a href="/api/stats"><code>/api/stats</code></a></td><td>Observation, species, and distinct-date totals.</td></tr>
+        <tr><td><strong>listSpecies</strong><br><a href="/api/species"><code>/api/species</code></a></td><td>Recorded taxa with observation totals, distinct-date counts, and first and last dates.</td><td><code>taxon_id, scientific_name, common_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
+        <tr><td><strong>listObservations</strong><br><a href="/api/observations"><code>/api/observations</code></a></td><td>Unique observation records with local dates and canonical iNaturalist links.</td><td><code>observation_id, taxon_id, scientific_name, common_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
+        <tr><td><strong>listObservationNights</strong><br><a href="/api/nights"><code>/api/nights</code></a></td><td>One row per matching local calendar date.</td><td><code>taxon_id, scientific_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
+        <tr><td><strong>getSurveyStats</strong><br><a href="/api/stats"><code>/api/stats</code></a></td><td>Observation, taxon, and distinct-date totals for the full survey or a filtered subset.</td><td><code>taxon_id, scientific_name, common_name, family, year, date_from, date_to, format</code></td></tr>
       </tbody>
     </table>
 
-    <h2>Filtering</h2>
-    <p>Filters use AND semantics. Family and species names are case-insensitive exact matches. Dates use <code>YYYY-MM-DD</code> and are inclusive. The <code>year</code> filter intersects with explicit date bounds.</p>
-    <pre><code>GET /api/stats?family=Saturniidae
-GET /api/observations?family=Saturniidae&amp;date_from=2026-06-01&amp;limit=25
-GET /api/species?scientific_name=Actias%20luna
-GET /api/nights?taxon_id=47919&amp;year=2026</code></pre>
+    <h2>Try the API</h2>
+    <p>These examples are live and clickable:</p>
+    <ul>
+      <li><a href="/api/species?family=Saturniidae"><code>/api/species?family=Saturniidae</code></a></li>
+      <li><a href="/api/observations?scientific_name=Actias%20luna&amp;limit=1"><code>/api/observations?scientific_name=Actias%20luna&amp;limit=1</code></a></li>
+      <li><a href="/api/stats?family=Saturniidae"><code>/api/stats?family=Saturniidae</code></a></li>
+      <li><a href="/api/nights?family=Saturniidae&amp;limit=500"><code>/api/nights?family=Saturniidae&amp;limit=500</code></a></li>
+      <li><a href="/api/observations?scientific_name=Eacles%20imperialis"><code>/api/observations?scientific_name=Eacles%20imperialis</code></a> demonstrates a zero-result query.</li>
+    </ul>
+
+    <h2>Responses</h2>
+    <h3>Filtered statistics</h3>
+    <pre><code>{
+  "filters": { "family": "Saturniidae" },
+  "observation_count": 91,
+  "species_count": 7,
+  "night_count": 38,
+  "first_observation_date": "2025-08-19",
+  "last_observation_date": "2026-07-16"
+}</code></pre>
+    <h3>Paginated collection</h3>
+    <pre><code>{
+  "count": 100,
+  "total": 842,
+  "limit": 100,
+  "offset": 0,
+  "next_offset": 100,
+  "results": []
+}</code></pre>
+    <p><code>count</code> is the number of rows in the current page; <code>total</code> is the number matching the filters. Collection endpoints default to 100 rows with a maximum of 500. Pagination order is stable. Dates use inclusive <code>YYYY-MM-DD</code> bounds.</p>
 
     <h2>Dates and nights</h2>
-    <p class="note">A night is a distinct <code>observed_on</code> date in <code>America/New_York</code>. It is not a formal trapping-session record. Records with the same iNaturalist observation ID are counted once.</p>
+    <p class="note">A night is a distinct local calendar date in <code>America/New_York</code>, calculated from each timezone-aware observation timestamp. It is not a formal trapping-session record. Records with the same iNaturalist observation ID are counted once.</p>
 
-    <h2>Pagination and CSV</h2>
-    <p>Collection endpoints default to 100 rows. Use <code>limit</code> and <code>offset</code>; the maximum page size is 500. Add <code>format=csv</code> to any data endpoint for CSV output.</p>
-    <pre><code>GET /api/observations?limit=500&amp;offset=500&amp;format=csv</code></pre>
+    <h2>Errors, caching, and limits</h2>
+    <p>Errors are structured JSON. Unsupported parameters and invalid values return 400, unknown endpoints return 404, write methods return 405, internal failures return 500, and exceeded rate limits return 429 with <code>Retry-After</code>.</p>
+    <pre><code>{
+  "error": "invalid_date",
+  "message": "date_from must use YYYY-MM-DD format"
+}</code></pre>
+    <p>Responses include public CORS headers, cache validators, and rate-limit headers. The fallback limit is 120 requests per client per endpoint per minute. A normal conversational client should remain well below it. Add <code>format=csv</code> to a data endpoint for CSV output.</p>
 
-    <h2>Errors and caching</h2>
-    <p>Errors use stable JSON fields: <code>{"error":"invalid_date_from","message":"date_from must use YYYY-MM-DD format"}</code>. Responses include CORS, cache validators, pagination headers, and rate-limit headers. The dataset refreshes when the public survey rebuilds.</p>
+    <h2>Custom GPT setup</h2>
+    <ol>
+      <li>In the GPT Action editor, import <a href="/api/openapi.json"><code>https://survey.kingfisher-hollow.com/api/openapi.json</code></a>.</li>
+      <li>Choose no authentication.</li>
+      <li>Test the four actions, then add the instructions below to the GPT.</li>
+    </ol>
+    <pre><code>Use the Kingfisher Hollow Survey API for every question about survey
+observations, species, dates, nights, and counts.
+Never infer that a species was observed based on geography, taxonomy,
+or general knowledge.
+Use listSpecies to determine which taxa have been recorded.
+Use listObservations to retrieve individual records and direct
+iNaturalist links.
+Use listObservationNights or getSurveyStats to answer questions about
+distinct nights.
+When the API returns zero results, state that no matching records were found.
+Do not invent observations, counts, dates, or species.
+Observation links returned to the user must come directly from inat_url.</code></pre>
+
+    <h2>Machine-readable contract</h2>
+    <p>The complete OpenAPI 3.1 schema is available at <a href="/api/openapi.json"><code>/api/openapi.json</code></a>. The dataset and cache validators refresh whenever the public survey rebuilds.</p>
   </main>
   <footer>API version ${API_VERSION}. No authentication is required. Exact coordinates and observer details are not exposed.</footer>
 </body>

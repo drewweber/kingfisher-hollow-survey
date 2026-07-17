@@ -1,4 +1,4 @@
-export const API_VERSION = "1.0.0";
+export const API_VERSION = "1.1.0";
 
 const SNAPSHOT_PATH = "/_api-data/moths.json";
 const DEFAULT_LIMIT = 100;
@@ -9,19 +9,20 @@ const CACHE_CONTROL = "public, max-age=300, s-maxage=3600, stale-while-revalidat
 
 const ENDPOINT_PARAMETERS = {
   observations: new Set([
-    "taxon_id", "family", "scientific_name", "date_from", "date_to",
-    "year", "limit", "offset", "format",
+    "observation_id", "taxon_id", "family", "scientific_name", "common_name",
+    "date_from", "date_to", "year", "limit", "offset", "format",
   ]),
   species: new Set([
     "taxon_id", "scientific_name", "common_name", "family", "date_from",
     "date_to", "year", "limit", "offset", "format",
   ]),
   nights: new Set([
-    "taxon_id", "family", "date_from", "date_to", "year", "limit",
-    "offset", "format",
+    "taxon_id", "family", "scientific_name", "date_from", "date_to", "year",
+    "limit", "offset", "format",
   ]),
   stats: new Set([
-    "taxon_id", "family", "date_from", "date_to", "year", "format",
+    "taxon_id", "family", "scientific_name", "common_name", "date_from",
+    "date_to", "year", "format",
   ]),
 };
 
@@ -36,7 +37,7 @@ const CSV_FIELDS = {
   ],
   nights: ["date", "observation_count", "species_count", "families"],
   stats: [
-    "observation_count", "species_count", "night_count",
+    "filters", "observation_count", "species_count", "night_count",
     "first_observation_date", "last_observation_date", "generated_at",
     "timezone", "data_version",
   ],
@@ -63,6 +64,24 @@ function isIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function isIsoDateTime(value) {
+  if (typeof value !== "string" || !/T.+(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
+    return false;
+  }
+  return !Number.isNaN(Date.parse(value));
+}
+
+function isCanonicalInatUrl(value, observationId) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && url.hostname === "www.inaturalist.org"
+      && url.pathname === `/observations/${observationId}`;
+  } catch (_error) {
+    return false;
+  }
 }
 
 function requiredSnapshotText(value, field) {
@@ -93,6 +112,15 @@ function normalizeSnapshot(raw) {
       throw new Error("API snapshot contains an invalid observed_on date");
     }
 
+    const observedAt = requiredSnapshotText(item.observed_at, "observed_at");
+    if (!isIsoDateTime(observedAt)) {
+      throw new Error("API snapshot contains an invalid observed_at date-time");
+    }
+    const inatUrl = requiredSnapshotText(item.inat_url, "inat_url");
+    if (!isCanonicalInatUrl(inatUrl, observationId)) {
+      throw new Error("API snapshot contains an invalid inat_url");
+    }
+
     seen.add(observationId);
     observations.push({
       observation_id: observationId,
@@ -105,13 +133,13 @@ function normalizeSnapshot(raw) {
       family: requiredSnapshotText(item.family, "family"),
       rank: requiredSnapshotText(item.rank, "rank"),
       observed_on: item.observed_on,
-      observed_at: requiredSnapshotText(item.observed_at, "observed_at"),
-      inat_url: requiredSnapshotText(item.inat_url, "inat_url"),
+      observed_at: observedAt,
+      inat_url: inatUrl,
     });
   }
 
   observations.sort((left, right) => {
-    const timestampOrder = right.observed_at.localeCompare(left.observed_at);
+    const timestampOrder = Date.parse(right.observed_at) - Date.parse(left.observed_at);
     return timestampOrder || right.observation_id - left.observation_id;
   });
 
@@ -151,8 +179,8 @@ function corsHeaders() {
     "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
     "Access-Control-Allow-Headers": "Accept, Content-Type, If-None-Match",
     "Access-Control-Expose-Headers": [
-      "ETag", "X-Total-Count", "X-Limit", "X-Offset", "RateLimit-Limit",
-      "RateLimit-Remaining", "RateLimit-Reset",
+      "ETag", "X-Result-Count", "X-Total-Count", "X-Limit", "X-Offset",
+      "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset",
     ].join(", "),
     "Access-Control-Max-Age": "86400",
   };
@@ -287,7 +315,7 @@ function parseDate(params, name) {
   const raw = singleParameter(params, name);
   if (raw === null) return null;
   if (!isIsoDate(raw)) {
-    throw new ApiError(`invalid_${name}`, `${name} must use YYYY-MM-DD format`);
+    throw new ApiError("invalid_date", `${name} must use YYYY-MM-DD format`);
   }
   return raw;
 }
@@ -317,6 +345,9 @@ function parseQuery(endpoint, url) {
     }
   }
 
+  const observationId = allowed.has("observation_id")
+    ? parseInteger(url.searchParams, "observation_id", { minimum: 1 })
+    : null;
   const taxonId = allowed.has("taxon_id")
     ? parseInteger(url.searchParams, "taxon_id", { minimum: 1 })
     : null;
@@ -346,6 +377,7 @@ function parseQuery(endpoint, url) {
 
   return {
     filters: {
+      observation_id: observationId,
       taxon_id: taxonId,
       family: allowed.has("family") ? parseText(url.searchParams, "family") : null,
       scientific_name: allowed.has("scientific_name")
@@ -370,6 +402,10 @@ function sameText(left, right) {
 
 function filterObservations(observations, filters) {
   return observations.filter((item) => {
+    if (
+      filters.observation_id !== null
+      && item.observation_id !== filters.observation_id
+    ) return false;
     if (filters.taxon_id !== null && item.taxon_id !== filters.taxon_id) return false;
     if (filters.family !== null && !sameText(item.family, filters.family)) return false;
     if (
@@ -457,9 +493,17 @@ function nightRows(observations) {
   })).sort((left, right) => right.date.localeCompare(left.date));
 }
 
-function statsRow(observations, snapshot) {
+function appliedFilters(filters) {
+  return Object.fromEntries(
+    Object.entries(filters).filter(([_name, value]) => value !== null),
+  );
+}
+
+function statsRow(observations, snapshot, filters) {
   const dates = observations.map((item) => item.observed_on);
+  const applied = appliedFilters(filters);
   return {
+    ...(Object.keys(applied).length ? { filters: applied } : {}),
     observation_count: observations.length,
     species_count: new Set(observations.map((item) => item.taxon_id)).size,
     night_count: new Set(dates).size,
@@ -477,7 +521,8 @@ function collectionPayload(rows, query, snapshot) {
     ? query.offset + results.length
     : null;
   return {
-    count: rows.length,
+    count: results.length,
+    total: rows.length,
     limit: query.limit,
     offset: query.offset,
     next_offset: nextOffset,
@@ -491,6 +536,7 @@ function collectionPayload(rows, query, snapshot) {
 function csvValue(value) {
   if (value === null || value === undefined) return "";
   if (Array.isArray(value)) return value.join("|");
+  if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
 
@@ -534,7 +580,8 @@ function successResponse({ endpoint, request, query, payload, snapshot, rate }) 
   const etag = representationEtag(snapshot, endpoint, new URL(request.url), query.format);
   headers.set("ETag", etag);
   if (isCollection) {
-    headers.set("X-Total-Count", String(payload.count));
+    headers.set("X-Result-Count", String(payload.count));
+    headers.set("X-Total-Count", String(payload.total));
     headers.set("X-Limit", String(payload.limit));
     headers.set("X-Offset", String(payload.offset));
   }
@@ -586,35 +633,45 @@ export async function handleEndpoint(endpoint, context) {
   } catch (error) {
     console.error("Unable to load the public moth API snapshot", error);
     return errorResponse(
-      "data_unavailable",
-      "The survey data snapshot is temporarily unavailable.",
-      503,
+      "server_error",
+      "The survey data could not be loaded.",
+      500,
       rate,
     );
   }
 
-  const observations = filterObservations(snapshot.observations, query.filters);
-  let payload;
-  if (endpoint === "observations") {
-    payload = collectionPayload(observations, query, snapshot);
-  } else if (endpoint === "species") {
-    payload = collectionPayload(speciesRows(observations), query, snapshot);
-  } else if (endpoint === "nights") {
-    payload = collectionPayload(nightRows(observations), query, snapshot);
-  } else if (endpoint === "stats") {
-    payload = statsRow(observations, snapshot);
-  } else {
-    return errorResponse("not_found", "API endpoint not found", 404, rate);
-  }
+  try {
+    const observations = filterObservations(snapshot.observations, query.filters);
+    let payload;
+    if (endpoint === "observations") {
+      payload = collectionPayload(observations, query, snapshot);
+    } else if (endpoint === "species") {
+      payload = collectionPayload(speciesRows(observations), query, snapshot);
+    } else if (endpoint === "nights") {
+      payload = collectionPayload(nightRows(observations), query, snapshot);
+    } else if (endpoint === "stats") {
+      payload = statsRow(observations, snapshot, query.filters);
+    } else {
+      return errorResponse("not_found", "API endpoint not found", 404, rate);
+    }
 
-  return successResponse({
-    endpoint,
-    request: context.request,
-    query,
-    payload,
-    snapshot,
-    rate,
-  });
+    return successResponse({
+      endpoint,
+      request: context.request,
+      query,
+      payload,
+      snapshot,
+      rate,
+    });
+  } catch (error) {
+    console.error("Unable to build the public moth API response", error);
+    return errorResponse(
+      "server_error",
+      "The survey request could not be completed.",
+      500,
+      rate,
+    );
+  }
 }
 
 export function handleNotFound(context) {
