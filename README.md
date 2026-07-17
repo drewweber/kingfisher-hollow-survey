@@ -120,6 +120,44 @@ project:
 Without those variables, the link is visible but the endpoint returns a
 configuration error instead of starting a workflow.
 
+### Public read-only moth API
+
+The Pages deployment also publishes a small public API for tools that need to
+query Kingfisher Hollow moth occurrences without accessing SQLite or calling
+iNaturalist directly:
+
+- `/api/observations` — observation-level records
+- `/api/species` — species counts and first/last dates
+- `/api/nights` — one row per matching local calendar date
+- `/api/stats` — aggregate observation, species, and distinct-date counts
+- `/api/docs` — human-readable documentation
+- `/api/openapi.json` — OpenAPI 3.1 contract
+
+`report.py` calls `src/public_api.py` during every rebuild. The generator writes
+a compact snapshot to `public/_api-data/moths.json`; Pages Functions read that
+asset through Cloudflare's `ASSETS` binding. The deployed snapshot contains only
+taxon names and IDs, taxonomic rank, family, observation dates/times, and public
+iNaturalist links. It excludes coordinates, observers, photos, and every other
+private pipeline field.
+
+All API filters use AND semantics. Names and families are case-insensitive exact
+matches. A "night" is `COUNT(DISTINCT observed_on)` in `America/New_York`, not a
+formal trapping-session record. Observation IDs are deduplicated before any
+count is calculated. Collection endpoints default to 100 rows and reject limits
+above 500. Add `format=csv` for CSV output.
+
+The Functions enforce a lightweight per-client fallback limit of 120 requests
+per minute. If the Pages project later receives an `API_RATE_LIMITER` Cloudflare
+Rate Limiting binding, the same code uses that binding automatically.
+
+Local checks:
+
+```sh
+.venv/bin/python src/public_api.py
+node --test tests/public_api.test.mjs
+field-alerts/node_modules/.bin/wrangler pages dev public
+```
+
 ### Realtime moth field alerts
 
 `field-alerts/` contains a separate Cloudflare Worker for immediate moth

@@ -30,6 +30,7 @@ on:
       - "src/**"
       - "field-guide/**"
       - "functions/**"
+      - "tests/**"
       - "requirements.txt"
       - ".github/workflows/update.yml"
 
@@ -111,8 +112,14 @@ jobs:
           cache: npm
           cache-dependency-path: field-alerts/package-lock.json
 
+      - name: Test public API
+        run: node --test tests/public_api.test.mjs
+
       - name: Install Wrangler
         run: npm ci --prefix field-alerts --ignore-scripts
+
+      - name: Compile Pages Functions
+        run: field-alerts/node_modules/.bin/wrangler pages functions build functions --outdir /tmp/pages-functions --project-directory . --build-output-directory public
 
       - name: Deploy to Cloudflare Pages
         env:
