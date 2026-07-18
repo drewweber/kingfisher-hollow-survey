@@ -32,6 +32,9 @@ on:
       - "functions/**"
       - "tests/**"
       - "requirements.txt"
+      - ".node-version"
+      - "field-alerts/package.json"
+      - "field-alerts/package-lock.json"
       - ".github/workflows/update.yml"
 
 # Avoid overlapping runs if one is slow.
@@ -108,7 +111,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version-file: ".node-version"
           cache: npm
           cache-dependency-path: field-alerts/package-lock.json
 
