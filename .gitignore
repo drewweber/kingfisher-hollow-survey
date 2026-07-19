@@ -5,6 +5,7 @@ __pycache__/
 
 # Local runtime artifacts
 logs/
+node_modules/
 
 # Generated report; deployed via wrangler, not committed.
 public/

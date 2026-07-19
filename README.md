@@ -23,11 +23,13 @@ database is populated fresh from the API.
 ```sh
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
+npm ci
 ```
 
 ## Usage
 ```sh
 .venv/bin/python sync.py --daily    # fast daily refresh for new survey records
+npm run build:css                   # compile the survey stylesheet
 .venv/bin/python report.py          # build public/index.html
 open public/index.html
 ```

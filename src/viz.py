@@ -72,7 +72,12 @@ def _style(fig, height=420, showlegend=False, dark=False):
 
 def _html(fig, **cfg):
     config = {"displayModeBar": False, "responsive": True, **cfg}
-    return fig.to_html(full_html=False, include_plotlyjs=False, config=config)
+    # Queue chart creation until its card approaches the viewport. This keeps
+    # Plotly's large runtime and the hidden taxonomy views off the initial path.
+    return (fig.to_html(full_html=False, include_plotlyjs=False, config=config)
+            .replace('class="plotly-graph-div"',
+                     'class="plotly-graph-div" data-plotly-chart')
+            .replace("Plotly.newPlot(", "window.__plotlyRender("))
 
 
 # --- cumulative discovery (species accumulation, annotated) -----------------

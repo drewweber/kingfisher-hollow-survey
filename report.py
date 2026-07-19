@@ -12,6 +12,7 @@ import subprocess
 import sys
 import hashlib
 import json
+import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,7 @@ PROJECT_URL = "https://www.inaturalist.org/projects/kingfisher-hollow-biodiversi
 TAXON_URL = "https://www.inaturalist.org/taxa/"   # + taxon_id → species page
 OBS_URL   = "https://www.inaturalist.org/observations/"  # + obs_id → observation
 HERO_PHOTO = f"{SITE}/aerial/dji_fly_20251020_173830_305_1760996794506_photo_optimized.JPG"
+HERO_WEBP = f"{SITE}/aerial/optimized/dji_fly_20251020_173830_305_1760996794506_photo_optimized"
 
 
 def _timed(label, func, *args, **kwargs):
@@ -53,6 +55,13 @@ def _timed(label, func, *args, **kwargs):
 
 def _log_timing(label, start):
     print(f"[report-timing] {label}: {time.monotonic() - start:.1f}s")
+
+
+def _copy_static_assets():
+    """Publish locally hosted fonts without coupling report content to a CDN."""
+    source = Path(__file__).resolve().parent / "assets"
+    if source.exists():
+        shutil.copytree(source, PUBLIC_DIR / "assets", dirs_exist_ok=True)
 
 
 def _load_id_changes():
@@ -197,7 +206,10 @@ def hero(s, county_firsts):
     return f"""
 <section class="relative min-h-[88vh] flex items-center justify-center overflow-hidden">
   <div class="absolute inset-0">
-    <img src="{HERO_PHOTO}" class="absolute inset-0 w-full h-full object-cover" alt="Aerial view of Kingfisher Hollow">
+    <img src="{HERO_WEBP}-1280.webp"
+      srcset="{HERO_WEBP}-960.webp 960w, {HERO_WEBP}-1280.webp 1280w, {HERO_WEBP}-1920.webp 1920w"
+      sizes="100vw" width="1920" height="1080" fetchpriority="high" decoding="async"
+      class="absolute inset-0 w-full h-full object-cover" alt="Aerial view of Kingfisher Hollow">
     <div class="hero-overlay absolute inset-0"></div>
   </div>
   <div class="relative z-10 text-center px-6 max-w-4xl mx-auto pt-24 md:pt-36">
@@ -239,7 +251,7 @@ def whats_new_body(recent):
         elif state_n == state_n and state_n is not None and state_n <= 25:
             flag = f'<span class="badge badge-green">{int(state_n)} in NY</span>'
         photo = r.get("photo_url")
-        img = (f'<img src="{esc(photo)}" class="w-full aspect-square object-cover" alt="{name}">'
+        img = (f'<img src="{esc(photo)}" class="w-full aspect-square object-cover" alt="{name}" loading="lazy" decoding="async">'
                if photo == photo and photo else
                '<div class="w-full aspect-square bg-hollow-100 flex items-center justify-center text-hollow-400 text-3xl">🪶</div>')
         cards.append(f"""
@@ -274,7 +286,7 @@ def showcase_body(show):
         state_n = r.get("state_obs_count")
         ny = f"{int(state_n)} in all of NY" if state_n == state_n else ""
         photo = r.get("photo_url")
-        img = (f'<img src="{esc(photo)}" class="photo-img w-full h-full object-cover" alt="{name}">'
+        img = (f'<img src="{esc(photo)}" class="photo-img w-full h-full object-cover" alt="{name}" loading="lazy" decoding="async">'
                if photo == photo and photo else
                '<div class="w-full h-full bg-gradient-to-br from-hollow-200 to-hollow-400 flex items-center justify-center text-white/70 text-4xl">🪶</div>')
         tid = sval(r.get("taxon_id"))
@@ -1390,68 +1402,14 @@ def head(s, county_firsts, moth_species=None):
 <meta name="twitter:title" content="Kingfisher Hollow · Biodiversity Survey">
 <meta name="twitter:description" content="{desc}">
 <meta name="twitter:image" content="{HERO_PHOTO}">
-<script src="{PLOTLY_CDN}"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/survey.css">
 <script>
-tailwind.config = {{ theme: {{ extend: {{
-  fontFamily: {{ serif: ['Playfair Display','Georgia','serif'], sans: ['Inter','system-ui','sans-serif'] }},
-  colors: {{ hollow: {{ 50:'#f0f7f4',100:'#dcefe6',200:'#bbdfd0',300:'#8ec8b1',400:'#5eab8d',500:'#3d8f72',600:'#2e735c',700:'#265d4b',800:'#214a3d',900:'#1d3d33',950:'#0d221c' }} }}
-}} }} }}
+window.__plotlyQueue=[];
+window.__plotlyRender=(...args)=>window.__plotlyQueue.push(args);
 </script>
-<style>
-  html {{ scroll-behavior: smooth; }}
-  body {{ background:#fafaf9; }}
-  .nav-transparent {{ background: rgba(13,34,28,0.15); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom:1px solid rgba(255,255,255,0.10); }}
-  .nav-solid {{ background: rgba(255,255,255,0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom:1px solid rgba(0,0,0,0.07); }}
-  .hero-overlay {{ background: linear-gradient(160deg, rgba(13,34,28,0.30) 0%, rgba(13,34,28,0.55) 55%, rgba(13,34,28,0.85) 100%); }}
-  .rule {{ display:block; width:52px; height:3px; border-radius:2px; background: linear-gradient(to right,#3d8f72,#8ec8b1); }}
-  .fade-up {{ animation: fadeUp 0.85s ease-out both; }}
-  @keyframes fadeUp {{ from {{ opacity:0; transform: translateY(28px); }} to {{ opacity:1; transform: translateY(0); }} }}
-  .delay-1{{animation-delay:.15s}} .delay-2{{animation-delay:.30s}} .delay-3{{animation-delay:.45s}}
-  .lift {{ transition: transform .3s ease, box-shadow .3s ease; }}
-  .lift:hover {{ transform: translateY(-4px); box-shadow: 0 20px 40px rgba(13,34,28,0.12); }}
-  .photo-card .photo-img {{ transition: transform .65s cubic-bezier(.25,.46,.45,.94); }}
-  .photo-card:hover .photo-img {{ transform: scale(1.05); }}
-  .badge {{ display:inline-block; font-size:.62rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:.22rem .55rem; border-radius:9999px; }}
-  .badge-accent {{ background:#c2703d; color:white; }}
-  .badge-green {{ background:#dcefe6; color:#265d4b; }}
-  .ll-filter {{ font-size:.8rem; padding:.35rem .85rem; border-radius:9999px; border:1px solid #e7e5e4; color:#57534e; background:white; transition: all .2s; cursor:pointer; }}
-  .ll-filter:hover {{ border-color:#8ec8b1; }}
-  .ll-active {{ background:#2e735c; color:white; border-color:#2e735c; }}
-  .ll-n {{ opacity:.55; font-variant-numeric:tabular-nums; margin-left:.15rem; }}
-  .ll-select {{ cursor:pointer; outline:none; }} .ll-select:focus {{ border-color:#8ec8b1; }}
-  .chart-empty {{ text-align:center; color:#a8a29e; padding:2rem; font-style:italic; }}
-  .reveal {{ opacity:0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }}
-  .reveal.in {{ opacity:1; transform:none; }}
-  /* Mode toggle (All life / Moths) */
-  .mode-btn {{ font-size:.78rem; font-weight:600; padding:.3rem .8rem; border-radius:9999px; color:rgba(255,255,255,0.7); transition:all .2s; cursor:pointer; white-space:nowrap; }}
-  .mode-btn.mode-active {{ background:#8ec8b1; color:#0d221c; }}
-  /* Mobile menu is always dark: keep its mode chips legible + tappable regardless of nav scroll state. */
-  #mob .mode-btn {{ background:rgba(255,255,255,0.06); padding:.4rem .85rem; }}
-  #mob .mode-btn:not(.mode-active) {{ color:rgba(255,255,255,0.82) !important; }}
-  #mob .mode-btn.mode-active {{ background:#8ec8b1; color:#0d221c !important; }}
-  /* Moths mode = night: dark page + dark nav regardless of scroll */
-  body[data-mode="moths"] {{ background:#0d221c; }}
-  body[data-mode="moths"] #navbar.nav-solid {{ background:rgba(13,34,28,0.92); border-bottom:1px solid rgba(255,255,255,0.08); }}
-  body[data-mode="moths"] #navbar.nav-solid #nav-brand {{ color:#fff !important; }}
-  body[data-mode="moths"] #navbar.nav-solid .nav-link {{ color:rgba(255,255,255,0.8) !important; }}
-  /* Log mode: no hero, so force solid nav appearance immediately */
-  body[data-mode="log"] #navbar {{ background:rgba(255,255,255,0.94) !important; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid rgba(0,0,0,0.07) !important; }}
-  body[data-mode="log"] #navbar #nav-brand {{ color:#1c1917 !important; }}
-  body[data-mode="log"] #navbar .nav-link {{ color:#44403c !important; }}
-  /* Mode-toggle button text: dark on light nav backgrounds (all life scrolled + log), white in moths */
-  body:not([data-mode="moths"]) #navbar.nav-solid .mode-btn:not(.mode-active),
-  body[data-mode="log"] #navbar .mode-btn:not(.mode-active) {{ color:rgba(13,34,28,0.55); }}
-  /* Section nav: secondary bar separator line */
-  #section-bar {{ border-top: 1px solid rgba(255,255,255,0.12); }}
-  #navbar.nav-solid #section-bar {{ border-top: 1px solid rgba(0,0,0,0.07); }}
-  body[data-mode="moths"] #navbar.nav-solid #section-bar {{ border-top: 1px solid rgba(255,255,255,0.08); }}
-  body[data-mode="log"] #navbar #section-bar {{ border-top: 1px solid rgba(0,0,0,0.07) !important; }}
-  .log-rarity {{ color:#2e735c; font-size:.78rem; font-weight:500; }}
-  .log-moth-label {{ color:#57534e; font-size:.8rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }}
-</style></head>
+</head>
 <body class="font-sans text-stone-800 antialiased" data-mode="all">"""
 
 
@@ -1665,6 +1623,54 @@ SCRIPTS = """
   // Scroll reveal
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // Plotly is large, so fetch it only when the first chart nears the viewport.
+  // Individual chart calls were queued while the page parsed and are rendered
+  // on visibility, including after a reader opens another taxon view.
+  (function(){
+    const charts=[...document.querySelectorAll('[data-plotly-chart]')];
+    if(!charts.length) return;
+    const queued=new Map((window.__plotlyQueue||[]).map(args=>[String(args[0]),args]));
+    const pending=new Set();
+    let loading=false,ready=false;
+    function render(id){
+      if(!ready||!queued.has(id)) return;
+      const chart=document.getElementById(id),args=queued.get(id);
+      if(!chart||chart.dataset.plotlyRendered==='true') return;
+      chart.dataset.plotlyRendered='true';
+      window.Plotly.newPlot(...args);
+    }
+    function load(){
+      if(loading||ready) return;
+      loading=true;
+      const script=document.createElement('script');
+      script.src='__PLOTLY_CDN__';
+      script.async=true;
+      script.onload=()=>{
+        ready=true;
+        pending.forEach(render);
+        pending.clear();
+      };
+      document.head.appendChild(script);
+    }
+    function observe(chart){
+      const id=String(chart.id);
+      if(!id||!queued.has(id)) return;
+      pending.add(id);
+      load();
+      render(id);
+    }
+    if(!('IntersectionObserver' in window)){
+      charts.forEach(observe);
+      return;
+    }
+    const chartObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
+      if(!entry.isIntersecting) return;
+      chartObserver.unobserve(entry.target);
+      observe(entry.target);
+    }),{rootMargin:'700px 0px'});
+    charts.forEach(chart=>chartObserver.observe(chart));
+  })();
 
   // Mode toggle: one page, multiple focused views.
   (function(){
@@ -2438,6 +2444,7 @@ AMPHIBIAN_METHODS = [
 
 def build():
     build_start = time.monotonic()
+    _timed("static-assets", _copy_static_assets)
     init_db()
     df = _timed("load-property", analyze.load_property)
     stats = _timed("load-stats", analyze.load_stats)
@@ -2630,7 +2637,7 @@ def build():
     parts.append('</div>')  # /view-log
 
     parts.append(footer(_code_updated(), _insights_updated(), data_updated_date()))
-    parts.append(SCRIPTS)
+    parts.append(SCRIPTS.replace("__PLOTLY_CDN__", PLOTLY_CDN))
 
     html = "".join(parts)
 

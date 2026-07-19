@@ -33,6 +33,9 @@ on:
       - "tests/**"
       - "requirements.txt"
       - ".node-version"
+      - "package.json"
+      - "package-lock.json"
+      - "tailwind.config.js"
       - "field-alerts/package.json"
       - "field-alerts/package-lock.json"
       - ".github/workflows/update.yml"
@@ -60,6 +63,14 @@ jobs:
           cache: "pip"
           cache-dependency-path: "requirements.txt"
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: ".node-version"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            field-alerts/package-lock.json
+
       # Persist the SQLite DB across runs. On a cache miss the pipeline simply
       # re-pulls from the API (idempotent), so this is an optimisation, not a
       # correctness requirement. Unique save key + prefix restore = "latest".
@@ -86,6 +97,11 @@ jobs:
       - name: Test pipeline helpers
         run: python -m unittest discover -s tests
 
+      - name: Build survey styles
+        run: |
+          npm ci --ignore-scripts
+          npm run build:css
+
       - name: Choose refresh scope
         id: scope
         run: |
@@ -108,12 +124,6 @@ jobs:
 
       - name: Build report
         run: python report.py
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: ".node-version"
-          cache: npm
-          cache-dependency-path: field-alerts/package-lock.json
 
       - name: Test public API
         run: node --test tests/public_api.test.mjs
