@@ -42,7 +42,7 @@ PROJECT_URL = "https://www.inaturalist.org/projects/kingfisher-hollow-biodiversi
 TAXON_URL = "https://www.inaturalist.org/taxa/"   # + taxon_id → species page
 OBS_URL   = "https://www.inaturalist.org/observations/"  # + obs_id → observation
 HERO_PHOTO = f"{SITE}/aerial/dji_fly_20251020_173830_305_1760996794506_photo_optimized.JPG"
-HERO_WEBP = f"{SITE}/aerial/optimized/dji_fly_20251020_173830_305_1760996794506_photo_optimized"
+HERO_WEBP = "/assets/hero/dji_fly_20251020_173830_305_1760996794506_photo_optimized"
 
 
 def _timed(label, func, *args, **kwargs):

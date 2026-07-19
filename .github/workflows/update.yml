@@ -28,6 +28,7 @@ on:
       - "report.py"
       - "sync.py"
       - "src/**"
+      - "assets/**"
       - "field-guide/**"
       - "functions/**"
       - "tests/**"
