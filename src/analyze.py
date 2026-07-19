@@ -303,6 +303,7 @@ def life_list(df):
         rank=("rank", "first"),
         observations=("id", "count"),
         first_seen=("observed_on", "min"),
+        first_observed_at=("observed_at", "min"),
         last_seen=("observed_on", "max"),
         observers=("user_login", "nunique"),
     ).reset_index()

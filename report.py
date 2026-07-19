@@ -339,6 +339,14 @@ def rarest_body(rare):
 def life_list_body(life):
     if life.empty:
         return '<p class="text-center text-stone-500">No species yet.</p>'
+    # A life list is a chronology, not a taxonomic inventory: the number is
+    # fixed for a species even when the visible table is narrowed by a filter.
+    life = life.sort_values(
+        ["first_seen", "first_observed_at", "taxon_id"],
+        ascending=[False, False, False],
+        kind="stable",
+    ).copy()
+    life["list_number"] = range(len(life), 0, -1)
     # Pin the biggest groups as pills; the long tail goes in a dropdown so the
     # filter bar stays scannable instead of a 28-button wall. Counts aid the eye.
     counts = life["group"].value_counts()
@@ -369,12 +377,13 @@ def life_list_body(life):
         link = taxon_link(r["taxon_id"], name, cls="font-medium text-stone-800 hover:text-hollow-600")
         rows.append(f"""
       <tr class="ll-row border-b border-stone-100" data-group="{grp}" data-order="{order}" data-family="{family}" data-name="{esc(name).lower()} {sci.lower()}">
+        <td class="py-2.5 pr-3 text-stone-400 text-sm text-right whitespace-nowrap">{int(r['list_number']):,}</td>
         <td class="py-2.5 pr-4">{link}
             <span class="text-stone-400 italic text-sm block sm:inline sm:ml-2">{sci}</span></td>
         <td class="py-2.5 pr-4 text-stone-500 text-sm whitespace-nowrap hidden md:table-cell">{grp}</td>
-        <td class="py-2.5 pr-4 text-stone-500 text-sm text-right">{int(r['observations'])}</td>
-        <td class="py-2.5 pr-4 text-stone-400 text-sm whitespace-nowrap text-right">{fdate(r['first_seen'])}</td>
-        <td class="py-2.5 text-stone-400 text-sm whitespace-nowrap text-right hidden sm:table-cell">{fdate(r['last_seen'])}</td>
+        <td class="py-2.5 pr-4 text-stone-500 text-sm text-right hidden sm:table-cell">{int(r['observations'])}</td>
+        <td class="py-2.5 pr-3 text-stone-400 text-xs sm:text-sm whitespace-nowrap text-right">{fdate(r['first_seen'])}</td>
+        <td class="py-2.5 text-stone-400 text-sm whitespace-nowrap text-right hidden md:table-cell">{fdate(r['last_seen'])}</td>
       </tr>""")
     return f"""
     <div class="max-w-4xl mx-auto">
@@ -389,8 +398,8 @@ def life_list_body(life):
       </div>
       <div class="bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm max-h-[560px] overflow-y-auto">
         <table class="w-full text-[0.95rem]"><thead class="text-stone-400 text-xs uppercase tracking-wider border-b-2 border-stone-100">
-          <tr><th class="text-left pb-2 font-semibold">Species</th><th class="text-left pb-2 font-semibold hidden md:table-cell">Group</th>
-          <th class="text-right pb-2 font-semibold">Records</th><th class="text-right pb-2 font-semibold">First</th><th class="text-right pb-2 font-semibold hidden sm:table-cell">Latest</th></tr>
+          <tr><th class="text-right pb-2 pr-3 font-semibold">#</th><th class="text-left pb-2 font-semibold">Species</th><th class="text-left pb-2 font-semibold hidden md:table-cell">Group</th>
+          <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Added</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
       </div>
       <p id="ll-count" class="text-center text-stone-400 text-sm mt-4">{total:,} species shown</p>
@@ -415,6 +424,66 @@ def gallery_body(photos):
       </a>""")
     return ('<div class="grid grid-cols-3 md:grid-cols-6 gap-2.5">'
             + "".join(cells) + "</div>")
+
+
+MOTH_PORTRAIT_TAXA = (
+    47916,   # North American Luna Moth
+    47919,   # Polyphemus Moth
+    81582,   # Cecropia Moth
+    48094,   # Rosy Maple Moth
+    82279,   # Io Moth
+    606580,  # Virgin Tiger Moth
+    49716,   # Blinded Sphinx
+    84333,   # Beautiful Wood-nymph
+)
+
+
+def moth_portrait_showcase(df):
+    """A compact, curated exhibit of Drew's strongest moth photographs."""
+    if df.empty or "photo_url" not in df.columns:
+        return ""
+    moths = analyze.load_moths()
+    if moths.empty:
+        return ""
+    sub = analyze.moth_obs(df, moths)
+    sub = sub[(sub["user_login"] == MY_USERNAME) & sub["photo_url"].notna()].copy()
+    if sub.empty:
+        return ""
+
+    cards = []
+    for index, taxon_id in enumerate(MOTH_PORTRAIT_TAXA):
+        photos = sub[sub["taxon_id"] == taxon_id]
+        if photos.empty:
+            continue
+        photo = photos.sort_values(["observed_on", "id"], ascending=False).iloc[0]
+        name = esc(photo.get("common_name") or photo.get("taxon_name") or "Moth")
+        sci = esc(photo.get("taxon_name") or "")
+        first_seen = photos["observed_on"].min()
+        featured = index < 2
+        span = " col-span-2 md:col-span-2" if featured else ""
+        ratio = " aspect-[16/10]" if featured else " aspect-square"
+        cards.append(f'''<a href="{esc(photo.get('url') or '#')}" target="_blank" rel="noopener"
+          class="group relative overflow-hidden rounded-xl block bg-stone-900{span}{ratio}">
+          <img src="{esc(photo['photo_url'])}" alt="{name}, photographed at Kingfisher Hollow"
+            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" loading="lazy" decoding="async">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent"></div>
+          <div class="absolute inset-x-0 bottom-0 p-3 md:p-4">
+            <div class="font-serif text-white text-base leading-tight">{name}</div>
+            <div class="text-white/70 italic text-xs mt-0.5">{sci}</div>
+            <div class="text-hollow-200 text-[0.65rem] uppercase tracking-[0.14em] mt-2">Added {fdate(first_seen)}</div>
+          </div>
+        </a>''')
+    if not cards:
+        return ""
+    return '''<div class="max-w-5xl mx-auto mb-14">
+      <div class="flex flex-col md:flex-row gap-3 md:items-end md:justify-between mb-5">
+        <div>
+          <div class="eyebrow text-hollow-600">From the light sheet</div>
+          <h3 class="font-serif text-3xl text-stone-900 mt-1">Moth portraits</h3>
+        </div>
+        <p class="text-stone-500 text-sm leading-relaxed md:text-right max-w-md">A selected set of Drew Weber's photographs from the property, led by the moths that make a field night feel memorable.</p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">''' + "".join(cards) + "</div></div>"
 
 
 # ── moth view ("After Dark") ─────────────────────────────────────────────────
@@ -2551,8 +2620,8 @@ def build():
     parts.append(section(
         "life-list", "The Full Roll",
         'The <em class="text-hollow-600">Life List</em>',
-        life_list_body(life),
-        intro="Every species confirmed at Kingfisher Hollow — insects, birds, plants, fungi, mammals, and more. Search by name, then filter by taxon group and family."))
+        moth_portrait_showcase(df) + life_list_body(life),
+        intro="The property life list, newest additions first. Each number marks when a species joined the Kingfisher Hollow record; search by name, then filter by taxon group and family."))
     two_up = (
         '<div class="grid lg:grid-cols-2 gap-6">'
         + chart_card(viz.per_day(analyze.obs_per_day(overview_df)))
