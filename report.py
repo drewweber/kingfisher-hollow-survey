@@ -377,7 +377,7 @@ def life_list_body(life):
         link = taxon_link(r["taxon_id"], name, cls="font-medium text-stone-800 hover:text-hollow-600")
         rows.append(f"""
       <tr class="ll-row border-b border-stone-100" data-group="{grp}" data-order="{order}" data-family="{family}" data-name="{esc(name).lower()} {sci.lower()}">
-        <td class="py-2.5 pr-3 text-stone-400 text-sm text-right whitespace-nowrap">{int(r['list_number']):,}</td>
+        <td class="ll-number py-2.5 pr-3 text-stone-400 text-sm text-right whitespace-nowrap">{int(r['list_number']):,}</td>
         <td class="py-2.5 pr-4">{link}
             <span class="text-stone-400 italic text-sm block sm:inline sm:ml-2">{sci}</span></td>
         <td class="py-2.5 pr-4 text-stone-500 text-sm whitespace-nowrap hidden md:table-cell">{grp}</td>
@@ -1693,11 +1693,13 @@ SCRIPTS = """
         ? '<option value="">All '+group.toLowerCase()+' families</option>'+families.map(f=>'<option value="'+f.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+f.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</option>').join('')
         : '<option value="">No family filter available</option>';
     }
-    function apply(){const q=(search.value||'').toLowerCase();let n=0;
+    function apply(){const q=(search.value||'').toLowerCase(),visible=[];
       rows.forEach(r=>{const okG=group==='all'||r.dataset.group===group,
         okF=!family||r.dataset.family===family,okQ=!q||r.dataset.name.includes(q);const show=okG&&okF&&okQ;
-        r.style.display=show?'':'none';if(show)n++;});
-      count.textContent=n+' species shown';}
+        r.style.display=show?'':'none';if(show)visible.push(r);});
+      visible.forEach((r,index)=>{const number=r.querySelector('.ll-number');
+        if(number)number.textContent=(visible.length-index).toLocaleString();});
+      count.textContent=visible.length+' species shown';}
     function activate(g,fromSelect){group=g;
       document.querySelectorAll('.ll-filter').forEach(x=>{const on=(x.dataset.group===g);
         x.classList.toggle('ll-active',on);x.setAttribute('aria-pressed',on?'true':'false');});
