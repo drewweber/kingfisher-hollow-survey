@@ -410,6 +410,110 @@ def gallery_body(photos):
             + "".join(cells) + "</div>")
 
 
+MOTH_LIFE_LIST_FEATURES = (
+    47916,   # North American Luna Moth
+    47919,   # Polyphemus Moth
+    81582,   # Cecropia Moth
+    82279,   # Io Moth
+    48094,   # Rosy Maple Moth
+    49716,   # Blinded Sphinx
+    606580,  # Virgin Tiger Moth
+    84333,   # Beautiful Wood-nymph
+)
+
+
+def moth_life_list_body(moth_sub):
+    """A complete, photo-led moth list using one property image per taxon.
+
+    Drew's most recent photo leads whenever it exists, with another property
+    observer filling the small number of species he has not photographed. A
+    curated feature tier gives the most visually striking, actually-recorded
+    moths enough space to read as photographs rather than thumbnails.
+    """
+    if moth_sub.empty:
+        return '<p class="text-center text-white/50">No moth records yet.</p>'
+
+    sub = moth_sub.dropna(subset=["taxon_id", "photo_url"]).copy()
+    if sub.empty:
+        return '<p class="text-center text-white/50">Moth photographs will appear after the next sync.</p>'
+
+    sub["label"] = sub["common_name"].fillna(sub["taxon_name"])
+    sub = analyze._join_taxonomy(sub)
+    summary = sub.groupby("taxon_id").agg(
+        label=("label", "first"),
+        taxon_name=("taxon_name", "first"),
+        family_name=("family_name", "first"),
+        observations=("id", "nunique"),
+        first_seen=("observed_on", "min"),
+    ).reset_index()
+    sub["_drew_photo"] = sub["user_login"].eq("drewweber")
+    photos = (sub.sort_values(["_drew_photo", "observed_on", "id"],
+                               ascending=False)
+                .drop_duplicates("taxon_id")
+                [["taxon_id", "photo_url", "url", "observed_on"]]
+                .rename(columns={"observed_on": "photo_date"}))
+    life = summary.merge(photos, on="taxon_id", how="inner")
+    life["_feature_rank"] = life["taxon_id"].map(
+        {taxon_id: index for index, taxon_id in enumerate(MOTH_LIFE_LIST_FEATURES)}
+    )
+    featured = life[life["_feature_rank"].notna()].sort_values("_feature_rank")
+    regular = life[~life["taxon_id"].isin(featured["taxon_id"])].sort_values(
+        ["label", "taxon_name"], kind="stable"
+    )
+
+    def card(r, featured=False, primary=False):
+        name = esc(r["label"])
+        sci = esc(r.get("taxon_name"))
+        family = esc(r.get("family_name"))
+        photo = esc(r["photo_url"])
+        href = esc(r.get("url") or f"{TAXON_URL}{int(r['taxon_id'])}")
+        obs_n = int(r["observations"])
+        records = "record" if obs_n == 1 else "records"
+        first_seen = fdate(r.get("first_seen"), "%b %Y")
+        image_alt = f"{name}, photographed at Kingfisher Hollow"
+        if featured:
+            span = "moth-life-featured-primary" if primary else "moth-life-featured"
+            family_html = (f'<span class="moth-life-family">{family}</span>' if family else "")
+            return f'''
+              <a href="{href}" target="_blank" rel="noopener" class="{span} photo-card group"
+                 data-moth-name="{esc((str(r['label']) + ' ' + str(r.get('taxon_name') or '')).lower())}">
+                <img src="{photo}" alt="{image_alt}" class="photo-img" loading="lazy" decoding="async">
+                <div class="moth-life-featured-shade"></div>
+                <div class="moth-life-featured-copy">
+                  {family_html}
+                  <div class="font-serif text-xl md:text-2xl font-bold text-white leading-tight">{name}</div>
+                  <div class="text-white/70 text-sm italic mt-1">{sci}</div>
+                  <div class="text-white/55 text-xs mt-2">{obs_n} {records} · first seen {first_seen}</div>
+                </div>
+              </a>'''
+        family_html = f'<div class="moth-life-card-family">{family}</div>' if family else ""
+        return f'''
+          <a href="{href}" target="_blank" rel="noopener" class="moth-life-card group"
+             data-moth-name="{esc((str(r['label']) + ' ' + str(r.get('taxon_name') or '')).lower())}">
+            <div class="moth-life-card-photo"><img src="{photo}" alt="{image_alt}" loading="lazy" decoding="async"></div>
+            <div class="moth-life-card-copy">
+              <div class="moth-life-card-name">{name}</div>
+              <div class="moth-life-card-sci">{sci}</div>
+              {family_html}
+              <div class="moth-life-card-meta">{obs_n} {records} · first {first_seen}</div>
+            </div>
+          </a>'''
+
+    feature_cards = [card(r, featured=True, primary=index < 2)
+                     for index, (_, r) in enumerate(featured.iterrows())]
+    regular_cards = [card(r) for _, r in regular.iterrows()]
+    return f'''
+      <div class="moth-life-feature-grid">{"".join(feature_cards)}</div>
+      <div class="moth-life-toolbar">
+        <label class="sr-only" for="moth-life-search">Search the illustrated moth life list</label>
+        <input id="moth-life-search" type="search" autocomplete="off" placeholder="Search moths..."
+          class="moth-life-search">
+        <p id="moth-life-count" class="moth-life-count">{len(regular_cards):,} more species</p>
+      </div>
+      <div id="moth-life-grid" class="moth-life-grid">{"".join(regular_cards)}</div>
+      <p id="moth-life-empty" class="hidden text-center text-white/50 py-10">No illustrated moth matches that search.</p>'''
+
+
 # ── moth view ("After Dark") ─────────────────────────────────────────────────
 def _dark_stat(num, label, sub=""):
     sub_html = (f'<div class="text-white/35 text-[0.62rem] mt-1 max-w-[9.5rem] '
@@ -1417,7 +1521,7 @@ def nav():
     all_links = [("#whats-new", "What's New"), ("#discovery", "Discovery"),
                  ("#unique", "Unique Finds"), ("#life-list", "Life List"),
                  ("#gallery", "Gallery")]
-    moth_links = [("#moths", "Overview"), ("#moth-gallery", "Recent"),
+    moth_links = [("#moths", "Overview"), ("#moth-life-list", "Life List"),
                   ("#moth-gap", "Gap List"),
                   ("#moth-families", "Families"), ("#moth-standouts", "Standouts"),
                   ("#moth-completeness", "Inventory"), ("#moth-diversity", "Diversity"),
@@ -1620,6 +1724,27 @@ SCRIPTS = """
     if(search)search.addEventListener('input',apply);apply();
   })();
 
+  // The moth list is intentionally photo-led. Keep its search independent of
+  // the all-taxa table so either view can be used without the other in the DOM.
+  (function(){
+    const search=document.getElementById('moth-life-search'),
+          cards=[...document.querySelectorAll('.moth-life-card, .moth-life-featured, .moth-life-featured-primary')],
+          count=document.getElementById('moth-life-count'),
+          empty=document.getElementById('moth-life-empty');
+    if(!search||!cards.length||!count||!empty) return;
+    function apply(){
+      const query=(search.value||'').trim().toLowerCase(); let shown=0;
+      cards.forEach(card=>{
+        const show=!query||card.dataset.mothName.includes(query);
+        card.classList.toggle('hidden',!show);
+        if(show) shown++;
+      });
+      count.textContent=`${shown.toLocaleString()} ${shown===1?'species':'species'} shown`;
+      empty.classList.toggle('hidden',shown!==0);
+    }
+    search.addEventListener('input',apply); apply();
+  })();
+
   // Scroll reveal
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
@@ -1791,10 +1916,13 @@ def moth_view(df, stats):
               f"canopy, wetland edges, and {plant_count:,} recorded wild/established plant species supporting many host-linked guilds.",
         dark=True))
     out.append(section(
-        "moth-gallery", "In Pictures",
-        'Recent <em class="text-hollow-300">Moths</em>',
-        gallery_body(analyze.photo_highlights(moth_sub)),
-        intro="Recent moth photographs from the property.",
+        "moth-life-list", "In Pictures",
+        'The Illustrated <em class="text-hollow-300">Life List</em>',
+        moth_life_list_body(moth_sub),
+        intro=("Every confirmed moth is shown with Drew Weber’s photograph whenever one is available, "
+               "with a Kingfisher Hollow contributor’s image filling the few exceptions. "
+               "The larger portraits celebrate a few of the property’s most visually arresting regulars; "
+               "every image opens its source observation."),
         dark=True))
 
     _import_calendar = __import__('calendar')

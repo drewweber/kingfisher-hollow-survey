@@ -133,6 +133,62 @@
 
   .log-rarity { color: #2e735c; font-size: .78rem; font-weight: 500; }
   .log-moth-label { color: #57534e; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+  .moth-life-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+    margin-bottom: 2.25rem;
+  }
+
+  .moth-life-featured, .moth-life-featured-primary {
+    position: relative;
+    display: block;
+    min-height: 15rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .13);
+    border-radius: .5rem;
+    background: rgba(255, 255, 255, .04);
+  }
+
+  .moth-life-featured-primary { grid-column: span 2; min-height: clamp(18rem, 38vw, 29rem); }
+  .moth-life-featured img, .moth-life-featured-primary img {
+    width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0;
+  }
+  .moth-life-featured-shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(5, 16, 12, .94), rgba(5, 16, 12, .08) 68%); }
+  .moth-life-featured-copy { position: absolute; left: 1rem; right: 1rem; bottom: 1rem; }
+  .moth-life-family { display: inline-block; margin-bottom: .45rem; color: #8ec8b1; font-size: .63rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+
+  .moth-life-toolbar { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .moth-life-search { width: min(100%, 23rem); padding: .7rem 1rem; color: white; border: 1px solid rgba(255, 255, 255, .2); border-radius: .35rem; background: rgba(255, 255, 255, .06); outline: none; }
+  .moth-life-search::placeholder { color: rgba(255, 255, 255, .45); }
+  .moth-life-search:focus { border-color: #8ec8b1; box-shadow: 0 0 0 3px rgba(142, 200, 177, .16); }
+  .moth-life-count { margin: 0; color: rgba(255, 255, 255, .5); font-size: .8rem; }
+
+  .moth-life-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+  .moth-life-card { display: block; overflow: hidden; border: 1px solid rgba(255, 255, 255, .11); border-radius: .45rem; background: rgba(255, 255, 255, .045); transition: border-color .2s ease, background-color .2s ease; }
+  .moth-life-card:hover { border-color: rgba(142, 200, 177, .7); background: rgba(255, 255, 255, .07); }
+  .moth-life-card-photo { aspect-ratio: 1; overflow: hidden; background: rgba(255, 255, 255, .05); }
+  .moth-life-card-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+  .moth-life-card:hover .moth-life-card-photo img { transform: scale(1.035); }
+  .moth-life-card-copy { min-height: 6.15rem; padding: .65rem .7rem .7rem; }
+  .moth-life-card-name { overflow: hidden; color: white; font-size: .78rem; font-weight: 600; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+  .moth-life-card-sci { overflow: hidden; margin-top: .2rem; color: rgba(255, 255, 255, .47); font-size: .67rem; font-style: italic; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+  .moth-life-card-family { overflow: hidden; margin-top: .35rem; color: #8ec8b1; font-size: .56rem; font-weight: 600; letter-spacing: .09em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+  .moth-life-card-meta { margin-top: .55rem; color: rgba(255, 255, 255, .42); font-size: .61rem; line-height: 1.15; }
+
+  @media (min-width: 640px) {
+    .moth-life-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+  }
+  @media (min-width: 768px) {
+    .moth-life-feature-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .moth-life-featured-primary { min-height: 24rem; }
+    .moth-life-featured { min-height: 12rem; }
+    .moth-life-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .moth-life-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  }
 }
 
 @keyframes fadeUp {
