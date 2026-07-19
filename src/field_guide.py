@@ -28,8 +28,10 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-07-12.1"
-SCHEMA_VERSION = "kh-field-targets/1.0.0"
+GUIDANCE_REVISION = "2026-07-19.1"
+SCHEMA_VERSION = "kh-field-targets/1.1.0"
+TARGET_IMAGE_COUNT = 2
+LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
 
 ALLOWED_LICENSES = {
@@ -184,6 +186,7 @@ def _lookalikes(group, taxon_name, family_name, peers, limit=3):
     candidates = candidates.sort_values([count_col, "taxon_id"], ascending=[False, True])
     return [
         {
+            "taxon_id": int(row["taxon_id"]),
             "common_name": _clean(row.get("common_name")),
             "scientific_name": _clean(row.get("taxon_name")),
         }
@@ -281,8 +284,32 @@ def _normalize_taxon(taxon):
     }
 
 
-def resolve_taxa(target_ids):
-    """Resolve taxonomy and licensed photo metadata, using an incremental cache."""
+def _deduplicate_photos(photos):
+    result = []
+    seen = set()
+    for photo in photos or []:
+        if not isinstance(photo, dict):
+            continue
+        key = str(photo.get("id")) if photo.get("id") is not None else photo.get("medium_url")
+        if not key or key in seen or not photo.get("medium_url"):
+            continue
+        seen.add(key)
+        result.append(photo)
+    return result
+
+
+def _cached_photos(record):
+    """Migrate the original single-photo cache without discarding usable media."""
+    return _deduplicate_photos([*(record.get("photos") or []), record.get("photo")])
+
+
+def resolve_taxa(photo_requirements):
+    """Resolve taxonomy plus enough licensed photos for each requested taxon.
+
+    ``photo_requirements`` maps taxon IDs to the number of local photos needed:
+    two reference views for a target and one for a named lookalike.
+    """
+    target_ids = list(photo_requirements)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache = _json_read(PHOTO_CACHE, {"taxa": {}})
     taxa = cache.setdefault("taxa", {})
@@ -294,22 +321,48 @@ def resolve_taxa(target_ids):
             taxa[str(normalized["taxon_id"])] = normalized
 
     unresolved = []
+    photo_requests = []
     for taxon_id in target_ids:
         record = taxa.get(str(taxon_id))
         if not record:
             unresolved.append(taxon_id)
             continue
-        if not record.get("photo"):
-            record["photo"] = inat_api.fetch_licensed_photo(
-                taxon_id, tuple(sorted(ALLOWED_LICENSES))
-            )
-        if not record.get("photo"):
-            unresolved.append(taxon_id)
+        required = max(1, int(photo_requirements[taxon_id]))
+        photos = _cached_photos(record)
+        if len(photos) < required:
+            photo_requests.append((taxon_id, required, photos))
+        else:
+            record["photos"] = photos
+            record["photo"] = photos[0]
+
+    # Photo metadata is independent per taxon. Keep the pool deliberately
+    # small because this runs against iNaturalist, while avoiding one-second
+    # pauses serializing a whole new field-guide release.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {
+            pool.submit(
+                inat_api.fetch_licensed_photos,
+                taxon_id,
+                required - len(photos),
+                tuple(sorted(ALLOWED_LICENSES)),
+                [photo.get("id") for photo in photos],
+            ): (taxon_id, required, photos)
+            for taxon_id, required, photos in photo_requests
+        }
+        for future in as_completed(futures):
+            taxon_id, required, photos = futures[future]
+            photos.extend(future.result())
+            photos = _deduplicate_photos(photos)
+            record = taxa[str(taxon_id)]
+            record["photos"] = photos
+            record["photo"] = photos[0] if photos else None
+            if len(photos) < required:
+                unresolved.append(taxon_id)
     cache["updated_at"] = datetime.now(timezone.utc).isoformat()
     _json_write(PHOTO_CACHE, cache)
     if unresolved:
         raise ValueError(
-            "No Creative Commons reference photo could be resolved for target IDs: "
+            "Insufficient Creative Commons reference photos for taxon IDs: "
             + ", ".join(map(str, unresolved))
         )
     return {tid: taxa[str(tid)] for tid in target_ids}
@@ -322,12 +375,15 @@ def _valid_image(path):
     return header.startswith(b"\xff\xd8\xff") or header.startswith(b"\x89PNG\r\n\x1a\n")
 
 
-def _download_image(item):
-    taxon_id, photo = item
-    photo_id = photo.get("id") or taxon_id
+def _photo_key(photo):
+    return str(photo.get("id") or hashlib.sha256(photo["medium_url"].encode()).hexdigest()[:16])
+
+
+def _download_image(photo):
+    photo_id = _photo_key(photo)
     cached = IMAGE_CACHE_DIR / f"{photo_id}.jpg"
     if _valid_image(cached):
-        return taxon_id, cached
+        return photo_id, cached
     IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     response = requests.get(
         photo["medium_url"], timeout=45, headers={"User-Agent": USER_AGENT}
@@ -337,9 +393,9 @@ def _download_image(item):
     partial.write_bytes(response.content)
     if not _valid_image(partial):
         partial.unlink(missing_ok=True)
-        raise ValueError(f"Downloaded reference image is invalid for taxon {taxon_id}")
+        raise ValueError(f"Downloaded reference image is invalid for photo {photo_id}")
     partial.replace(cached)
-    return taxon_id, cached
+    return photo_id, cached
 
 
 def _write_png(path, size, maskable=False):
@@ -404,11 +460,24 @@ def _merge_taxon_metadata(targets, taxa):
         ))
 
 
+def _image_data(photo, relative_path, destination, alt):
+    code = photo["license_code"].casefold()
+    return {
+        "image": relative_path,
+        "image_alt": alt,
+        "image_attribution": photo["attribution"],
+        "image_license_code": code,
+        "image_license": LICENSE_LABELS[code],
+        "image_license_url": LICENSE_URLS[code],
+        "image_source_url": photo["source_url"],
+        "image_sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+    }
+
+
 def _validate_targets(targets, output_dir=None):
     required_text = (
         "common_name", "scientific_name", "season_label", "target_reason",
-        "id_limitations", "image", "image_attribution", "image_license",
-        "image_source_url",
+        "id_limitations", "image", "image_attribution", "image_license", "image_source_url",
     )
     required_lists = (
         "active_months", "habitat_tags", "method_tags", "finding_help",
@@ -430,6 +499,19 @@ def _validate_targets(targets, output_dir=None):
             errors.append(f"taxon {target['id']} has an unapproved image license")
         if output_dir and not (output_dir / target["image"]).is_file():
             errors.append(f"taxon {target['id']} is missing local image {target['image']}")
+        images = target.get("images") or []
+        if len(images) != TARGET_IMAGE_COUNT:
+            errors.append(f"taxon {target['id']} does not have {TARGET_IMAGE_COUNT} reference images")
+        for image in images:
+            if image.get("image_license_code") not in ALLOWED_LICENSES:
+                errors.append(f"taxon {target['id']} has an unapproved reference image license")
+            if output_dir and not (output_dir / image.get("image", "")).is_file():
+                errors.append(f"taxon {target['id']} is missing local reference image")
+        for lookalike in target.get("lookalikes") or []:
+            if not lookalike.get("taxon_id") or not lookalike.get("image"):
+                errors.append(f"taxon {target['id']} has an unillustrated lookalike")
+            elif output_dir and not (output_dir / lookalike["image"]).is_file():
+                errors.append(f"taxon {target['id']} is missing local lookalike image")
     if errors:
         raise ValueError("Invalid field guide release:\n- " + "\n- ".join(errors))
 
@@ -442,7 +524,13 @@ def build(effective_date=None, output_dir=None):
         raise FileNotFoundError("Field guide app sources are incomplete")
 
     targets, counts, moth_months = collect_targets(effective_date)
-    taxa = resolve_taxa([target["id"] for target in targets])
+    photo_requirements = {target["id"]: TARGET_IMAGE_COUNT for target in targets}
+    for target in targets:
+        for lookalike in target.get("lookalikes") or []:
+            taxon_id = lookalike.get("taxon_id")
+            if taxon_id:
+                photo_requirements.setdefault(int(taxon_id), LOOKALIKE_IMAGE_COUNT)
+    taxa = resolve_taxa(photo_requirements)
     _merge_taxon_metadata(targets, taxa)
 
     if output_dir.exists():
@@ -451,29 +539,46 @@ def build(effective_date=None, output_dir=None):
     images_dir = output_dir / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
 
-    photo_items = [(target["id"], taxa[target["id"]]["photo"]) for target in targets]
+    required_photos = {}
+    for taxon_id, count in photo_requirements.items():
+        for photo in taxa[taxon_id]["photos"][:count]:
+            required_photos.setdefault(_photo_key(photo), photo)
     image_paths = {}
     with ThreadPoolExecutor(max_workers=6) as pool:
-        futures = [pool.submit(_download_image, item) for item in photo_items]
+        futures = [pool.submit(_download_image, photo) for photo in required_photos.values()]
         for future in as_completed(futures):
-            taxon_id, cached = future.result()
-            image_paths[taxon_id] = cached
+            photo_id, cached = future.result()
+            image_paths[photo_id] = cached
 
     for target in targets:
-        photo = taxa[target["id"]]["photo"]
-        destination = images_dir / f"{target['id']}.jpg"
-        shutil.copy2(image_paths[target["id"]], destination)
-        code = photo["license_code"].casefold()
-        target.update({
-            "image": f"images/{target['id']}.jpg",
-            "image_alt": f"Reference photograph of {target['common_name']} ({target['scientific_name']})",
-            "image_attribution": photo["attribution"],
-            "image_license_code": code,
-            "image_license": LICENSE_LABELS[code],
-            "image_license_url": LICENSE_URLS[code],
-            "image_source_url": photo["source_url"],
-            "image_sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
-        })
+        images = []
+        for index, photo in enumerate(taxa[target["id"]]["photos"][:TARGET_IMAGE_COUNT], start=1):
+            relative_path = f"images/target-{target['id']}-{index}.jpg"
+            destination = output_dir / relative_path
+            shutil.copy2(image_paths[_photo_key(photo)], destination)
+            images.append(_image_data(
+                photo,
+                relative_path,
+                destination,
+                f"Reference photograph {index} of {target['common_name']} ({target['scientific_name']})",
+            ))
+        target["images"] = images
+        # Preserve the original first-image fields for older installed releases.
+        target.update(images[0])
+
+        for lookalike in target.get("lookalikes") or []:
+            taxon_id = int(lookalike["taxon_id"])
+            photo = taxa[taxon_id]["photos"][0]
+            relative_path = f"images/lookalike-{taxon_id}.jpg"
+            destination = output_dir / relative_path
+            if not destination.exists():
+                shutil.copy2(image_paths[_photo_key(photo)], destination)
+            lookalike.update(_image_data(
+                photo,
+                relative_path,
+                destination,
+                f"Reference photograph of {lookalike['name']} ({lookalike.get('scientific_name', '')})",
+            ))
 
     _validate_targets(targets, output_dir)
     generated_at = _latest_data_sync()
@@ -507,7 +612,12 @@ def build(effective_date=None, output_dir=None):
         "./manifest.webmanifest", "./targets.json",
         "./icons/icon-192.png", "./icons/apple-touch-icon.png", "./icons/icon-512.png",
         "./icons/icon-maskable-512.png",
-        *[f"./{target['image']}" for target in targets],
+        *sorted({
+            f"./{image['image']}"
+            for target in targets
+            for image in [*(target.get("images") or []), *(target.get("lookalikes") or [])]
+            if image.get("image")
+        }),
     ]
     missing_assets = [
         asset for asset in assets

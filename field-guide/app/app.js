@@ -93,6 +93,20 @@
     }
   }
 
+  function normalizeImage(raw, fallbackAlt) {
+    if (!raw || typeof raw !== "object") return null;
+    const image = cleanImageUrl(raw.image);
+    if (!image) return null;
+    return {
+      image,
+      alt: cleanString(raw.image_alt) || fallbackAlt,
+      attribution: cleanString(raw.image_attribution),
+      license: cleanString(raw.image_license),
+      licenseUrl: cleanOnlineUrl(raw.image_license_url),
+      sourceUrl: cleanOnlineUrl(raw.image_source_url)
+    };
+  }
+
   function normalizeSearch(value) {
     return String(value || "")
       .normalize("NFD")
@@ -118,13 +132,26 @@
     const findingHelp = cleanStringList(raw.finding_help);
     const idHelp = cleanStringList(raw.id_help);
     const photoChecklist = cleanStringList(raw.photo_checklist);
+    const images = (Array.isArray(raw.images) ? raw.images : [])
+      .map((image, index) => normalizeImage(
+        image,
+        `Reference photograph ${index + 1} of ${commonName}${scientificName ? ` (${scientificName})` : ""}`
+      ))
+      .filter(Boolean);
+    const legacyImage = normalizeImage(raw, `Reference photograph of ${commonName}${scientificName ? ` (${scientificName})` : ""}`);
+    if (!images.length && legacyImage) images.push(legacyImage);
+
     const lookalikes = Array.isArray(raw.lookalikes)
       ? raw.lookalikes
         .filter((item) => item && typeof item === "object")
         .map((item) => ({
           name: cleanString(item.name) || "Unnamed lookalike",
           scientificName: cleanString(item.scientific_name),
-          distinction: cleanString(item.distinction)
+          distinction: cleanString(item.distinction),
+          image: normalizeImage(
+            item,
+            `Reference photograph of ${cleanString(item.name) || cleanString(item.scientific_name) || "a lookalike"}`
+          )
         }))
       : [];
 
@@ -135,12 +162,7 @@
       scientificName,
       familyName: cleanString(raw.family_name),
       familyCommon: cleanString(raw.family_common),
-      image: cleanImageUrl(raw.image),
-      imageAlt: cleanString(raw.image_alt) || `Photograph of ${commonName}`,
-      imageAttribution: cleanString(raw.image_attribution),
-      imageLicense: cleanString(raw.image_license),
-      imageLicenseUrl: cleanOnlineUrl(raw.image_license_url),
-      imageSourceUrl: cleanOnlineUrl(raw.image_source_url),
+      images,
       regionalCount: Number.isFinite(regionalValue) && regionalValue >= 0 ? Math.round(regionalValue) : null,
       seasonLabel: cleanString(raw.season_label) || seasonFromMonths(activeMonths),
       activeMonths,
@@ -324,14 +346,14 @@
     });
   }
 
-  function createImageFrame(target, className, eager = false) {
+  function createImageFrame(imageData, fallbackText, className, eager = false) {
     const frame = makeElement("div", className);
-    const fallback = makeElement("span", "image-fallback", `${groupLabel(target.group)} image not available`);
+    const fallback = makeElement("span", "image-fallback", fallbackText);
 
-    if (target.image) {
+    if (imageData?.image) {
       const image = document.createElement("img");
-      image.src = target.image;
-      image.alt = target.imageAlt;
+      image.src = imageData.image;
+      image.alt = imageData.alt;
       image.loading = eager ? "eager" : "lazy";
       image.decoding = "async";
       fallback.hidden = true;
@@ -344,6 +366,24 @@
       frame.append(fallback);
     }
     return frame;
+  }
+
+  function createReferenceGallery(target, className, eager = false) {
+    const gallery = makeElement("div", className);
+    const photos = target.images.slice(0, 2);
+    photos.forEach((image, index) => {
+      const frame = createImageFrame(
+        image,
+        `${groupLabel(target.group)} reference image not available`,
+        "reference-media",
+        eager && index === 0
+      );
+      gallery.append(frame);
+    });
+    if (!photos.length) {
+      gallery.append(createImageFrame(null, `${groupLabel(target.group)} image not available`, "reference-media"));
+    }
+    return gallery;
   }
 
   function createMonthRail(target, detailed = false) {
@@ -400,7 +440,7 @@
     button.dataset.targetId = target.id;
     button.setAttribute("aria-label", `Open ${target.commonName} details`);
 
-    const media = createImageFrame(target, "card-media");
+    const media = createReferenceGallery(target, "card-media-grid");
     media.append(makeElement("span", "group-badge", groupLabel(target.group)));
 
     const body = makeElement("div", "card-body");
@@ -496,13 +536,28 @@
     container.append(section);
   }
 
-  function appendLookalikes(container, lookalikes) {
+  function appendLookalikes(container, target) {
+    const lookalikes = target.lookalikes;
     if (!lookalikes.length) return;
     const section = makeElement("section", "detail-section");
     section.append(makeElement("h3", "", "Lookalikes"));
     const list = makeElement("ul", "lookalike-list");
     lookalikes.forEach((lookalike) => {
       const item = document.createElement("li");
+      const comparison = makeElement("div", "comparison-photo-grid");
+      const targetPhoto = target.images[0] || null;
+      const targetFigure = document.createElement("figure");
+      targetFigure.append(
+        createImageFrame(targetPhoto, `${target.commonName} image not available`, "comparison-media"),
+        makeElement("figcaption", "comparison-label", target.commonName)
+      );
+      const peerFigure = document.createElement("figure");
+      peerFigure.append(
+        createImageFrame(lookalike.image, `${lookalike.name} image not available`, "comparison-media"),
+        makeElement("figcaption", "comparison-label", lookalike.name)
+      );
+      comparison.append(targetFigure, peerFigure);
+      item.append(comparison);
       const name = makeElement("div", "lookalike-name");
       name.append(makeElement("strong", "", lookalike.name));
       if (lookalike.scientificName) name.append(makeElement("em", "", lookalike.scientificName));
@@ -525,24 +580,39 @@
   }
 
   function appendCredits(container, target) {
-    const hasCredits = target.imageAttribution || target.imageLicense || target.imageLicenseUrl
-      || target.taxonUrl || target.imageSourceUrl;
+    const hasCredits = target.images.length || target.taxonUrl;
     if (!hasCredits) return;
 
     const section = makeElement("section", "detail-section");
     section.append(makeElement("h3", "", "Record and image"));
     const creditLines = makeElement("div", "credit-lines");
-    if (target.imageAttribution) creditLines.append(makeElement("p", "", `Image: ${target.imageAttribution}`));
-    if (target.imageLicense) creditLines.append(makeElement("p", "", `License: ${target.imageLicense}`));
+    target.images.forEach((image, index) => {
+      const source = [image.attribution, image.license].filter(Boolean).join(" · ");
+      if (source) creditLines.append(makeElement("p", "", `Reference ${index + 1}: ${source}`));
+    });
+    target.lookalikes.forEach((lookalike) => {
+      const image = lookalike.image;
+      const source = [image?.attribution, image?.license].filter(Boolean).join(" · ");
+      if (source) creditLines.append(makeElement("p", "", `Comparison ${lookalike.name}: ${source}`));
+    });
     if (creditLines.childElementCount) section.append(creditLines);
 
     const links = makeElement("div", "online-links");
     const taxonLink = createOnlineLink("View taxon on iNaturalist", target.taxonUrl);
-    const sourceLink = createOnlineLink("Image source", target.imageSourceUrl);
-    const licenseLink = createOnlineLink(`${target.imageLicense || "Image"} license`, target.imageLicenseUrl);
     if (taxonLink) links.append(taxonLink);
-    if (sourceLink) links.append(sourceLink);
-    if (licenseLink) links.append(licenseLink);
+    target.images.forEach((image, index) => {
+      const sourceLink = createOnlineLink(`Reference ${index + 1} image`, image.sourceUrl);
+      const licenseLink = createOnlineLink(`Reference ${index + 1} license`, image.licenseUrl);
+      if (sourceLink) links.append(sourceLink);
+      if (licenseLink) links.append(licenseLink);
+    });
+    target.lookalikes.forEach((lookalike) => {
+      const image = lookalike.image;
+      const sourceLink = createOnlineLink(`${lookalike.name} image`, image?.sourceUrl);
+      const licenseLink = createOnlineLink(`${lookalike.name} license`, image?.licenseUrl);
+      if (sourceLink) links.append(sourceLink);
+      if (licenseLink) links.append(licenseLink);
+    });
     if (links.childElementCount) section.append(links);
     container.append(section);
   }
@@ -552,7 +622,7 @@
     elements.dialogTitle.textContent = target.commonName;
 
     const hero = makeElement("div", "detail-hero");
-    hero.append(createImageFrame(target, "detail-media", true));
+    hero.append(createReferenceGallery(target, "detail-reference-grid", true));
 
     const summary = makeElement("div", "detail-summary");
     if (target.scientificName) summary.append(makeElement("p", "detail-scientific", target.scientificName));
@@ -577,7 +647,7 @@
     const sections = makeElement("div", "detail-sections");
     appendTextListSection(sections, "Where to look", target.findingHelp);
     appendTextListSection(sections, "Identification", target.idHelp);
-    appendLookalikes(sections, target.lookalikes);
+    appendLookalikes(sections, target);
     appendTextListSection(sections, "Photographs to take", target.photoChecklist, "photo-list");
     if (target.idLimitations) {
       const limitations = makeElement("section", "detail-section");

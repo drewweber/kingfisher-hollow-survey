@@ -20,7 +20,7 @@ class FieldGuidanceTests(unittest.TestCase):
                 "Test species",
                 "Jun-Sep",
                 12,
-                [{"common_name": "Nearby congener", "scientific_name": "Testa altera"}],
+                [{"taxon_id": 2, "common_name": "Nearby congener", "scientific_name": "Testa altera"}],
             )
             for key in (
                 "habitat_tags", "method_tags", "finding_help", "id_help",
@@ -30,6 +30,7 @@ class FieldGuidanceTests(unittest.TestCase):
             self.assertTrue(guidance["target_reason"])
             self.assertTrue(guidance["id_limitations"])
             self.assertIn("Nearby congener", guidance["lookalikes"][0]["name"])
+            self.assertEqual(2, guidance["lookalikes"][0]["taxon_id"])
 
     def test_difficult_families_keep_conservative_limitations(self):
         tortricid = guidance_profile("moths", "Tortricidae", "Leafroller Moth")
@@ -42,6 +43,17 @@ class FieldGuidanceTests(unittest.TestCase):
 
 class FieldGuideReleaseTests(unittest.TestCase):
     def _target(self, image_path="images/1.jpg", license_code="cc-by"):
+        images = []
+        for index in (1, 2):
+            path = image_path.replace("1.jpg", f"{index}.jpg")
+            images.append({
+                "image": path,
+                "image_alt": f"Example reference {index}",
+                "image_attribution": "Example photographer",
+                "image_license": "CC BY",
+                "image_license_code": license_code,
+                "image_source_url": f"https://www.inaturalist.org/photos/{index}",
+            })
         return {
             "id": 1,
             "common_name": "Example Moth",
@@ -54,6 +66,7 @@ class FieldGuideReleaseTests(unittest.TestCase):
             "image_license": "CC BY",
             "image_license_code": license_code,
             "image_source_url": "https://www.inaturalist.org/photos/1",
+            "images": images,
             "active_months": [6, 7, 8],
             "habitat_tags": ["forest edge"],
             "method_tags": ["UV light"],
@@ -65,9 +78,10 @@ class FieldGuideReleaseTests(unittest.TestCase):
     def test_release_validator_accepts_complete_local_target(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            image = root / "images" / "1.jpg"
-            image.parent.mkdir(parents=True)
-            image.write_bytes(b"reference image")
+            images = root / "images"
+            images.mkdir(parents=True)
+            (images / "1.jpg").write_bytes(b"reference image")
+            (images / "2.jpg").write_bytes(b"reference image")
             field_guide._validate_targets([self._target()], root)
 
     def test_release_validator_rejects_unlicensed_media(self):
@@ -106,6 +120,13 @@ class FieldGuideReleaseTests(unittest.TestCase):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
         self.assertIn('updateViaCache: "none"', app)
         self.assertIn("await state.registration.update()", app)
+
+    def test_field_app_requires_two_reference_images_and_illustrates_comparisons(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        builder = (ROOT / "src" / "field_guide.py").read_text(encoding="utf-8")
+        self.assertIn("TARGET_IMAGE_COUNT = 2", builder)
+        self.assertIn("comparison-photo-grid", app)
+        self.assertIn("createReferenceGallery", app)
 
     def test_new_release_refreshes_the_visible_target_list(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")

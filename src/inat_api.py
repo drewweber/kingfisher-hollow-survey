@@ -76,14 +76,17 @@ def fetch_taxa(ids):
     return _get(path, per_page=len(ids)).get("results", [])
 
 
-def fetch_licensed_photo(taxon_id, license_codes=None):
-    """Return a redistributable representative photo for a taxon.
+def fetch_licensed_photos(taxon_id, limit=2, license_codes=None, exclude_ids=None):
+    """Return distinct redistributable reference photos for a taxon.
 
     Taxon default photos are occasionally all-rights-reserved.  The offline
-    field guide must bundle its media, so in that case we search research-grade
-    observations for a Creative Commons alternative and preserve its source,
-    attribution, and license metadata.
+    field guide must bundle its media, so we search research-grade observations
+    for Creative Commons alternatives and preserve their source, attribution,
+    and license metadata. Votes give the guide a practical quality signal; the
+    caller retains multiple views where visual comparison matters.
     """
+    limit = max(1, int(limit))
+    excluded = {str(photo_id) for photo_id in (exclude_ids or ()) if photo_id is not None}
     licenses = license_codes or (
         "cc0", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa",
         "cc-by-nd", "cc-by-nc-nd",
@@ -96,26 +99,41 @@ def fetch_licensed_photo(taxon_id, license_codes=None):
         photo_license=",".join(licenses),
         order_by="votes",
         order="desc",
-        per_page=20,
+        per_page=100,
     )
     allowed = set(licenses)
+    photos = []
+    seen = set(excluded)
     for obs in data.get("results", []):
         for photo in obs.get("photos") or []:
             code = (photo.get("license_code") or "").casefold()
             if code not in allowed:
                 continue
+            photo_id = photo.get("id")
+            key = str(photo_id) if photo_id is not None else (photo.get("url") or "")
+            if not key or key in seen:
+                continue
             url = photo.get("url") or ""
             medium = url.replace("square.", "medium.") if url else ""
             if not medium:
                 continue
-            return {
-                "id": photo.get("id"),
+            seen.add(key)
+            photos.append({
+                "id": photo_id,
                 "medium_url": medium,
                 "attribution": photo.get("attribution") or "iNaturalist contributor",
                 "license_code": code,
                 "source_url": f"https://www.inaturalist.org/observations/{obs.get('id')}",
-            }
-    return None
+            })
+            if len(photos) >= limit:
+                return photos
+    return photos
+
+
+def fetch_licensed_photo(taxon_id, license_codes=None):
+    """Return one redistributable representative photo for a taxon."""
+    photos = fetch_licensed_photos(taxon_id, limit=1, license_codes=license_codes)
+    return photos[0] if photos else None
 
 
 def count(**params):

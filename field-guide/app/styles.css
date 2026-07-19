@@ -551,21 +551,32 @@ a:hover {
   outline-offset: -3px;
 }
 
-.card-media,
-.detail-media {
+.card-media-grid,
+.detail-reference-grid,
+.comparison-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  background: var(--line);
+}
+
+.card-media-grid {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+}
+
+.reference-media,
+.comparison-media {
   position: relative;
   display: grid;
   place-items: center;
+  aspect-ratio: 1;
   overflow: hidden;
   background: #dce5e0;
 }
 
-.card-media {
-  aspect-ratio: 16 / 9;
-  border-bottom: 1px solid var(--line);
-}
-
-.card-media img {
+.reference-media img,
+.comparison-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -783,7 +794,7 @@ a:hover {
 
 .skeleton-card span {
   display: block;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2 / 1;
   background: #dbe4df;
 }
 
@@ -886,18 +897,6 @@ a:hover {
 .detail-hero {
   display: grid;
   border-bottom: 1px solid var(--line);
-}
-
-.detail-media {
-  min-height: 14rem;
-  max-height: 26rem;
-}
-
-.detail-media img {
-  width: 100%;
-  height: 100%;
-  max-height: 26rem;
-  object-fit: contain;
 }
 
 .detail-summary {
@@ -1025,6 +1024,26 @@ a:hover {
   font-size: 0.83rem;
 }
 
+.comparison-photo-grid {
+  margin-bottom: 0.6rem;
+}
+
+.comparison-photo-grid figure {
+  min-width: 0;
+  margin: 0;
+  background: var(--surface-muted);
+}
+
+.comparison-label {
+  min-height: 2.35rem;
+  padding: 0.35rem 0.42rem;
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 750;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
 .credit-lines {
   display: grid;
   gap: 0.35rem;
@@ -1114,8 +1133,7 @@ a:hover {
     grid-template-columns: minmax(0, 1.05fr) minmax(16rem, 0.95fr);
   }
 
-  .detail-media {
-    min-height: 22rem;
+  .detail-reference-grid {
     border-right: 1px solid var(--line);
   }
 

@@ -356,6 +356,7 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
     )
     comparisons = [
         {
+            "taxon_id": peer.get("taxon_id"),
             "name": peer.get("common_name") or peer.get("scientific_name"),
             "scientific_name": peer.get("scientific_name", ""),
             "distinction": lookalike_distinction(
