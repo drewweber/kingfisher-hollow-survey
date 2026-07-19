@@ -294,7 +294,7 @@ def _label(row):
 
 # --- life list --------------------------------------------------------------
 def life_list(df):
-    """One row per species: names, group, rank, first/last seen, counts."""
+    """One row per species: names, taxonomy, first/last seen, and counts."""
     sub = df.dropna(subset=["taxon_id"])
     g = sub.groupby("taxon_id").agg(
         common_name=("common_name", "first"),
@@ -309,7 +309,8 @@ def life_list(df):
     g["label"] = g["common_name"].fillna(g["taxon_name"])
     g["iconic_taxon"] = g["iconic_taxon"].fillna("Other")
     g = add_group_column(g)
-    return g.sort_values(["group", "label"])
+    g = _join_taxonomy(g)
+    return g.sort_values(["group", "family_name", "label"])
 
 
 # --- rarest finds (fewest NY records) --------------------------------------
