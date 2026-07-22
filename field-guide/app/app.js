@@ -71,6 +71,16 @@
     return value.map(cleanString).filter(Boolean);
   }
 
+  function cleanTraits(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const label = cleanString(item.label);
+      const detail = cleanString(item.detail);
+      return label && detail ? { label, detail } : null;
+    }).filter(Boolean);
+  }
+
   function cleanOnlineUrl(value) {
     const raw = cleanString(value);
     if (!raw) return "";
@@ -148,6 +158,8 @@
           name: cleanString(item.name) || "Unnamed lookalike",
           scientificName: cleanString(item.scientific_name),
           distinction: cleanString(item.distinction),
+          traits: cleanTraits(item.traits),
+          decision: cleanString(item.decision),
           image: normalizeImage(
             item,
             `Reference photograph of ${cleanString(item.name) || cleanString(item.scientific_name) || "a lookalike"}`
@@ -171,6 +183,7 @@
       targetReason: cleanString(raw.target_reason),
       findingHelp,
       idHelp,
+      idTraits: cleanTraits(raw.id_traits),
       lookalikes,
       photoChecklist,
       idLimitations: cleanString(raw.id_limitations),
@@ -536,6 +549,17 @@
     container.append(section);
   }
 
+  function appendTraitList(container, traits, listClass = "trait-list") {
+    if (!traits.length) return;
+    const list = makeElement("ul", listClass);
+    traits.forEach((trait) => {
+      const item = makeElement("li", "");
+      item.append(makeElement("strong", "trait-label", `${trait.label}: `), document.createTextNode(trait.detail));
+      list.append(item);
+    });
+    container.append(list);
+  }
+
   function appendLookalikes(container, target) {
     const lookalikes = target.lookalikes;
     if (!lookalikes.length) return;
@@ -562,7 +586,13 @@
       name.append(makeElement("strong", "", lookalike.name));
       if (lookalike.scientificName) name.append(makeElement("em", "", lookalike.scientificName));
       item.append(name);
-      if (lookalike.distinction) item.append(makeElement("p", "", lookalike.distinction));
+      if (lookalike.traits.length) {
+        item.append(makeElement("p", "comparison-intro", `Check these traits against ${target.commonName}:`));
+        appendTraitList(item, lookalike.traits, "comparison-trait-list");
+      } else if (lookalike.distinction) {
+        item.append(makeElement("p", "", lookalike.distinction));
+      }
+      if (lookalike.decision) item.append(makeElement("p", "comparison-decision", lookalike.decision));
       list.append(item);
     });
     section.append(list);
@@ -646,7 +676,14 @@
 
     const sections = makeElement("div", "detail-sections");
     appendTextListSection(sections, "Where to look", target.findingHelp);
-    appendTextListSection(sections, "Identification", target.idHelp);
+    if (target.idTraits.length) {
+      const identification = makeElement("section", "detail-section");
+      identification.append(makeElement("h3", "", "Traits to check"));
+      appendTraitList(identification, target.idTraits);
+      sections.append(identification);
+    } else {
+      appendTextListSection(sections, "Traits to check", target.idHelp);
+    }
     appendLookalikes(sections, target);
     appendTextListSection(sections, "Photographs to take", target.photoChecklist, "photo-list");
     if (target.idLimitations) {

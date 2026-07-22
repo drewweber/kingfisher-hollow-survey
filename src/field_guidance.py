@@ -316,29 +316,69 @@ def guidance_profile(group, family_name="", common_name=""):
     return profile
 
 
-def lookalike_distinction(group, profile, peer_common, peer_scientific):
-    """Conservative comparison text for a named regional congener.
+TRAIT_LABELS = {
+    "moths": ("Forewing characters", "Whole-wing pattern", "Hindwing and body"),
+    "butterflies": ("Wing pattern", "Wing edge and underside", "Antennae and body"),
+    "odonates": ("Face and thorax", "Wings and abdomen", "Terminal segments"),
+}
 
-    The database can name real local alternatives, but it does not contain a
-    diagnostic key.  We therefore name the evidence set that must differ and
-    say when to stop at genus rather than inventing a mark.
+
+def _trait_items(group, guidance):
+    """Make the evidence checklist scannable without inventing a species mark."""
+    labels = TRAIT_LABELS[group]
+    return [
+        {"label": labels[index], "detail": detail}
+        for index, detail in enumerate(guidance[:len(labels)])
+    ]
+
+
+def lookalike_traits(group, target_common, peer_common, peer_scientific):
+    """Return explicit field characters for a target/lookalike photo comparison.
+
+    The source data supplies real regional alternatives, but not a vetted
+    species-level key.  The language names exactly what needs to be visible
+    and gives a conservative stopping rule rather than implying that a colour
+    impression or a single reference photo is diagnostic.
     """
+    target = target_common or "the target"
     peer = peer_common or peer_scientific
     if group == "moths":
-        return (
-            f"Eliminate {peer} by comparing the complete forewing line and spot pattern, "
-            "wing shape, hindwing, antennae and palps. If that combination is not visible "
-            "or a specialist cannot confirm it, retain the genus rather than using color alone."
-        )
+        return [
+            {"label": "Forewing pattern", "detail": (
+                f"For {target} and {peer}, show the entire forewing square-on. "
+                "Trace every line, fascia and spot from base to tip; ground color alone does not rule either species out."
+            )},
+            {"label": "Wing outline and hindwing", "detail": (
+                "Keep both wing tips and outer margins in frame, then add an exposed hindwing if possible. "
+                "A matching forewing color with a different outline or hindwing is not a match."
+            )},
+            {"label": "Head and resting structure", "detail": (
+                "Photograph antennae, palps and the resting profile. These features can separate similar leafrollers when the dorsal pattern is worn."
+            )},
+        ]
     if group == "butterflies":
-        return (
-            f"Eliminate {peer} with both wing surfaces: compare spot-band placement, wing "
-            "edge, tails or eye spots and antenna clubs. Wear can erase small differences."
-        )
-    return (
-        f"Eliminate {peer} by comparing face color, thoracic stripes, the pattern on each "
-        "abdominal segment and terminal appendages. Sex and maturity must match before color is compared."
-    )
+        return [
+            {"label": "Upper and lower wing surfaces", "detail": (
+                f"For {target} and {peer}, document both surfaces. Compare the full spot or band layout rather than one bright color patch."
+            )},
+            {"label": "Wing edge", "detail": (
+                "Include the complete hindwing edge so tails, eye spots, scallops and tornal markings can be checked."
+            )},
+            {"label": "Antennae and condition", "detail": (
+                "Show the antenna clubs and note wear. Missing scales can erase the marks needed to separate otherwise similar adults."
+            )},
+        ]
+    return [
+        {"label": "Face and thorax", "detail": (
+            f"For {target} and {peer}, show the face and both sides of the thorax so stripe placement and color can be checked."
+        )},
+        {"label": "Wings and abdomen", "detail": (
+            "Include all wing bases and the full dorsal and side abdominal pattern; sex and maturity must match before color is compared."
+        )},
+        {"label": "Terminal segments", "detail": (
+            "Take a close, sharp view of the final abdominal segments and appendages. Treat a record as genus-level if these are not visible."
+        )},
+    ]
 
 
 def build_guidance(group, family_name, common_name, season_label, regional_count,
@@ -359,8 +399,11 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
             "taxon_id": peer.get("taxon_id"),
             "name": peer.get("common_name") or peer.get("scientific_name"),
             "scientific_name": peer.get("scientific_name", ""),
-            "distinction": lookalike_distinction(
-                group, profile, peer.get("common_name", ""), peer.get("scientific_name", "")
+            "traits": lookalike_traits(
+                group, common_name, peer.get("common_name", ""), peer.get("scientific_name", "")
+            ),
+            "decision": (
+                "If the full character set is not visible, retain the genus or species group rather than using color alone."
             ),
         }
         for peer in lookalikes[:3]
@@ -371,6 +414,7 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
         "target_reason": reason,
         "finding_help": [seasonal, *profile["finding"][:2]],
         "id_help": list(profile["id"][:3]),
+        "id_traits": _trait_items(group, profile["id"][:3]),
         "lookalikes": comparisons,
         "photo_checklist": list(profile["photos"][:3]),
         "id_limitations": profile["limitation"],

@@ -28,7 +28,7 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-07-19.1"
+GUIDANCE_REVISION = "2026-07-22.1"
 SCHEMA_VERSION = "kh-field-targets/1.1.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
@@ -481,7 +481,7 @@ def _validate_targets(targets, output_dir=None):
     )
     required_lists = (
         "active_months", "habitat_tags", "method_tags", "finding_help",
-        "id_help", "photo_checklist",
+        "id_help", "id_traits", "photo_checklist",
     )
     seen = set()
     errors = []
@@ -495,6 +495,9 @@ def _validate_targets(targets, output_dir=None):
         for key in required_lists:
             if not target.get(key):
                 errors.append(f"taxon {target['id']} has no {key}")
+        for trait in target.get("id_traits") or []:
+            if not isinstance(trait, dict) or not trait.get("label") or not trait.get("detail"):
+                errors.append(f"taxon {target['id']} has an invalid identification trait")
         if target.get("image_license_code") not in ALLOWED_LICENSES:
             errors.append(f"taxon {target['id']} has an unapproved image license")
         if output_dir and not (output_dir / target["image"]).is_file():
@@ -512,6 +515,9 @@ def _validate_targets(targets, output_dir=None):
                 errors.append(f"taxon {target['id']} has an unillustrated lookalike")
             elif output_dir and not (output_dir / lookalike["image"]).is_file():
                 errors.append(f"taxon {target['id']} is missing local lookalike image")
+            for trait in lookalike.get("traits") or []:
+                if not isinstance(trait, dict) or not trait.get("label") or not trait.get("detail"):
+                    errors.append(f"taxon {target['id']} has an invalid lookalike trait")
     if errors:
         raise ValueError("Invalid field guide release:\n- " + "\n- ".join(errors))
 

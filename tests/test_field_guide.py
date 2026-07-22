@@ -24,13 +24,15 @@ class FieldGuidanceTests(unittest.TestCase):
             )
             for key in (
                 "habitat_tags", "method_tags", "finding_help", "id_help",
-                "photo_checklist", "lookalikes",
+                "id_traits", "photo_checklist", "lookalikes",
             ):
                 self.assertTrue(guidance[key], f"{group} has no {key}")
             self.assertTrue(guidance["target_reason"])
             self.assertTrue(guidance["id_limitations"])
             self.assertIn("Nearby congener", guidance["lookalikes"][0]["name"])
             self.assertEqual(2, guidance["lookalikes"][0]["taxon_id"])
+            self.assertTrue(guidance["id_traits"][0]["label"])
+            self.assertTrue(guidance["lookalikes"][0]["traits"][0]["detail"])
 
     def test_difficult_families_keep_conservative_limitations(self):
         tortricid = guidance_profile("moths", "Tortricidae", "Leafroller Moth")
@@ -72,6 +74,7 @@ class FieldGuideReleaseTests(unittest.TestCase):
             "method_tags": ["UV light"],
             "finding_help": ["Look on warm nights."],
             "id_help": ["Record the complete wing pattern."],
+            "id_traits": [{"label": "Forewing", "detail": "Record the complete wing pattern."}],
             "photo_checklist": ["Square dorsal frame."],
         }
 
@@ -127,6 +130,8 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("TARGET_IMAGE_COUNT = 2", builder)
         self.assertIn("comparison-photo-grid", app)
         self.assertIn("createReferenceGallery", app)
+        self.assertIn("Traits to check", app)
+        self.assertIn("comparison-trait-list", app)
 
     def test_new_release_refreshes_the_visible_target_list(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
