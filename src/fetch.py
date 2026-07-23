@@ -154,6 +154,20 @@ def _property_updated_since(conn):
     return updated_since.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _property_reconciliation_due(conn):
+    """Keep a full project membership reconciliation at least weekly."""
+    row = last_sync(conn, "property-full")
+    if not row or not row["synced_at"]:
+        return True
+    try:
+        last_full = datetime.fromisoformat(row["synced_at"].replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    if last_full.tzinfo is None:
+        last_full = last_full.replace(tzinfo=timezone.utc)
+    return datetime.now(timezone.utc) - last_full.astimezone(timezone.utc) >= timedelta(days=7)
+
+
 def sync_property(incremental=False):
     """Pull property observations.
 
@@ -169,14 +183,15 @@ def sync_property(incremental=False):
         before_count = conn.execute(
             "SELECT COUNT(*) AS c FROM property_obs"
         ).fetchone()["c"]
-        if not incremental:
+        full_reconciliation = not incremental or _property_reconciliation_due(conn)
+        if full_reconciliation:
             conn.execute(
                 "CREATE TEMP TABLE IF NOT EXISTS current_property_ids "
                 "(id INTEGER PRIMARY KEY)"
             )
             conn.execute("DELETE FROM current_property_ids")
         last_created = None
-        updated_since = _property_updated_since(conn) if incremental else None
+        updated_since = _property_updated_since(conn) if not full_reconciliation else None
         if updated_since:
             observations = inat_api.iter_updated_since(
                 updated_since, project_id=PROPERTY_PROJECT_ID
@@ -185,12 +200,12 @@ def sync_property(incremental=False):
             observations = inat_api.iter_all(project_id=PROPERTY_PROJECT_ID)
         for obs in observations:
             conn.execute(PROPERTY_INSERT, _property_row(obs))
-            if not incremental:
+            if full_reconciliation:
                 conn.execute(
                     "INSERT INTO current_property_ids (id) VALUES (?)", (obs["id"],)
                 )
             last_created = obs.get("created_at") or last_created
-        if not incremental:
+        if full_reconciliation:
             conn.execute(
                 "DELETE FROM property_obs WHERE id NOT IN "
                 "(SELECT id FROM current_property_ids)"
@@ -203,7 +218,9 @@ def sync_property(incremental=False):
         removed = max(before_count - after_count, 0)
         new_species = len(after_taxa - before_taxa)
         record_sync(conn, "property", last_created, added, new_species)
-    mode = "incremental" if incremental else "full"
+        if full_reconciliation:
+            record_sync(conn, "property-full", last_created, added, new_species)
+    mode = "full" if full_reconciliation else "incremental"
     print(f"[property:{mode}] total {after_count} obs (+{added}), "
           f"-{removed} removed, +{new_species} new species")
     return added, new_species
