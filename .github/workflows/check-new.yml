@@ -1,10 +1,10 @@
 name: Check for new observations
 
-# Cheap, frequent poll: ask iNaturalist whether the project has any observation
-# newer than what the last full run already ingested. If so, dispatch the heavy
-# update.yml (sync + build + deploy); otherwise do nothing. The nightly schedule
-# in update.yml remains the backstop that catches anything this poll misses
-# (e.g. an older observation newly *added* to the project, which keeps a lower id).
+# Cheap, frequent poll: ask iNaturalist whether the project has a new
+# observation or an observation edited since the last property sync. If so,
+# dispatch the heavy update.yml (sync + build + deploy); otherwise do nothing.
+# The nightly schedule in update.yml remains the backstop that catches anything
+# this poll misses (e.g. an older observation newly added to the project).
 on:
   schedule:
     # Every hour at :45, around the clock. Off the top of the hour on purpose —
@@ -40,7 +40,7 @@ jobs:
           restore-keys: |
             inat-db-
 
-      - name: Compare iNat latest observation id to local DB
+      - name: Compare iNat new and updated observations to local DB
         id: cmp
         run: |
           set -euo pipefail
@@ -50,16 +50,32 @@ jobs:
             | jq '.results[0].id // 0')
           if [ -f data/inat.db ]; then
             HAVE=$(sqlite3 data/inat.db "SELECT COALESCE(MAX(id),0) FROM property_obs" 2>/dev/null || echo 0)
+            SYNCED=$(sqlite3 data/inat.db "SELECT synced_at FROM sync_log WHERE source = 'property' ORDER BY id DESC LIMIT 1" 2>/dev/null || true)
           else
             HAVE=0
+            SYNCED=""
           fi
           HAVE=${HAVE:-0}
+          UPDATED=0
+          if [ -n "$SYNCED" ]; then
+            UPDATED_SINCE="${SYNCED/ /T}Z"
+            UPDATED=$(curl -s --max-time 30 --get \
+              --data-urlencode "project_id=${PROJECT_ID}" \
+              --data-urlencode "updated_since=${UPDATED_SINCE}" \
+              --data-urlencode "order_by=updated_at" \
+              --data-urlencode "order=desc" \
+              --data-urlencode "per_page=1" \
+              "https://api.inaturalist.org/v1/observations" \
+              | jq '.total_results // 0')
+          fi
+          UPDATED=${UPDATED:-0}
           echo "iNat latest obs id: $LATEST   |   already ingested: $HAVE"
-          if [ "${LATEST:-0}" -gt "${HAVE:-0}" ]; then
-            echo "New observations detected → will trigger daily update."
+          echo "iNat updates since last property sync: $UPDATED"
+          if [ "${LATEST:-0}" -gt "${HAVE:-0}" ] || [ "$UPDATED" -gt 0 ]; then
+            echo "New or corrected observations detected → will trigger daily update."
             echo "new=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Nothing new → skipping daily update."
+            echo "Nothing new or corrected → skipping daily update."
             echo "new=false" >> "$GITHUB_OUTPUT"
           fi
 

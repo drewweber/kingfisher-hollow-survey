@@ -1,12 +1,14 @@
 """Incremental sync of property and county observations into SQLite."""
 
+from datetime import datetime, timedelta, timezone
+
 import inat_api
 from config import (AMPHIBIA_TAXON_ID, BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID,
                     LEPIDOPTERA_TAXON_ID, MAMMALIA_TAXON_ID,
                     ODONATA_TAXON_ID, PLANTAE_TAXON_ID,
                     PROPERTY_PROJECT_ID, REGION_RADIUS_KM, REPTILIA_TAXON_ID,
                     STATE_PLACE_ID)
-from db import connect, max_id, record_sync
+from db import connect, last_sync, max_id, record_sync
 
 
 def _parse_location(obs):
@@ -137,22 +139,43 @@ def _distinct_taxa(conn, table):
     return {r["taxon_id"] for r in rows}
 
 
+def _property_updated_since(conn):
+    """Return a UTC iNaturalist cursor, with a small overlap at the boundary."""
+    row = last_sync(conn, "property")
+    if not row or not row["synced_at"]:
+        return None
+    try:
+        synced_at = datetime.fromisoformat(row["synced_at"].replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if synced_at.tzinfo is None:
+        synced_at = synced_at.replace(tzinfo=timezone.utc)
+    updated_since = synced_at.astimezone(timezone.utc) - timedelta(minutes=5)
+    return updated_since.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def sync_property(incremental=False):
     """Pull property observations.
 
-    Full mode re-sweeps the project and is self-healing. Incremental mode uses
-    id_above for fast daily runs; weekly/full refreshes catch older observations
-    that are newly added to the project or otherwise change below the max id.
+    Full mode re-sweeps the project and is self-healing. Incremental mode asks
+    iNaturalist for observations updated since the last run, so an improved or
+    corrected identification replaces the old stored taxon even when its
+    observation id is older than the local maximum.
     """
     with connect() as conn:
-        cursor = max_id(conn, "property_obs") if incremental else 0
         before_taxa = _distinct_taxa(conn, "property_obs")
         before_count = conn.execute(
             "SELECT COUNT(*) AS c FROM property_obs"
         ).fetchone()["c"]
         last_created = None
-        for obs in inat_api.iter_all(project_id=PROPERTY_PROJECT_ID,
-                                     id_above=cursor):
+        updated_since = _property_updated_since(conn) if incremental else None
+        if updated_since:
+            observations = inat_api.iter_updated_since(
+                updated_since, project_id=PROPERTY_PROJECT_ID
+            )
+        else:
+            observations = inat_api.iter_all(project_id=PROPERTY_PROJECT_ID)
+        for obs in observations:
             conn.execute(PROPERTY_INSERT, _property_row(obs))
             last_created = obs.get("created_at") or last_created
         after_count = conn.execute(

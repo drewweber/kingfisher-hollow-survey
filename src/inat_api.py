@@ -286,3 +286,32 @@ def iter_all(id_above=0, **params):
         id_above = results[-1]["id"]
         if len(results) < PER_PAGE:
             return
+
+
+def iter_updated_since(updated_since, **params):
+    """Yield observations changed after ``updated_since``, oldest first.
+
+    iNaturalist keeps the same observation id when its identification changes.
+    Incremental imports therefore need an ``updated_since`` pass as well as
+    the historic id cursor used for long full sweeps. The result set is small
+    for normal daily runs, so ordinary page pagination is sufficient here.
+    """
+    page = 1
+    while True:
+        data = _get(
+            "observations",
+            per_page=PER_PAGE,
+            page=page,
+            order_by="updated_at",
+            order="asc",
+            updated_since=updated_since,
+            **params,
+        )
+        results = data["results"]
+        if not results:
+            return
+        for obs in results:
+            yield obs
+        if len(results) < PER_PAGE:
+            return
+        page += 1
