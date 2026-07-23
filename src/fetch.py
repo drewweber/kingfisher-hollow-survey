@@ -160,13 +160,21 @@ def sync_property(incremental=False):
     Full mode re-sweeps the project and is self-healing. Incremental mode asks
     iNaturalist for observations updated since the last run, so an improved or
     corrected identification replaces the old stored taxon even when its
-    observation id is older than the local maximum.
+    observation id is older than the local maximum. Full mode also removes
+    records no longer returned for the project, such as observations removed
+    from the project after an identification correction.
     """
     with connect() as conn:
         before_taxa = _distinct_taxa(conn, "property_obs")
         before_count = conn.execute(
             "SELECT COUNT(*) AS c FROM property_obs"
         ).fetchone()["c"]
+        if not incremental:
+            conn.execute(
+                "CREATE TEMP TABLE IF NOT EXISTS current_property_ids "
+                "(id INTEGER PRIMARY KEY)"
+            )
+            conn.execute("DELETE FROM current_property_ids")
         last_created = None
         updated_since = _property_updated_since(conn) if incremental else None
         if updated_since:
@@ -177,17 +185,27 @@ def sync_property(incremental=False):
             observations = inat_api.iter_all(project_id=PROPERTY_PROJECT_ID)
         for obs in observations:
             conn.execute(PROPERTY_INSERT, _property_row(obs))
+            if not incremental:
+                conn.execute(
+                    "INSERT INTO current_property_ids (id) VALUES (?)", (obs["id"],)
+                )
             last_created = obs.get("created_at") or last_created
+        if not incremental:
+            conn.execute(
+                "DELETE FROM property_obs WHERE id NOT IN "
+                "(SELECT id FROM current_property_ids)"
+            )
         after_count = conn.execute(
             "SELECT COUNT(*) AS c FROM property_obs"
         ).fetchone()["c"]
         after_taxa = _distinct_taxa(conn, "property_obs")
-        added = after_count - before_count
+        added = max(after_count - before_count, 0)
+        removed = max(before_count - after_count, 0)
         new_species = len(after_taxa - before_taxa)
         record_sync(conn, "property", last_created, added, new_species)
     mode = "incremental" if incremental else "full"
     print(f"[property:{mode}] total {after_count} obs (+{added}), "
-          f"+{new_species} new species")
+          f"-{removed} removed, +{new_species} new species")
     return added, new_species
 
 
