@@ -53,11 +53,20 @@ export async function onRequestPost({ request, env }) {
 
   if (!response.ok) {
     const text = await response.text();
+    const githubMessage = text.toLowerCase();
+    let detail = "GitHub could not start the update. Please try again.";
+    if (response.status === 401) {
+      detail = "The GitHub dispatch token is no longer valid. Replace GITHUB_DISPATCH_TOKEN in Cloudflare Pages.";
+    } else if (response.status === 403 && githubMessage.includes("rate limit")) {
+      detail = "GitHub is temporarily rate-limiting update requests. Wait a few minutes, then try again.";
+    } else if (response.status === 403 || response.status === 404) {
+      detail = "The GitHub dispatch token cannot start this workflow. Confirm it is restricted to this repository and has Actions read and write permission.";
+    }
     return json({
       ok: false,
       error: "GitHub did not start the workflow.",
       status: response.status,
-      detail: text.slice(0, 1000),
+      detail,
     }, { status: 502 });
   }
 
