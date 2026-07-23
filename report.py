@@ -1868,13 +1868,15 @@ def moth_view(df, stats):
         moth_stats(msum, comp)
         + property_profile_body(plant_count, msum["species"])
         + takeaway(
-            "Mid-July made the host-plant connection unusually concrete. Greater burdock "
-            "(<em>Arctium lappa</em>) was documented on July 12, and Burdock Conch "
-            "(<em>Aethes rubigana</em>) appeared three days later. Ash Leaf Cone Roller, Willow "
-            "Leafcone Caterpillar Moth, Apple Skeletonizer, and Drab Prominent likewise match "
-            "white ash, shining willow, apple, and the property's cottonwood/aspen hosts. These "
-            "records say more than another rise in the species count: plant inventory and moth "
-            "inventory are beginning to explain each other.", dark=True),
+            "July has made the host-plant connection unusually concrete. Greater burdock "
+            "(<em>Arctium lappa</em>), an established introduced plant, was documented on July 12, "
+            "and Burdock Conch (<em>Aethes rubigana</em>) appeared three days later. The late-July "
+            "Sumac Leaf Blotch Miner matches recorded staghorn sumac, while Hermit Sphinx fits a "
+            "plant list that now includes scarlet beebalm, wild basil, and other mint-family hosts. "
+            "Ash Leaf Cone Roller, Willow Leafcone Caterpillar Moth, Apple Skeletonizer, and Drab "
+            "Prominent reinforce the same pattern around white ash, shining willow, apple, and the "
+            "property's cottonwood/aspen hosts. The plant inventory and moth inventory are now "
+            "predicting useful searches in both directions.", dark=True),
         intro=f"{msum['species']:,} moth species on 30 riparian acres, and {moth_county_firsts:,} of them are first iNaturalist records for "
               "Tioga County. That says two things at once: the county has been thinly sampled, and this stretch "
               "of Michigan Creek is a real moth engine. The regional comparison is shaped by heavy Tompkins "
@@ -2113,13 +2115,15 @@ def plants_view(df, stats):
         stats_band
         + takeaway(
             "The plant list reads like a compact Tioga County cross-section: oak-hickory upland, northern-hardwood "
-            "slope, hemlock shade, wet meadow, pond edge, and creek corridor all packed into 30 acres. Mid-July "
-            "closed two especially useful host gaps. Eastern cottonwood and greater burdock were documented, then "
-            "Drab Prominent and Burdock Conch followed. Ash Leaf Cone Roller, Willow Leafcone Caterpillar Moth, and "
-            "Apple Skeletonizer reinforce the same pattern around white ash, shining willow, and apple. The next "
-            "botanical gains should come from similarly focused searches, especially sunflowers, cattails, wood "
-            "nettle, and wet-edge graminoids. <em>Salix</em> still stands at one species and <em>Carex</em> at two; "
-            "those remain survey gaps, not ecological absences.", dark=True)
+            "slope, hemlock shade, wet meadow, pond edge, and creek corridor all packed into 30 acres. July closed "
+            "several especially useful host gaps. Eastern cottonwood and established greater burdock were documented, "
+            "then Drab Prominent and Burdock Conch followed. Ash Leaf Cone Roller, Willow Leafcone Caterpillar Moth, "
+            "Apple Skeletonizer, and Sumac Leaf Blotch Miner reinforce the same pattern around white ash, shining "
+            "willow, apple, and staghorn sumac. Native common evening-primrose is the newest addition and turns "
+            "Primrose Moth from a generic regional gap into a host-supported dusk target. The next botanical gains "
+            "should come from similarly focused searches, especially sunflowers, cattails, wood nettle, and wet-edge "
+            "graminoids. <em>Salix</em> still stands at one species and <em>Carex</em> at two; those remain survey "
+            "gaps, not ecological absences.", dark=True)
         + plant_found_body(found),
         intro=f"{psum['species']:,} wild/established plant species on 30 acres, with a transition-zone signature: "
               "Appalachian ravine plants, northern hardwoods, wetland/riparian flora, old-field edge, and "
@@ -2169,11 +2173,11 @@ def amphibians_view(df, stats):
         stats_band
         + takeaway(
             "Ten amphibian species is a strong incidental list, but the habitat says there is more to find. "
-            "The confirmed set includes spring peeper, American toad, gray treefrog, pickerel frog, eastern "
-            "newt, red-backed salamander, northern slimy salamander, and spotted salamander, so the forest, "
-            "pond, seep, and vernal-pool signals are all present. The obvious hole is stream salamanders: "
-            "riffles and seepage zones should be checked for two-lined, dusky, and spring salamanders before "
-            "the site is treated as well sampled.", dark=True)
+            "The late-July sequence of pickerel frog, eastern newt, gray treefrog, and spring peeper shows that "
+            "the pond, wet margins, and forest floor remain active well beyond the spring chorus. Red-backed, "
+            "northern slimy, and spotted salamanders add upland forest and vernal-pool evidence. The obvious hole "
+            "is stream salamanders: riffles and seepage zones should be checked for two-lined, dusky, and spring "
+            "salamanders before the site is treated as well sampled.", dark=True)
         + amphibian_found_body(amp_found),
         intro="Frogs and salamanders are method- and season-dependent. The current list already points to "
               "clean water, wet forest floor, and breeding wetlands, but it is still mostly incidental. In "
@@ -2185,8 +2189,9 @@ def amphibians_view(df, stats):
         'The <em class="text-hollow-300">Reptiles</em>',
         reptile_found_body(rep_found),
         intro=f"{rsum['species']} reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
-              "milksnake, DeKay's brownsnake, and Central Ratsnake. Most records are incidental. July favors "
-              "slow basking checks, pond-edge turtle scans, and careful cover-object work for small secretive "
+              "milksnake, DeKay's brownsnake, and Central Ratsnake. Recent snapping turtle and garter snake records "
+              "show that ordinary pond-edge and trail encounters are still adding useful seasonal evidence. July "
+              "favors slow basking checks, pond-edge turtle scans, and careful cover-object work for small secretive "
               "snakes.",
         dark=True))
     out.append(section(
@@ -2232,11 +2237,12 @@ def butterflies_view(df, stats):
         stats_band + butterfly_found_body(found),
         intro="Butterflies are the daytime half of the property's Lepidoptera, and this list is still "
               f"effort-limited. {bsum['species']} species against {moth_species:,} moths says more about survey timing than habitat. "
-              "July records now span three useful settings: Appalachian Brown at the sedge-wet edge, Northern "
-              "Pearly-eye in shaded woodland, and Orange Sulphur in open ground. That spread confirms that sunny "
-              "transects are beginning to sample the property rather than one nectar patch. Violets, nettles, "
-              "willows, oaks, hickories, cherries, sedges, turtlehead, milkweeds, asters, and goldenrods still point "
-              "to many missing skippers, hairstreaks, swallowtails, and brushfoots.",
+              "July records now span the property's main daytime settings: Appalachian Brown at the sedge-wet edge, "
+              "Northern Pearly-eye in shaded woodland, Orange Sulphur in open ground, Little Glassywing along grassy "
+              "margin, and Midsummer Tiger Swallowtail at the canopy edge. That spread confirms that repeated sunny "
+              "transects are sampling the property rather than one nectar patch. Violets, nettles, willows, oaks, "
+              "hickories, cherries, sedges, turtlehead, milkweeds, asters, and goldenrods still point to many missing "
+              "skippers, hairstreaks, swallowtails, and brushfoots.",
         dark=True))
     out.append(section(
         "butterfly-gap", "Yet to Find",
@@ -2577,12 +2583,13 @@ def build():
                    note=f"Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after {public_s['observations']:,} records indicates a long way still to go.")
         + takeaway(
             "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
-            "show a curve that flattens within the first season; this one hasn't. Mid-July shows why. Host-linked "
-            "micromoths appeared alongside their food plants, sunny passes added a sulphur and two odonates, and "
-            "close inspection exposed beetles, flies, barklice, and leafhoppers that broad surveys overlook. Moth "
-            "lighting still drives the steepest runs, but no single method owns the remaining frontier. Each plant "
-            "genus documented on the property sharpens the insect search, and each new method reaches a different "
-            "slice of the site."),
+            "show a curve that flattens within the first season; this one hasn't. Late July shows why. Little "
+            "Glassywing widened the daytime grass-edge list, common evening-primrose sharpened a moth-host search, "
+            "and night work added Hermit Sphinx and Splendid Dagger. Close inspection produced an even larger wave "
+            "of leafminers, gall makers, aphids, flies, barklice, and other small insects that broad surveys overlook. "
+            "Moth lighting still drives the steepest runs, but no single method owns the remaining frontier. Each "
+            "plant genus documented on the property sharpens the insect search, and each new method reaches a "
+            "different slice of the site."),
         intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
