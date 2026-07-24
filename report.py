@@ -1260,10 +1260,10 @@ def _rarity_badge(sp):
     return " · ".join(parts)
 
 
-def _weather_parts(w):
-    """Return the journal's 9 PM conditions as individually readable items."""
+def _weather_line(w):
+    """Compact weather summary string for a journal entry (9 PM conditions)."""
     if not w:
-        return []
+        return ""
     parts = []
     temp = w.get("temp_f_9pm") if w.get("temp_f_9pm") is not None else w.get("temp_f_hi")
     if temp is not None:
@@ -1277,12 +1277,7 @@ def _weather_parts(w):
     moon = w.get("moon")
     if moon:
         parts.append(moon)
-    return parts
-
-
-def _weather_line(w):
-    """Compact weather summary string for callers that need one line."""
-    return " · ".join(_weather_parts(w))
+    return " · ".join(parts)
 
 
 def activity_log_body(log_entries, weather_cache):
@@ -1324,15 +1319,16 @@ def activity_log_body(log_entries, weather_cache):
         date_label = f"Night of {month_names[d.month]} {d.day}"
 
         w = weather_cache.get(str(d))
+        weather_str = _weather_line(w)
+        weather_html = (
+            f'<p class="text-stone-400 text-sm mt-1">{esc(weather_str)}</p>'
+            if weather_str else ""
+        )
+
         observers = entry.get("observers", [])
-        meta_items = _weather_parts(w)
-        if observers:
-            meta_items.append(", ".join(observers))
-        meta_html = (
-            '<ul class="log-meta-list text-stone-400 text-sm mt-1" aria-label="Night conditions and observers">'
-            + "".join(f"<li>{esc(item)}</li>" for item in meta_items)
-            + "</ul>"
-            if meta_items else ""
+        observers_html = (
+            f'<p class="text-stone-400 text-xs mt-1">{esc(", ".join(observers))}</p>'
+            if observers else ""
         )
 
         def _sp_html(sp):
@@ -1349,15 +1345,23 @@ def activity_log_body(log_entries, weather_cache):
             return name_html
 
         def _group_html(species_list):
-            """Render a list of species into labelled group paragraph(s)."""
+            """Render species as a mobile-friendly list, compact on wider screens."""
             moths = [sp for sp in species_list if sp["is_moth"]]
             others = [sp for sp in species_list if not sp["is_moth"]]
-            parts = []
-            if moths:
-                parts.append(
-                    f'<span class="font-medium text-stone-700">Moths:</span> '
-                    + ", ".join(_sp_html(sp) for sp in moths)
+
+            groups = []
+
+            def _group(label, group_species):
+                items = "".join(f"<li>{_sp_html(sp)}</li>" for sp in group_species)
+                return (
+                    '<div class="log-species-group">'
+                    f'<span class="font-medium text-stone-700">{esc(label)}</span>'
+                    f'<ul class="log-species-items">{items}</ul>'
+                    '</div>'
                 )
+
+            if moths:
+                groups.append(_group("Moths:", moths))
             if others:
                 groups_seen = {}
                 for sp in others:
@@ -1365,22 +1369,16 @@ def activity_log_body(log_entries, weather_cache):
                     groups_seen.setdefault(grp, []).append(sp)
                 if len(groups_seen) == 1:
                     grp_name, grp_sps = next(iter(groups_seen.items()))
-                    parts.append(
-                        f'<span class="font-medium text-stone-700">{esc(grp_name)}:</span> '
-                        + ", ".join(_sp_html(sp) for sp in grp_sps)
-                    )
+                    groups.append(_group(f"{grp_name}:", grp_sps))
                 else:
                     lbl = "Other species" if moths else "Species"
-                    parts.append(
-                        f'<span class="font-medium text-stone-700">{lbl}:</span> '
-                        + ", ".join(_sp_html(sp) for sp in others)
-                    )
-            if not parts:
+                    groups.append(_group(f"{lbl}:", others))
+            if not groups:
                 return ""
             return (
-                '<p class="text-stone-700 leading-relaxed mt-2 text-[0.95rem]">'
-                + " &nbsp;·&nbsp; ".join(parts)
-                + "</p>"
+                '<div class="log-species-groups text-stone-700 leading-relaxed mt-2 text-[0.95rem]">'
+                + "".join(groups)
+                + "</div>"
             )
 
         def _badge(n):
@@ -1417,7 +1415,8 @@ def activity_log_body(log_entries, weather_cache):
 
             evening_meta = f"""
       <div class="{section_label_cls}">Evening</div>
-      {meta_html}"""
+      {weather_html}
+      {observers_html}"""
 
             html_parts.append(f"""
 <div class="py-5 border-b border-stone-100 group">{morning_row}
@@ -1448,7 +1447,8 @@ def activity_log_body(log_entries, weather_cache):
     <div class="flex items-start gap-2">
       {_badge(new_count)}
       <div class="flex-1 min-w-0">
-        {meta_html}
+        {weather_html}
+        {observers_html}
         {species_html}
       </div>
     </div>

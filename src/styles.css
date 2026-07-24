@@ -134,42 +134,50 @@
   .log-rarity { color: #2e735c; font-size: .78rem; font-weight: 500; }
   .log-moth-label { color: #57534e; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 
-  .log-meta-list {
+  .log-species-groups {
     display: flex;
     flex-direction: column;
     gap: .25rem;
-    list-style: none;
+  }
+
+  .log-species-group {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+  }
+
+  .log-species-items {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    list-style: disc;
     margin: 0;
-    padding: 0 0 0 .85rem;
-  }
-
-  .log-meta-list li {
-    position: relative;
-  }
-
-  .log-meta-list li::before {
-    position: absolute;
-    left: -.75rem;
-    color: #8ec8b1;
-    content: "•";
+    padding-left: 1.15rem;
   }
 
   @media (min-width: 640px) {
-    .log-meta-list {
+    .log-species-groups {
       flex-direction: row;
       flex-wrap: wrap;
-      column-gap: .75rem;
-      row-gap: .25rem;
+      gap: .5rem .9rem;
+    }
+
+    .log-species-group {
+      flex-direction: row;
+      align-items: baseline;
+      gap: .3rem;
+    }
+
+    .log-species-items {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0;
+      list-style: none;
       padding-left: 0;
     }
 
-    .log-meta-list li::before { display: none; }
-    .log-meta-list li + li::before {
-      display: inline;
-      position: static;
-      margin-right: .75rem;
-      color: #a8a29e;
-      content: "·";
+    .log-species-items li:not(:last-child)::after {
+      content: ",\00a0";
     }
   }
 
