@@ -36,7 +36,12 @@ a species that falls just below the regional-frequency top 50.
 2. Give every target common and scientific names, seasonal context, habitat and
    method tags, explicit daylight and/or dusk-night survey periods, a reason to
    look, finding guidance, identification evidence to photograph, named
-   regional comparisons where available, and an explicit ID limitation.
+   regional comparisons where available, and an explicit ID limitation. Only
+   show a comparison after it has been deliberately vetted as a plausible
+   confusion species. For each field-separable pair, name the visible character
+   and state what that character looks like on both species. If an ordinary
+   field view cannot resolve the pair, say so and name the genus, species group,
+   or other higher level at which it should be reported.
 3. Treat family-level guidance as an evidence protocol, not as a sourced
    species diagnosis. Never invent a field mark when the local database does
    not contain a vetted diagnostic key.
@@ -150,6 +155,12 @@ update.
 - Every target selected in that build is present exactly once.
 - Every target opens offline with finding help, ID help, evidence checklist,
   image, and attribution.
+- Comparison species are limited to vetted confusion pairs; no arbitrary
+  same-family fallback is presented as a lookalike.
+- Every field-separable comparison names visible traits for both species.
+  Comparisons that cannot be resolved from an ordinary field view explicitly
+  name the higher taxonomic level to report and do not invent a difference
+  list.
 - Search and every group/filter control work after a cold offline reload.
 - Dusk-night selection immediately changes the interface and browser chrome to
   the low-light theme, survives a cold offline reload without a bright startup

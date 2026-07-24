@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from field_identification import comparison_profile
+
 
 GROUP_PROFILES = {
     "moths": {
@@ -448,55 +450,6 @@ def _trait_items(group, guidance):
     ]
 
 
-def lookalike_traits(group, target_common, peer_common, peer_scientific):
-    """Return explicit field characters for a target/lookalike photo comparison.
-
-    The source data supplies real regional alternatives, but not a vetted
-    species-level key.  The language names exactly what needs to be visible
-    and gives a conservative stopping rule rather than implying that a colour
-    impression or a single reference photo is diagnostic.
-    """
-    target = target_common or "the target"
-    peer = peer_common or peer_scientific
-    if group == "moths":
-        return [
-            {"label": "Forewing pattern", "detail": (
-                f"For {target} and {peer}, show the entire forewing square-on. "
-                "Trace every line, fascia and spot from base to tip; ground color alone does not rule either species out."
-            )},
-            {"label": "Wing outline and hindwing", "detail": (
-                "Keep both wing tips and outer margins in frame, then add an exposed hindwing if possible. "
-                "A matching forewing color with a different outline or hindwing is not a match."
-            )},
-            {"label": "Head and resting structure", "detail": (
-                "Photograph antennae, palps and the resting profile. These features can separate similar leafrollers when the dorsal pattern is worn."
-            )},
-        ]
-    if group == "butterflies":
-        return [
-            {"label": "Upper and lower wing surfaces", "detail": (
-                f"For {target} and {peer}, document both surfaces. Compare the full spot or band layout rather than one bright color patch."
-            )},
-            {"label": "Wing edge", "detail": (
-                "Include the complete hindwing edge so tails, eye spots, scallops and tornal markings can be checked."
-            )},
-            {"label": "Antennae and condition", "detail": (
-                "Show the antenna clubs and note wear. Missing scales can erase the marks needed to separate otherwise similar adults."
-            )},
-        ]
-    return [
-        {"label": "Face and thorax", "detail": (
-            f"For {target} and {peer}, show the face and both sides of the thorax so stripe placement and color can be checked."
-        )},
-        {"label": "Wings and abdomen", "detail": (
-            "Include all wing bases and the full dorsal and side abdominal pattern; sex and maturity must match before color is compared."
-        )},
-        {"label": "Terminal segments", "detail": (
-            "Take a close, sharp view of the final abdominal segments and appendages. Treat a record as genus-level if these are not visible."
-        )},
-    ]
-
-
 def build_guidance(group, family_name, common_name, season_label, regional_count,
                    lookalikes, scientific_name=""):
     """Build all required offline guidance fields for a target."""
@@ -534,20 +487,17 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
         f"Not yet recorded at Kingfisher Hollow; {regional_count:,} nearby reference "
         f"{observation_word} make it a practical comparison target."
     )
-    comparisons = [
-        {
+    comparisons = []
+    for peer in lookalikes[:2]:
+        pair_profile = comparison_profile(scientific_name, peer.get("scientific_name", ""))
+        if not pair_profile:
+            continue
+        comparisons.append({
             "taxon_id": peer.get("taxon_id"),
             "name": peer.get("common_name") or peer.get("scientific_name"),
             "scientific_name": peer.get("scientific_name", ""),
-            "traits": lookalike_traits(
-                group, common_name, peer.get("common_name", ""), peer.get("scientific_name", "")
-            ),
-            "decision": (
-                "If the full character set is not visible, retain the genus or species group rather than using color alone."
-            ),
-        }
-        for peer in lookalikes[:3]
-    ]
+            **pair_profile,
+        })
     return {
         "habitat_tags": profile["habitat_tags"],
         "method_tags": method_tags,

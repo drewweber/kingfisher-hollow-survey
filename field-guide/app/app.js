@@ -98,6 +98,17 @@
     }).filter(Boolean);
   }
 
+  function cleanComparisonDifferences(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const feature = cleanString(item.feature);
+      const target = cleanString(item.target);
+      const peer = cleanString(item.peer);
+      return feature && target && peer ? { feature, target, peer } : null;
+    }).filter(Boolean);
+  }
+
   function cleanOnlineUrl(value) {
     const raw = cleanString(value);
     if (!raw) return "";
@@ -215,9 +226,11 @@
         .map((item) => ({
           name: cleanString(item.name) || "Unnamed lookalike",
           scientificName: cleanString(item.scientific_name),
-          distinction: cleanString(item.distinction),
-          traits: cleanTraits(item.traits),
+          identifiability: cleanString(item.identifiability),
+          identifiabilityLabel: cleanString(item.identifiability_label),
+          differences: cleanComparisonDifferences(item.differences),
           decision: cleanString(item.decision),
+          reportAs: cleanString(item.report_as),
           image: normalizeImage(
             item,
             `Reference photograph of ${cleanString(item.name) || cleanString(item.scientific_name) || "a lookalike"}`
@@ -680,7 +693,7 @@
     const lookalikes = target.lookalikes;
     if (!lookalikes.length) return;
     const section = makeElement("section", "detail-section");
-    section.append(makeElement("h3", "", "Lookalikes"));
+    section.append(makeElement("h3", "", "Comparison species"));
     const list = makeElement("ul", "lookalike-list");
     lookalikes.forEach((lookalike) => {
       const item = document.createElement("li");
@@ -702,13 +715,51 @@
       name.append(makeElement("strong", "", lookalike.name));
       if (lookalike.scientificName) name.append(makeElement("em", "", lookalike.scientificName));
       item.append(name);
-      if (lookalike.traits.length) {
-        item.append(makeElement("p", "comparison-intro", `Check these traits against ${target.commonName}:`));
-        appendTraitList(item, lookalike.traits, "comparison-trait-list");
-      } else if (lookalike.distinction) {
-        item.append(makeElement("p", "", lookalike.distinction));
+      if (lookalike.identifiabilityLabel || lookalike.reportAs) {
+        const statusRow = makeElement("div", "comparison-status-row");
+        if (lookalike.identifiabilityLabel) {
+          statusRow.append(makeElement(
+            "span",
+            `comparison-status status-${lookalike.identifiability || "conditional"}`,
+            lookalike.identifiabilityLabel
+          ));
+        }
+        if (lookalike.reportAs) {
+          statusRow.append(makeElement("span", "comparison-report-as", `Report as: ${lookalike.reportAs}`));
+        }
+        item.append(statusRow);
       }
-      if (lookalike.decision) item.append(makeElement("p", "comparison-decision", lookalike.decision));
+      if (lookalike.differences.length) {
+        item.append(makeElement("p", "comparison-intro", "Visible differences"));
+        const differences = makeElement("ul", "comparison-difference-list");
+        lookalike.differences.forEach((difference) => {
+          const differenceItem = document.createElement("li");
+          differenceItem.append(makeElement("strong", "difference-feature", difference.feature));
+          const speciesTraits = makeElement("div", "comparison-species-traits");
+          const targetTrait = document.createElement("p");
+          targetTrait.append(
+            makeElement("strong", "", `${target.commonName}: `),
+            document.createTextNode(difference.target)
+          );
+          const peerTrait = document.createElement("p");
+          peerTrait.append(
+            makeElement("strong", "", `${lookalike.name}: `),
+            document.createTextNode(difference.peer)
+          );
+          speciesTraits.append(targetTrait, peerTrait);
+          differenceItem.append(speciesTraits);
+          differences.append(differenceItem);
+        });
+        item.append(differences);
+      }
+      if (lookalike.decision) {
+        const decision = makeElement("p", "comparison-decision");
+        decision.append(
+          makeElement("strong", "", "Field decision: "),
+          document.createTextNode(lookalike.decision)
+        );
+        item.append(decision);
+      }
       list.append(item);
     });
     section.append(list);

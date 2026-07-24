@@ -1249,8 +1249,7 @@ a:hover {
   font-size: 0.86rem;
 }
 
-.trait-list,
-.comparison-trait-list {
+.trait-list {
   display: grid;
   gap: 0.5rem;
   margin: 0;
@@ -1259,8 +1258,7 @@ a:hover {
   font-size: 0.86rem;
 }
 
-.trait-list li::marker,
-.comparison-trait-list li::marker {
+.trait-list li::marker {
   color: var(--spruce-mid);
 }
 
@@ -1298,19 +1296,97 @@ a:hover {
   margin: 0.6rem 0 0.4rem;
   color: var(--ink-soft) !important;
   font-size: 0.78rem !important;
+  font-weight: 750;
+  text-transform: uppercase;
 }
 
-.comparison-trait-list {
-  gap: 0.38rem;
-  color: #405149;
+.comparison-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.comparison-status,
+.comparison-report-as {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.22rem 0.42rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  color: var(--ink);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.comparison-status.status-field {
+  border-color: #8db9a6;
+  background: #e7f2ec;
+  color: #275b49;
+}
+
+.comparison-status.status-conditional {
+  border-color: #b9a86f;
+  background: #f4f0df;
+  color: #695b24;
+}
+
+.comparison-status.status-not_field {
+  border-color: #bd9189;
+  background: #f5e8e5;
+  color: #713b32;
+}
+
+.comparison-report-as {
+  background: var(--surface-muted);
+  color: var(--ink-soft);
+}
+
+.comparison-difference-list {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comparison-difference-list > li {
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+}
+
+.difference-feature {
+  display: block;
+  margin-bottom: 0.38rem;
+  color: var(--ink);
   font-size: 0.82rem;
 }
 
+.comparison-species-traits {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.comparison-species-traits p {
+  margin: 0;
+  padding-left: 0.55rem;
+  border-left: 2px solid var(--line-strong);
+  line-height: 1.45;
+}
+
+.comparison-species-traits p:first-child {
+  border-left-color: var(--spruce-mid);
+}
+
 .comparison-decision {
-  margin-top: 0.55rem;
-  color: var(--ink-soft) !important;
-  font-size: 0.78rem !important;
-  font-style: italic;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.65rem;
+  border-left: 3px solid var(--line-strong);
+  background: var(--surface-muted);
+  color: #33473e !important;
+  font-size: 0.8rem !important;
+  line-height: 1.45;
 }
 
 .comparison-photo-grid {
@@ -1544,10 +1620,52 @@ a:hover {
 :root[data-survey-period="night"] .lookalike-list,
 :root[data-survey-period="night"] .photo-list,
 :root[data-survey-period="night"] .trait-list,
-:root[data-survey-period="night"] .comparison-trait-list,
+:root[data-survey-period="night"] .comparison-difference-list,
 :root[data-survey-period="night"] .lookalike-list p,
 :root[data-survey-period="night"] .guild-signal-list {
   color: #bb7868;
+}
+
+:root[data-survey-period="night"] .comparison-status.status-field {
+  border-color: #4f826b;
+  background: #102a20;
+  color: #94c6ad;
+}
+
+:root[data-survey-period="night"] .comparison-status.status-conditional {
+  border-color: #756530;
+  background: #251f08;
+  color: #c9b66e;
+}
+
+:root[data-survey-period="night"] .comparison-status.status-not_field {
+  border-color: #824b3f;
+  background: #2c100b;
+  color: #d8927f;
+}
+
+:root[data-survey-period="night"] .comparison-report-as {
+  border-color: #57271e;
+  background: #220a07;
+  color: #c98270;
+}
+
+:root[data-survey-period="night"] .difference-feature {
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .comparison-species-traits p {
+  border-left-color: #57271e;
+}
+
+:root[data-survey-period="night"] .comparison-species-traits p:first-child {
+  border-left-color: #9a4937;
+}
+
+:root[data-survey-period="night"] .comparison-decision {
+  border-left-color: #713023;
+  background: #190705;
+  color: #bb7868 !important;
 }
 
 :root[data-survey-period="night"] .tag-list li,
@@ -1596,8 +1714,7 @@ a:hover {
 }
 
 :root[data-survey-period="night"] .guild-signal-list li::marker,
-:root[data-survey-period="night"] .trait-list li::marker,
-:root[data-survey-period="night"] .comparison-trait-list li::marker {
+:root[data-survey-period="night"] .trait-list li::marker {
   color: #a64c39;
 }
 

@@ -13,6 +13,7 @@ from field_guidance import (  # noqa: E402
     guidance_profile,
     survey_period_profile,
 )
+from field_identification import PAIR_PROFILES, curated_peer_names  # noqa: E402
 
 
 class FieldGuidanceTests(unittest.TestCase):
@@ -24,20 +25,134 @@ class FieldGuidanceTests(unittest.TestCase):
                 "Test species",
                 "Jun-Sep",
                 12,
-                [{"taxon_id": 2, "common_name": "Nearby congener", "scientific_name": "Testa altera"}],
+                [],
             )
             for key in (
                 "survey_periods", "habitat_tags", "method_tags", "finding_help", "id_help",
-                "id_traits", "photo_checklist", "lookalikes",
+                "id_traits", "photo_checklist",
             ):
                 self.assertTrue(guidance[key], f"{group} has no {key}")
             self.assertTrue(guidance["survey_period_note"])
             self.assertTrue(guidance["target_reason"])
             self.assertTrue(guidance["id_limitations"])
-            self.assertIn("Nearby congener", guidance["lookalikes"][0]["name"])
-            self.assertEqual(2, guidance["lookalikes"][0]["taxon_id"])
             self.assertTrue(guidance["id_traits"][0]["label"])
-            self.assertTrue(guidance["lookalikes"][0]["traits"][0]["detail"])
+            self.assertEqual([], guidance["lookalikes"])
+
+    def test_curated_comparison_names_specific_visible_differences(self):
+        guidance = build_guidance(
+            "moths",
+            "Sphingidae",
+            "Hummingbird Clearwing",
+            "Jun-Aug",
+            12,
+            [{
+                "taxon_id": 2,
+                "common_name": "Snowberry Clearwing",
+                "scientific_name": "Hemaris diffinis",
+            }],
+            "Hemaris thysbe",
+        )
+        comparison = guidance["lookalikes"][0]
+        self.assertEqual("conditional", comparison["identifiability"])
+        self.assertEqual("Hemaris sp.", comparison["report_as"])
+        self.assertIn("Pale cream", comparison["differences"][0]["target"])
+        self.assertIn("Black legs", comparison["differences"][0]["peer"])
+
+    def test_unidentifiable_pair_explicitly_stops_at_higher_taxon(self):
+        guidance = build_guidance(
+            "moths",
+            "Tortricidae",
+            "Raspberry Leafroller Moth",
+            "Jun-Aug",
+            12,
+            [{
+                "taxon_id": 2,
+                "common_name": "Diamondback Epinotia Moth",
+                "scientific_name": "Epinotia lindana",
+            }],
+            "Epinotia medioviridana",
+        )
+        comparison = guidance["lookalikes"][0]
+        self.assertEqual("not_field", comparison["identifiability"])
+        self.assertEqual([], comparison["differences"])
+        self.assertEqual("Epinotia sp.", comparison["report_as"])
+        self.assertIn("ordinary field photographs", comparison["decision"].casefold())
+
+    def test_bluet_comparison_requires_diagnostic_terminal_structures(self):
+        guidance = build_guidance(
+            "odonates",
+            "Coenagrionidae",
+            "Azure Bluet",
+            "Jun-Aug",
+            12,
+            [{
+                "taxon_id": 2,
+                "common_name": "Familiar Bluet",
+                "scientific_name": "Enallagma civile",
+            }],
+            "Enallagma aspersum",
+        )
+        comparison = guidance["lookalikes"][0]
+        self.assertEqual("not_field", comparison["identifiability"])
+        self.assertEqual([], comparison["differences"])
+        self.assertEqual("Enallagma sp.", comparison["report_as"])
+        self.assertIn("terminal appendages", comparison["decision"])
+        self.assertIn("mesostigmal plates", comparison["decision"])
+
+    def test_arbitrary_family_members_are_not_presented_as_lookalikes(self):
+        guidance = build_guidance(
+            "moths",
+            "Sphingidae",
+            "Pandorus Sphinx",
+            "Jun-Aug",
+            12,
+            [{
+                "taxon_id": 2,
+                "common_name": "Waved Sphinx",
+                "scientific_name": "Ceratomia undulosa",
+            }],
+            "Eumorpha pandorus",
+        )
+        self.assertEqual([], guidance["lookalikes"])
+
+    def test_every_curated_pair_has_a_field_decision_and_valid_fallback(self):
+        pair_keys = [frozenset(profile["taxa"]) for profile in PAIR_PROFILES]
+        self.assertEqual(len(pair_keys), len(set(pair_keys)))
+        for profile in PAIR_PROFILES:
+            self.assertIn(profile["status"], {"field", "conditional", "not_field"})
+            self.assertTrue(profile["decision"])
+            if profile["status"] == "not_field":
+                self.assertFalse(profile["differences"])
+                self.assertTrue(profile["report_as"])
+            else:
+                self.assertTrue(profile["differences"])
+            if profile["status"] == "conditional":
+                self.assertTrue(profile["report_as"])
+            self.assertEqual(2, len(profile["taxa"]))
+            for taxon in profile["taxa"]:
+                self.assertIn(
+                    next(name for name in profile["taxa"] if name != taxon),
+                    curated_peer_names(taxon),
+                )
+
+    def test_curated_comparisons_do_not_contain_generic_templates(self):
+        forbidden = (
+            "compare the complete",
+            "show the entire",
+            "full character set",
+            "rather than using color alone",
+            "check these traits",
+        )
+        for profile in PAIR_PROFILES:
+            text = " ".join([
+                profile["decision"],
+                *[
+                    " ".join((difference["feature"], difference["first"], difference["second"]))
+                    for difference in profile["differences"]
+                ],
+            ]).casefold()
+            for phrase in forbidden:
+                self.assertNotIn(phrase, text)
 
     def test_difficult_families_keep_conservative_limitations(self):
         tortricid = guidance_profile("moths", "Tortricidae", "Leafroller Moth")
@@ -172,7 +287,12 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("comparison-photo-grid", app)
         self.assertIn("createReferenceGallery", app)
         self.assertIn("Traits to check", app)
-        self.assertIn("comparison-trait-list", app)
+        self.assertIn("Visible differences", app)
+        self.assertIn("Field decision", app)
+        self.assertIn("comparison-difference-list", app)
+        self.assertNotIn("Check these traits against", app)
+        self.assertNotIn("lookalike.traits", app)
+        self.assertNotIn("lookalike.distinction", app)
 
     def test_field_app_exposes_local_moth_flight_signals(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")

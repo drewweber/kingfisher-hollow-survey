@@ -21,6 +21,7 @@ import inat_api
 from config import DATA_DIR, PUBLIC_DIR, REGION_RADIUS_KM, ROOT, USER_AGENT
 from db import DB_PATH, connect
 from field_guidance import build_guidance
+from field_identification import curated_peer_names
 from moth_guilds import LOOKBACK_DAYS, load_host_index, local_flight_signal
 
 
@@ -30,8 +31,8 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-07-23.1"
-SCHEMA_VERSION = "kh-field-targets/1.3.0"
+GUIDANCE_REVISION = "2026-07-24.1"
+SCHEMA_VERSION = "kh-field-targets/1.4.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
@@ -225,24 +226,19 @@ def _regional_peers():
     return peers
 
 
-def _lookalikes(group, taxon_name, family_name, peers, limit=3):
+def _lookalikes(group, taxon_name, family_name, peers, limit=2):
     frame = peers[group]
     if frame.empty:
         return []
-    genus = (taxon_name or "").split(" ", 1)[0]
-    same_genus = frame[
-        frame["taxon_name"].fillna("").str.startswith(f"{genus} ")
-        & (frame["taxon_name"] != taxon_name)
-    ]
-    candidates = same_genus
-    if candidates.empty and family_name and "family_name" in frame.columns:
-        candidates = frame[
-            (frame["family_name"] == family_name) & (frame["taxon_name"] != taxon_name)
-        ]
+    desired_names = curated_peer_names(taxon_name)
+    if not desired_names:
+        return []
+    order = {name: index for index, name in enumerate(desired_names)}
+    candidates = frame[frame["taxon_name"].isin(desired_names)].copy()
     if candidates.empty:
         return []
-    count_col = "region_count" if "region_count" in candidates.columns else "ref_count"
-    candidates = candidates.sort_values([count_col, "taxon_id"], ascending=[False, True])
+    candidates["_comparison_order"] = candidates["taxon_name"].map(order)
+    candidates = candidates.sort_values(["_comparison_order", "taxon_id"])
     return [
         {
             "taxon_id": int(row["taxon_id"]),
@@ -317,7 +313,7 @@ def collect_targets(effective_date=None):
                 "active_months": sorted(month_counts) or list(fallback),
                 "phenology_scope": "Tioga County observations" if month_counts else "group field season",
                 "taxon_url": f"https://www.inaturalist.org/taxa/{taxon_id}",
-                "guidance_status": "family evidence protocol",
+                "guidance_status": "vetted field comparison",
                 "_peer_taxa": lookalikes,
                 **guidance,
             })
@@ -586,9 +582,46 @@ def _validate_targets(targets, output_dir=None):
                 errors.append(f"taxon {target['id']} has an unillustrated lookalike")
             elif output_dir and not (output_dir / lookalike["image"]).is_file():
                 errors.append(f"taxon {target['id']} is missing local lookalike image")
-            for trait in lookalike.get("traits") or []:
-                if not isinstance(trait, dict) or not trait.get("label") or not trait.get("detail"):
-                    errors.append(f"taxon {target['id']} has an invalid lookalike trait")
+            status = lookalike.get("identifiability")
+            if status not in {"field", "conditional", "not_field"}:
+                errors.append(f"taxon {target['id']} has no valid lookalike identifiability")
+            if not lookalike.get("identifiability_label") or not lookalike.get("decision"):
+                errors.append(f"taxon {target['id']} has incomplete lookalike guidance")
+            differences = lookalike.get("differences") or []
+            if status != "not_field" and not differences:
+                errors.append(f"taxon {target['id']} has no specific lookalike differences")
+            if status in {"conditional", "not_field"} and not lookalike.get("report_as"):
+                errors.append(f"taxon {target['id']} has no higher-taxon fallback")
+            for difference in differences:
+                if (
+                    not isinstance(difference, dict)
+                    or not difference.get("feature")
+                    or not difference.get("target")
+                    or not difference.get("peer")
+                ):
+                    errors.append(f"taxon {target['id']} has an invalid lookalike difference")
+            generic_text = " ".join(
+                [
+                    lookalike.get("decision", ""),
+                    *[
+                        " ".join(
+                            str(difference.get(key, ""))
+                            for key in ("feature", "target", "peer")
+                        )
+                        for difference in differences
+                        if isinstance(difference, dict)
+                    ],
+                ]
+            ).casefold()
+            for phrase in (
+                "compare the complete",
+                "show the entire",
+                "full character set",
+                "rather than using color alone",
+                "check these traits",
+            ):
+                if phrase in generic_text:
+                    errors.append(f"taxon {target['id']} has generic lookalike guidance")
     if errors:
         raise ValueError("Invalid field guide release:\n- " + "\n- ".join(errors))
 
