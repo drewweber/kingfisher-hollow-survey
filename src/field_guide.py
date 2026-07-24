@@ -30,8 +30,8 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-07-22.1"
-SCHEMA_VERSION = "kh-field-targets/1.2.0"
+GUIDANCE_REVISION = "2026-07-23.1"
+SCHEMA_VERSION = "kh-field-targets/1.3.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
@@ -296,7 +296,8 @@ def collect_targets(effective_date=None):
                 else None
             )
             guidance = build_guidance(
-                group, family_name, common_name, season_label, regional_count, lookalikes
+                group, family_name, common_name, season_label, regional_count, lookalikes,
+                scientific_name,
             )
             records.append({
                 "id": taxon_id,
@@ -522,6 +523,7 @@ def _merge_taxon_metadata(targets, taxa):
         target.update(build_guidance(
             target["group"], target["family_name"], target["common_name"],
             target["season_label"], target["regional_count"], peers,
+            target["scientific_name"],
         ))
 
 
@@ -542,10 +544,11 @@ def _image_data(photo, relative_path, destination, alt):
 def _validate_targets(targets, output_dir=None):
     required_text = (
         "common_name", "scientific_name", "season_label", "target_reason",
-        "id_limitations", "image", "image_attribution", "image_license", "image_source_url",
+        "id_limitations", "survey_period_note", "image", "image_attribution",
+        "image_license", "image_source_url",
     )
     required_lists = (
-        "active_months", "habitat_tags", "method_tags", "finding_help",
+        "active_months", "survey_periods", "habitat_tags", "method_tags", "finding_help",
         "id_help", "id_traits", "photo_checklist",
     )
     seen = set()
@@ -560,6 +563,9 @@ def _validate_targets(targets, output_dir=None):
         for key in required_lists:
             if not target.get(key):
                 errors.append(f"taxon {target['id']} has no {key}")
+        periods = target.get("survey_periods") or []
+        if any(period not in {"day", "night"} for period in periods):
+            errors.append(f"taxon {target['id']} has an invalid survey period")
         for trait in target.get("id_traits") or []:
             if not isinstance(trait, dict) or not trait.get("label") or not trait.get("detail"):
                 errors.append(f"taxon {target['id']} has an invalid identification trait")

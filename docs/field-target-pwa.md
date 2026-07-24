@@ -34,9 +34,9 @@ a species that falls just below the regional-frequency top 50.
    as the moth baseline, then allow recent Kingfisher Hollow moths sharing an
    exact, sourced larval-host genus to boost a seasonal candidate.
 2. Give every target common and scientific names, seasonal context, habitat and
-   method tags, a reason to look, finding guidance, identification evidence to
-   photograph, named regional comparisons where available, and an explicit ID
-   limitation.
+   method tags, explicit daylight and/or dusk-night survey periods, a reason to
+   look, finding guidance, identification evidence to photograph, named
+   regional comparisons where available, and an explicit ID limitation.
 3. Treat family-level guidance as an evidence protocol, not as a sourced
    species diagnosis. Never invent a field mark when the local database does
    not contain a vetted diagnostic key.
@@ -46,9 +46,12 @@ a species that falls just below the regional-frequency top 50.
 5. Keep all application code, styles, data, icons, and required photographs on
    the same origin. Do not depend on CDNs, Google Fonts, iNaturalist, or an AI
    model for offline use.
-6. Support common/scientific-name search, group filtering, habitat, method, and
-   local-flight-signal filtering, target details, browser back, keyboard
-   navigation, and preserved list position.
+6. Support common/scientific-name search, group filtering, an always-visible
+   survey-period control, habitat, method, and local-flight-signal filtering,
+   target details, browser back, keyboard navigation, and preserved list
+   position. Daylight includes active adults and explicit methods such as
+   flushing, beating, or leaf-mine searches; a generic host-search fallback
+   does not make every nocturnal moth a daytime target.
 7. Display `Ready offline` only after the service worker verifies every release
    asset. Preserve the previous complete release when an update is interrupted.
 8. Keep the package below 75 MB and expose the data date, guidance revision,
@@ -68,7 +71,10 @@ The guide is a separate static application deployed beside the survey at
   report, enriches licensed image metadata through a persistent cache, and
   generates `public/field/`.
 - `src/field_guidance.py` owns conservative family and group evidence
-  protocols.
+  protocols and the survey-period rules. Butterflies and most odonates are
+  daylight targets; darners include dusk; moths are nocturnal unless known
+  day-flying behavior or a named daylight detection method supports another
+  period.
 - `src/moth_guilds.py` combines a 14-day property activity window with a
   checked-in reduction of the Natural History Museum HOSTS dataset. Exact
   shared host genera can change moth order; very broad feeders and unknown

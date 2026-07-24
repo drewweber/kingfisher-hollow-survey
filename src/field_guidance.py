@@ -236,6 +236,7 @@ FAMILY_PROFILES = {
 NAME_PROFILES = (
     ("clearwing", {
         "method_tags": ["day watch", "host-stem search"],
+        "finding": "Watch sunlit flowers and host stems from late morning through afternoon; these moths are daylight targets rather than light-sheet priorities.",
         "id": "Measure the shape of every transparent wing window and dark border, then compare body bands, leg color and tail tuft; include a side view that shows the legs.",
     }),
     ("underwing", {
@@ -251,8 +252,14 @@ NAME_PROFILES = (
         "id": "Compare the complete forewing line-and-dash pattern and add a hindwing and side view; several dagger moth adults are not reliably separable without larvae or expert examination.",
         "limitation": "Some dagger moths are safer as Acronicta or a named complex from adult photographs; larvae, genitalia or expert review may be needed.",
     }),
+    ("leafminer", {
+        "method_tags": ["leaf-mine search", "macro photography"],
+    }),
     ("leafroller", {
         "method_tags": ["rolled-leaf search", "beating sheet"],
+    }),
+    ("webworm", {
+        "method_tags": ["host-sign search", "beating sheet"],
     }),
     ("borer", {
         "method_tags": ["host-stem search", "frass search"],
@@ -280,6 +287,115 @@ NAME_PROFILES = (
         "habitat_tags": ["wet meadow", "sunny perch"],
     }),
 )
+
+
+DAYLIGHT_MOTH_METHODS = {
+    "beating sheet",
+    "day flush",
+    "day watch",
+    "frass search",
+    "host-sign search",
+    "host-stem search",
+    "leaf-mine search",
+    "rolled-leaf search",
+}
+
+DAY_FLYING_MOTH_GENERA = {
+    "Acoloithus",
+    "Alypia",
+    "Cisseps",
+    "Ctenucha",
+    "Harrisina",
+    "Hemaris",
+    "Hemileuca",
+    "Psychomorpha",
+    "Scepsis",
+    "Thyris",
+}
+
+DAY_FLYING_MOTH_NAMES = (
+    "clearwing",
+    "ctenucha",
+    "forester",
+    "grapevine epimenis",
+)
+
+NIGHT_ONLY_MOTH_METHODS = {
+    "dusk watch",
+    "sugar bait",
+    "uv light",
+}
+
+
+def survey_period_profile(group, family_name="", common_name="",
+                          scientific_name="", method_tags=()):
+    """Return conservative periods when a target is practical to seek.
+
+    Daylight includes active adults and named sign-search methods.  It does not
+    treat the generic moth fallback of "host search" as enough to make every
+    nocturnal species a day target.
+    """
+    if group == "butterflies":
+        return {
+            "survey_periods": ["day"],
+            "survey_period_note": (
+                "Daylight target. Search warm, bright, low-wind periods when adults "
+                "are flying, nectaring, puddling or returning to habitual perches."
+            ),
+        }
+
+    if group == "odonates":
+        periods = ["day"]
+        if family_name == "Aeshnidae":
+            periods.append("night")
+            note = (
+                "Search by day and through the last light of evening. Darners may "
+                "continue patrol flights into dusk, especially over openings and water."
+            )
+        else:
+            note = (
+                "Daylight target. Warm sun and low wind bring adults onto patrol routes "
+                "and perches; cool or overcast conditions sharply reduce detectability."
+            )
+        return {"survey_periods": periods, "survey_period_note": note}
+
+    genus = (scientific_name or "").split(" ", 1)[0]
+    common = (common_name or "").casefold()
+    day_flying = (
+        family_name == "Sesiidae"
+        or genus in DAY_FLYING_MOTH_GENERA
+        or any(marker in common for marker in DAY_FLYING_MOTH_NAMES)
+    )
+    if day_flying:
+        return {
+            "survey_periods": ["day"],
+            "survey_period_note": (
+                "Day-flying moth. Prioritize sunlit flowers, host patches and edge "
+                "vegetation from late morning through afternoon instead of waiting for a light sheet."
+            ),
+        }
+
+    daylight_methods = [
+        method for method in method_tags
+        if method.casefold() in DAYLIGHT_MOTH_METHODS
+    ]
+    if daylight_methods:
+        method_text = ", ".join(daylight_methods[:2])
+        return {
+            "survey_periods": ["day", "night"],
+            "survey_period_note": (
+                f"Searchable in daylight by {method_text}; adults may also be found "
+                "at dusk, at bait or at a light sheet after dark."
+            ),
+        }
+
+    return {
+        "survey_periods": ["night"],
+        "survey_period_note": (
+            "Dusk and night target. Prioritize the first hours after dark, light-sheet "
+            "checks, bait or pre-dawn resting searches rather than a daytime transect."
+        ),
+    }
 
 
 def _merge_unique(base, additions):
@@ -382,9 +498,33 @@ def lookalike_traits(group, target_common, peer_common, peer_scientific):
 
 
 def build_guidance(group, family_name, common_name, season_label, regional_count,
-                   lookalikes):
+                   lookalikes, scientific_name=""):
     """Build all required offline guidance fields for a target."""
     profile = guidance_profile(group, family_name, common_name)
+    period_profile = survey_period_profile(
+        group, family_name, common_name, scientific_name, profile["method_tags"]
+    )
+    method_tags = profile["method_tags"]
+    finding = profile["finding"]
+    if group == "moths" and period_profile["survey_periods"] == ["day"]:
+        method_tags = _merge_unique(
+            ["day watch", "nectar watch"],
+            [
+                method for method in method_tags
+                if method.casefold() not in NIGHT_ONLY_MOTH_METHODS
+            ],
+        )
+        label = (common_name or "").casefold()
+        if "clearwing" in label:
+            finding = (
+                "Watch sunlit tubular flowers and likely host stems from late morning through afternoon; follow repeated nectar routes before approaching.",
+                "Inspect host stems for fresh frass, exit holes or pupal cases and photograph that sign with the host plant.",
+            )
+        else:
+            finding = (
+                "Walk sunny flower patches, host edges and openings slowly from late morning through afternoon, watching active adults and repeated perches.",
+                "Check flower heads and upper foliage from several angles; day-flying moths can be overlooked among bees, wasps and butterflies.",
+            )
     seasonal = (
         f"Nearby records place this species in {season_label}. Concentrate effort inside that "
         "window, but allow for warm-year shifts of one to two weeks."
@@ -410,9 +550,10 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
     ]
     return {
         "habitat_tags": profile["habitat_tags"],
-        "method_tags": profile["method_tags"],
+        "method_tags": method_tags,
+        **period_profile,
         "target_reason": reason,
-        "finding_help": [seasonal, *profile["finding"][:2]],
+        "finding_help": [seasonal, *finding[:2]],
         "id_help": list(profile["id"][:3]),
         "id_traits": _trait_items(group, profile["id"][:3]),
         "lookalikes": comparisons,

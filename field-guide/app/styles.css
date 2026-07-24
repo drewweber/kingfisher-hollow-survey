@@ -359,6 +359,84 @@ a:hover {
   outline-offset: 1px;
 }
 
+.period-filter {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.period-filter legend {
+  width: 100%;
+  margin-bottom: 0.28rem;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.period-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  padding: 0.2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface-muted);
+}
+
+.period-segment {
+  position: relative;
+  min-width: 0;
+}
+
+.period-segment input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.period-segment span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  min-width: 0;
+  padding: 0.3rem 0.2rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #42534b;
+  font-size: 0.75rem;
+  font-weight: 760;
+  text-align: center;
+}
+
+.period-segment input:checked + span {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--spruce);
+  box-shadow: 0 1px 2px rgb(22 40 32 / 12%);
+}
+
+.period-segment input[value="day"]:checked + span {
+  border-color: #b78b25;
+  background: #f4e4ae;
+  color: #4d390d;
+}
+
+.period-segment input[value="night"]:checked + span {
+  border-color: #213c33;
+  background: #29463c;
+  color: #ffffff;
+}
+
+.period-segment input:focus-visible + span {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
 .search-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -786,6 +864,31 @@ a:hover {
   white-space: nowrap;
 }
 
+.tag-list .period-tag {
+  border-color: #9caea5;
+  background: #e9efec;
+  color: #293c34;
+  font-weight: 800;
+}
+
+.tag-list .period-day {
+  border-color: #c4a65e;
+  background: #f6eac2;
+  color: #514017;
+}
+
+.tag-list .period-night {
+  border-color: #597067;
+  background: #dce6e1;
+  color: #213c33;
+}
+
+.tag-list .period-day-night {
+  border-color: #9b8f67;
+  background: #eee9d8;
+  color: #413d2b;
+}
+
 .tag-list li.method-tag {
   border-color: #c7bd9e;
   background: #f8f4e7;
@@ -1035,6 +1138,44 @@ a:hover {
 .detail-section > p {
   color: #405149;
   font-size: 0.86rem;
+}
+
+.survey-period-section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.survey-period-section h3 {
+  margin: 0;
+}
+
+.survey-period-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.survey-period-list li {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.survey-period-list .period-day {
+  border-color: #c4a65e;
+  background: #f6eac2;
+  color: #514017;
+}
+
+.survey-period-list .period-night {
+  border-color: #597067;
+  background: #29463c;
+  color: #ffffff;
 }
 
 .local-signal-section {

@@ -6,6 +6,11 @@
     butterflies: "Butterflies",
     odonates: "Dragons"
   };
+  const PERIOD_LABELS = {
+    day: "Daylight",
+    night: "Dusk + night"
+  };
+  const PERIOD_STORAGE_KEY = "kh-field-survey-period";
   const MONTH_NAMES = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -17,6 +22,7 @@
     data: null,
     targets: [],
     group: "all",
+    period: "all",
     query: "",
     habitat: "",
     method: "",
@@ -178,6 +184,10 @@
     const regionalValue = Number(raw.regional_count);
     const habitatTags = cleanStringList(raw.habitat_tags);
     const methodTags = cleanStringList(raw.method_tags);
+    const surveyPeriods = cleanStringList(raw.survey_periods)
+      .map((period) => period.toLocaleLowerCase())
+      .filter((period) => period === "day" || period === "night");
+    if (!surveyPeriods.length) surveyPeriods.push(group === "moths" ? "night" : "day");
     const findingHelp = cleanStringList(raw.finding_help);
     const idHelp = cleanStringList(raw.id_help);
     const photoChecklist = cleanStringList(raw.photo_checklist);
@@ -217,6 +227,8 @@
       regionalCount: Number.isFinite(regionalValue) && regionalValue >= 0 ? Math.round(regionalValue) : null,
       seasonLabel: cleanString(raw.season_label) || seasonFromMonths(activeMonths),
       activeMonths,
+      surveyPeriods: [...new Set(surveyPeriods)],
+      surveyPeriodNote: cleanString(raw.survey_period_note),
       habitatTags,
       methodTags,
       targetReason: cleanString(raw.target_reason),
@@ -236,6 +248,8 @@
       target.familyName,
       target.familyCommon,
       target.targetReason,
+      target.surveyPeriodNote,
+      ...target.surveyPeriods.map((period) => PERIOD_LABELS[period] || period),
       target.localSignal?.label || "",
       ...(target.localSignal?.guilds || []).flatMap((guild) => [
         guild.hostGenus,
@@ -283,6 +297,14 @@
   function regionalLabel(count) {
     if (count === null) return "";
     return `${count.toLocaleString()} nearby ${count === 1 ? "record" : "records"}`;
+  }
+
+  function surveyPeriodLabel(periods) {
+    const hasDay = periods.includes("day");
+    const hasNight = periods.includes("night");
+    if (hasDay && hasNight) return "Day + night";
+    if (hasDay) return PERIOD_LABELS.day;
+    return PERIOD_LABELS.night;
   }
 
   function setLoadingState() {
@@ -402,6 +424,7 @@
     const query = normalizeSearch(state.query.trim());
     return state.targets.filter((target) => {
       if (state.group !== "all" && target.group !== state.group) return false;
+      if (state.period !== "all" && !target.surveyPeriods.includes(state.period)) return false;
       if (state.habitat && !target.habitatTags.includes(state.habitat)) return false;
       if (state.method && !target.methodTags.includes(state.method)) return false;
       if (state.localSignalOnly && !target.localSignal) return false;
@@ -485,13 +508,17 @@
     const habitatLimit = includeAll ? target.habitatTags.length : 2;
     const methodLimit = includeAll ? target.methodTags.length : 1;
     const tags = [
-      ...target.habitatTags.slice(0, habitatLimit).map((value) => ({ value, method: false })),
-      ...target.methodTags.slice(0, methodLimit).map((value) => ({ value, method: true }))
+      {
+        value: surveyPeriodLabel(target.surveyPeriods),
+        className: `period-tag period-${target.surveyPeriods.join("-")}`
+      },
+      ...target.habitatTags.slice(0, habitatLimit).map((value) => ({ value, className: "" })),
+      ...target.methodTags.slice(0, methodLimit).map((value) => ({ value, className: "method-tag" }))
     ];
     if (!tags.length) return null;
 
     const list = makeElement("ul", "tag-list");
-    tags.forEach((tag) => list.append(makeElement("li", tag.method ? "method-tag" : "", formatTag(tag.value))));
+    tags.forEach((tag) => list.append(makeElement("li", tag.className, formatTag(tag.value))));
     return list;
   }
 
@@ -556,10 +583,10 @@
 
     if (!matches.length) {
       const hasFilters = state.group !== "all" || state.query || state.habitat
-        || state.method || state.localSignalOnly;
+        || state.period !== "all" || state.method || state.localSignalOnly;
       const message = total === 0
         ? "No field targets are included in this data release."
-        : "Try another group, search term, habitat, or method.";
+        : "Try another survey period, group, search term, habitat, or method.";
       showState(
         hasFilters ? "No targets match" : "No targets available",
         message,
@@ -587,6 +614,7 @@
 
   function clearAllFilters() {
     state.group = "all";
+    state.period = "all";
     state.query = "";
     state.habitat = "";
     state.method = "";
@@ -596,6 +624,11 @@
     elements.habitat.value = "";
     elements.method.value = "";
     elements.localSignal.checked = false;
+    try {
+      localStorage.setItem(PERIOD_STORAGE_KEY, "all");
+    } catch (_error) {
+      // Storage is an optional convenience; filtering still works without it.
+    }
     renderTargets();
     elements.resultsHeading.focus({ preventScroll: true });
   }
@@ -607,6 +640,18 @@
     const list = makeElement("ul", listClass);
     items.forEach((item) => list.append(makeElement("li", "", item)));
     section.append(list);
+    container.append(section);
+  }
+
+  function appendSurveyPeriod(container, target) {
+    const section = makeElement("section", "detail-section survey-period-section");
+    section.append(makeElement("h3", "", "When to search"));
+    const periods = makeElement("ul", "survey-period-list");
+    target.surveyPeriods.forEach((period) => {
+      periods.append(makeElement("li", `period-${period}`, PERIOD_LABELS[period]));
+    });
+    section.append(periods);
+    if (target.surveyPeriodNote) section.append(makeElement("p", "", target.surveyPeriodNote));
     container.append(section);
   }
 
@@ -778,6 +823,7 @@
     hero.append(summary);
 
     const sections = makeElement("div", "detail-sections");
+    appendSurveyPeriod(sections, target);
     appendLocalSignal(sections, target);
     appendTextListSection(sections, "Where to look", target.findingHelp);
     if (target.idTraits.length) {
@@ -1042,6 +1088,14 @@
     elements.form.addEventListener("submit", (event) => event.preventDefault());
     elements.form.addEventListener("change", (event) => {
       if (event.target.name === "group") state.group = event.target.value;
+      if (event.target.name === "period") {
+        state.period = event.target.value;
+        try {
+          localStorage.setItem(PERIOD_STORAGE_KEY, state.period);
+        } catch (_error) {
+          // Storage is an optional convenience; filtering still works without it.
+        }
+      }
       if (event.target === elements.habitat) state.habitat = elements.habitat.value;
       if (event.target === elements.method) state.method = elements.method.value;
       if (event.target === elements.localSignal) {
@@ -1095,6 +1149,16 @@
   }
 
   function init() {
+    try {
+      const storedPeriod = localStorage.getItem(PERIOD_STORAGE_KEY);
+      if (storedPeriod === "day" || storedPeriod === "night") {
+        state.period = storedPeriod;
+        const input = elements.form.querySelector(`input[name="period"][value="${storedPeriod}"]`);
+        if (input) input.checked = true;
+      }
+    } catch (_error) {
+      // Start in the neutral view when storage is unavailable.
+    }
     bindEvents();
     updateNetworkState();
     setOfflineState("checking");

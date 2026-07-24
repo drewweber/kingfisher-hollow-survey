@@ -8,7 +8,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 import field_guide  # noqa: E402
-from field_guidance import build_guidance, guidance_profile  # noqa: E402
+from field_guidance import (  # noqa: E402
+    build_guidance,
+    guidance_profile,
+    survey_period_profile,
+)
 
 
 class FieldGuidanceTests(unittest.TestCase):
@@ -23,10 +27,11 @@ class FieldGuidanceTests(unittest.TestCase):
                 [{"taxon_id": 2, "common_name": "Nearby congener", "scientific_name": "Testa altera"}],
             )
             for key in (
-                "habitat_tags", "method_tags", "finding_help", "id_help",
+                "survey_periods", "habitat_tags", "method_tags", "finding_help", "id_help",
                 "id_traits", "photo_checklist", "lookalikes",
             ):
                 self.assertTrue(guidance[key], f"{group} has no {key}")
+            self.assertTrue(guidance["survey_period_note"])
             self.assertTrue(guidance["target_reason"])
             self.assertTrue(guidance["id_limitations"])
             self.assertIn("Nearby congener", guidance["lookalikes"][0]["name"])
@@ -41,6 +46,40 @@ class FieldGuidanceTests(unittest.TestCase):
         self.assertIn("genus", tortricid["limitation"].casefold())
         self.assertIn("terminal", bluet["limitation"].casefold())
         self.assertIn("species-group", skipper["limitation"].casefold())
+
+    def test_survey_periods_separate_adult_activity_and_named_day_methods(self):
+        nocturnal = survey_period_profile(
+            "moths", "Noctuidae", "Primrose Moth", "Schinia florida",
+            ["UV light", "host search"],
+        )
+        day_flying = survey_period_profile(
+            "moths", "Sphingidae", "Hummingbird Clearwing", "Hemaris thysbe",
+            ["day watch", "UV light"],
+        )
+        searchable_both = survey_period_profile(
+            "moths", "Tortricidae", "Raspberry Leafroller Moth",
+            "Epinotia medioviridana", ["rolled-leaf search", "UV light"],
+        )
+        darner = survey_period_profile(
+            "odonates", "Aeshnidae", "Shadow Darner", "Aeshna umbrosa",
+            ["patrol watch", "evening flight"],
+        )
+
+        self.assertEqual(["night"], nocturnal["survey_periods"])
+        self.assertEqual(["day"], day_flying["survey_periods"])
+        self.assertEqual(["day", "night"], searchable_both["survey_periods"])
+        self.assertEqual(["day", "night"], darner["survey_periods"])
+        self.assertEqual(
+            ["day"],
+            survey_period_profile("butterflies", "Nymphalidae")["survey_periods"],
+        )
+        clearwing_guidance = build_guidance(
+            "moths", "Sphingidae", "Hummingbird Clearwing", "Jun-Aug", 12, [],
+            "Hemaris thysbe",
+        )
+        self.assertIn("day watch", clearwing_guidance["method_tags"])
+        self.assertNotIn("UV light", clearwing_guidance["method_tags"])
+        self.assertNotIn("dusk", " ".join(clearwing_guidance["finding_help"]).casefold())
 
 
 class FieldGuideReleaseTests(unittest.TestCase):
@@ -70,6 +109,8 @@ class FieldGuideReleaseTests(unittest.TestCase):
             "image_source_url": "https://www.inaturalist.org/photos/1",
             "images": images,
             "active_months": [6, 7, 8],
+            "survey_periods": ["night"],
+            "survey_period_note": "Search after dusk.",
             "habitat_tags": ["forest edge"],
             "method_tags": ["UV light"],
             "finding_help": ["Look on warm nights."],
@@ -140,6 +181,15 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("Why it may be flying now", app)
         self.assertIn("appendLocalSignal", app)
         self.assertIn('id="local-signal-filter"', markup)
+
+    def test_field_app_exposes_day_and_night_survey_modes(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('name="period" value="day"', markup)
+        self.assertIn('name="period" value="night"', markup)
+        self.assertIn("target.surveyPeriods.includes(state.period)", app)
+        self.assertIn("When to search", app)
+        self.assertIn("surveyPeriodNote", app)
 
     def test_new_release_refreshes_the_visible_target_list(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
