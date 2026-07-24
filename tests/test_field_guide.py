@@ -191,6 +191,22 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("When to search", app)
         self.assertIn("surveyPeriodNote", app)
 
+    def test_night_mode_uses_a_persisted_low_light_theme(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")
+        styles = (ROOT / "field-guide" / "app" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn("applySurveyPeriodTheme", app)
+        self.assertIn('document.documentElement.dataset.surveyPeriod = period', app)
+        self.assertIn('localStorage.getItem("kh-field-survey-period") === "night"', markup)
+        self.assertLess(
+            markup.index('localStorage.getItem("kh-field-survey-period")'),
+            markup.index('<link rel="stylesheet"'),
+        )
+        self.assertIn(':root[data-survey-period="night"]', styles)
+        self.assertIn("color-scheme: dark", styles)
+        self.assertIn("filter: brightness(0.46)", styles)
+        self.assertIn("filter: brightness(0.66)", styles)
+
     def test_new_release_refreshes_the_visible_target_list(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
         controller_change = app.split(

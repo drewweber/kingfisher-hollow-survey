@@ -52,14 +52,19 @@ a species that falls just below the regional-frequency top 50.
    position. Daylight includes active adults and explicit methods such as
    flushing, beating, or leaf-mine searches; a generic host-search fallback
    does not make every nocturnal moth a daytime target.
-7. Display `Ready offline` only after the service worker verifies every release
+7. When dusk-night is selected, use a persisted low-light red and black theme
+   with dimmed target thumbnails and restrained identification imagery. Apply
+   that preference before styles load so reopening the installed app does not
+   produce a bright flash. Any-time and daylight views retain the standard
+   field theme.
+8. Display `Ready offline` only after the service worker verifies every release
    asset. Preserve the previous complete release when an update is interrupted.
-8. Keep the package below 75 MB and expose the data date, guidance revision,
+9. Keep the package below 75 MB and expose the data date, guidance revision,
    target counts, download progress, and cache-repair state.
-9. Register the worker only from `/field/service-worker.js` with `/field/`
+10. Register the worker only from `/field/service-worker.js` with `/field/`
    scope. It must never control `/`, the survey's external assets, or
    `/api/update`.
-10. A missing target, required guidance field, image, attribution, approved
+11. A missing target, required guidance field, image, attribution, approved
     license, or service-worker asset fails the build.
 
 ## Architecture
@@ -146,6 +151,9 @@ update.
 - Every target opens offline with finding help, ID help, evidence checklist,
   image, and attribution.
 - Search and every group/filter control work after a cold offline reload.
+- Dusk-night selection immediately changes the interface and browser chrome to
+  the low-light theme, survives a cold offline reload without a bright startup
+  state, and returns to the standard theme when another period is selected.
 - No required offline flow makes a request to another origin.
 - The service worker's asset manifest contains every local target image and
   cannot control a URL outside `/field/`.

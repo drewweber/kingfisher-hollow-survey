@@ -37,6 +37,8 @@
   };
 
   const elements = {
+    themeColor: document.querySelector('meta[name="theme-color"]'),
+    colorScheme: document.querySelector('meta[name="color-scheme"]'),
     dataDate: document.querySelector("#data-date"),
     networkState: document.querySelector("#network-state"),
     networkLabel: document.querySelector("#network-label"),
@@ -68,6 +70,13 @@
     if (className) element.className = className;
     if (text !== undefined && text !== null) element.textContent = text;
     return element;
+  }
+
+  function applySurveyPeriodTheme(period) {
+    const isNight = period === "night";
+    document.documentElement.dataset.surveyPeriod = period;
+    if (elements.themeColor) elements.themeColor.content = isNight ? "#120504" : "#18382c";
+    if (elements.colorScheme) elements.colorScheme.content = isNight ? "dark" : "light";
   }
 
   function cleanString(value) {
@@ -615,6 +624,7 @@
   function clearAllFilters() {
     state.group = "all";
     state.period = "all";
+    applySurveyPeriodTheme(state.period);
     state.query = "";
     state.habitat = "";
     state.method = "";
@@ -1090,6 +1100,7 @@
       if (event.target.name === "group") state.group = event.target.value;
       if (event.target.name === "period") {
         state.period = event.target.value;
+        applySurveyPeriodTheme(state.period);
         try {
           localStorage.setItem(PERIOD_STORAGE_KEY, state.period);
         } catch (_error) {
@@ -1159,6 +1170,7 @@
     } catch (_error) {
       // Start in the neutral view when storage is unavailable.
     }
+    applySurveyPeriodTheme(state.period);
     bindEvents();
     updateNetworkState();
     setOfflineState("checking");

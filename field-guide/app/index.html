@@ -8,6 +8,17 @@
   <meta name="application-name" content="Kingfisher Hollow Field Targets">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script>
+    try {
+      if (localStorage.getItem("kh-field-survey-period") === "night") {
+        document.documentElement.dataset.surveyPeriod = "night";
+        document.querySelector('meta[name="theme-color"]').content = "#120504";
+        document.querySelector('meta[name="color-scheme"]').content = "dark";
+      }
+    } catch (_error) {
+      // The app will start in its daylight-safe neutral theme.
+    }
+  </script>
   <title>Field Targets | Kingfisher Hollow</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png" sizes="192x192">

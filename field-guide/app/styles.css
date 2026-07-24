@@ -1376,6 +1376,231 @@ a:hover {
   text-align: center;
 }
 
+:root[data-survey-period="night"] {
+  color-scheme: dark;
+  --paper: #080201;
+  --surface: #120504;
+  --surface-muted: #1c0907;
+  --ink: #de9480;
+  --ink-soft: #a76b5d;
+  --spruce: #120504;
+  --spruce-mid: #c36b55;
+  --line: #35130f;
+  --line-strong: #633025;
+  --timing: #b95139;
+  --moth: #8d3b2f;
+  --butterfly: #8d3b2f;
+  --odonate: #8d3b2f;
+  --danger: #d86d56;
+  --focus: #ef8c67;
+}
+
+:root[data-survey-period="night"] .app-header {
+  border-color: #3c1712;
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .title-block p,
+:root[data-survey-period="night"] .header-meta,
+:root[data-survey-period="night"] .data-stamp span,
+:root[data-survey-period="night"] .offline-kicker {
+  color: var(--ink-soft);
+}
+
+:root[data-survey-period="night"] .offline-panel {
+  border-color: #3c1712;
+}
+
+:root[data-survey-period="night"] #offline-status {
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .network-dot,
+:root[data-survey-period="night"] .network-state[data-online="false"] .network-dot {
+  border-color: #7d4033;
+  background: #9e4b3a;
+}
+
+:root[data-survey-period="night"] .offline-action,
+:root[data-survey-period="night"] .offline-action:hover:not(:disabled),
+:root[data-survey-period="night"] .offline-action:disabled {
+  border-color: var(--line-strong);
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .segment span,
+:root[data-survey-period="night"] .period-segment span,
+:root[data-survey-period="night"] .search-field input::placeholder {
+  color: var(--ink-soft);
+}
+
+:root[data-survey-period="night"] .segment input:checked + span,
+:root[data-survey-period="night"] .period-segment input:checked + span {
+  border-color: var(--line-strong);
+  background: #2a0d09;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+:root[data-survey-period="night"] .period-segment input[value="night"]:checked + span {
+  border-color: #9a4937;
+  background: #4c1912;
+  color: #efad99;
+}
+
+:root[data-survey-period="night"] .search-field input,
+:root[data-survey-period="night"] .filter-toggle,
+:root[data-survey-period="night"] .clear-button,
+:root[data-survey-period="night"] .filter-panel,
+:root[data-survey-period="night"] .filter-panel select,
+:root[data-survey-period="night"] .filter-panel .check-filter {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .filter-toggle[aria-expanded="true"] {
+  background: var(--surface-muted);
+}
+
+:root[data-survey-period="night"] .filter-count,
+:root[data-survey-period="night"] .state-copy button {
+  border-color: #8e4232;
+  background: #5c2017;
+  color: #efad99;
+}
+
+:root[data-survey-period="night"] .target-card,
+:root[data-survey-period="night"] .state-panel:not(.loading-state),
+:root[data-survey-period="night"] .skeleton-card,
+:root[data-survey-period="night"] .target-dialog,
+:root[data-survey-period="night"] .dialog-bar,
+:root[data-survey-period="night"] .icon-button,
+:root[data-survey-period="night"] .online-link,
+:root[data-survey-period="night"] .noscript-message {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .reference-media,
+:root[data-survey-period="night"] .comparison-media,
+:root[data-survey-period="night"] .skeleton-card span,
+:root[data-survey-period="night"] .skeleton-card i {
+  background: #190806;
+}
+
+:root[data-survey-period="night"] .card-media-grid img {
+  filter: brightness(0.46) saturate(0.72);
+}
+
+:root[data-survey-period="night"] .detail-reference-grid img,
+:root[data-survey-period="night"] .comparison-photo-grid img {
+  filter: brightness(0.66) saturate(0.78);
+}
+
+:root[data-survey-period="night"] .image-fallback,
+:root[data-survey-period="night"] .scientific-name,
+:root[data-survey-period="night"] .season-row,
+:root[data-survey-period="night"] .card-chevron,
+:root[data-survey-period="night"] #result-count,
+:root[data-survey-period="night"] .state-copy p,
+:root[data-survey-period="night"] .detail-scientific,
+:root[data-survey-period="night"] .family-line,
+:root[data-survey-period="night"] .detail-month,
+:root[data-survey-period="night"] .credit-lines {
+  color: var(--ink-soft);
+}
+
+:root[data-survey-period="night"] .group-badge,
+:root[data-survey-period="night"] .flight-signal-badge,
+:root[data-survey-period="night"] .flight-signal-badge.signal-strong {
+  border-color: #783526;
+  background: #43140f;
+  color: #dfa08e;
+}
+
+:root[data-survey-period="night"] .month-rail span,
+:root[data-survey-period="night"] .detail-month::before {
+  border-color: #3e1712;
+  background: #190806;
+}
+
+:root[data-survey-period="night"] .month-rail span.is-active,
+:root[data-survey-period="night"] .detail-month.is-active::before {
+  border-color: #944331;
+  background: #6e281d;
+}
+
+:root[data-survey-period="night"] .month-rail span.is-current,
+:root[data-survey-period="night"] .detail-month.is-current::before {
+  outline-color: var(--ink);
+}
+
+:root[data-survey-period="night"] .target-reason,
+:root[data-survey-period="night"] .detail-reason,
+:root[data-survey-period="night"] .detail-section > p,
+:root[data-survey-period="night"] .guidance-list,
+:root[data-survey-period="night"] .lookalike-list,
+:root[data-survey-period="night"] .photo-list,
+:root[data-survey-period="night"] .trait-list,
+:root[data-survey-period="night"] .comparison-trait-list,
+:root[data-survey-period="night"] .lookalike-list p,
+:root[data-survey-period="night"] .guild-signal-list {
+  color: #bb7868;
+}
+
+:root[data-survey-period="night"] .tag-list li,
+:root[data-survey-period="night"] .tag-list .period-tag,
+:root[data-survey-period="night"] .tag-list li.method-tag,
+:root[data-survey-period="night"] .survey-period-list li {
+  border-color: #57271e;
+  background: #220a07;
+  color: #c98270;
+}
+
+:root[data-survey-period="night"] .tag-list .period-night,
+:root[data-survey-period="night"] .survey-period-list .period-night {
+  border-color: #8d3f2f;
+  background: #45150f;
+  color: #e4a08c;
+}
+
+:root[data-survey-period="night"] .tag-list .period-day-night,
+:root[data-survey-period="night"] .survey-period-list .period-day {
+  border-color: #663024;
+  background: #2d0e0a;
+  color: #cf8876;
+}
+
+:root[data-survey-period="night"] .target-dialog::backdrop {
+  background: rgb(0 0 0 / 82%);
+}
+
+:root[data-survey-period="night"] .icon-button:hover,
+:root[data-survey-period="night"] .online-link:hover,
+:root[data-survey-period="night"] .comparison-photo-grid figure {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .local-signal-section {
+  border-left-color: #8e3e2e;
+  background: #190705;
+}
+
+:root[data-survey-period="night"] .signal-chip,
+:root[data-survey-period="night"] .signal-chip.signal-strong {
+  border-color: #713023;
+  color: #c67e6c;
+}
+
+:root[data-survey-period="night"] .guild-signal-list li::marker,
+:root[data-survey-period="night"] .trait-list li::marker,
+:root[data-survey-period="night"] .comparison-trait-list li::marker {
+  color: #a64c39;
+}
+
 @media (min-width: 38rem) {
   .title-block h1 {
     font-size: 1.9rem;
@@ -1391,6 +1616,10 @@ a:hover {
     padding: 0 0 0 1rem;
     border-top: 0;
     border-left: 1px solid #315444;
+  }
+
+  :root[data-survey-period="night"] .offline-panel {
+    border-left-color: #3c1712;
   }
 
   .controls {
