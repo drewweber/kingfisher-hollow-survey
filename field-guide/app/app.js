@@ -20,6 +20,7 @@
     query: "",
     habitat: "",
     method: "",
+    localSignalOnly: false,
     registration: null,
     offlinePhase: "checking",
     offlineTimer: null,
@@ -43,6 +44,7 @@
     filterPanel: document.querySelector("#filter-panel"),
     habitat: document.querySelector("#habitat-filter"),
     method: document.querySelector("#method-filter"),
+    localSignal: document.querySelector("#local-signal-filter"),
     clearFilters: document.querySelector("#clear-filters"),
     resultCount: document.querySelector("#result-count"),
     resultsHeading: document.querySelector("#results-heading"),
@@ -124,6 +126,43 @@
       .toLocaleLowerCase();
   }
 
+  function normalizeLocalSignal(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const score = Number(raw.score);
+    const guilds = Array.isArray(raw.guilds)
+      ? raw.guilds.map((guild) => {
+        if (!guild || typeof guild !== "object") return null;
+        const hostGenus = cleanString(guild.host_genus);
+        const hostLabel = cleanString(guild.host_label);
+        const indicators = Array.isArray(guild.indicators)
+          ? guild.indicators.map((indicator) => {
+            if (!indicator || typeof indicator !== "object") return null;
+            const scientificName = cleanString(indicator.scientific_name);
+            const commonName = cleanString(indicator.common_name) || scientificName;
+            const lastSeen = cleanString(indicator.last_seen);
+            return commonName && lastSeen
+              ? { commonName, scientificName, lastSeen }
+              : null;
+          }).filter(Boolean)
+          : [];
+        return hostGenus && hostLabel && indicators.length
+          ? { hostGenus, hostLabel, indicators }
+          : null;
+      }).filter(Boolean)
+      : [];
+    if (!Number.isFinite(score) || score <= 0 || !guilds.length) return null;
+    return {
+      score,
+      strength: cleanString(raw.strength) || "supporting",
+      label: cleanString(raw.label) || "Local flight signal",
+      lookbackDays: Number(raw.lookback_days) || 14,
+      guilds,
+      sourceName: cleanString(raw.source_name),
+      sourceUrl: cleanOnlineUrl(raw.source_url),
+      caution: cleanString(raw.caution)
+    };
+  }
+
   function normalizeTarget(raw) {
     if (!raw || typeof raw !== "object") return null;
 
@@ -187,7 +226,8 @@
       lookalikes,
       photoChecklist,
       idLimitations: cleanString(raw.id_limitations),
-      taxonUrl: cleanOnlineUrl(raw.taxon_url)
+      taxonUrl: cleanOnlineUrl(raw.taxon_url),
+      localSignal: normalizeLocalSignal(raw.local_flight_signal)
     };
 
     target.searchText = normalizeSearch([
@@ -196,6 +236,15 @@
       target.familyName,
       target.familyCommon,
       target.targetReason,
+      target.localSignal?.label || "",
+      ...(target.localSignal?.guilds || []).flatMap((guild) => [
+        guild.hostGenus,
+        guild.hostLabel,
+        ...guild.indicators.flatMap((indicator) => [
+          indicator.commonName,
+          indicator.scientificName
+        ])
+      ]),
       ...target.habitatTags,
       ...target.methodTags,
       ...target.findingHelp,
@@ -355,6 +404,7 @@
       if (state.group !== "all" && target.group !== state.group) return false;
       if (state.habitat && !target.habitatTags.includes(state.habitat)) return false;
       if (state.method && !target.methodTags.includes(state.method)) return false;
+      if (state.localSignalOnly && !target.localSignal) return false;
       return !query || target.searchText.includes(query);
     });
   }
@@ -455,6 +505,13 @@
 
     const media = createReferenceGallery(target, "card-media-grid");
     media.append(makeElement("span", "group-badge", groupLabel(target.group)));
+    if (target.localSignal) {
+      media.append(makeElement(
+        "span",
+        `flight-signal-badge signal-${target.localSignal.strength}`,
+        target.localSignal.strength === "strong" ? "Strong local signal" : "Local signal"
+      ));
+    }
 
     const body = makeElement("div", "card-body");
     const heading = makeElement("div", "card-heading");
@@ -498,7 +555,8 @@
     updateFilterCount();
 
     if (!matches.length) {
-      const hasFilters = state.group !== "all" || state.query || state.habitat || state.method;
+      const hasFilters = state.group !== "all" || state.query || state.habitat
+        || state.method || state.localSignalOnly;
       const message = total === 0
         ? "No field targets are included in this data release."
         : "Try another group, search term, habitat, or method.";
@@ -520,7 +578,8 @@
   }
 
   function updateFilterCount() {
-    const count = Number(Boolean(state.habitat)) + Number(Boolean(state.method));
+    const count = Number(Boolean(state.habitat)) + Number(Boolean(state.method))
+      + Number(state.localSignalOnly);
     elements.filterCount.textContent = String(count);
     elements.filterCount.hidden = count === 0;
     elements.filterCount.setAttribute("aria-label", `${count} active ${count === 1 ? "filter" : "filters"}`);
@@ -531,10 +590,12 @@
     state.query = "";
     state.habitat = "";
     state.method = "";
+    state.localSignalOnly = false;
     elements.form.reset();
     elements.search.value = "";
     elements.habitat.value = "";
     elements.method.value = "";
+    elements.localSignal.checked = false;
     renderTargets();
     elements.resultsHeading.focus({ preventScroll: true });
   }
@@ -599,6 +660,43 @@
     container.append(section);
   }
 
+  function formatSignalDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(cleanString(value));
+    if (!match) return value;
+    return `${MONTH_SHORT[Number(match[2]) - 1]} ${Number(match[3])}`;
+  }
+
+  function appendLocalSignal(container, target) {
+    const signal = target.localSignal;
+    if (!signal) return;
+    const section = makeElement("section", "detail-section local-signal-section");
+    const heading = makeElement("div", "signal-heading");
+    heading.append(
+      makeElement("h3", "", "Why it may be flying now"),
+      makeElement("span", `signal-chip signal-${signal.strength}`, signal.label)
+    );
+    section.append(heading);
+    const list = makeElement("ul", "guild-signal-list");
+    signal.guilds.forEach((guild) => {
+      const item = document.createElement("li");
+      const label = makeElement("strong", "", `${guild.hostLabel} guild`);
+      const genus = makeElement("em", "", guild.hostGenus);
+      const indicatorText = guild.indicators.map((indicator) => (
+        `${indicator.commonName} (${formatSignalDate(indicator.lastSeen)})`
+      )).join("; ");
+      item.append(
+        label,
+        document.createTextNode(" / "),
+        genus,
+        document.createTextNode(`: ${indicatorText}.`)
+      );
+      list.append(item);
+    });
+    section.append(list);
+    if (signal.caution) section.append(makeElement("p", "signal-caution", signal.caution));
+    container.append(section);
+  }
+
   function createOnlineLink(label, url) {
     if (!url) return null;
     const link = makeElement("a", "online-link", `${label} / Online`);
@@ -610,7 +708,7 @@
   }
 
   function appendCredits(container, target) {
-    const hasCredits = target.images.length || target.taxonUrl;
+    const hasCredits = target.images.length || target.taxonUrl || target.localSignal?.sourceUrl;
     if (!hasCredits) return;
 
     const section = makeElement("section", "detail-section");
@@ -630,6 +728,11 @@
     const links = makeElement("div", "online-links");
     const taxonLink = createOnlineLink("View taxon on iNaturalist", target.taxonUrl);
     if (taxonLink) links.append(taxonLink);
+    const hostLink = createOnlineLink(
+      target.localSignal?.sourceName || "Larval host source",
+      target.localSignal?.sourceUrl
+    );
+    if (hostLink) links.append(hostLink);
     target.images.forEach((image, index) => {
       const sourceLink = createOnlineLink(`Reference ${index + 1} image`, image.sourceUrl);
       const licenseLink = createOnlineLink(`Reference ${index + 1} license`, image.licenseUrl);
@@ -675,6 +778,7 @@
     hero.append(summary);
 
     const sections = makeElement("div", "detail-sections");
+    appendLocalSignal(sections, target);
     appendTextListSection(sections, "Where to look", target.findingHelp);
     if (target.idTraits.length) {
       const identification = makeElement("section", "detail-section");
@@ -940,6 +1044,9 @@
       if (event.target.name === "group") state.group = event.target.value;
       if (event.target === elements.habitat) state.habitat = elements.habitat.value;
       if (event.target === elements.method) state.method = elements.method.value;
+      if (event.target === elements.localSignal) {
+        state.localSignalOnly = elements.localSignal.checked;
+      }
       renderTargets();
     });
     elements.search.addEventListener("input", () => {

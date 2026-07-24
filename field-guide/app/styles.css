@@ -460,6 +460,30 @@ a:hover {
   font-size: 0.82rem;
 }
 
+.filter-panel .check-filter {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  background: #f5f7f6;
+}
+
+.check-filter input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  accent-color: var(--spruce-mid);
+}
+
+.filter-panel .check-filter > span {
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
 .clear-button {
   grid-column: 1 / -1;
   min-height: 2.6rem;
@@ -606,6 +630,31 @@ a:hover {
   font-weight: 800;
   line-height: 1.2;
   text-transform: uppercase;
+}
+
+.flight-signal-badge {
+  position: absolute;
+  z-index: 2;
+  top: 0.55rem;
+  right: 0.55rem;
+  max-width: calc(100% - 7rem);
+  padding: 0.25rem 0.45rem;
+  border: 1px solid #735c1b;
+  border-radius: 4px;
+  background: #f1cf71;
+  color: #382d0e;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.2;
+  pointer-events: none;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.flight-signal-badge.signal-strong {
+  border-color: #1f4f3c;
+  background: #d5eadf;
+  color: #173c2e;
 }
 
 .card-body {
@@ -988,6 +1037,66 @@ a:hover {
   font-size: 0.86rem;
 }
 
+.local-signal-section {
+  margin: 0 -1rem;
+  padding: 1rem;
+  border-left: 3px solid var(--timing);
+  background: #faf7e9;
+}
+
+.signal-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.signal-heading h3 {
+  margin: 0;
+}
+
+.signal-chip {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid #8e762f;
+  border-radius: 4px;
+  color: #4a3c13;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.signal-chip.signal-strong {
+  border-color: #40705c;
+  color: #214c39;
+}
+
+.guild-signal-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #33473e;
+  font-size: 0.84rem;
+}
+
+.guild-signal-list li::marker {
+  color: #8e762f;
+}
+
+.guild-signal-list em {
+  color: var(--ink-soft);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.local-signal-section .signal-caution {
+  margin-top: 0.75rem;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  font-style: italic;
+}
+
 .guidance-list,
 .lookalike-list,
 .photo-list {
@@ -1155,8 +1264,12 @@ a:hover {
 
   .filter-panel {
     grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
     align-items: end;
+  }
+
+  .filter-panel .check-filter {
+    grid-column: auto;
   }
 
   .clear-button {
@@ -1186,6 +1299,11 @@ a:hover {
 
   .detail-sections {
     padding: 0 1.25rem 1.25rem;
+  }
+
+  .local-signal-section {
+    margin: 0 -1.25rem;
+    padding: 1rem 1.25rem;
   }
 }
 

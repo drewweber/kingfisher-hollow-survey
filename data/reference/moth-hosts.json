@@ -1,0 +1,7734 @@
+{
+  "schema_version": "kh-moth-hosts/1.0",
+  "generated_at": "2026-07-24T00:19:24.298978+00:00",
+  "effective_date": "2026-07-23",
+  "source": {
+    "title": "HOSTS: a Database of the World's Lepidopteran Hostplants",
+    "url": "https://data.nhm.ac.uk/dataset/hosts",
+    "doi": "10.5519/havt50xw",
+    "resource_id": "877f387a-36a3-486c-a0c1-b8d5fb69f85a",
+    "record_scope": "Nearctic, United States, Canada, and New World records"
+  },
+  "selection": {
+    "seasonal_target_limit": 200,
+    "recent_property_days": 45,
+    "queried_species": 671,
+    "matched_species": 468
+  },
+  "associations": {
+    "Acleris curvalana": {
+      "host_genera": [
+        "Gaylussacia",
+        "Vaccinium"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Acleris curvalana"
+      ]
+    },
+    "Acleris hastiana": {
+      "host_genera": [
+        "Andromeda",
+        "Betula",
+        "Ceanothus",
+        "Gaylussacia",
+        "Myrica",
+        "Populus",
+        "Quercus",
+        "Rhododendron",
+        "Salix",
+        "Vaccinium"
+      ],
+      "record_count": 21,
+      "source_names": [
+        "Acleris hastiana"
+      ]
+    },
+    "Acleris semipurpurana": {
+      "host_genera": [
+        "Prunus",
+        "Quercus",
+        "Rosa",
+        "Vitis"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Acleris semipurpurana"
+      ]
+    },
+    "Acleris variana": {
+      "host_genera": [
+        "Abies",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Pseudotsuga",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 44,
+      "source_names": [
+        "Acleris variana"
+      ]
+    },
+    "Acrobasis angusella": {
+      "host_genera": [
+        "Carya",
+        "Juglans"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Acrobasis angusella"
+      ]
+    },
+    "Acrobasis caryae": {
+      "host_genera": [
+        "Carya",
+        "Juglans"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Acrobasis caryae"
+      ]
+    },
+    "Acrobasis exsulella": {
+      "host_genera": [
+        "Carya"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Acrobasis exsulella"
+      ]
+    },
+    "Acrocercops astericola": {
+      "host_genera": [
+        "Aster",
+        "Inula"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Acrocercops astericola"
+      ]
+    },
+    "Acrolophus arcanella": {
+      "host_genera": [
+        "Fragaria",
+        "Zea"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Acrolophus arcanella"
+      ]
+    },
+    "Acronicta americana": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Caragana",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Cercis",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Fagus",
+        "Fraxinus",
+        "Juglans",
+        "Malus",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Robinia",
+        "Rubus",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 92,
+      "source_names": [
+        "Acronicta americana"
+      ]
+    },
+    "Acronicta hamamelis": {
+      "host_genera": [
+        "Aesculus",
+        "Betula",
+        "Castanea",
+        "Hamamelis",
+        "Quercus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Acronicta hamamelis"
+      ]
+    },
+    "Acronicta hasta": {
+      "host_genera": [
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Acronicta hasta"
+      ]
+    },
+    "Acronicta impleta": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Carya",
+        "Cornus",
+        "Crataegus",
+        "Fraxinus",
+        "Hamamelis",
+        "Juglans",
+        "Malus",
+        "Oxydendrum",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Salix",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 39,
+      "source_names": [
+        "Acronicta impleta"
+      ]
+    },
+    "Acronicta increta": {
+      "host_genera": [
+        "Corylus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Acronicta increta"
+      ]
+    },
+    "Acronicta innotata": {
+      "host_genera": [
+        "Abies",
+        "Alnus",
+        "Betula",
+        "Carya",
+        "Populus",
+        "Prunus",
+        "Salix"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Acronicta innotata"
+      ]
+    },
+    "Acronicta insita": {
+      "host_genera": [
+        "Populus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Acronicta insita"
+      ]
+    },
+    "Acronicta laetifica": {
+      "host_genera": [
+        "Carya"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Acronicta laetifica"
+      ]
+    },
+    "Acronicta lobeliae": {
+      "host_genera": [
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Acronicta lobeliae"
+      ]
+    },
+    "Acronicta modica": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Acronicta modica"
+      ]
+    },
+    "Acronicta morula": {
+      "host_genera": [
+        "Crataegus",
+        "Malus",
+        "Pyrus",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Acronicta morula"
+      ]
+    },
+    "Acronicta noctivaga": {
+      "host_genera": [
+        "Apocynum",
+        "Populus",
+        "Quercus",
+        "Salix",
+        "Spiraea",
+        "Vaccinium"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Acronicta noctivaga"
+      ]
+    },
+    "Acronicta ovata": {
+      "host_genera": [
+        "Betula",
+        "Castanea",
+        "Fagus",
+        "Quercus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Acronicta ovata"
+      ]
+    },
+    "Acronicta rubricoma": {
+      "host_genera": [
+        "Celtis",
+        "Populus",
+        "Rhus",
+        "Ulmus"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Acronicta rubricoma"
+      ]
+    },
+    "Acronicta superans": {
+      "host_genera": [
+        "Amelanchier",
+        "Betula",
+        "Corylus",
+        "Crataegus",
+        "Malus",
+        "Prunus",
+        "Pyrus",
+        "Sorbus"
+      ],
+      "record_count": 22,
+      "source_names": [
+        "Acronicta superans"
+      ]
+    },
+    "Actias luna": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Corylus",
+        "Diospyros",
+        "Fagus",
+        "Humulus",
+        "Juglans",
+        "Liquidambar",
+        "Liriodendron",
+        "Lythrum",
+        "Nyssa",
+        "Ostrya",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rhus",
+        "Robinia",
+        "Salix",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 143,
+      "source_names": [
+        "Actias luna"
+      ]
+    },
+    "Adoneta spinuloides": {
+      "host_genera": [
+        "Malus",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Adoneta spinuloides"
+      ]
+    },
+    "Aethalura intertexta": {
+      "host_genera": [
+        "Alnus",
+        "Aquilegia",
+        "Betula",
+        "Cytisus",
+        "Genista",
+        "Ligustrum",
+        "Lonicera",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Salix",
+        "Sambucus",
+        "Spartina",
+        "Ulmus"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Aethalura intertexta"
+      ]
+    },
+    "Agonopterix atrodorsella": {
+      "host_genera": [
+        "Bidens",
+        "Comptonia",
+        "Coreopsis",
+        "Eupatorium"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Agonopterix atrodorsella"
+      ]
+    },
+    "Agonopterix pulvipennella": {
+      "host_genera": [
+        "Eupatorium",
+        "Solidago",
+        "Urtica"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Agonopterix pulvipennella"
+      ]
+    },
+    "Agonopterix robiniella": {
+      "host_genera": [
+        "Gleditsia",
+        "Robinia",
+        "Sanicula"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Agonopterix robiniella"
+      ]
+    },
+    "Agriphila vulgivagellus": {
+      "host_genera": [
+        "Zea"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Agriphila vulgivagellus"
+      ]
+    },
+    "Agrotis ipsilon": {
+      "host_genera": [
+        "Allium",
+        "Amaranthus",
+        "Apium",
+        "Asparagus",
+        "Avena",
+        "Beta",
+        "Brassica",
+        "Capsicum",
+        "Chrysothamnus",
+        "Cichorium",
+        "Citrus",
+        "Cucumis",
+        "Cucurbita",
+        "Cynodon",
+        "Fragaria",
+        "Gladiolus",
+        "Gossypium",
+        "Helianthus",
+        "Ipomoea",
+        "Lactuca",
+        "Malus",
+        "Malva",
+        "Nicotiana",
+        "Parthenium",
+        "Phaseolus",
+        "Portulaca",
+        "Prunus",
+        "Raphanus",
+        "Ricinus",
+        "Saccharum",
+        "Salsola",
+        "Sinapis",
+        "Sisymbrium",
+        "Solanum",
+        "Spinacia",
+        "Trifolium",
+        "Vaccinium",
+        "Vitis",
+        "Zea"
+      ],
+      "record_count": 47,
+      "source_names": [
+        "Agrotis ipsilon"
+      ]
+    },
+    "Allagrapha aerea": {
+      "host_genera": [
+        "Aster",
+        "Glycine",
+        "Urtica"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Allagrapha aerea"
+      ]
+    },
+    "Alypia octomaculata": {
+      "host_genera": [
+        "Ampelopsis",
+        "Berberis",
+        "Parthenocissus",
+        "Rosa",
+        "Vitis"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Alypia octomaculata"
+      ]
+    },
+    "Amorbia humerosana": {
+      "host_genera": [
+        "Abies",
+        "Alnus",
+        "Betula",
+        "Castanea",
+        "Cornus",
+        "Crataegus",
+        "Fraxinus",
+        "Larix",
+        "Lindera",
+        "Lonicera",
+        "Malus",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rhus",
+        "Salix",
+        "Solidago",
+        "Thuja",
+        "Toxicodendron",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum"
+      ],
+      "record_count": 52,
+      "source_names": [
+        "Amorbia humerosana"
+      ]
+    },
+    "Amphipoea americana": {
+      "host_genera": [
+        "Carex",
+        "Zea"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Amphipoea americana"
+      ]
+    },
+    "Anagrapha falcifera": {
+      "host_genera": [
+        "Alcea",
+        "Apium",
+        "Arctium",
+        "Beta",
+        "Brassica",
+        "Cirsium",
+        "Daucus",
+        "Glycine",
+        "Lactuca",
+        "Medicago",
+        "Nicotiana",
+        "Phaseolus",
+        "Plantago",
+        "Taraxacum",
+        "Vaccinium",
+        "Viburnum",
+        "Zea"
+      ],
+      "record_count": 20,
+      "source_names": [
+        "Anagrapha falcifera"
+      ]
+    },
+    "Anania funebris": {
+      "host_genera": [
+        "Solidago"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Anania funebris"
+      ]
+    },
+    "Anaplectoides prasina": {
+      "host_genera": [
+        "Rubus",
+        "Vaccinium"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Anaplectoides prasina"
+      ]
+    },
+    "Anavitrinella pampinaria": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Asparagus",
+        "Baccharis",
+        "Betula",
+        "Carya",
+        "Ceanothus",
+        "Citrus",
+        "Cornus",
+        "Crataegus",
+        "Daucus",
+        "Eupatorium",
+        "Fragaria",
+        "Fraxinus",
+        "Geranium",
+        "Gleditsia",
+        "Glycine",
+        "Gossypium",
+        "Larix",
+        "Malus",
+        "Pelargonium",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Psidium",
+        "Pyrus",
+        "Quercus",
+        "Rubus",
+        "Rumex",
+        "Salix",
+        "Sambucus",
+        "Shepherdia",
+        "Spiraea",
+        "Thuja",
+        "Trifolium",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum"
+      ],
+      "record_count": 63,
+      "source_names": [
+        "Anavitrinella pampinaria"
+      ]
+    },
+    "Ancylis burgessiana": {
+      "host_genera": [
+        "Castanea",
+        "Castanopsis",
+        "Corylus",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Ancylis burgessiana"
+      ]
+    },
+    "Ancylis metamelana": {
+      "host_genera": [
+        "Lathyrus",
+        "Trifolium"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Ancylis metamelana"
+      ]
+    },
+    "Ancylis muricana": {
+      "host_genera": [
+        "Betula",
+        "Cornus",
+        "Fragaria",
+        "Rubus"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Ancylis muricana"
+      ]
+    },
+    "Anicla infecta": {
+      "host_genera": [
+        "Beta",
+        "Cenchrus",
+        "Digitaria",
+        "Lycopersicon",
+        "Muhlenbergia",
+        "Nicotiana",
+        "Plantago",
+        "Poa",
+        "Portulaca",
+        "Trifolium"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Anicla infecta"
+      ]
+    },
+    "Anisota virginiensis": {
+      "host_genera": [
+        "Acer",
+        "Amelanchier",
+        "Betula",
+        "Carpinus",
+        "Castanea",
+        "Celtis",
+        "Cornus",
+        "Corylus",
+        "Fagus",
+        "Prunus",
+        "Quercus",
+        "Salix"
+      ],
+      "record_count": 76,
+      "source_names": [
+        "Anisota virginiensis"
+      ]
+    },
+    "Antaeotricha leucillana": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Cornus",
+        "Fraxinus",
+        "Malus",
+        "Ostrya",
+        "Populus",
+        "Pyracantha",
+        "Quercus",
+        "Salix",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 25,
+      "source_names": [
+        "Antaeotricha leucillana"
+      ]
+    },
+    "Antaeotricha schlaegeri": {
+      "host_genera": [
+        "Betula",
+        "Quercus"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Antaeotricha schlaegeri"
+      ]
+    },
+    "Anterastria teratophora": {
+      "host_genera": [
+        "Mentha",
+        "Monarda"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Anterastria teratophora"
+      ]
+    },
+    "Antheraea polyphemus": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Alnus",
+        "Amelanchier",
+        "Arbutus",
+        "Baptisia",
+        "Betula",
+        "Capsicum",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Cydonia",
+        "Fagus",
+        "Fraxinus",
+        "Gaylussacia",
+        "Gleditsia",
+        "Hamamelis",
+        "Juglans",
+        "Liriodendron",
+        "Lythrum",
+        "Malus",
+        "Myrica",
+        "Ostrya",
+        "Pinus",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhamnus",
+        "Ribes",
+        "Rosa",
+        "Salix",
+        "Sambucus",
+        "Sassafras",
+        "Sorbus",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium",
+        "Vitis",
+        "Weigela",
+        "Wisteria"
+      ],
+      "record_count": 270,
+      "source_names": [
+        "Antheraea polyphemus"
+      ]
+    },
+    "Apamea amputatrix": {
+      "host_genera": [
+        "Avena",
+        "Brassica",
+        "Lactuca",
+        "Nicotiana",
+        "Ribes",
+        "Rosa",
+        "Spinacia",
+        "Triticum",
+        "Zea"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Apamea amputatrix"
+      ]
+    },
+    "Apamea lignicolora": {
+      "host_genera": [
+        "Elymus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Apamea lignicolora"
+      ]
+    },
+    "Apantesis nais": {
+      "host_genera": [
+        "Artemisia",
+        "Chenopodium",
+        "Fragaria",
+        "Plantago",
+        "Platanus",
+        "Polygonum",
+        "Rumex",
+        "Taraxacum",
+        "Trifolium",
+        "Viola"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Apantesis nais"
+      ]
+    },
+    "Apantesis phalerata": {
+      "host_genera": [
+        "Plantago",
+        "Spartina",
+        "Taraxacum",
+        "Trifolium",
+        "Zea"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Apantesis phalerata"
+      ]
+    },
+    "Apatelodes torrefacta": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Arctium",
+        "Asimina",
+        "Carica",
+        "Carpinus",
+        "Corylus",
+        "Fraxinus",
+        "Ilex",
+        "Lindera",
+        "Myrica",
+        "Ostrya",
+        "Prunus",
+        "Quercus",
+        "Rhododendron",
+        "Rubus",
+        "Salix",
+        "Sassafras",
+        "Strophostyles",
+        "Viburnum"
+      ],
+      "record_count": 50,
+      "source_names": [
+        "Apatelodes torrefacta"
+      ]
+    },
+    "Apoda biguttata": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Apoda biguttata"
+      ]
+    },
+    "Archips argyrospila": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Allium",
+        "Alnus",
+        "Carpinus",
+        "Carya",
+        "Ceanothus",
+        "Cercis",
+        "Cercocarpus",
+        "Cicuta",
+        "Citrus",
+        "Comptonia",
+        "Cornus",
+        "Crataegus",
+        "Cydonia",
+        "Elaeagnus",
+        "Eriodictyon",
+        "Fraxinus",
+        "Juglans",
+        "Malus",
+        "Medicago",
+        "Melilotus",
+        "Myrica",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Pyrus",
+        "Quercus",
+        "Rhododendron",
+        "Rhus",
+        "Ribes",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Spiraea",
+        "Toxicodendron",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum",
+        "Vitis"
+      ],
+      "record_count": 104,
+      "source_names": [
+        "Archips argyrospila"
+      ]
+    },
+    "Archips dissitana": {
+      "host_genera": [
+        "Picea"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Archips dissitana"
+      ]
+    },
+    "Archips grisea": {
+      "host_genera": [
+        "Carya",
+        "Crataegus",
+        "Malus",
+        "Pyrus",
+        "Quercus",
+        "Rudbeckia"
+      ],
+      "record_count": 12,
+      "source_names": [
+        "Archips grisea"
+      ]
+    },
+    "Archips purpurana": {
+      "host_genera": [
+        "Betula",
+        "Cornus",
+        "Erigeron",
+        "Fragaria",
+        "Fraxinus",
+        "Geranium",
+        "Maianthemum",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rhus",
+        "Ribes",
+        "Rubus",
+        "Salix",
+        "Sassafras",
+        "Sedum",
+        "Sempervivum",
+        "Solidago",
+        "Spiraea",
+        "Tilia",
+        "Vaccinium",
+        "Viburnum",
+        "Viola"
+      ],
+      "record_count": 43,
+      "source_names": [
+        "Archips purpurana"
+      ]
+    },
+    "Argyresthia calliphanes": {
+      "host_genera": [
+        "Alnus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Argyresthia calliphanes"
+      ]
+    },
+    "Argyresthia oreasella": {
+      "host_genera": [
+        "Amelanchier",
+        "Crataegus",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Argyresthia oreasella"
+      ]
+    },
+    "Argyresthia thuiella": {
+      "host_genera": [
+        "Thuja"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Argyresthia thuiella"
+      ]
+    },
+    "Argyrotaenia pinatubana": {
+      "host_genera": [
+        "Abies",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 20,
+      "source_names": [
+        "Argyrotaenia pinatubana"
+      ]
+    },
+    "Argyrotaenia quercifoliana": {
+      "host_genera": [
+        "Acer",
+        "Hamamelis",
+        "Malus",
+        "Quercus",
+        "Rhamnus",
+        "Rhus",
+        "Rubus"
+      ],
+      "record_count": 22,
+      "source_names": [
+        "Argyrotaenia quercifoliana"
+      ]
+    },
+    "Argyrotaenia velutinana": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alcea",
+        "Alnus",
+        "Apocynum",
+        "Betula",
+        "Chrysanthemum",
+        "Cornus",
+        "Dahlia",
+        "Geranium",
+        "Ilex",
+        "Impatiens",
+        "Larix",
+        "Ligustrum",
+        "Lobelia",
+        "Lonicera",
+        "Malus",
+        "Myrica",
+        "Phaseolus",
+        "Picea",
+        "Pinus",
+        "Platanthera",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Solidago",
+        "Tilia",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum",
+        "Viola",
+        "Vitis",
+        "Zinnia"
+      ],
+      "record_count": 56,
+      "source_names": [
+        "Argyrotaenia velutinana"
+      ]
+    },
+    "Asciodes gordialis": {
+      "host_genera": [
+        "Bougainvillea",
+        "Pisonia"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Asciodes gordialis"
+      ]
+    },
+    "Automeris io": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Albizia",
+        "Amelanchier",
+        "Amorpha",
+        "Baptisia",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Cassia",
+        "Celtis",
+        "Cercis",
+        "Cercocarpus",
+        "Chamaecrista",
+        "Comptonia",
+        "Conocarpus",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Crescentia",
+        "Croton",
+        "Cynodon",
+        "Delonix",
+        "Diospyros",
+        "Fagus",
+        "Ficus",
+        "Fraxinus",
+        "Galactia",
+        "Gladiolus",
+        "Gleditsia",
+        "Gliricidia",
+        "Glycyrrhiza",
+        "Gossypium",
+        "Hibiscus",
+        "Humulus",
+        "Ilex",
+        "Juglans",
+        "Laburnum",
+        "Lespedeza",
+        "Leucaena",
+        "Ligustrum",
+        "Liquidambar",
+        "Liriodendron",
+        "Litchi",
+        "Lythrum",
+        "Magnolia",
+        "Malus",
+        "Malvaviscus",
+        "Melilotus",
+        "Mimosa",
+        "Morus",
+        "Myrica",
+        "Ostrya",
+        "Persea",
+        "Phaseolus",
+        "Physocarpus",
+        "Piscidia",
+        "Platanus",
+        "Populus",
+        "Prosopis",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhapis",
+        "Rhizophora",
+        "Rhododendron",
+        "Rhynchosia",
+        "Ribes",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Sabal",
+        "Salix",
+        "Sassafras",
+        "Serenoa",
+        "Spiraea",
+        "Symphoricarpos",
+        "Syringa",
+        "Tabebuia",
+        "Tecoma",
+        "Tilia",
+        "Trema",
+        "Trifolium",
+        "Turnera",
+        "Ulmus",
+        "Vernonia",
+        "Viburnum",
+        "Wisteria",
+        "Zea"
+      ],
+      "record_count": 397,
+      "source_names": [
+        "Automeris io"
+      ]
+    },
+    "Baileya doubledayi": {
+      "host_genera": [
+        "Alnus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Baileya doubledayi"
+      ]
+    },
+    "Baileya ophthalmica": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Carpinus",
+        "Corylus",
+        "Juglans",
+        "Ostrya"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Baileya ophthalmica"
+      ]
+    },
+    "Balsa tristrigella": {
+      "host_genera": [
+        "Crataegus",
+        "Picea"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Balsa tristrigella"
+      ]
+    },
+    "Bellura obliqua": {
+      "host_genera": [
+        "Nelumbo",
+        "Pontederia",
+        "Sagittaria",
+        "Sparganium",
+        "Symplocarpus",
+        "Typha"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Bellura obliqua"
+      ]
+    },
+    "Besma endropiaria": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Carpinus",
+        "Castanea",
+        "Quercus"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Besma endropiaria"
+      ]
+    },
+    "Bibarrambla allenella": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Quercus",
+        "Salix"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Bibarrambla allenella"
+      ]
+    },
+    "Biston betularia": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Aster",
+        "Betula",
+        "Caragana",
+        "Castanea",
+        "Ceanothus",
+        "Comptonia",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Fragaria",
+        "Ginkgo",
+        "Gladiolus",
+        "Gleditsia",
+        "Hedysarum",
+        "Holodiscus",
+        "Larix",
+        "Malus",
+        "Melilotus",
+        "Myrica",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhus",
+        "Ribes",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Shepherdia",
+        "Sorbaria",
+        "Spiraea",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 70,
+      "source_names": [
+        "Biston betularia"
+      ]
+    },
+    "Blepharomastix ranalis": {
+      "host_genera": [
+        "Chenopodium"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Blepharomastix ranalis"
+      ]
+    },
+    "Bucculatrix angustata": {
+      "host_genera": [
+        "Aster",
+        "Erigeron",
+        "Solidago"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Bucculatrix angustata"
+      ]
+    },
+    "Bucculatrix canadensisella": {
+      "host_genera": [
+        "Betula"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Bucculatrix canadensisella"
+      ]
+    },
+    "Bucculatrix pomifoliella": {
+      "host_genera": [
+        "Ambrosia",
+        "Amelanchier",
+        "Chaenomeles",
+        "Crataegus",
+        "Cydonia",
+        "Malus",
+        "Prunus",
+        "Pyrus"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Bucculatrix pomifoliella"
+      ]
+    },
+    "Cabera erythemaria": {
+      "host_genera": [
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Cabera erythemaria"
+      ]
+    },
+    "Cabera variolaria": {
+      "host_genera": [
+        "Populus",
+        "Prunus",
+        "Salix"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Cabera variolaria"
+      ]
+    },
+    "Caenurgina crassiuscula": {
+      "host_genera": [
+        "Erodium",
+        "Lupinus",
+        "Medicago",
+        "Trifolium"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Caenurgina crassiuscula"
+      ]
+    },
+    "Caenurgina erechtea": {
+      "host_genera": [
+        "Ambrosia",
+        "Brachiaria",
+        "Glycine",
+        "Lespedeza",
+        "Medicago",
+        "Trifolium",
+        "Vaccinium"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Caenurgina erechtea"
+      ]
+    },
+    "Calledapteryx dryopterata": {
+      "host_genera": [
+        "Viburnum"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Calledapteryx dryopterata"
+      ]
+    },
+    "Callima argenticinctella": {
+      "host_genera": [
+        "Carya",
+        "Larix",
+        "Quercus",
+        "Sambucus",
+        "Ulmus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Callima argenticinctella"
+      ]
+    },
+    "Callopistria mollissima": {
+      "host_genera": [
+        "Pteridium",
+        "Thelypteris"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Callopistria mollissima"
+      ]
+    },
+    "Callosamia promethea": {
+      "host_genera": [
+        "Acer",
+        "Berberis",
+        "Betula",
+        "Cephalanthus",
+        "Cinnamomum",
+        "Corylus",
+        "Diospyros",
+        "Fagus",
+        "Fraxinus",
+        "Gordonia",
+        "Halesia",
+        "Kalmia",
+        "Ligustrum",
+        "Lindera",
+        "Liquidambar",
+        "Liriodendron",
+        "Lythrum",
+        "Magnolia",
+        "Malus",
+        "Myrica",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhododendron",
+        "Salix",
+        "Sassafras",
+        "Stuartia",
+        "Styrax",
+        "Symplocos",
+        "Syringa",
+        "Thuja",
+        "Tilia",
+        "Viburnum"
+      ],
+      "record_count": 144,
+      "source_names": [
+        "Callosamia promethea"
+      ]
+    },
+    "Calophasia lunula": {
+      "host_genera": [
+        "Linaria"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Calophasia lunula"
+      ]
+    },
+    "Caloptilia bimaculatella": {
+      "host_genera": [
+        "Acer"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Caloptilia bimaculatella"
+      ]
+    },
+    "Caloptilia blandella": {
+      "host_genera": [
+        "Juglans"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Caloptilia blandella"
+      ]
+    },
+    "Caloptilia fraxinella": {
+      "host_genera": [
+        "Fraxinus",
+        "Ligustrum",
+        "Pyrus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Caloptilia fraxinella"
+      ]
+    },
+    "Caloptilia hypericella": {
+      "host_genera": [
+        "Hypericum"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Caloptilia hypericella"
+      ]
+    },
+    "Caloptilia invariabilis": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Caloptilia invariabilis"
+      ]
+    },
+    "Caloptilia rhoifoliella": {
+      "host_genera": [
+        "Rhus",
+        "Schinus",
+        "Toxicodendron"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Caloptilia rhoifoliella"
+      ]
+    },
+    "Caloptilia serotinella": {
+      "host_genera": [
+        "Prunus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Caloptilia serotinella"
+      ]
+    },
+    "Caloptilia stigmatella": {
+      "host_genera": [
+        "Populus",
+        "Robinia",
+        "Salix"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Caloptilia stigmatella"
+      ]
+    },
+    "Calyptra canadensis": {
+      "host_genera": [
+        "Thalictrum"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Calyptra canadensis"
+      ]
+    },
+    "Cameraria hamameliella": {
+      "host_genera": [
+        "Hamamelis"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Cameraria hamameliella"
+      ]
+    },
+    "Campaea perlata": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Corylus",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Pseudotsuga",
+        "Quercus",
+        "Rosa",
+        "Salix",
+        "Shepherdia",
+        "Thuja",
+        "Tilia",
+        "Tsuga",
+        "Ulmus"
+      ],
+      "record_count": 48,
+      "source_names": [
+        "Campaea perlata"
+      ]
+    },
+    "Caripeta angustiorata": {
+      "host_genera": [
+        "Abies",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga"
+      ],
+      "record_count": 16,
+      "source_names": [
+        "Caripeta angustiorata"
+      ]
+    },
+    "Caripeta divisata": {
+      "host_genera": [
+        "Abies",
+        "Impatiens",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 43,
+      "source_names": [
+        "Caripeta divisata"
+      ]
+    },
+    "Caripeta piniata": {
+      "host_genera": [
+        "Picea",
+        "Pinus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Caripeta piniata"
+      ]
+    },
+    "Catocala blandula": {
+      "host_genera": [
+        "Amelanchier",
+        "Crataegus",
+        "Malus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Catocala blandula"
+      ]
+    },
+    "Catocala cara": {
+      "host_genera": [
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Catocala cara"
+      ]
+    },
+    "Catocala crataegi": {
+      "host_genera": [
+        "Crataegus",
+        "Malus",
+        "Pyrus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Catocala crataegi"
+      ]
+    },
+    "Catocala ilia": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Catocala ilia"
+      ]
+    },
+    "Catocala micronympha": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Catocala micronympha"
+      ]
+    },
+    "Catocala piatrix": {
+      "host_genera": [
+        "Carya",
+        "Diospyros",
+        "Fraxinus",
+        "Juglans",
+        "Salix"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Catocala piatrix"
+      ]
+    },
+    "Catocala retecta": {
+      "host_genera": [
+        "Carya",
+        "Juglans"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Catocala retecta"
+      ]
+    },
+    "Catocala ultronia": {
+      "host_genera": [
+        "Cornus",
+        "Fraxinus",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Tilia"
+      ],
+      "record_count": 22,
+      "source_names": [
+        "Catocala ultronia"
+      ]
+    },
+    "Cepphis armataria": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Comptonia",
+        "Ilex",
+        "Malus",
+        "Quercus",
+        "Ribes"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Cepphis armataria"
+      ]
+    },
+    "Ceratomia undulosa": {
+      "host_genera": [
+        "Campsis",
+        "Chionanthus",
+        "Crataegus",
+        "Fraxinus",
+        "Ligustrum",
+        "Quercus",
+        "Syringa"
+      ],
+      "record_count": 29,
+      "source_names": [
+        "Ceratomia undulosa"
+      ]
+    },
+    "Cerma cerintha": {
+      "host_genera": [
+        "Crataegus",
+        "Ligustrum",
+        "Malus",
+        "Prunus",
+        "Pyrus"
+      ],
+      "record_count": 12,
+      "source_names": [
+        "Cerma cerintha"
+      ]
+    },
+    "Charadra deridens": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Fagus",
+        "Populus",
+        "Quercus",
+        "Ulmus"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Charadra deridens"
+      ]
+    },
+    "Chlorochlamys chloroleucaria": {
+      "host_genera": [
+        "Achillea",
+        "Ambrosia",
+        "Amphiachyris",
+        "Apocynum",
+        "Aster",
+        "Ceanothus",
+        "Comptonia",
+        "Conyza",
+        "Dianthus",
+        "Eriogonum",
+        "Eupatorium",
+        "Fragaria",
+        "Gutierrezia",
+        "Helenium",
+        "Helianthus",
+        "Leucanthemum",
+        "Parthenium",
+        "Prunus",
+        "Rubus",
+        "Rudbeckia",
+        "Solidago",
+        "Vernonia",
+        "Zinnia"
+      ],
+      "record_count": 29,
+      "source_names": [
+        "Chlorochlamys chloroleucaria"
+      ]
+    },
+    "Choristoneura fractivittana": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Fagus",
+        "Malus",
+        "Pyrus",
+        "Quercus",
+        "Rubus",
+        "Ulmus"
+      ],
+      "record_count": 33,
+      "source_names": [
+        "Choristoneura fractivittana"
+      ]
+    },
+    "Choristoneura fumiferana": {
+      "host_genera": [
+        "Abies",
+        "Conium",
+        "Fagus",
+        "Impatiens",
+        "Juniperus",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Pseudotsuga",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 63,
+      "source_names": [
+        "Choristoneura fumiferana"
+      ]
+    },
+    "Choristoneura pinus": {
+      "host_genera": [
+        "Abies",
+        "Larix",
+        "Picea",
+        "Pinus"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Choristoneura pinus"
+      ]
+    },
+    "Choristoneura rosaceana": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Aesculus",
+        "Alnus",
+        "Ambrosia",
+        "Amelanchier",
+        "Apium",
+        "Aster",
+        "Betula",
+        "Ceanothus",
+        "Celtis",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Dianthus",
+        "Fraxinus",
+        "Geranium",
+        "Helianthus",
+        "Hypericum",
+        "Ilex",
+        "Lonicera",
+        "Malus",
+        "Ostrya",
+        "Phaseolus",
+        "Physocarpus",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhododendron",
+        "Rhus",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Spiraea",
+        "Syringa",
+        "Tilia",
+        "Trifolium",
+        "Tsuga",
+        "Typha",
+        "Ulmus",
+        "Vaccinium",
+        "Verbena",
+        "Viburnum"
+      ],
+      "record_count": 113,
+      "source_names": [
+        "Choristoneura rosaceana"
+      ]
+    },
+    "Chytolita morbidalis": {
+      "host_genera": [
+        "Corylus",
+        "Taraxacum"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Chytolita morbidalis"
+      ]
+    },
+    "Chytonix palliatricula": {
+      "host_genera": [
+        "Aster"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Chytonix palliatricula"
+      ]
+    },
+    "Cisseps fulvicollis": {
+      "host_genera": [
+        "Bromus",
+        "Eleocharis",
+        "Eupatorium",
+        "Solidago",
+        "Zea"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Cisseps fulvicollis"
+      ]
+    },
+    "Clemensia albata": {
+      "host_genera": [
+        "Abies",
+        "Hypogymnia",
+        "Lobaria",
+        "Picea",
+        "Protococcus",
+        "Tsuga"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Clemensia albata"
+      ]
+    },
+    "Clepsis clemensiana": {
+      "host_genera": [
+        "Apocynum",
+        "Aster",
+        "Malus",
+        "Phleum",
+        "Solidago",
+        "Triticum"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Clepsis clemensiana"
+      ]
+    },
+    "Clepsis persicana": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Aster",
+        "Bellis",
+        "Betula",
+        "Ceanothus",
+        "Comptonia",
+        "Cornus",
+        "Corylus",
+        "Elytrigia",
+        "Fagus",
+        "Fragaria",
+        "Frasera",
+        "Fraxinus",
+        "Larix",
+        "Maianthemum",
+        "Malus",
+        "Osmorhiza",
+        "Ostrya",
+        "Phleum",
+        "Picea",
+        "Pinus",
+        "Polygonum",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Ranunculus",
+        "Raphanus",
+        "Rhododendron",
+        "Ribes",
+        "Rosa",
+        "Rubus",
+        "Rumex",
+        "Salix",
+        "Solidago",
+        "Syngonium",
+        "Taraxacum",
+        "Trifolium",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 75,
+      "source_names": [
+        "Clepsis persicana"
+      ]
+    },
+    "Clostera albosigma": {
+      "host_genera": [
+        "Alnus",
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Clostera albosigma"
+      ]
+    },
+    "Clostera apicalis": {
+      "host_genera": [
+        "Betula",
+        "Myrica",
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Clostera apicalis"
+      ]
+    },
+    "Coleophora limosipennella": {
+      "host_genera": [
+        "Ulmus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Coleophora limosipennella"
+      ]
+    },
+    "Coleophora mayrella": {
+      "host_genera": [
+        "Trifolium"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Coleophora mayrella"
+      ]
+    },
+    "Coleophora trifolii": {
+      "host_genera": [
+        "Melilotus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Coleophora trifolii"
+      ]
+    },
+    "Coleotechnites atrupictella": {
+      "host_genera": [
+        "Abies",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga",
+        "Tsuga"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Coleotechnites atrupictella"
+      ]
+    },
+    "Colocasia flavicornis": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Carya",
+        "Fagus",
+        "Ostrya",
+        "Tilia"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Colocasia flavicornis"
+      ]
+    },
+    "Colocasia propinquilinea": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Castanea",
+        "Fagus",
+        "Juglans",
+        "Populus",
+        "Quercus",
+        "Salix",
+        "Tilia"
+      ],
+      "record_count": 29,
+      "source_names": [
+        "Colocasia propinquilinea"
+      ]
+    },
+    "Condica vecors": {
+      "host_genera": [
+        "Lactuca"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Condica vecors"
+      ]
+    },
+    "Cosmia calami": {
+      "host_genera": [
+        "Quercus",
+        "Vaccinium"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Cosmia calami"
+      ]
+    },
+    "Cosmopterix pulchrimella": {
+      "host_genera": [
+        "Parietaria",
+        "Pilea"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Cosmopterix pulchrimella"
+      ]
+    },
+    "Costaconvexa centrostrigaria": {
+      "host_genera": [
+        "Galium"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Costaconvexa centrostrigaria"
+      ]
+    },
+    "Crambus praefectellus": {
+      "host_genera": [
+        "Zea"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Crambus praefectellus"
+      ]
+    },
+    "Cremastobombycia solidaginis": {
+      "host_genera": [
+        "Baccharis",
+        "Solidago"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Cremastobombycia solidaginis"
+      ]
+    },
+    "Crocidophora serratissimalis": {
+      "host_genera": [
+        "Leersia"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Crocidophora serratissimalis"
+      ]
+    },
+    "Cryptothelea gloverii": {
+      "host_genera": [
+        "Acacia",
+        "Acca",
+        "Ananas",
+        "Carya",
+        "Citrus",
+        "Coccidae (Z)",
+        "Crataegus",
+        "Diospyros",
+        "Erythrina",
+        "Persea",
+        "Prosopis",
+        "Pseudaonidia (Z)",
+        "Psidium",
+        "Quercus",
+        "Rosa",
+        "Spondias",
+        "Yucca"
+      ],
+      "record_count": 34,
+      "source_names": [
+        "Cryptothelea gloverii"
+      ]
+    },
+    "Ctenucha virginica": {
+      "host_genera": [
+        "Agrostis",
+        "Bromus",
+        "Calamagrostis",
+        "Carex",
+        "Echinochloa",
+        "Elytrigia",
+        "Iris",
+        "Lolium",
+        "Panicum",
+        "Phleum",
+        "Poa"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Ctenucha virginica"
+      ]
+    },
+    "Cucullia convexipennis": {
+      "host_genera": [
+        "Aster",
+        "Callistephus",
+        "Solidago"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Cucullia convexipennis"
+      ]
+    },
+    "Cucullia florea": {
+      "host_genera": [
+        "Aster",
+        "Conyza",
+        "Erigeron",
+        "Euthamia",
+        "Hieracium",
+        "Solidago"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Cucullia florea"
+      ]
+    },
+    "Cucullia intermedia": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Lactuca",
+        "Populus",
+        "Prunus",
+        "Xylorhiza"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Cucullia intermedia"
+      ]
+    },
+    "Cyclophora pendulinaria": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Comptonia",
+        "Larix",
+        "Myrica",
+        "Orbexilum",
+        "Quercus",
+        "Salix",
+        "Vaccinium"
+      ],
+      "record_count": 23,
+      "source_names": [
+        "Cyclophora pendulinaria"
+      ]
+    },
+    "Cycnia tenera": {
+      "host_genera": [
+        "Apocynum",
+        "Asclepias"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Cycnia tenera"
+      ]
+    },
+    "Darapsa myron": {
+      "host_genera": [
+        "Parthenocissus",
+        "Viburnum",
+        "Vitis"
+      ],
+      "record_count": 14,
+      "source_names": [
+        "Darapsa myron"
+      ]
+    },
+    "Dasychira basiflava": {
+      "host_genera": [
+        "Betula",
+        "Carya",
+        "Malus",
+        "Quercus",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Dasychira basiflava"
+      ]
+    },
+    "Dasychira obliquata": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Carya",
+        "Fagus",
+        "Prunus",
+        "Quercus",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Dasychira obliquata"
+      ]
+    },
+    "Dasychira plagiata": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Betula",
+        "Chaenactis",
+        "Juniperus",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Quercus",
+        "Salix",
+        "Taxodium",
+        "Thuja",
+        "Tilia",
+        "Tsuga",
+        "Ulmus"
+      ],
+      "record_count": 55,
+      "source_names": [
+        "Dasychira plagiata"
+      ]
+    },
+    "Dasychira vagans": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Crataegus",
+        "Fagus",
+        "Larix",
+        "Malus",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Quercus",
+        "Rosa",
+        "Salix",
+        "Tsuga",
+        "Ulmus"
+      ],
+      "record_count": 38,
+      "source_names": [
+        "Dasychira vagans"
+      ]
+    },
+    "Dasylophia anguina": {
+      "host_genera": [
+        "Amorpha",
+        "Baptisia",
+        "Lespedeza",
+        "Robinia",
+        "Trifolium"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Dasylophia anguina"
+      ]
+    },
+    "Dasylophia thyatiroides": {
+      "host_genera": [
+        "Carya",
+        "Fagus"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Dasylophia thyatiroides"
+      ]
+    },
+    "Datana angusii": {
+      "host_genera": [
+        "Betula",
+        "Carya",
+        "Fagus",
+        "Hamamelis",
+        "Juglans",
+        "Quercus",
+        "Tilia",
+        "Vaccinium"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Datana angusii"
+      ]
+    },
+    "Datana integerrima": {
+      "host_genera": [
+        "Carya",
+        "Crataegus",
+        "Datura",
+        "Fagus",
+        "Fraxinus",
+        "Gleditsia",
+        "Juglans",
+        "Malus",
+        "Quercus",
+        "Robinia",
+        "Salix"
+      ],
+      "record_count": 36,
+      "source_names": [
+        "Datana integerrima"
+      ]
+    },
+    "Datana ministra": {
+      "host_genera": [
+        "Acer",
+        "Amelanchier",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Corylus",
+        "Crataegus",
+        "Cydonia",
+        "Eriobotrya",
+        "Fagus",
+        "Fraxinus",
+        "Gleditsia",
+        "Hamamelis",
+        "Juglans",
+        "Malus",
+        "Ostrya",
+        "Oxydendrum",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhus",
+        "Robinia",
+        "Rubus",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 104,
+      "source_names": [
+        "Datana ministra"
+      ]
+    },
+    "Decantha boreasella": {
+      "host_genera": [
+        "Pinus",
+        "Polystichum"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Decantha boreasella"
+      ]
+    },
+    "Desmia funeralis": {
+      "host_genera": [
+        "Cercis",
+        "Oenothera",
+        "Parthenocissus",
+        "Vitis"
+      ],
+      "record_count": 12,
+      "source_names": [
+        "Desmia funeralis"
+      ]
+    },
+    "Dichomeris bilobella": {
+      "host_genera": [
+        "Aster",
+        "Solidago"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Dichomeris bilobella"
+      ]
+    },
+    "Dichomeris flavocostella": {
+      "host_genera": [
+        "Aster",
+        "Helianthus",
+        "Solidago"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Dichomeris flavocostella"
+      ]
+    },
+    "Dichomeris juncidella": {
+      "host_genera": [
+        "Ambrosia",
+        "Aralia",
+        "Artemisia",
+        "Aster",
+        "Helianthus",
+        "Solidago"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Dichomeris juncidella"
+      ]
+    },
+    "Dichomeris ochripalpella": {
+      "host_genera": [
+        "Aster",
+        "Machaeranthera",
+        "Solidago"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Dichomeris ochripalpella"
+      ]
+    },
+    "Dicymolomia julianalis": {
+      "host_genera": [
+        "Amaranthus",
+        "Astragalus",
+        "Cirsium",
+        "Gossypium",
+        "Opuntia",
+        "Thyridopteryx (Z)",
+        "Typha"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Dicymolomia julianalis"
+      ]
+    },
+    "Dioryctria reniculelloides": {
+      "host_genera": [
+        "Picea",
+        "Pinus",
+        "Pseudotsuga"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Dioryctria reniculelloides"
+      ]
+    },
+    "Drepana arcuata": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Populus"
+      ],
+      "record_count": 16,
+      "source_names": [
+        "Drepana arcuata"
+      ]
+    },
+    "Dryocampa rubicunda": {
+      "host_genera": [
+        "Acer",
+        "Fagus",
+        "Juglans",
+        "Morus",
+        "Platanus",
+        "Quercus"
+      ],
+      "record_count": 41,
+      "source_names": [
+        "Dryocampa rubicunda"
+      ]
+    },
+    "Dyspteris abortivaria": {
+      "host_genera": [
+        "Parthenocissus",
+        "Prunus",
+        "Vitis"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Dyspteris abortivaria"
+      ]
+    },
+    "Dysstroma hersiliata": {
+      "host_genera": [
+        "Ribes"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Dysstroma hersiliata"
+      ]
+    },
+    "Ecdytolopha insiticiana": {
+      "host_genera": [
+        "Rhizophora",
+        "Robinia",
+        "Wisteria"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Ecdytolopha insiticiana"
+      ]
+    },
+    "Ectropis crepuscularia": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Aquilegia",
+        "Betula",
+        "Cornus",
+        "Cytisus",
+        "Fraxinus",
+        "Genista",
+        "Juglans",
+        "Larix",
+        "Ligustrum",
+        "Lonicera",
+        "Malus",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Pyrus",
+        "Quercus",
+        "Rosa",
+        "Salix",
+        "Sambucus",
+        "Shepherdia",
+        "Spartina",
+        "Thuja",
+        "Trifolium",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 60,
+      "source_names": [
+        "Ectropis crepuscularia"
+      ]
+    },
+    "Eido trimaculella": {
+      "host_genera": [
+        "Fomes",
+        "Piptoporus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Eido trimaculella"
+      ]
+    },
+    "Elaphria versicolor": {
+      "host_genera": [
+        "Abies",
+        "Betula",
+        "Juglans",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 38,
+      "source_names": [
+        "Elaphria versicolor"
+      ]
+    },
+    "Ellida caniplaga": {
+      "host_genera": [
+        "Tilia"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Ellida caniplaga"
+      ]
+    },
+    "Emmelina monodactyla": {
+      "host_genera": [
+        "Atriplex",
+        "Calluna",
+        "Calystegia",
+        "Chenopodium",
+        "Convolvulus",
+        "Datura",
+        "Eupatorium",
+        "Hyoscyamus",
+        "Ipomoea",
+        "Polygonum",
+        "Senecio",
+        "Vaccinium"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Emmelina monodactyla"
+      ]
+    },
+    "Endothenia hebesana": {
+      "host_genera": [
+        "Agalinis",
+        "Antirrhinum",
+        "Castilleja",
+        "Chelone",
+        "Frasera",
+        "Gentiana",
+        "Iris",
+        "Mentha",
+        "Orthocarpus",
+        "Ostrya",
+        "Penstemon",
+        "Physostegia",
+        "Rhus",
+        "Sarracenia",
+        "Solidago",
+        "Stachys",
+        "Tigridia",
+        "Typha",
+        "Verbascum",
+        "Verbena"
+      ],
+      "record_count": 46,
+      "source_names": [
+        "Endothenia hebesana"
+      ]
+    },
+    "Ennomos magnaria": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Carya",
+        "Castanea",
+        "Comptonia",
+        "Crataegus",
+        "Fagus",
+        "Fraxinus",
+        "Liquidambar",
+        "Malus",
+        "Ostrya",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Salix",
+        "Syringa",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 50,
+      "source_names": [
+        "Ennomos magnaria"
+      ]
+    },
+    "Ennomos subsignaria": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Alnus",
+        "Amelanchier",
+        "Asparagus",
+        "Betula",
+        "Bursera",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Fagus",
+        "Fraxinus",
+        "Juglans",
+        "Malus",
+        "Ostrya",
+        "Populus",
+        "Quercus",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 68,
+      "source_names": [
+        "Ennomos subsignaria"
+      ]
+    },
+    "Ephestiodes infimella": {
+      "host_genera": [
+        "Ambrosia",
+        "Prunus",
+        "Smilax"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Ephestiodes infimella"
+      ]
+    },
+    "Epiblema carolinana": {
+      "host_genera": [
+        "Rudbeckia"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Epiblema carolinana"
+      ]
+    },
+    "Epiblema desertana": {
+      "host_genera": [
+        "Euthamia",
+        "Solidago"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Epiblema desertana"
+      ]
+    },
+    "Epiblema otiosana": {
+      "host_genera": [
+        "Amaranthus",
+        "Ambrosia",
+        "Bidens",
+        "Chenopodium",
+        "Polygonum",
+        "Solidago",
+        "Typha"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Epiblema otiosana"
+      ]
+    },
+    "Epinotia medioviridana": {
+      "host_genera": [
+        "Rubus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Epinotia medioviridana"
+      ]
+    },
+    "Epinotia transmissana": {
+      "host_genera": [
+        "Betula",
+        "Salix"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Epinotia transmissana"
+      ]
+    },
+    "Episimus argutana": {
+      "host_genera": [
+        "Alnus",
+        "Crataegus",
+        "Euphorbia",
+        "Hamamelis",
+        "Rhus",
+        "Sambucus",
+        "Solidago",
+        "Toxicodendron",
+        "Ulmus",
+        "Vitis"
+      ],
+      "record_count": 22,
+      "source_names": [
+        "Episimus argutana"
+      ]
+    },
+    "Eubaphe mendica": {
+      "host_genera": [
+        "Acer",
+        "Vaccinium",
+        "Viola"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Eubaphe mendica"
+      ]
+    },
+    "Euchaetes egle": {
+      "host_genera": [
+        "Asclepias",
+        "Cynanchum",
+        "Gonolobus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Euchaetes egle"
+      ]
+    },
+    "Euchlaena muzaria": {
+      "host_genera": [
+        "Prunus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Euchlaena muzaria"
+      ]
+    },
+    "Euchlaena serrata": {
+      "host_genera": [
+        "Acer",
+        "Cornus",
+        "Malus",
+        "Pyrus",
+        "Spiraea",
+        "Vaccinium"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Euchlaena serrata"
+      ]
+    },
+    "Euclea delphinii": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Carya",
+        "Coccoloba",
+        "Crataegus",
+        "Fagus",
+        "Malus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhizophora",
+        "Salix"
+      ],
+      "record_count": 16,
+      "source_names": [
+        "Euclea delphinii"
+      ]
+    },
+    "Eudeilinia herminiata": {
+      "host_genera": [
+        "Cornus"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Eudeilinia herminiata"
+      ]
+    },
+    "Eudryas grata": {
+      "host_genera": [
+        "Ampelopsis",
+        "Cephalanthus",
+        "Humulus",
+        "Parthenocissus",
+        "Vitis"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Eudryas grata"
+      ]
+    },
+    "Eudryas unio": {
+      "host_genera": [
+        "Decodon",
+        "Epilobium",
+        "Euphorbia",
+        "Hibiscus",
+        "Ludwigia",
+        "Lythrum",
+        "Oenothera",
+        "Primula",
+        "Salix",
+        "Vitis"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Eudryas unio"
+      ]
+    },
+    "Eufidonia notataria": {
+      "host_genera": [
+        "Abies",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Tsuga"
+      ],
+      "record_count": 23,
+      "source_names": [
+        "Eufidonia notataria"
+      ]
+    },
+    "Eulia ministrana": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Corylus",
+        "Prunus",
+        "Salix",
+        "Viburnum"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Eulia ministrana"
+      ]
+    },
+    "Eulithis diversilineata": {
+      "host_genera": [
+        "Epilobium",
+        "Hedera",
+        "Malus",
+        "Parthenocissus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rosa",
+        "Ulmus",
+        "Vaccinium",
+        "Vitis"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Eulithis diversilineata"
+      ]
+    },
+    "Eulithis gracilineata": {
+      "host_genera": [
+        "Epilobium",
+        "Parthenocissus",
+        "Vitis"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Eulithis gracilineata"
+      ]
+    },
+    "Eulogia ochrifrontella": {
+      "host_genera": [
+        "Carya",
+        "Malus",
+        "Quercus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Eulogia ochrifrontella"
+      ]
+    },
+    "Eumorpha pandorus": {
+      "host_genera": [
+        "Ampelopsis",
+        "Parthenocissus",
+        "Vitis"
+      ],
+      "record_count": 12,
+      "source_names": [
+        "Eumorpha pandorus"
+      ]
+    },
+    "Euparthenos nubilis": {
+      "host_genera": [
+        "Robinia",
+        "Salix"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Euparthenos nubilis"
+      ]
+    },
+    "Eupithecia absinthiata": {
+      "host_genera": [
+        "Aconitum"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Eupithecia absinthiata"
+      ]
+    },
+    "Eupithecia miserulata": {
+      "host_genera": [
+        "Amelanchier",
+        "Aster",
+        "Baccharis",
+        "Chaenactis",
+        "Conyza",
+        "Eupatorium",
+        "Juniperus",
+        "Larix",
+        "Leucanthemum",
+        "Myrica",
+        "Pastinaca",
+        "Physocarpus",
+        "Prunus",
+        "Ptelea",
+        "Quercus",
+        "Rhexia",
+        "Ribes",
+        "Rubus",
+        "Rudbeckia",
+        "Salix",
+        "Senecio",
+        "Solidago",
+        "Taraxacum",
+        "Taxus",
+        "Thalictrum",
+        "Thymus",
+        "Vaccinium",
+        "Zizia"
+      ],
+      "record_count": 42,
+      "source_names": [
+        "Eupithecia miserulata"
+      ]
+    },
+    "Eupithecia palpata": {
+      "host_genera": [
+        "Abies",
+        "Larix",
+        "Physocarpus",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Pseudotsuga",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 32,
+      "source_names": [
+        "Eupithecia palpata"
+      ]
+    },
+    "Eusarca confusaria": {
+      "host_genera": [
+        "Aster",
+        "Polygonum",
+        "Solidago",
+        "Taraxacum",
+        "Trifolium"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Eusarca confusaria"
+      ]
+    },
+    "Eustixia pupula": {
+      "host_genera": [
+        "Brassica",
+        "Lepidium",
+        "Sideroxylon"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Eustixia pupula"
+      ]
+    },
+    "Eutrapela clemataria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Betula",
+        "Carya",
+        "Castanea",
+        "Celastrus",
+        "Clematis",
+        "Cornus",
+        "Fraxinus",
+        "Juglans",
+        "Malus",
+        "Picea",
+        "Populus",
+        "Prunus",
+        "Pycnanthemum",
+        "Pyrus",
+        "Quercus",
+        "Salix",
+        "Sassafras",
+        "Tilia",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 38,
+      "source_names": [
+        "Eutrapela clemataria"
+      ]
+    },
+    "Euzophera semifuneralis": {
+      "host_genera": [
+        "Carya",
+        "Convolvulus",
+        "Dibotryon",
+        "Diospyros",
+        "Ginkgo",
+        "Gossypium",
+        "Ipomoea",
+        "Juglans",
+        "Liquidambar",
+        "Malus",
+        "Morus",
+        "Olea",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Sorbus",
+        "Tilia",
+        "Zea"
+      ],
+      "record_count": 60,
+      "source_names": [
+        "Euzophera semifuneralis"
+      ]
+    },
+    "Feltia subgothica": {
+      "host_genera": [
+        "Armoracia",
+        "Brassica",
+        "Cucumis",
+        "Cucurbita",
+        "Fragaria",
+        "Helianthus",
+        "Linum",
+        "Lycopersicon",
+        "Malus",
+        "Medicago",
+        "Nicotiana",
+        "Phaseolus",
+        "Pisum",
+        "Rubus",
+        "Trifolium",
+        "Triticum",
+        "Zea"
+      ],
+      "record_count": 24,
+      "source_names": [
+        "Feltia subgothica"
+      ]
+    },
+    "Fissicrambus mutabilis": {
+      "host_genera": [
+        "Avena",
+        "Dactylis",
+        "Digitaria",
+        "Hordeum",
+        "Phleum",
+        "Poa",
+        "Secale",
+        "Triticum",
+        "Zea"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Fissicrambus mutabilis"
+      ]
+    },
+    "Furcula borealis": {
+      "host_genera": [
+        "Populus",
+        "Prunus",
+        "Salix"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Furcula borealis"
+      ]
+    },
+    "Furcula cinerea": {
+      "host_genera": [
+        "Betula",
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Furcula cinerea"
+      ]
+    },
+    "Galgula partita": {
+      "host_genera": [
+        "Oxalis"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Galgula partita"
+      ]
+    },
+    "Geina periscelidactylus": {
+      "host_genera": [
+        "Vitis"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Geina periscelidactylus"
+      ]
+    },
+    "Gluphisia septentrionis": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Juglans",
+        "Liquidambar",
+        "Populus",
+        "Salix",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 22,
+      "source_names": [
+        "Gluphisia septentrionis"
+      ]
+    },
+    "Gueneria similaria": {
+      "host_genera": [
+        "Dryopteris",
+        "Thelypteris"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Gueneria similaria"
+      ]
+    },
+    "Gypsonoma substitutionis": {
+      "host_genera": [
+        "Acer",
+        "Populus",
+        "Quercus"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Gypsonoma substitutionis"
+      ]
+    },
+    "Habrosyne gloriosa": {
+      "host_genera": [
+        "Physocarpus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Habrosyne gloriosa"
+      ]
+    },
+    "Habrosyne scripta": {
+      "host_genera": [
+        "Betula",
+        "Rubus",
+        "Syringa"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Habrosyne scripta"
+      ]
+    },
+    "Haematopis grataria": {
+      "host_genera": [
+        "Cerastium",
+        "Polygonum",
+        "Stellaria",
+        "Trifolium"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Haematopis grataria"
+      ]
+    },
+    "Halysidota tessellaris": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Buxus",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Celtis",
+        "Corylus",
+        "Crataegus",
+        "Fagus",
+        "Fraxinus",
+        "Gleditsia",
+        "Hamamelis",
+        "Juglans",
+        "Liquidambar",
+        "Liriodendron",
+        "Malus",
+        "Ostrya",
+        "Parthenocissus",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Robinia",
+        "Rubus",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium",
+        "Vitis",
+        "Zea"
+      ],
+      "record_count": 100,
+      "source_names": [
+        "Halysidota tessellaris"
+      ]
+    },
+    "Haploa clymene": {
+      "host_genera": [
+        "Ageratina",
+        "Eupatorium",
+        "Prunus",
+        "Quercus",
+        "Salix"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Haploa clymene"
+      ]
+    },
+    "Haploa confusa": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Cornus",
+        "Cynoglossum",
+        "Fraxinus",
+        "Penstemon",
+        "Populus",
+        "Prunus",
+        "Salix",
+        "Ulmus"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Haploa confusa"
+      ]
+    },
+    "Haploa lecontei": {
+      "host_genera": [
+        "Acer",
+        "Amelanchier",
+        "Betula",
+        "Ceanothus",
+        "Chaenomeles",
+        "Cornus",
+        "Cynoglossum",
+        "Juglans",
+        "Malus",
+        "Marah",
+        "Mentha",
+        "Onosmodium",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Rubus",
+        "Salix",
+        "Symphoricarpos",
+        "Tauschia",
+        "Triosteum",
+        "Ulmus"
+      ],
+      "record_count": 39,
+      "source_names": [
+        "Haploa lecontei"
+      ]
+    },
+    "Harrisimemna trisignata": {
+      "host_genera": [
+        "Cephalanthus",
+        "Diervilla",
+        "Diospyros",
+        "Dirca",
+        "Fraxinus",
+        "Ilex",
+        "Ligustrum",
+        "Liquidambar",
+        "Malus",
+        "Salix",
+        "Spiraea",
+        "Symphoricarpos",
+        "Syringa",
+        "Vaccinium",
+        "Viburnum"
+      ],
+      "record_count": 25,
+      "source_names": [
+        "Harrisimemna trisignata"
+      ]
+    },
+    "Harrisina americana": {
+      "host_genera": [
+        "Ampelopsis",
+        "Hedera",
+        "Parthenocissus",
+        "Vitis"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Harrisina americana"
+      ]
+    },
+    "Hedya separatana": {
+      "host_genera": [
+        "Amelanchier",
+        "Betula",
+        "Consolida",
+        "Crataegus",
+        "Delphinium",
+        "Prunus",
+        "Rosa",
+        "Rubus"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Hedya separatana"
+      ]
+    },
+    "Heliomata cycladata": {
+      "host_genera": [
+        "Gleditsia",
+        "Robinia"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Heliomata cycladata"
+      ]
+    },
+    "Hellinsia homodactylus": {
+      "host_genera": [
+        "Eupatorium",
+        "Solidago"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Hellinsia homodactylus"
+      ]
+    },
+    "Hellinsia paleaceus": {
+      "host_genera": [
+        "Vernonia"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Hellinsia paleaceus"
+      ]
+    },
+    "Hemaris thysbe": {
+      "host_genera": [
+        "Abelia",
+        "Crataegus",
+        "Lonicera",
+        "Prunus",
+        "Symphoricarpos",
+        "Viburnum"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Hemaris thysbe"
+      ]
+    },
+    "Herpetogramma aeglealis": {
+      "host_genera": [
+        "Osmunda",
+        "Phytolacca",
+        "Polystichum"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Herpetogramma aeglealis"
+      ]
+    },
+    "Herpetogramma pertextalis": {
+      "host_genera": [
+        "Acer",
+        "Aster",
+        "Clethra",
+        "Cornus",
+        "Erigeron",
+        "Eupatorium",
+        "Ilex",
+        "Plantago",
+        "Rubus",
+        "Thalictrum",
+        "Tilia",
+        "Ulmus",
+        "Viola"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Herpetogramma pertextalis"
+      ]
+    },
+    "Herpetogramma thestealis": {
+      "host_genera": [
+        "Clethra",
+        "Corylus",
+        "Tilia"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Herpetogramma thestealis"
+      ]
+    },
+    "Heterophleps triguttaria": {
+      "host_genera": [
+        "Acer"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Heterophleps triguttaria"
+      ]
+    },
+    "Holcocera immaculella": {
+      "host_genera": [
+        "Lyonia",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Holcocera immaculella"
+      ]
+    },
+    "Homochlodes fritillaria": {
+      "host_genera": [
+        "Pteridium"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Homochlodes fritillaria"
+      ]
+    },
+    "Homophoberia apicosa": {
+      "host_genera": [
+        "Polygonum"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Homophoberia apicosa"
+      ]
+    },
+    "Horisme intestinata": {
+      "host_genera": [
+        "Clematis"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Horisme intestinata"
+      ]
+    },
+    "Hyalophora cecropia": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Ailanthus",
+        "Alnus",
+        "Amelanchier",
+        "Asclepias",
+        "Berberis",
+        "Betula",
+        "Caragana",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Ceanothus",
+        "Celtis",
+        "Cephalanthus",
+        "Chaenomeles",
+        "Cornus",
+        "Corylus",
+        "Cotinus",
+        "Cotoneaster",
+        "Crataegus",
+        "Decodon",
+        "Deutzia",
+        "Diospyros",
+        "Elaeagnus",
+        "Euonymus",
+        "Fagus",
+        "Forsythia",
+        "Frangula",
+        "Fraxinus",
+        "Gaylussacia",
+        "Ginkgo",
+        "Gleditsia",
+        "Halesia",
+        "Hamamelis",
+        "Humulus",
+        "Juglans",
+        "Juniperus",
+        "Lactuca",
+        "Larix",
+        "Ligustrum",
+        "Liquidambar",
+        "Liriodendron",
+        "Lonicera",
+        "Lythrum",
+        "Maclura",
+        "Malosma",
+        "Malus",
+        "Morus",
+        "Myrica",
+        "Nyssa",
+        "Ostrya",
+        "Paeonia",
+        "Parthenocissus",
+        "Philadelphus",
+        "Photinia",
+        "Physocarpus",
+        "Picea",
+        "Plantago",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhododendron",
+        "Rhus",
+        "Ribes",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Sambucus",
+        "Sanicula",
+        "Sassafras",
+        "Schinus",
+        "Sorbus",
+        "Spiraea",
+        "Symphoricarpos",
+        "Syringa",
+        "Taraxacum",
+        "Taxodium",
+        "Taxus",
+        "Tilia",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum",
+        "Wisteria"
+      ],
+      "record_count": 500,
+      "source_names": [
+        "Hyalophora cecropia"
+      ]
+    },
+    "Hydrelia albifera": {
+      "host_genera": [
+        "Betula",
+        "Cornus",
+        "Ulmus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Hydrelia albifera"
+      ]
+    },
+    "Hydrelia inornata": {
+      "host_genera": [
+        "Betula"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Hydrelia inornata"
+      ]
+    },
+    "Hydria prunivorata": {
+      "host_genera": [
+        "Populus",
+        "Prunus",
+        "Rhododendron",
+        "Salix",
+        "Spiraea"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Hydria prunivorata"
+      ]
+    },
+    "Hydriomena perfracta": {
+      "host_genera": [
+        "Larix",
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Hydriomena perfracta"
+      ]
+    },
+    "Hyles gallii": {
+      "host_genera": [
+        "Asperula",
+        "Clarkia",
+        "Epilobium",
+        "Fuchsia",
+        "Galium",
+        "Malus",
+        "Oenothera",
+        "Portulaca",
+        "Rosa",
+        "Vitis"
+      ],
+      "record_count": 21,
+      "source_names": [
+        "Hyles gallii"
+      ]
+    },
+    "Hyles lineata": {
+      "host_genera": [
+        "Abronia",
+        "Amaranthus",
+        "Beta",
+        "Boerhavia",
+        "Boisduvalia",
+        "Brassica",
+        "Chenopodium",
+        "Chorizanthe",
+        "Citrullus",
+        "Clarkia",
+        "Cucumis",
+        "Epilobium",
+        "Erigeron",
+        "Escallonia",
+        "Fagopyrum",
+        "Fuchsia",
+        "Galium",
+        "Gossypium",
+        "Ipomoea",
+        "Lactuca",
+        "Leucocrinum",
+        "Lonicera",
+        "Lycopersicon",
+        "Malus",
+        "Mirabilis",
+        "Oenothera",
+        "Olea",
+        "Parthenocissus",
+        "Pelargonium",
+        "Pisum",
+        "Plantago",
+        "Polygonum",
+        "Portulaca",
+        "Prunus",
+        "Pyrus",
+        "Rhododendron",
+        "Ribes",
+        "Rosa",
+        "Rubus",
+        "Rumex",
+        "Salix",
+        "Salsola",
+        "Sambucus",
+        "Stellaria",
+        "Syringa",
+        "Ulmus",
+        "Vitis"
+      ],
+      "record_count": 109,
+      "source_names": [
+        "Hyles lineata"
+      ]
+    },
+    "Hypagyrtis piniata": {
+      "host_genera": [
+        "Abies",
+        "Betula",
+        "Chaenactis",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 37,
+      "source_names": [
+        "Hypagyrtis piniata"
+      ]
+    },
+    "Hypagyrtis unipunctata": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Carya",
+        "Cornus",
+        "Corylus",
+        "Fagus",
+        "Fraxinus",
+        "Juglans",
+        "Ostrya",
+        "Physocarpus",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rosa",
+        "Salix",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 53,
+      "source_names": [
+        "Hypagyrtis unipunctata"
+      ]
+    },
+    "Hypena abalienalis": {
+      "host_genera": [
+        "Cornus",
+        "Ulmus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Hypena abalienalis"
+      ]
+    },
+    "Hypena baltimoralis": {
+      "host_genera": [
+        "Acer"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Hypena baltimoralis"
+      ]
+    },
+    "Hypena bijugalis": {
+      "host_genera": [
+        "Cornus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Hypena bijugalis"
+      ]
+    },
+    "Hypena deceptalis": {
+      "host_genera": [
+        "Tilia"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Hypena deceptalis"
+      ]
+    },
+    "Hypena humuli": {
+      "host_genera": [
+        "Humulus",
+        "Urtica"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Hypena humuli"
+      ]
+    },
+    "Hypena madefactalis": {
+      "host_genera": [
+        "Alisma",
+        "Juglans"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Hypena madefactalis"
+      ]
+    },
+    "Hypena palparia": {
+      "host_genera": [
+        "Corylus",
+        "Ostrya",
+        "Quercus"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Hypena palparia"
+      ]
+    },
+    "Hypena scabra": {
+      "host_genera": [
+        "Acer",
+        "Ambrosia",
+        "Betula",
+        "Daucus",
+        "Desmodium",
+        "Digitaria",
+        "Fragaria",
+        "Glycine",
+        "Hedeoma",
+        "Ipomoea",
+        "Lespedeza",
+        "Malus",
+        "Medicago",
+        "Melilotus",
+        "Mucuna",
+        "Panicum",
+        "Paspalum",
+        "Phaseolus",
+        "Pisum",
+        "Polygonum",
+        "Populus",
+        "Potentilla",
+        "Robinia",
+        "Rubus",
+        "Salix",
+        "Setaria",
+        "Trifolium",
+        "Ulmus",
+        "Vicia",
+        "Vigna",
+        "Zea"
+      ],
+      "record_count": 52,
+      "source_names": [
+        "Hypena scabra"
+      ]
+    },
+    "Hypercompe scribonia": {
+      "host_genera": [
+        "Bougainvillea",
+        "Brassica",
+        "Citrus",
+        "Euphorbia",
+        "Helianthus",
+        "Lonicera",
+        "Magnolia",
+        "Musa",
+        "Persea",
+        "Phytolacca",
+        "Plantago",
+        "Pyrostegia",
+        "Ricinus",
+        "Robinia",
+        "Salix",
+        "Taraxacum",
+        "Viola"
+      ],
+      "record_count": 24,
+      "source_names": [
+        "Hypercompe scribonia"
+      ]
+    },
+    "Hyperstrotia pervertens": {
+      "host_genera": [
+        "Quercus",
+        "Ulmus"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Hyperstrotia pervertens"
+      ]
+    },
+    "Hyperstrotia secta": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Hyperstrotia secta"
+      ]
+    },
+    "Hyphantria cunea": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Ailanthus",
+        "Alcea",
+        "Alnus",
+        "Amelanchier",
+        "Arbutus",
+        "Asimina",
+        "Berberis",
+        "Betula",
+        "Buxus",
+        "Campsis",
+        "Caragana",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Catalpa",
+        "Celtis",
+        "Cephalanthus",
+        "Cercis",
+        "Chaenactis",
+        "Chenopodium",
+        "Chionanthus",
+        "Clematis",
+        "Cornus",
+        "Corylus",
+        "Cotinus",
+        "Crataegus",
+        "Cupressus",
+        "Cydonia",
+        "Diospyros",
+        "Euonymus",
+        "Fagus",
+        "Ficus",
+        "Fraxinus",
+        "Geranium",
+        "Gleditsia",
+        "Gossypium",
+        "Gymnocladus",
+        "Hamamelis",
+        "Helianthus",
+        "Hibiscus",
+        "Humulus",
+        "Ilex",
+        "Jasminum",
+        "Juglans",
+        "Juniperus",
+        "Kalmia",
+        "Larix",
+        "Ligustrum",
+        "Liquidambar",
+        "Liriodendron",
+        "Lonicera",
+        "Maclura",
+        "Magnolia",
+        "Malus",
+        "Morus",
+        "Nyssa",
+        "Ostrya",
+        "Oxydendrum",
+        "Parthenium",
+        "Parthenocissus",
+        "Paulownia",
+        "Pelargonium",
+        "Phaseolus",
+        "Pinus",
+        "Plantago",
+        "Platanus",
+        "Populus",
+        "Portulaca",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhamnus",
+        "Rhododendron",
+        "Ribes",
+        "Ricinus",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Sambucus",
+        "Sassafras",
+        "Sorbus",
+        "Spinacia",
+        "Spiraea",
+        "Staphylea",
+        "Symphoricarpos",
+        "Syringa",
+        "Taxus",
+        "Tilia",
+        "Trifolium",
+        "Ulmus",
+        "Viburnum",
+        "Vitis",
+        "Wisteria",
+        "Zanthoxylum",
+        "Zea"
+      ],
+      "record_count": 224,
+      "source_names": [
+        "Hyphantria cunea"
+      ]
+    },
+    "Hypoprepia fucosa": {
+      "host_genera": [
+        "Abies",
+        "Betula",
+        "Picea",
+        "Quercus",
+        "Ulmus"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Hypoprepia fucosa"
+      ]
+    },
+    "Idaea dimidiata": {
+      "host_genera": [
+        "Anthriscus",
+        "Galium",
+        "Pimpinella",
+        "Veronica"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Idaea dimidiata"
+      ]
+    },
+    "Idia aemula": {
+      "host_genera": [
+        "Abies",
+        "Phlox",
+        "Picea",
+        "Pseudotsuga",
+        "Thuja"
+      ],
+      "record_count": 20,
+      "source_names": [
+        "Idia aemula"
+      ]
+    },
+    "Idia americalis": {
+      "host_genera": [
+        "Angelica",
+        "Dolichovespula (Z)",
+        "Hedysarum",
+        "Picea",
+        "Pseudotsuga"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Idia americalis"
+      ]
+    },
+    "Idia lubricalis": {
+      "host_genera": [
+        "Lotus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Idia lubricalis"
+      ]
+    },
+    "Iridopsis larvaria": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Arbutus",
+        "Betula",
+        "Comptonia",
+        "Cornus",
+        "Crataegus",
+        "Larix",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Ribes",
+        "Salix",
+        "Sambucus",
+        "Shepherdia",
+        "Sorbus"
+      ],
+      "record_count": 31,
+      "source_names": [
+        "Iridopsis larvaria"
+      ]
+    },
+    "Isa textula": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Castanea",
+        "Myrica",
+        "Prunus",
+        "Quercus",
+        "Tilia"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Isa textula"
+      ]
+    },
+    "Lacanobia subjuncta": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Asparagus",
+        "Brassica",
+        "Fragaria",
+        "Populus",
+        "Prunus",
+        "Salix",
+        "Solanum",
+        "Taraxacum",
+        "Thalictrum",
+        "Vaccinium",
+        "Viola",
+        "Zea"
+      ],
+      "record_count": 23,
+      "source_names": [
+        "Lacanobia subjuncta"
+      ]
+    },
+    "Lacinipolia lorea": {
+      "host_genera": [
+        "Betula",
+        "Comptonia",
+        "Fragaria",
+        "Geranium",
+        "Medicago",
+        "Prunus",
+        "Spiraea",
+        "Taraxacum",
+        "Trifolium",
+        "Vaccinium",
+        "Viburnum"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Lacinipolia lorea"
+      ]
+    },
+    "Lacinipolia renigera": {
+      "host_genera": [
+        "Aster",
+        "Brassica",
+        "Cichorium",
+        "Lactuca",
+        "Malus",
+        "Medicago",
+        "Nicotiana",
+        "Phaseolus",
+        "Plantago",
+        "Populus",
+        "Rumex",
+        "Silene",
+        "Stellaria",
+        "Symphytum",
+        "Taraxacum",
+        "Trifolium",
+        "Vitis",
+        "Zea"
+      ],
+      "record_count": 26,
+      "source_names": [
+        "Lacinipolia renigera"
+      ]
+    },
+    "Lacosoma chiridota": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Lacosoma chiridota"
+      ]
+    },
+    "Lambdina fiscellaria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Corylus",
+        "Crataegus",
+        "Fagus",
+        "Hamamelis",
+        "Hylocomium",
+        "Juniperus",
+        "Larix",
+        "Ostrya",
+        "Picea",
+        "Pinus",
+        "Pleurozium",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Ptilium",
+        "Pyrus",
+        "Quercus",
+        "Salix",
+        "Thuja",
+        "Toxicodendron",
+        "Tsuga",
+        "Ulmus",
+        "Usnea",
+        "Vaccinium"
+      ],
+      "record_count": 118,
+      "source_names": [
+        "Lambdina fiscellaria"
+      ]
+    },
+    "Lapara bombycoides": {
+      "host_genera": [
+        "Larix",
+        "Pinus"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Lapara bombycoides"
+      ]
+    },
+    "Lascoria ambigualis": {
+      "host_genera": [
+        "Chrysanthemum"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Lascoria ambigualis"
+      ]
+    },
+    "Leucania commoides": {
+      "host_genera": [
+        "Dactylis",
+        "Glyceria"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Leucania commoides"
+      ]
+    },
+    "Leucania pseudargyria": {
+      "host_genera": [
+        "Agropyron",
+        "Agrostis",
+        "Bromus",
+        "Calamagrostis",
+        "Dactylis",
+        "Elymus",
+        "Phleum",
+        "Triticum",
+        "Typha"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Leucania pseudargyria"
+      ]
+    },
+    "Leuconycta diphteroides": {
+      "host_genera": [
+        "Aster",
+        "Solidago"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Leuconycta diphteroides"
+      ]
+    },
+    "Leucospilapteryx venustella": {
+      "host_genera": [
+        "Ageratina",
+        "Eupatorium"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Leucospilapteryx venustella"
+      ]
+    },
+    "Limnaecia phragmitella": {
+      "host_genera": [
+        "Typha"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Limnaecia phragmitella"
+      ]
+    },
+    "Lintneria eremitus": {
+      "host_genera": [
+        "Hedeoma",
+        "Lycopus",
+        "Mentha",
+        "Monarda",
+        "Pycnanthemum",
+        "Salvia"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Lintneria eremitus",
+        "Sphinx eremitus"
+      ]
+    },
+    "Lithacodes fasciola": {
+      "host_genera": [
+        "Acer",
+        "Carya",
+        "Fagus",
+        "Myrica",
+        "Ostrya",
+        "Prunus",
+        "Quercus",
+        "Ribes",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Lithacodes fasciola"
+      ]
+    },
+    "Lochmaeus bilineata": {
+      "host_genera": [
+        "Betula",
+        "Fagus",
+        "Quercus",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Lochmaeus bilineata"
+      ]
+    },
+    "Lochmaeus manteo": {
+      "host_genera": [
+        "Betula",
+        "Crataegus",
+        "Diospyros",
+        "Fagus",
+        "Juglans",
+        "Malus",
+        "Ostrya",
+        "Pinckneya",
+        "Quercus",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 29,
+      "source_names": [
+        "Lochmaeus manteo"
+      ]
+    },
+    "Lomographa vestaliata": {
+      "host_genera": [
+        "Acer",
+        "Carpinus",
+        "Crataegus",
+        "Malus",
+        "Physocarpus",
+        "Prunus",
+        "Quercus",
+        "Sorbus",
+        "Symphoricarpos",
+        "Viburnum"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Lomographa vestaliata"
+      ]
+    },
+    "Lophocampa caryae": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Alnus",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Celtis",
+        "Chaenomeles",
+        "Crataegus",
+        "Fagus",
+        "Fraxinus",
+        "Hamamelis",
+        "Humulus",
+        "Juglans",
+        "Larix",
+        "Malus",
+        "Ostrya",
+        "Parthenocissus",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhus",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 87,
+      "source_names": [
+        "Lophocampa caryae"
+      ]
+    },
+    "Lymantria dispar": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Aralia",
+        "Berberis",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Catalpa",
+        "Celtis",
+        "Chaenactis",
+        "Clethra",
+        "Comptonia",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Diervilla",
+        "Diospyros",
+        "Fagus",
+        "Fraxinus",
+        "Gaylussacia",
+        "Gleditsia",
+        "Gymnocladus",
+        "Hamamelis",
+        "Ilex",
+        "Iris",
+        "Juglans",
+        "Juniperus",
+        "Kalmia",
+        "Larix",
+        "Leucothoe",
+        "Ligustrum",
+        "Lindera",
+        "Liriodendron",
+        "Maclura",
+        "Malus",
+        "Myrica",
+        "Nyssa",
+        "Ostrya",
+        "Physocarpus",
+        "Picea",
+        "Pinus",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhododendron",
+        "Rhus",
+        "Ribes",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Rumex",
+        "Salix",
+        "Sambucus",
+        "Sassafras",
+        "Smilax",
+        "Sorbus",
+        "Spiraea",
+        "Symplocarpus",
+        "Taxodium",
+        "Thuja",
+        "Tilia",
+        "Toxicodendron",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum",
+        "Vitis",
+        "Zea"
+      ],
+      "record_count": 162,
+      "source_names": [
+        "Lymantria dispar"
+      ]
+    },
+    "Lytrosis unitaria": {
+      "host_genera": [
+        "Acer",
+        "Crataegus",
+        "Quercus"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Lytrosis unitaria"
+      ]
+    },
+    "Macaria pustularia": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Betula",
+        "Larix",
+        "Populus",
+        "Prunus",
+        "Tsuga"
+      ],
+      "record_count": 16,
+      "source_names": [
+        "Macaria pustularia",
+        "Itame pustularia"
+      ]
+    },
+    "Macrochilo absorptalis": {
+      "host_genera": [
+        "Carex"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Macrochilo absorptalis"
+      ]
+    },
+    "Macrochilo litophora": {
+      "host_genera": [
+        "Medicago",
+        "Poa",
+        "Trifolium"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Macrochilo litophora"
+      ]
+    },
+    "Macrurocampa marthesia": {
+      "host_genera": [
+        "Acer",
+        "Carya",
+        "Castanea",
+        "Fagus",
+        "Platanus",
+        "Populus",
+        "Quercus"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Macrurocampa marthesia"
+      ]
+    },
+    "Malacosoma americana": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Arbutus",
+        "Berberis",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Ceanothus",
+        "Cercis",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Fagus",
+        "Fragaria",
+        "Fraxinus",
+        "Hamamelis",
+        "Juglans",
+        "Liquidambar",
+        "Malus",
+        "Nyssa",
+        "Ostrya",
+        "Photinia",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Ribes",
+        "Robinia",
+        "Rosa",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 114,
+      "source_names": [
+        "Malacosoma americana"
+      ]
+    },
+    "Malacosoma disstria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Arctostaphylos",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Cornus",
+        "Corylus",
+        "Crataegus",
+        "Cydonia",
+        "Fagus",
+        "Fraxinus",
+        "Hamamelis",
+        "Ilex",
+        "Juglans",
+        "Larix",
+        "Liquidambar",
+        "Malus",
+        "Nyssa",
+        "Ostrya",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Pyrus",
+        "Quercus",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 137,
+      "source_names": [
+        "Malacosoma disstria"
+      ]
+    },
+    "Maliattha synochitis": {
+      "host_genera": [
+        "Carex",
+        "Polygonum"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Maliattha synochitis"
+      ]
+    },
+    "Marathyssa inficita": {
+      "host_genera": [
+        "Rhus",
+        "Toxicodendron"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Marathyssa inficita"
+      ]
+    },
+    "Meganola minuscula": {
+      "host_genera": [
+        "Quercus",
+        "Salix"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Meganola minuscula"
+      ]
+    },
+    "Melanolophia canadaria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Cornus",
+        "Epilobium",
+        "Fagus",
+        "Fraxinus",
+        "Jacaranda",
+        "Larix",
+        "Malus",
+        "Myrica",
+        "Picea",
+        "Pinus",
+        "Polygonum",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rhus",
+        "Salix",
+        "Spiraea",
+        "Tilia",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum"
+      ],
+      "record_count": 49,
+      "source_names": [
+        "Melanolophia canadaria"
+      ]
+    },
+    "Melanolophia signataria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Larix",
+        "Physocarpus",
+        "Picea",
+        "Populus",
+        "Quercus",
+        "Salix",
+        "Sassafras",
+        "Ulmus"
+      ],
+      "record_count": 20,
+      "source_names": [
+        "Melanolophia signataria"
+      ]
+    },
+    "Meroptera pravella": {
+      "host_genera": [
+        "Betula",
+        "Fagus",
+        "Populus",
+        "Rhus",
+        "Salix",
+        "Ulmus"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Meroptera pravella"
+      ]
+    },
+    "Mesoleuca ruficillata": {
+      "host_genera": [
+        "Betula",
+        "Rubus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Mesoleuca ruficillata"
+      ]
+    },
+    "Metalectra quadrisignata": {
+      "host_genera": [
+        "Agaricus",
+        "Laetiporus",
+        "Tsuga"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Metalectra quadrisignata"
+      ]
+    },
+    "Metanema inatomaria": {
+      "host_genera": [
+        "Betula",
+        "Corylus",
+        "Pinus",
+        "Populus",
+        "Pseudotsuga",
+        "Salix"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Metanema inatomaria"
+      ]
+    },
+    "Metarranthis hypochraria": {
+      "host_genera": [
+        "Diospyros",
+        "Malus",
+        "Prunus",
+        "Sassafras",
+        "Vaccinium"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Metarranthis hypochraria"
+      ]
+    },
+    "Metarranthis indeclinata": {
+      "host_genera": [
+        "Prunus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Metarranthis indeclinata"
+      ]
+    },
+    "Metzneria lappella": {
+      "host_genera": [
+        "Arctium"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Metzneria lappella"
+      ]
+    },
+    "Microcrambus elegans": {
+      "host_genera": [
+        "Zea"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Microcrambus elegans"
+      ]
+    },
+    "Misogada unicolor": {
+      "host_genera": [
+        "Acer",
+        "Platanus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Misogada unicolor"
+      ]
+    },
+    "Mompha brevivittella": {
+      "host_genera": [
+        "Oenothera"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Mompha brevivittella"
+      ]
+    },
+    "Mompha eloisella": {
+      "host_genera": [
+        "Oenothera"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Mompha eloisella"
+      ]
+    },
+    "Moodna ostrinella": {
+      "host_genera": [
+        "Betula",
+        "Carya",
+        "Eriobotrya",
+        "Gossypium",
+        "Iris",
+        "Malus",
+        "Paeonia",
+        "Pinus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhus",
+        "Rosa"
+      ],
+      "record_count": 39,
+      "source_names": [
+        "Moodna ostrinella"
+      ]
+    },
+    "Morrisonia latex": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Fagus",
+        "Magnolia",
+        "Nyssa",
+        "Ostrya",
+        "Prunus",
+        "Quercus",
+        "Salix",
+        "Sassafras",
+        "Ulmus"
+      ],
+      "record_count": 40,
+      "source_names": [
+        "Morrisonia latex"
+      ]
+    },
+    "Nadata gibbosa": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Castanea",
+        "Corylus",
+        "Fagus",
+        "Fraxinus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rosa",
+        "Salix"
+      ],
+      "record_count": 46,
+      "source_names": [
+        "Nadata gibbosa"
+      ]
+    },
+    "Nedra ramosula": {
+      "host_genera": [
+        "Hypericum",
+        "Triadenum"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Nedra ramosula"
+      ]
+    },
+    "Nematocampa resistaria": {
+      "host_genera": [
+        "Aesculus",
+        "Carya",
+        "Castanea",
+        "Corylus",
+        "Crataegus",
+        "Fragaria",
+        "Humulus",
+        "Malus",
+        "Ribes",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Sedum"
+      ],
+      "record_count": 17,
+      "source_names": [
+        "Nematocampa resistaria"
+      ]
+    },
+    "Nemoria bistriaria": {
+      "host_genera": [
+        "Betula",
+        "Hamamelis",
+        "Juglans",
+        "Malus",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Nemoria bistriaria"
+      ]
+    },
+    "Nemoria mimosaria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Carpinus",
+        "Comptonia",
+        "Crataegus",
+        "Fraxinus",
+        "Larix",
+        "Myrica",
+        "Ostrya",
+        "Picea",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Tsuga",
+        "Ulmus"
+      ],
+      "record_count": 45,
+      "source_names": [
+        "Nemoria mimosaria"
+      ]
+    },
+    "Neodactria luteolellus": {
+      "host_genera": [
+        "Zea"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Neodactria luteolellus"
+      ]
+    },
+    "Nepytia canosaria": {
+      "host_genera": [
+        "Abies",
+        "Betula",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 29,
+      "source_names": [
+        "Nepytia canosaria"
+      ]
+    },
+    "Nerice bidentata": {
+      "host_genera": [
+        "Ulmus"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Nerice bidentata"
+      ]
+    },
+    "Neurobathra strigifinitella": {
+      "host_genera": [
+        "Castanea",
+        "Castanopsis",
+        "Fagus",
+        "Quercus"
+      ],
+      "record_count": 16,
+      "source_names": [
+        "Neurobathra strigifinitella"
+      ]
+    },
+    "Noctua pronuba": {
+      "host_genera": [
+        "Beta",
+        "Brassica",
+        "Daucus",
+        "Fragaria",
+        "Lactuca",
+        "Lycopersicon",
+        "Solanum",
+        "Vitis"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Noctua pronuba"
+      ]
+    },
+    "Nola cilicoides": {
+      "host_genera": [
+        "Lysimachia"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Nola cilicoides"
+      ]
+    },
+    "Nomophila nearctica": {
+      "host_genera": [
+        "Apium",
+        "Glycine",
+        "Medicago",
+        "Melilotus",
+        "Poa",
+        "Polygonum",
+        "Portulaca",
+        "Potentilla",
+        "Saccharum",
+        "Sinapis",
+        "Trifolium",
+        "Zea"
+      ],
+      "record_count": 14,
+      "source_names": [
+        "Nomophila nearctica"
+      ]
+    },
+    "Ogdoconta cinereola": {
+      "host_genera": [
+        "Ambrosia",
+        "Beta",
+        "Helianthus",
+        "Parthenium",
+        "Phaseolus",
+        "Stachys",
+        "Triticum",
+        "Xanthium"
+      ],
+      "record_count": 14,
+      "source_names": [
+        "Ogdoconta cinereola"
+      ]
+    },
+    "Olceclostera angelica": {
+      "host_genera": [
+        "Fraxinus",
+        "Syringa"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Olceclostera angelica"
+      ]
+    },
+    "Olethreutes appendiceum": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Comptonia",
+        "Dennstaedtia",
+        "Fagus",
+        "Hamamelis",
+        "Ostrya",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Ribes",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Vaccinium",
+        "Viburnum"
+      ],
+      "record_count": 30,
+      "source_names": [
+        "Olethreutes appendiceum"
+      ]
+    },
+    "Olethreutes fasciatana": {
+      "host_genera": [
+        "Populus",
+        "Rumex",
+        "Salix"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Olethreutes fasciatana"
+      ]
+    },
+    "Olethreutes ferriferana": {
+      "host_genera": [
+        "Hydrangea"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Olethreutes ferriferana"
+      ]
+    },
+    "Olethreutes furfuranum": {
+      "host_genera": [
+        "Rubus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Olethreutes furfuranum"
+      ]
+    },
+    "Olethreutes hamameliana": {
+      "host_genera": [
+        "Hamamelis"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Olethreutes hamameliana"
+      ]
+    },
+    "Olethreutes inornatana": {
+      "host_genera": [
+        "Clethra",
+        "Cornus",
+        "Juglans",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Olethreutes inornatana"
+      ]
+    },
+    "Olethreutes nigranum": {
+      "host_genera": [
+        "Acer",
+        "Carya",
+        "Tilia"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Olethreutes nigranum"
+      ]
+    },
+    "Olethreutes osmundana": {
+      "host_genera": [
+        "Ambrosia",
+        "Osmunda",
+        "Pteridium"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Olethreutes osmundana"
+      ]
+    },
+    "Olethreutes permundana": {
+      "host_genera": [
+        "Carya",
+        "Corylus",
+        "Fragaria",
+        "Myrica",
+        "Physocarpus",
+        "Rhus",
+        "Rosa",
+        "Rubus",
+        "Spiraea",
+        "Vaccinium"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Olethreutes permundana"
+      ]
+    },
+    "Olethreutes punctanum": {
+      "host_genera": [
+        "Cornus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Olethreutes punctanum"
+      ]
+    },
+    "Olethreutes quadrifidum": {
+      "host_genera": [
+        "Cornus",
+        "Prunus"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Olethreutes quadrifidum"
+      ]
+    },
+    "Olethreutes valdanum": {
+      "host_genera": [
+        "Cornus",
+        "Myrica",
+        "Spiraea"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Olethreutes valdanum"
+      ]
+    },
+    "Oneida lunulalis": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Oneida lunulalis"
+      ]
+    },
+    "Oreana unicolorella": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Crataegus",
+        "Malus",
+        "Quercus",
+        "Salix",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Oreana unicolorella"
+      ]
+    },
+    "Oreta rosea": {
+      "host_genera": [
+        "Betula",
+        "Viburnum"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Oreta rosea"
+      ]
+    },
+    "Orgyia definita": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Hamamelis",
+        "Populus",
+        "Quercus",
+        "Salix",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Orgyia definita"
+      ]
+    },
+    "Orgyia leucostigma": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Aesculus",
+        "Ailanthus",
+        "Alnus",
+        "Amelanchier",
+        "Berberis",
+        "Betula",
+        "Campsis",
+        "Carpinus",
+        "Carya",
+        "Castanea",
+        "Catalpa",
+        "Celtis",
+        "Cephalanthus",
+        "Cercis",
+        "Chaenactis",
+        "Chenopodium",
+        "Chionanthus",
+        "Clematis",
+        "Convallaria",
+        "Cornus",
+        "Corylus",
+        "Cotinus",
+        "Crataegus",
+        "Cupressus",
+        "Cydonia",
+        "Diospyros",
+        "Euonymus",
+        "Fagus",
+        "Ficus",
+        "Fraxinus",
+        "Geranium",
+        "Gleditsia",
+        "Gordonia",
+        "Gossypium",
+        "Gymnocladus",
+        "Hamamelis",
+        "Helianthus",
+        "Hibiscus",
+        "Humulus",
+        "Ilex",
+        "Ipomoea",
+        "Iris",
+        "Jasminum",
+        "Juglans",
+        "Juniperus",
+        "Kalmia",
+        "Larix",
+        "Leptochloa",
+        "Ligustrum",
+        "Liquidambar",
+        "Liriodendron",
+        "Lonicera",
+        "Maclura",
+        "Magnolia",
+        "Malus",
+        "Malva",
+        "Mimosa",
+        "Morus",
+        "Myrica",
+        "Nyssa",
+        "Ostrya",
+        "Oxydendrum",
+        "Parthenocissus",
+        "Paulownia",
+        "Picea",
+        "Pinus",
+        "Plantago",
+        "Platanus",
+        "Poa",
+        "Populus",
+        "Prunus",
+        "Pyracantha",
+        "Pyrus",
+        "Quercus",
+        "Rhamnus",
+        "Rhododendron",
+        "Ribes",
+        "Ricinus",
+        "Robinia",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Sambucus",
+        "Sassafras",
+        "Sorbus",
+        "Spiraea",
+        "Staphylea",
+        "Symphoricarpos",
+        "Syringa",
+        "Tamarix",
+        "Taraxacum",
+        "Taxus",
+        "Tilia",
+        "Trifolium",
+        "Tsuga",
+        "Ulmus",
+        "Viburnum",
+        "Wisteria",
+        "Zanthoxylum",
+        "Zea"
+      ],
+      "record_count": 236,
+      "source_names": [
+        "Orgyia leucostigma"
+      ]
+    },
+    "Orthodes cynica": {
+      "host_genera": [
+        "Achillea",
+        "Cirsium",
+        "Malus",
+        "Plantago",
+        "Prunus",
+        "Solidago",
+        "Taraxacum"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Orthodes cynica"
+      ]
+    },
+    "Orthonama obstipata": {
+      "host_genera": [
+        "Acalypha",
+        "Annona",
+        "Chrysanthemum",
+        "Galium",
+        "Polygonum",
+        "Rumex",
+        "Senecio",
+        "Ulmus"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Orthonama obstipata"
+      ]
+    },
+    "Pachysphinx modesta": {
+      "host_genera": [
+        "Betula",
+        "Malus",
+        "Pontederia",
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 33,
+      "source_names": [
+        "Pachysphinx modesta"
+      ]
+    },
+    "Packardia elegans": {
+      "host_genera": [
+        "Castanea",
+        "Fagus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Packardia elegans"
+      ]
+    },
+    "Packardia geminata": {
+      "host_genera": [
+        "Prunus",
+        "Viburnum"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Packardia geminata"
+      ]
+    },
+    "Paectes oculatrix": {
+      "host_genera": [
+        "Rhus",
+        "Toxicodendron"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Paectes oculatrix"
+      ]
+    },
+    "Palthis angulalis": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Cornus",
+        "Fraxinus",
+        "Juniperus",
+        "Larix",
+        "Lobelia",
+        "Lonicera",
+        "Malus",
+        "Ostrya",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Rubus",
+        "Salix",
+        "Spiraea",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 54,
+      "source_names": [
+        "Palthis angulalis"
+      ]
+    },
+    "Palthis asopialis": {
+      "host_genera": [
+        "Bidens",
+        "Erechtites",
+        "Phaseolus",
+        "Quercus",
+        "Symphoricarpos",
+        "Zea"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Palthis asopialis"
+      ]
+    },
+    "Pandemis lamprosana": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Brassica",
+        "Carpinus",
+        "Fagus",
+        "Fraxinus",
+        "Gleditsia",
+        "Hamamelis",
+        "Malus",
+        "Ostrya",
+        "Platanus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Sassafras",
+        "Tilia",
+        "Ulmus",
+        "Urtica"
+      ],
+      "record_count": 51,
+      "source_names": [
+        "Pandemis lamprosana"
+      ]
+    },
+    "Pandemis limitata": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Castanea",
+        "Cornus",
+        "Corylus",
+        "Malus",
+        "Myrica",
+        "Osmunda",
+        "Populus",
+        "Prunus",
+        "Purshia",
+        "Quercus",
+        "Rosa",
+        "Salix",
+        "Sorbus",
+        "Tilia",
+        "Trifolium",
+        "Ulmus",
+        "Vaccinium",
+        "Viburnum"
+      ],
+      "record_count": 65,
+      "source_names": [
+        "Pandemis limitata"
+      ]
+    },
+    "Panopoda carneicosta": {
+      "host_genera": [
+        "Carya",
+        "Quercus",
+        "Salix",
+        "Tilia"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Panopoda carneicosta"
+      ]
+    },
+    "Panopoda rufimargo": {
+      "host_genera": [
+        "Carya",
+        "Fagus",
+        "Juglans",
+        "Prunus",
+        "Quercus",
+        "Salix"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Panopoda rufimargo"
+      ]
+    },
+    "Panthea acronyctoides": {
+      "host_genera": [
+        "Abies",
+        "Glycine",
+        "Larix",
+        "Nicotiana",
+        "Picea",
+        "Pinus",
+        "Pseudotsuga",
+        "Tsuga"
+      ],
+      "record_count": 32,
+      "source_names": [
+        "Panthea acronyctoides"
+      ]
+    },
+    "Panthea furcilla": {
+      "host_genera": [
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Tilia"
+      ],
+      "record_count": 24,
+      "source_names": [
+        "Panthea furcilla"
+      ]
+    },
+    "Pantographa limata": {
+      "host_genera": [
+        "Quercus",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Pantographa limata"
+      ]
+    },
+    "Paonias excaecata": {
+      "host_genera": [
+        "Acer",
+        "Amelanchier",
+        "Betula",
+        "Carpinus",
+        "Chaenomeles",
+        "Corylus",
+        "Crataegus",
+        "Fagus",
+        "Fraxinus",
+        "Holodiscus",
+        "Malus",
+        "Ostrya",
+        "Physocarpus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Spiraea",
+        "Tilia",
+        "Ulmus",
+        "Viburnum",
+        "Wisteria"
+      ],
+      "record_count": 85,
+      "source_names": [
+        "Paonias excaecata"
+      ]
+    },
+    "Paonias myops": {
+      "host_genera": [
+        "Amelanchier",
+        "Arctostaphylos",
+        "Betula",
+        "Corylus",
+        "Crataegus",
+        "Ligustrum",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Salix",
+        "Syringa",
+        "Vitis"
+      ],
+      "record_count": 27,
+      "source_names": [
+        "Paonias myops"
+      ]
+    },
+    "Parallelia bistriaris": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Juglans"
+      ],
+      "record_count": 12,
+      "source_names": [
+        "Parallelia bistriaris"
+      ]
+    },
+    "Parapoynx allionealis": {
+      "host_genera": [
+        "Myriophyllum"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Parapoynx allionealis"
+      ]
+    },
+    "Parapoynx badiusalis": {
+      "host_genera": [
+        "Myriophyllum"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Parapoynx badiusalis"
+      ]
+    },
+    "Patalene olyzonaria": {
+      "host_genera": [
+        "Juniperus",
+        "Pinus",
+        "Thuja"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Patalene olyzonaria"
+      ]
+    },
+    "Pediasia trisecta": {
+      "host_genera": [
+        "Festuca",
+        "Nicotiana",
+        "Poa",
+        "Zea"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Pediasia trisecta"
+      ]
+    },
+    "Peridea angulosa": {
+      "host_genera": [
+        "Carya",
+        "Castanea",
+        "Eremochloa",
+        "Quercus"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Peridea angulosa"
+      ]
+    },
+    "Peridea basitriens": {
+      "host_genera": [
+        "Acer",
+        "Ulmus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Peridea basitriens"
+      ]
+    },
+    "Peridea ferruginea": {
+      "host_genera": [
+        "Acer",
+        "Betula"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Peridea ferruginea"
+      ]
+    },
+    "Pero honestaria": {
+      "host_genera": [
+        "Larix",
+        "Prunus",
+        "Robinia"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Pero honestaria"
+      ]
+    },
+    "Pero morrisonaria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Arbutus",
+        "Aster",
+        "Betula",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Salix",
+        "Shepherdia",
+        "Thuja",
+        "Tsuga"
+      ],
+      "record_count": 25,
+      "source_names": [
+        "Pero morrisonaria"
+      ]
+    },
+    "Phalaenostola larentioides": {
+      "host_genera": [
+        "Poa",
+        "Trifolium"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Phalaenostola larentioides"
+      ]
+    },
+    "Phalaenostola metonalis": {
+      "host_genera": [
+        "Betula",
+        "Poa",
+        "Taraxacum",
+        "Vaccinium"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Phalaenostola metonalis"
+      ]
+    },
+    "Pheosia rimosa": {
+      "host_genera": [
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 12,
+      "source_names": [
+        "Pheosia rimosa"
+      ]
+    },
+    "Philonome clemensella": {
+      "host_genera": [
+        "Carya",
+        "Tilia"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Philonome clemensella"
+      ]
+    },
+    "Phlogophora iris": {
+      "host_genera": [
+        "Carduus",
+        "Onoclea",
+        "Rumex",
+        "Taraxacum",
+        "Vaccinium"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Phlogophora iris"
+      ]
+    },
+    "Phobetron pithecium": {
+      "host_genera": [
+        "Acer",
+        "Amelanchier",
+        "Betula",
+        "Carya",
+        "Castanea",
+        "Citrus",
+        "Fraxinus",
+        "Juglans",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus"
+      ],
+      "record_count": 21,
+      "source_names": [
+        "Phobetron pithecium"
+      ]
+    },
+    "Phragmatobia fuliginosa": {
+      "host_genera": [
+        "Eupatorium",
+        "Fraxinus",
+        "Helianthus",
+        "Plantago",
+        "Rumex",
+        "Solidago",
+        "Symplocarpus",
+        "Vernonia"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Phragmatobia fuliginosa"
+      ]
+    },
+    "Phyllocnistis insignis": {
+      "host_genera": [
+        "Arnoglossum",
+        "Erechtites",
+        "Senecio"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Phyllocnistis insignis"
+      ]
+    },
+    "Phyllodesma americana": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Arctostaphylos",
+        "Betula",
+        "Carya",
+        "Ceanothus",
+        "Celtis",
+        "Chrysolepis",
+        "Crataegus",
+        "Fraxinus",
+        "Malus",
+        "Parthenocissus",
+        "Populus",
+        "Prunus",
+        "Pseudotsuga",
+        "Pyrus",
+        "Quercus",
+        "Rubus",
+        "Salix",
+        "Ulmus",
+        "Vitis"
+      ],
+      "record_count": 73,
+      "source_names": [
+        "Phyllodesma americana"
+      ]
+    },
+    "Plagodis kuetzingi": {
+      "host_genera": [
+        "Fraxinus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Plagodis kuetzingi"
+      ]
+    },
+    "Plagodis phlogosaria": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Corylus",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Salix",
+        "Tilia"
+      ],
+      "record_count": 20,
+      "source_names": [
+        "Plagodis phlogosaria"
+      ]
+    },
+    "Plagodis pulveraria": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Corylus",
+        "Fagus",
+        "Rubus",
+        "Salix"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Plagodis pulveraria"
+      ]
+    },
+    "Plagodis serinaria": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Fagus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Tilia"
+      ],
+      "record_count": 14,
+      "source_names": [
+        "Plagodis serinaria"
+      ]
+    },
+    "Platynota idaeusalis": {
+      "host_genera": [
+        "Ceanothus",
+        "Fraxinus",
+        "Maclura",
+        "Malus",
+        "Pinus",
+        "Prunus",
+        "Rubus",
+        "Salix",
+        "Sanguinaria",
+        "Solanum",
+        "Solidago",
+        "Trifolium",
+        "Vaccinium",
+        "Vernonia",
+        "Viburnum"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Platynota idaeusalis"
+      ]
+    },
+    "Pleuroprucha insulsaria": {
+      "host_genera": [
+        "Acacia",
+        "Baccharis",
+        "Castanea",
+        "Celastrus",
+        "Chamaecrista",
+        "Galium",
+        "Parthenium",
+        "Polygonum",
+        "Prosopis",
+        "Quercus",
+        "Salix",
+        "Solidago",
+        "Sorghum",
+        "Zea"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Pleuroprucha insulsaria"
+      ]
+    },
+    "Plodia interpunctella": {
+      "host_genera": [
+        "Arachis",
+        "Avena",
+        "Berberis",
+        "Camellia",
+        "Capsicum",
+        "Castanea",
+        "Cicer",
+        "Ficus",
+        "Gleditsia",
+        "Juglans",
+        "Morus",
+        "Oryza",
+        "Phaseolus",
+        "Phoenix",
+        "Pistacia",
+        "Prosopis",
+        "Prunus",
+        "Punica",
+        "Theobroma",
+        "Triticum",
+        "Vicia",
+        "Vitis",
+        "Zea",
+        "Ziziphus"
+      ],
+      "record_count": 35,
+      "source_names": [
+        "Plodia interpunctella"
+      ]
+    },
+    "Plutella porrectella": {
+      "host_genera": [
+        "Barbarea",
+        "Hesperis"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Plutella porrectella"
+      ]
+    },
+    "Plutella xylostella": {
+      "host_genera": [
+        "Arachis",
+        "Brassica",
+        "Erysimum",
+        "Iberis",
+        "Lobularia",
+        "Matthiola",
+        "Saccharum",
+        "Zea"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Plutella xylostella"
+      ]
+    },
+    "Pococera asperatella": {
+      "host_genera": [
+        "Acer",
+        "Fagus",
+        "Populus",
+        "Quercus",
+        "Ulmus"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Pococera asperatella"
+      ]
+    },
+    "Pococera expandens": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Pococera expandens"
+      ]
+    },
+    "Pococera maritimalis": {
+      "host_genera": [
+        "Larix",
+        "Picea"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Pococera maritimalis"
+      ]
+    },
+    "Pococera militella": {
+      "host_genera": [
+        "Platanus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Pococera militella"
+      ]
+    },
+    "Polia imbrifera": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Prunus",
+        "Salix"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Polia imbrifera"
+      ]
+    },
+    "Polix coloradella": {
+      "host_genera": [
+        "Pinus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Polix coloradella"
+      ]
+    },
+    "Polygrammate hebraeicum": {
+      "host_genera": [
+        "Diospyros",
+        "Nyssa"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Polygrammate hebraeicum"
+      ]
+    },
+    "Prionoxystus macmurtrei": {
+      "host_genera": [
+        "Acer",
+        "Castanea",
+        "Fraxinus",
+        "Quercus"
+      ],
+      "record_count": 8,
+      "source_names": [
+        "Prionoxystus macmurtrei"
+      ]
+    },
+    "Prochoerodes lineola": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Clethra",
+        "Comptonia",
+        "Geranium",
+        "Juniperus",
+        "Larix",
+        "Malus",
+        "Myrica",
+        "Ostrya",
+        "Pelargonium",
+        "Physocarpus",
+        "Picea",
+        "Pinus",
+        "Polygonum",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Ribes",
+        "Salix",
+        "Thuja",
+        "Tilia",
+        "Tsuga",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 40,
+      "source_names": [
+        "Prochoerodes lineola",
+        "Prochoerodes transversata"
+      ]
+    },
+    "Prolimacodes badia": {
+      "host_genera": [
+        "Acer",
+        "Carya",
+        "Castanea",
+        "Citrus",
+        "Crataegus",
+        "Fagus",
+        "Ilex",
+        "Juglans",
+        "Myrica",
+        "Nyssa",
+        "Ostrya",
+        "Platanus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Rhododendron",
+        "Ulmus"
+      ],
+      "record_count": 25,
+      "source_names": [
+        "Prolimacodes badia"
+      ]
+    },
+    "Proteoteras aesculana": {
+      "host_genera": [
+        "Acer",
+        "Aesculus",
+        "Malus"
+      ],
+      "record_count": 19,
+      "source_names": [
+        "Proteoteras aesculana"
+      ]
+    },
+    "Proteoteras crescentana": {
+      "host_genera": [
+        "Acer"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Proteoteras crescentana"
+      ]
+    },
+    "Protitame virginalis": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Protitame virginalis"
+      ]
+    },
+    "Protoboarmia porcelaria": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Betula",
+        "Juniperus",
+        "Larix",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Pseudotsuga",
+        "Quercus",
+        "Salix",
+        "Shepherdia",
+        "Thuja",
+        "Tsuga",
+        "Ulmus"
+      ],
+      "record_count": 66,
+      "source_names": [
+        "Protoboarmia porcelaria"
+      ]
+    },
+    "Pseudaletia unipuncta": {
+      "host_genera": [
+        "Agrostis",
+        "Allium",
+        "Amaranthus",
+        "Ambrosia",
+        "Asparagus",
+        "Aster",
+        "Avena",
+        "Beta",
+        "Brassica",
+        "Capsicum",
+        "Citrullus",
+        "Cucumis",
+        "Cynodon",
+        "Dactylis",
+        "Daucus",
+        "Digitaria",
+        "Elymus",
+        "Elytrigia",
+        "Fragaria",
+        "Glyceria",
+        "Helianthus",
+        "Hordeum",
+        "Ipomoea",
+        "Lactuca",
+        "Leymus",
+        "Linum",
+        "Malus",
+        "Medicago",
+        "Milium",
+        "Panicum",
+        "Papaver",
+        "Pastinaca",
+        "Petroselinum",
+        "Phaseolus",
+        "Phleum",
+        "Pisum",
+        "Poa",
+        "Raphanus",
+        "Rubus",
+        "Saccharum",
+        "Secale",
+        "Setaria",
+        "Solanum",
+        "Sorghum",
+        "Trifolium",
+        "Triticum",
+        "Vaccinium",
+        "Zea"
+      ],
+      "record_count": 55,
+      "source_names": [
+        "Pseudaletia unipuncta"
+      ]
+    },
+    "Pseudeustrotia carneola": {
+      "host_genera": [
+        "Carex",
+        "Polygonum",
+        "Quercus",
+        "Rumex",
+        "Solidago"
+      ],
+      "record_count": 9,
+      "source_names": [
+        "Pseudeustrotia carneola"
+      ]
+    },
+    "Pseudexentera costomaculana": {
+      "host_genera": [
+        "Hamamelis"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Pseudexentera costomaculana"
+      ]
+    },
+    "Pseudohermonassa bicarnea": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Glyceria",
+        "Spiraea",
+        "Taraxacum",
+        "Vaccinium"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Pseudohermonassa bicarnea"
+      ]
+    },
+    "Pseudorthodes vecors": {
+      "host_genera": [
+        "Achillea",
+        "Aster",
+        "Chrysanthemum",
+        "Impatiens",
+        "Plantago",
+        "Taraxacum"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Pseudorthodes vecors"
+      ]
+    },
+    "Pseudosciaphila duplex": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Corylus",
+        "Fraxinus",
+        "Populus",
+        "Prunus",
+        "Salix"
+      ],
+      "record_count": 20,
+      "source_names": [
+        "Pseudosciaphila duplex"
+      ]
+    },
+    "Pseudothyatira cymatophoroides": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Amelanchier",
+        "Betula",
+        "Corylus",
+        "Crataegus",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Rosa",
+        "Rubus",
+        "Salix",
+        "Sorbus"
+      ],
+      "record_count": 28,
+      "source_names": [
+        "Pseudothyatira cymatophoroides"
+      ]
+    },
+    "Psilocorsis reflexella": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Carya",
+        "Corylus",
+        "Fagus",
+        "Populus",
+        "Quercus",
+        "Salix",
+        "Tilia"
+      ],
+      "record_count": 23,
+      "source_names": [
+        "Psilocorsis reflexella"
+      ]
+    },
+    "Psyche casta": {
+      "host_genera": [
+        "Vaccinium"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Psyche casta"
+      ]
+    },
+    "Pyrausta orphisalis": {
+      "host_genera": [
+        "Mentha"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Pyrausta orphisalis"
+      ]
+    },
+    "Pyrrharctia isabella": {
+      "host_genera": [
+        "Acer",
+        "Arctium",
+        "Asclepias",
+        "Aster",
+        "Atropa",
+        "Beta",
+        "Betula",
+        "Clethra",
+        "Cucumis",
+        "Dianthus",
+        "Elytrigia",
+        "Fragaria",
+        "Gossypium",
+        "Helianthus",
+        "Lycopersicon",
+        "Melilotus",
+        "Parthenocissus",
+        "Phaseolus",
+        "Pisum",
+        "Plantago",
+        "Polygonum",
+        "Proboscidea",
+        "Prunus",
+        "Ribes",
+        "Ricinus",
+        "Rubus",
+        "Sorbaria",
+        "Syringa",
+        "Taraxacum",
+        "Trifolium",
+        "Tropaeolum",
+        "Ulmus",
+        "Urtica",
+        "Viburnum",
+        "Vitis",
+        "Zantedeschia",
+        "Zea"
+      ],
+      "record_count": 44,
+      "source_names": [
+        "Pyrrharctia isabella"
+      ]
+    },
+    "Raphia frater": {
+      "host_genera": [
+        "Alnus",
+        "Betula",
+        "Populus",
+        "Salix"
+      ],
+      "record_count": 27,
+      "source_names": [
+        "Raphia frater"
+      ]
+    },
+    "Redectis vitrea": {
+      "host_genera": [
+        "Digitaria",
+        "Paspalum"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Redectis vitrea"
+      ]
+    },
+    "Renia adspergillus": {
+      "host_genera": [
+        "Diospyros"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Renia adspergillus"
+      ]
+    },
+    "Saucrobotys futilalis": {
+      "host_genera": [
+        "Apocynum",
+        "Polygonum"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Saucrobotys futilalis"
+      ]
+    },
+    "Schinia florida": {
+      "host_genera": [
+        "Oenothera"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Schinia florida"
+      ]
+    },
+    "Schizura badia": {
+      "host_genera": [
+        "Viburnum"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Schizura badia"
+      ]
+    },
+    "Scolecocampa liburna": {
+      "host_genera": [
+        "Carya",
+        "Castanea",
+        "Platanus",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Scolecocampa liburna"
+      ]
+    },
+    "Scopula inductata": {
+      "host_genera": [
+        "Ambrosia",
+        "Aster",
+        "Melilotus",
+        "Prunus",
+        "Trifolium"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Scopula inductata"
+      ]
+    },
+    "Scopula limboundata": {
+      "host_genera": [
+        "Galium",
+        "Malus",
+        "Photinia",
+        "Polygonum",
+        "Prunus",
+        "Rhexia",
+        "Ulmus",
+        "Vaccinium"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Scopula limboundata"
+      ]
+    },
+    "Sicya macularia": {
+      "host_genera": [
+        "Abies",
+        "Alnus",
+        "Betula",
+        "Ceanothus",
+        "Fraxinus",
+        "Populus",
+        "Ribes",
+        "Salix",
+        "Spiraea",
+        "Ulmus"
+      ],
+      "record_count": 17,
+      "source_names": [
+        "Sicya macularia"
+      ]
+    },
+    "Smerinthus jamaicensis": {
+      "host_genera": [
+        "Betula",
+        "Carpinus",
+        "Corylus",
+        "Fraxinus",
+        "Malus",
+        "Ostrya",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Salix",
+        "Spiraea",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 43,
+      "source_names": [
+        "Smerinthus jamaicensis"
+      ]
+    },
+    "Sonia canadana": {
+      "host_genera": [
+        "Acer",
+        "Aster"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Sonia canadana"
+      ]
+    },
+    "Spargaloma sexpunctata": {
+      "host_genera": [
+        "Apocynum"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Spargaloma sexpunctata"
+      ]
+    },
+    "Spargania magnoliata": {
+      "host_genera": [
+        "Epilobium",
+        "Fuchsia",
+        "Geranium",
+        "Oenothera",
+        "Pelargonium"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Spargania magnoliata"
+      ]
+    },
+    "Sparganothis sulfureana": {
+      "host_genera": [
+        "Abies",
+        "Ambrosia",
+        "Apium",
+        "Arctium",
+        "Asparagus",
+        "Aster",
+        "Baccharis",
+        "Citrus",
+        "Conyza",
+        "Crataegus",
+        "Erigeron",
+        "Euphorbia",
+        "Fragaria",
+        "Gleditsia",
+        "Glycine",
+        "Gossypium",
+        "Helenium",
+        "Hydrocotyle",
+        "Hypericum",
+        "Larix",
+        "Lilium",
+        "Malus",
+        "Medicago",
+        "Monarda",
+        "Oenothera",
+        "Phaseolus",
+        "Picea",
+        "Pinus",
+        "Pisum",
+        "Prunus",
+        "Ranunculus",
+        "Robinia",
+        "Salix",
+        "Solidago",
+        "Thuja",
+        "Trifolium",
+        "Ulmus",
+        "Vaccinium",
+        "Verbena",
+        "Vitis",
+        "Zea"
+      ],
+      "record_count": 75,
+      "source_names": [
+        "Sparganothis sulfureana"
+      ]
+    },
+    "Sparganothis unifasciana": {
+      "host_genera": [
+        "Aster",
+        "Crataegus",
+        "Fraxinus",
+        "Medicago",
+        "Melilotus",
+        "Picea",
+        "Pinus",
+        "Potentilla",
+        "Prunus",
+        "Pulsatilla",
+        "Quercus",
+        "Rubus",
+        "Solidago",
+        "Trifolium",
+        "Vaccinium"
+      ],
+      "record_count": 24,
+      "source_names": [
+        "Sparganothis unifasciana"
+      ]
+    },
+    "Sparganothis xanthoides": {
+      "host_genera": [
+        "Lotus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Sparganothis xanthoides"
+      ]
+    },
+    "Sphecodina abbottii": {
+      "host_genera": [
+        "Crataegus",
+        "Parthenocissus",
+        "Vitis"
+      ],
+      "record_count": 11,
+      "source_names": [
+        "Sphecodina abbottii"
+      ]
+    },
+    "Sphinx kalmiae": {
+      "host_genera": [
+        "Chionanthus",
+        "Diervilla",
+        "Fraxinus",
+        "Ilex",
+        "Kalmia",
+        "Laurus",
+        "Ligustrum",
+        "Nemopanthus",
+        "Populus",
+        "Prunus",
+        "Rhododendron",
+        "Syringa"
+      ],
+      "record_count": 35,
+      "source_names": [
+        "Sphinx kalmiae"
+      ]
+    },
+    "Spilosoma congrua": {
+      "host_genera": [
+        "Agaricus",
+        "Chenopodium",
+        "Lactuca",
+        "Plantago",
+        "Polygonum",
+        "Taraxacum"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Spilosoma congrua"
+      ]
+    },
+    "Spilosoma virginica": {
+      "host_genera": [
+        "Acer",
+        "Agaricus",
+        "Alcea",
+        "Allium",
+        "Alnus",
+        "Amaranthus",
+        "Ambrosia",
+        "Arachis",
+        "Arctium",
+        "Asparagus",
+        "Beta",
+        "Betula",
+        "Bidens",
+        "Brassica",
+        "Calendula",
+        "Carya",
+        "Castanea",
+        "Chenopodium",
+        "Chrysanthemum",
+        "Citrullus",
+        "Convolvulus",
+        "Corylus",
+        "Cucumis",
+        "Cucurbita",
+        "Cytisus",
+        "Dahlia",
+        "Daucus",
+        "Dyssodia",
+        "Frangula",
+        "Fraxinus",
+        "Fuchsia",
+        "Geranium",
+        "Gossypium",
+        "Helianthus",
+        "Hyacinthus",
+        "Ipomoea",
+        "Juglans",
+        "Lavandula",
+        "Lilium",
+        "Medicago",
+        "Myrica",
+        "Nicotiana",
+        "Oxalis",
+        "Parthenocissus",
+        "Pastinaca",
+        "Pelargonium",
+        "Petunia",
+        "Phaseolus",
+        "Pinus",
+        "Pisum",
+        "Plantago",
+        "Polygonum",
+        "Populus",
+        "Proboscidea",
+        "Prunus",
+        "Raphanus",
+        "Rhamnus",
+        "Rheum",
+        "Rhus",
+        "Ribes",
+        "Ricinus",
+        "Rubus",
+        "Rumex",
+        "Salix",
+        "Salsola",
+        "Salvia",
+        "Sambucus",
+        "Solanum",
+        "Solenostemon",
+        "Spiraea",
+        "Syringa",
+        "Taraxacum",
+        "Tragopogon",
+        "Trifolium",
+        "Tropaeolum",
+        "Ulmus",
+        "Verbena",
+        "Verbesina",
+        "Viola",
+        "Vitis",
+        "Zantedeschia",
+        "Zea"
+      ],
+      "record_count": 116,
+      "source_names": [
+        "Spilosoma virginica"
+      ]
+    },
+    "Spodoptera ornithogalli": {
+      "host_genera": [
+        "Allium",
+        "Amaranthus",
+        "Asparagus",
+        "Aster",
+        "Baccharis",
+        "Beta",
+        "Brassica",
+        "Chenopodium",
+        "Conyza",
+        "Cosmos",
+        "Cucumis",
+        "Datura",
+        "Gladiolus",
+        "Glycine",
+        "Gossypium",
+        "Hibiscus",
+        "Ipomoea",
+        "Lactuca",
+        "Lycopersicon",
+        "Medicago",
+        "Nicandra",
+        "Nicotiana",
+        "Petunia",
+        "Phaseolus",
+        "Phytolacca",
+        "Pisum",
+        "Plantago",
+        "Populus",
+        "Prunus",
+        "Rheum",
+        "Ricinus",
+        "Rubus",
+        "Rumex",
+        "Sida",
+        "Solanum",
+        "Solidago",
+        "Tragopogon",
+        "Triticum",
+        "Vernonia",
+        "Viola",
+        "Zea"
+      ],
+      "record_count": 62,
+      "source_names": [
+        "Spodoptera ornithogalli"
+      ]
+    },
+    "Stigmella intermedia": {
+      "host_genera": [
+        "Rhus"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Stigmella intermedia"
+      ]
+    },
+    "Stigmella quercipulchella": {
+      "host_genera": [
+        "Quercus"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Stigmella quercipulchella"
+      ]
+    },
+    "Symmerista leucitys": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Fagus",
+        "Quercus",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 15,
+      "source_names": [
+        "Symmerista leucitys"
+      ]
+    },
+    "Synanthedon acerni": {
+      "host_genera": [
+        "Acer"
+      ],
+      "record_count": 13,
+      "source_names": [
+        "Synanthedon acerni"
+      ]
+    },
+    "Synchlora aerata": {
+      "host_genera": [
+        "Ageratum",
+        "Ambrosia",
+        "Artemisia",
+        "Aster",
+        "Betula",
+        "Chilopsis",
+        "Chrysanthemum",
+        "Comptonia",
+        "Conyza",
+        "Coreopsis",
+        "Eriogonum",
+        "Eupatorium",
+        "Gaylussacia",
+        "Liatris",
+        "Malus",
+        "Melilotus",
+        "Mentha",
+        "Ribes",
+        "Rubus",
+        "Rudbeckia",
+        "Salix",
+        "Solidago",
+        "Taraxacum"
+      ],
+      "record_count": 47,
+      "source_names": [
+        "Synchlora aerata"
+      ]
+    },
+    "Tetracis cachexiata": {
+      "host_genera": [
+        "Abies",
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Carya",
+        "Comptonia",
+        "Cornus",
+        "Fraxinus",
+        "Iris",
+        "Juglans",
+        "Kalmia",
+        "Larix",
+        "Ostrya",
+        "Picea",
+        "Pinus",
+        "Populus",
+        "Prunus",
+        "Quercus",
+        "Robinia",
+        "Salix",
+        "Thuja",
+        "Tilia",
+        "Tsuga",
+        "Ulmus"
+      ],
+      "record_count": 35,
+      "source_names": [
+        "Tetracis cachexiata"
+      ]
+    },
+    "Tetracis crocallata": {
+      "host_genera": [
+        "Alnus",
+        "Castanea",
+        "Lindera",
+        "Rhus",
+        "Salix",
+        "Sambucus"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Tetracis crocallata"
+      ]
+    },
+    "Thopeutis forbesellus": {
+      "host_genera": [
+        "Scirpus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Thopeutis forbesellus"
+      ]
+    },
+    "Thyris maculata": {
+      "host_genera": [
+        "Clematis"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Thyris maculata"
+      ]
+    },
+    "Tolype velleda": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Diospyros",
+        "Fraxinus",
+        "Malus",
+        "Populus",
+        "Prunus",
+        "Pyrus",
+        "Quercus",
+        "Salix",
+        "Syringa",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 41,
+      "source_names": [
+        "Tolype velleda"
+      ]
+    },
+    "Tortricidia flexuosa": {
+      "host_genera": [
+        "Acer",
+        "Betula",
+        "Prunus",
+        "Quercus"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Tortricidia flexuosa"
+      ]
+    },
+    "Tortricidia pallida": {
+      "host_genera": [
+        "Acer",
+        "Fagus",
+        "Quercus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Tortricidia pallida"
+      ]
+    },
+    "Tortricidia testacea": {
+      "host_genera": [
+        "Alnus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Tortricidia testacea"
+      ]
+    },
+    "Trichodezia albovittata": {
+      "host_genera": [
+        "Abies",
+        "Epilobium",
+        "Impatiens",
+        "Pinus",
+        "Thalictrum"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Trichodezia albovittata"
+      ]
+    },
+    "Tricholita signata": {
+      "host_genera": [
+        "Ambrosia",
+        "Plantago",
+        "Prunus",
+        "Solidago",
+        "Taraxacum"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Tricholita signata"
+      ]
+    },
+    "Trichordestra legitima": {
+      "host_genera": [
+        "Achillea",
+        "Agrostis",
+        "Apocynum",
+        "Asclepias",
+        "Asparagus",
+        "Aster",
+        "Balsamorhiza",
+        "Brassica",
+        "Calendula",
+        "Cassia",
+        "Digitaria",
+        "Gnaphalium",
+        "Muhlenbergia",
+        "Nicotiana",
+        "Phaseolus",
+        "Pisum",
+        "Prunus",
+        "Rubus",
+        "Salix",
+        "Solidago",
+        "Trifolium",
+        "Viola"
+      ],
+      "record_count": 37,
+      "source_names": [
+        "Trichordestra legitima"
+      ]
+    },
+    "Udea rubigalis": {
+      "host_genera": [
+        "Ageratum",
+        "Amaranthus",
+        "Antirrhinum",
+        "Apium",
+        "Beta",
+        "Brassica",
+        "Chrysanthemum",
+        "Cineraria",
+        "Cirsium",
+        "Cucumis",
+        "Cynara",
+        "Delphinium",
+        "Geranium",
+        "Heliotropium",
+        "Ipomoea",
+        "Lactuca",
+        "Leucanthemum",
+        "Medicago",
+        "Mentha",
+        "Ocimum",
+        "Phaseolus",
+        "Pimenta",
+        "Pisum",
+        "Raphanus",
+        "Rosa",
+        "Spinacia",
+        "Trifolium",
+        "Viola"
+      ],
+      "record_count": 40,
+      "source_names": [
+        "Udea rubigalis"
+      ]
+    },
+    "Vitula edmandsii": {
+      "host_genera": [
+        "Apis (Z)"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Vitula edmandsii"
+      ]
+    },
+    "Xanthorhoe ferrugata": {
+      "host_genera": [
+        "Armoracia",
+        "Glechoma",
+        "Polygonum",
+        "Stellaria",
+        "Taraxacum"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Xanthorhoe ferrugata"
+      ]
+    },
+    "Xanthorhoe iduata": {
+      "host_genera": [
+        "Brassica",
+        "Tropaeolum"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Xanthorhoe iduata"
+      ]
+    },
+    "Xanthorhoe labradorensis": {
+      "host_genera": [
+        "Alyssum",
+        "Lobularia"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Xanthorhoe labradorensis"
+      ]
+    },
+    "Xanthorhoe lacustrata": {
+      "host_genera": [
+        "Betula",
+        "Crataegus",
+        "Impatiens",
+        "Rubus",
+        "Salix"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Xanthorhoe lacustrata"
+      ]
+    },
+    "Xestia dolosa": {
+      "host_genera": [
+        "Acer",
+        "Hordeum",
+        "Malus",
+        "Nicotiana",
+        "Trifolium",
+        "Zea"
+      ],
+      "record_count": 6,
+      "source_names": [
+        "Xestia dolosa"
+      ]
+    },
+    "Xylesthia pruniramiella": {
+      "host_genera": [
+        "Prunus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Xylesthia pruniramiella"
+      ]
+    },
+    "Yponomeuta multipunctella": {
+      "host_genera": [
+        "Euonymus"
+      ],
+      "record_count": 3,
+      "source_names": [
+        "Yponomeuta multipunctella"
+      ]
+    },
+    "Ypsolopha dentella": {
+      "host_genera": [
+        "Lonicera"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Ypsolopha dentella"
+      ]
+    },
+    "Zale galbanata": {
+      "host_genera": [
+        "Acer"
+      ],
+      "record_count": 7,
+      "source_names": [
+        "Zale galbanata"
+      ]
+    },
+    "Zale helata": {
+      "host_genera": [
+        "Larix",
+        "Pinus"
+      ],
+      "record_count": 16,
+      "source_names": [
+        "Zale helata"
+      ]
+    },
+    "Zale horrida": {
+      "host_genera": [
+        "Viburnum"
+      ],
+      "record_count": 2,
+      "source_names": [
+        "Zale horrida"
+      ]
+    },
+    "Zale lunata": {
+      "host_genera": [
+        "Acer",
+        "Hypericum",
+        "Prunus",
+        "Pyracantha",
+        "Quercus",
+        "Rosa",
+        "Salix",
+        "Solidago",
+        "Wisteria"
+      ],
+      "record_count": 17,
+      "source_names": [
+        "Zale lunata"
+      ]
+    },
+    "Zale minerea": {
+      "host_genera": [
+        "Acer",
+        "Alnus",
+        "Betula",
+        "Carpinus",
+        "Carya",
+        "Corylus",
+        "Fagus",
+        "Ostrya",
+        "Picea",
+        "Populus",
+        "Pseudotsuga",
+        "Quercus",
+        "Rubus",
+        "Salix",
+        "Tilia",
+        "Tsuga",
+        "Ulmus"
+      ],
+      "record_count": 43,
+      "source_names": [
+        "Zale minerea"
+      ]
+    },
+    "Zale phaeocapna": {
+      "host_genera": [
+        "Corylus",
+        "Hamamelis"
+      ],
+      "record_count": 4,
+      "source_names": [
+        "Zale phaeocapna"
+      ]
+    },
+    "Zanclognatha cruralis": {
+      "host_genera": [
+        "Abies",
+        "Corylus",
+        "Thuja"
+      ],
+      "record_count": 5,
+      "source_names": [
+        "Zanclognatha cruralis"
+      ]
+    },
+    "Zanclognatha jacchusalis": {
+      "host_genera": [
+        "Populus"
+      ],
+      "record_count": 1,
+      "source_names": [
+        "Zanclognatha jacchusalis"
+      ]
+    },
+    "Zanclognatha protumnusalis": {
+      "host_genera": [
+        "Abies",
+        "Monotropa",
+        "Picea",
+        "Pinus",
+        "Quercus"
+      ],
+      "record_count": 10,
+      "source_names": [
+        "Zanclognatha protumnusalis"
+      ]
+    },
+    "Zeuzera pyrina": {
+      "host_genera": [
+        "Acer",
+        "Broussonetia",
+        "Carya",
+        "Celtis",
+        "Crataegus",
+        "Fraxinus",
+        "Liquidambar",
+        "Liriodendron",
+        "Malus",
+        "Pyrus",
+        "Quercus",
+        "Robinia",
+        "Syringa",
+        "Tilia",
+        "Ulmus"
+      ],
+      "record_count": 18,
+      "source_names": [
+        "Zeuzera pyrina"
+      ]
+    }
+  }
+}

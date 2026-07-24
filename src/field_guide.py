@@ -5,6 +5,7 @@ from __future__ import annotations
 import calendar
 import hashlib
 import json
+import math
 import shutil
 import struct
 import zlib
@@ -20,6 +21,7 @@ import inat_api
 from config import DATA_DIR, PUBLIC_DIR, REGION_RADIUS_KM, ROOT, USER_AGENT
 from db import DB_PATH, connect
 from field_guidance import build_guidance
+from moth_guilds import LOOKBACK_DAYS, load_host_index, local_flight_signal
 
 
 APP_SOURCE = ROOT / "field-guide" / "app"
@@ -29,10 +31,12 @@ CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
 GUIDANCE_REVISION = "2026-07-22.1"
-SCHEMA_VERSION = "kh-field-targets/1.1.0"
+SCHEMA_VERSION = "kh-field-targets/1.2.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
+MOTH_TARGET_LIMIT = 50
+MOTH_CANDIDATE_LIMIT = 200
 
 ALLOWED_LICENSES = {
     "cc0", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa",
@@ -106,12 +110,67 @@ def _latest_data_sync():
             datetime.now(timezone.utc).isoformat())
 
 
+def _recent_moth_activity(effective_date, lookback_days=LOOKBACK_DAYS):
+    cutoff = (effective_date - timedelta(days=lookback_days - 1)).isoformat()
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT m.taxon_id, m.taxon_name, m.common_name, "
+            "MAX(p.observed_on) AS last_seen, COUNT(DISTINCT p.id) AS observation_count "
+            "FROM property_obs p JOIN moth_taxa m USING (taxon_id) "
+            "WHERE p.observed_on BETWEEN ? AND ? "
+            "AND (p.captive IS NULL OR p.captive = 0) "
+            "GROUP BY m.taxon_id, m.taxon_name, m.common_name",
+            (cutoff, effective_date.isoformat()),
+        ).fetchall()
+    return [
+        {
+            "taxon_id": int(row["taxon_id"]),
+            "scientific_name": row["taxon_name"] or "",
+            "common_name": row["common_name"] or row["taxon_name"] or "",
+            "last_seen": row["last_seen"],
+            "observation_count": int(row["observation_count"]),
+        }
+        for row in rows
+    ]
+
+
+def _rank_moth_targets(frame, effective_date):
+    if frame.empty:
+        return frame
+    host_index = load_host_index()
+    recent_moths = _recent_moth_activity(effective_date)
+    ranked = frame.copy()
+    signals = []
+    scores = []
+    for _, row in ranked.iterrows():
+        signal = local_flight_signal(
+            _clean(row.get("taxon_name")),
+            recent_moths,
+            host_index,
+            effective_date,
+        )
+        signals.append(signal)
+        scores.append(float(signal["score"]) if signal else 0.0)
+    ranked["_local_signal"] = signals
+    ranked["_local_signal_score"] = scores
+    ranked["_regional_score"] = ranked["ref_count"].fillna(0).map(
+        lambda count: math.log1p(max(0, float(count)))
+    )
+    ranked["_target_score"] = ranked["_regional_score"] + ranked["_local_signal_score"]
+    ranked = ranked.sort_values(
+        ["_target_score", "ref_count", "taxon_id"],
+        ascending=[False, False, True],
+    )
+    return ranked.head(MOTH_TARGET_LIMIT)
+
+
 def _target_frames(effective_date):
     target_months = sorted({effective_date.month, (effective_date + timedelta(days=14)).month})
+    moths = analyze.moth_county_gap(
+        analyze.load_moths(), n=MOTH_CANDIDATE_LIMIT, target_months=target_months
+    )["missing"].copy()
     return {
-        "moths": analyze.moth_county_gap(
-            analyze.load_moths(), n=50, target_months=target_months
-        )["missing"].copy(),
+        "moths": _rank_moth_targets(moths, effective_date),
         "butterflies": analyze.butterfly_gap(
             analyze.load_butterflies(), n=30
         )["missing"].copy(),
@@ -231,6 +290,11 @@ def collect_targets(effective_date=None):
             lookalikes = _lookalikes(group, scientific_name, family_name, peers)
             regional_count = int(_clean(row.get("ref_count"), 0)
                                  or _clean(row.get("region_count"), 0) or 0)
+            local_signal = (
+                row.get("_local_signal")
+                if group == "moths" and isinstance(row.get("_local_signal"), dict)
+                else None
+            )
             guidance = build_guidance(
                 group, family_name, common_name, season_label, regional_count, lookalikes
             )
@@ -247,6 +311,7 @@ def collect_targets(effective_date=None):
                 "family_name": family_name,
                 "family_common": meta.get("family_common") or "",
                 "regional_count": regional_count,
+                "local_flight_signal": local_signal,
                 "season_label": season_label,
                 "active_months": sorted(month_counts) or list(fallback),
                 "phenology_scope": "Tioga County observations" if month_counts else "group field season",

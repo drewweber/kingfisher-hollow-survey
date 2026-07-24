@@ -133,6 +133,14 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("Traits to check", app)
         self.assertIn("comparison-trait-list", app)
 
+    def test_field_app_exposes_local_moth_flight_signals(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("normalizeLocalSignal", app)
+        self.assertIn("Why it may be flying now", app)
+        self.assertIn("appendLocalSignal", app)
+        self.assertIn('id="local-signal-filter"', markup)
+
     def test_new_release_refreshes_the_visible_target_list(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
         controller_change = app.split(
