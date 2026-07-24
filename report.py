@@ -1260,10 +1260,10 @@ def _rarity_badge(sp):
     return " · ".join(parts)
 
 
-def _weather_line(w):
-    """Compact weather summary string for a journal entry (9 PM conditions)."""
+def _weather_parts(w):
+    """Return the journal's 9 PM conditions as individually readable items."""
     if not w:
-        return ""
+        return []
     parts = []
     temp = w.get("temp_f_9pm") if w.get("temp_f_9pm") is not None else w.get("temp_f_hi")
     if temp is not None:
@@ -1277,7 +1277,12 @@ def _weather_line(w):
     moon = w.get("moon")
     if moon:
         parts.append(moon)
-    return " · ".join(parts)
+    return parts
+
+
+def _weather_line(w):
+    """Compact weather summary string for callers that need one line."""
+    return " · ".join(_weather_parts(w))
 
 
 def activity_log_body(log_entries, weather_cache):
@@ -1319,16 +1324,15 @@ def activity_log_body(log_entries, weather_cache):
         date_label = f"Night of {month_names[d.month]} {d.day}"
 
         w = weather_cache.get(str(d))
-        weather_str = _weather_line(w)
-        weather_html = (
-            f'<p class="text-stone-400 text-sm mt-1">{esc(weather_str)}</p>'
-            if weather_str else ""
-        )
-
         observers = entry.get("observers", [])
-        observers_html = (
-            f'<p class="text-stone-400 text-xs mt-1">{esc(", ".join(observers))}</p>'
-            if observers else ""
+        meta_items = _weather_parts(w)
+        if observers:
+            meta_items.append(", ".join(observers))
+        meta_html = (
+            '<ul class="log-meta-list text-stone-400 text-sm mt-1" aria-label="Night conditions and observers">'
+            + "".join(f"<li>{esc(item)}</li>" for item in meta_items)
+            + "</ul>"
+            if meta_items else ""
         )
 
         def _sp_html(sp):
@@ -1399,8 +1403,8 @@ def activity_log_body(log_entries, weather_cache):
             morning_row = ""
             if morning_html:
                 morning_row = f"""
-  <div class="grid grid-cols-[8rem_1fr] gap-x-6 pb-3">
-    <div></div>
+  <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-x-6 pb-3">
+    <div class="hidden sm:block"></div>
     <div>
       <div class="{section_label_cls}">Morning</div>
       <div class="flex items-start gap-2">
@@ -1409,17 +1413,16 @@ def activity_log_body(log_entries, weather_cache):
       </div>
     </div>
   </div>
-  <hr class="border-stone-100 ml-[calc(8rem+1.5rem)]">"""
+  <hr class="border-stone-100 ml-0 sm:ml-[calc(8rem+1.5rem)]">"""
 
             evening_meta = f"""
       <div class="{section_label_cls}">Evening</div>
-      {weather_html}
-      {observers_html}"""
+      {meta_html}"""
 
             html_parts.append(f"""
 <div class="py-5 border-b border-stone-100 group">{morning_row}
-  <div class="grid grid-cols-[8rem_1fr] gap-x-6 pt-3">
-    <div class="text-right pt-0.5">
+  <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-x-6 pt-3">
+    <div class="text-left sm:text-right pt-0.5">
       <span class="font-serif text-lg font-bold text-stone-900 leading-snug">{date_label}</span>
     </div>
     <div>
@@ -1437,16 +1440,15 @@ def activity_log_body(log_entries, weather_cache):
             species_html = _group_html(entry["new_species"])
             new_count = len(entry["new_species"])
             html_parts.append(f"""
-<div class="grid grid-cols-[8rem_1fr] gap-x-6 py-5 border-b border-stone-100 group">
-  <div class="text-right pt-0.5">
+<div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-x-6 py-5 border-b border-stone-100 group">
+  <div class="text-left sm:text-right pt-0.5">
     <span class="font-serif text-lg font-bold text-stone-900 leading-snug">{date_label}</span>
   </div>
   <div>
     <div class="flex items-start gap-2">
       {_badge(new_count)}
       <div class="flex-1 min-w-0">
-        {weather_html}
-        {observers_html}
+        {meta_html}
         {species_html}
       </div>
     </div>

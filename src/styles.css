@@ -134,6 +134,45 @@
   .log-rarity { color: #2e735c; font-size: .78rem; font-weight: 500; }
   .log-moth-label { color: #57534e; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 
+  .log-meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 .85rem;
+  }
+
+  .log-meta-list li {
+    position: relative;
+  }
+
+  .log-meta-list li::before {
+    position: absolute;
+    left: -.75rem;
+    color: #8ec8b1;
+    content: "•";
+  }
+
+  @media (min-width: 640px) {
+    .log-meta-list {
+      flex-direction: row;
+      flex-wrap: wrap;
+      column-gap: .75rem;
+      row-gap: .25rem;
+      padding-left: 0;
+    }
+
+    .log-meta-list li::before { display: none; }
+    .log-meta-list li + li::before {
+      display: inline;
+      position: static;
+      margin-right: .75rem;
+      color: #a8a29e;
+      content: "·";
+    }
+  }
+
 }
 
 @keyframes fadeUp {
