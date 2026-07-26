@@ -199,10 +199,12 @@ def takeaway(text, dark=False):
 
 def moth_forecast_body(forecast, validation):
     """Phone-friendly upcoming-night queue with an honest validation readout."""
-    ranked = analyze.rank_moth_forecast(forecast.get("nights", []))
+    ranked = analyze.rank_moth_forecast(
+        forecast.get("nights", []), analysis=validation
+    )
     scored = sorted(
-        [row for row in ranked if row.get("score") is not None],
-        key=lambda row: (-row["score"], row["date"]),
+        [row for row in ranked if row.get("priority_rank") is not None],
+        key=lambda row: row["priority_rank"],
     )
     if not scored:
         return (
@@ -219,10 +221,7 @@ def moth_forecast_body(forecast, validation):
 
     best = scored[0]
     best_date = datetime.fromisoformat(best["date"])
-    top_targets = [
-        row for row in scored[:2]
-        if row["score"] >= 60
-    ]
+    top_targets = scored[:2]
     target_names = " and ".join(
         datetime.fromisoformat(row["date"]).strftime("%A, %b %-d")
         for row in sorted(top_targets, key=lambda item: item["date"])
@@ -238,11 +237,9 @@ def moth_forecast_body(forecast, validation):
     cards = []
     for row in ranked:
         date = datetime.fromisoformat(row["date"])
-        rating = "Calibration" if row.get("is_calibration") else row["rating"]
-        badge_class = (
-            "bg-violet-200 text-violet-950"
-            if row.get("is_calibration")
-            else rating_classes.get(row["rating"], rating_classes["Incomplete"])
+        rating = row.get("rating", "Incomplete")
+        badge_class = rating_classes.get(
+            rating, rating_classes["Incomplete"]
         )
         wind_desc = weather.wind_description(
             row.get("wind_mph_9pm"), row.get("wind_dir_9pm")
@@ -255,6 +252,18 @@ def moth_forecast_body(forecast, validation):
             f"{row.get('rain_chance_pct')}% rain",
             f"{moon} · {row.get('moon_illumination_pct')}% lit",
         ]
+        predicted = row.get("predicted_species")
+        if predicted is not None:
+            metric = str(predicted)
+            metric_suffix = "species"
+            error_note = (
+                f"Typical error ±{row['typical_error']} species"
+                if row.get("typical_error") is not None else ""
+            )
+        else:
+            metric = str(row.get("score", "—"))
+            metric_suffix = "/ 100"
+            error_note = "Provisional field score"
         cards.append(
             '<li class="min-w-[15.5rem] snap-start rounded-xl border '
             'md:min-w-0 '
@@ -266,8 +275,9 @@ def moth_forecast_body(forecast, validation):
             f'font-semibold uppercase tracking-wide">{rating}</span></div>'
             '<div class="mt-4 flex items-end gap-2">'
             f'<span class="font-serif text-4xl font-bold text-white tabular-nums">'
-            f'{row.get("score", "—")}</span>'
-            '<span class="pb-1 text-xs text-white/60">/ 100</span></div>'
+            f'{metric}</span>'
+            f'<span class="pb-1 text-xs text-white/60">{metric_suffix}</span></div>'
+            f'<p class="mt-1 text-[0.68rem] text-white/60">{esc(error_note)}</p>'
             f'<p class="mt-2 text-sm font-medium text-hollow-300">'
             f'{esc(row.get("action"))}</p>'
             '<ul class="mt-3 space-y-1 text-xs leading-5 text-white/55">'
@@ -293,20 +303,21 @@ def moth_forecast_body(forecast, validation):
     if validation.get("status") == "supported":
         lift = validation.get("lift_pct") or 0
         validation_copy = (
-            f"On {validation_nights} comparable survey nights, adding 9 PM "
-            f"weather and moon reduced held-out error by {lift:.0f}% beyond "
-            "season alone. The local model now has a measurable signal, but "
-            "the selectively chosen survey nights still limit causal claims."
+            f"On {validation_nights} full survey nights, season alone had "
+            f"{validation.get('baseline_mae'):.1f} species of held-out error. "
+            f"Adding 9 PM weather, daily precipitation, and moon reduced that "
+            f"to {validation.get('weather_mae'):.1f} species—a {lift:.0f}% "
+            "improvement. That is enough to rank nights locally, but not to "
+            "claim weather alone causes the difference."
         )
-        status_badge = "Local signal detected"
+        status_badge = "Whole-night model active"
         status_class = "text-hollow-300"
     elif validation.get("status") == "not_yet_supported":
         baseline = validation.get("baseline_mae")
         weather_error = validation.get("weather_mae")
         validation_copy = (
-            f"On {validation_nights} comparable survey nights, season alone "
-            f"had {baseline:.1f} species of held-out error in the fixed "
-            f"{validation.get('window')} window; adding weather "
+            f"On {validation_nights} full survey nights, season alone "
+            f"had {baseline:.1f} species of held-out error; adding weather "
             f"and moon changed that to {weather_error:.1f}. That small "
             f"{max(validation.get('lift_pct') or 0, 0):.0f}% gain is below "
             "the 5% threshold set for calling the local signal predictive."
@@ -315,9 +326,9 @@ def moth_forecast_body(forecast, validation):
         status_class = "text-amber-200"
     else:
         validation_copy = (
-            f"Only {validation_nights} effort-comparable nights currently have "
-            "complete weather. More standardized short runs are needed before "
-            "a local model can be validated."
+            f"Only {validation_nights} full survey nights currently have "
+            "complete weather. More complete nights are needed before a local "
+            "model can be validated."
         )
         status_badge = "Building the sample"
         status_class = "text-amber-200"
@@ -333,9 +344,9 @@ def moth_forecast_body(forecast, validation):
         f'<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
         f'{esc(target_names)}</h3>'
         '<p class="mt-3 max-w-xl text-sm leading-6 text-white/60">'
-        "These are the two best candidates for concentrated effort. The queue "
-        "protects your time: one primary two-hour sheet, one shorter fallback, "
-        "and at most one standardized one-hour calibration run.</p>"
+        "These are the two best candidates for your normal complete, "
+        "multi-station survey. Other nights can be used for processing records "
+        "unless the forecast changes materially.</p>"
         f'<p class="mt-4 text-xs text-white/55">{esc(fetched_text)} · '
         '<a class="underline decoration-white/20 underline-offset-2 '
         'hover:text-white" href="https://open-meteo.com/en/docs">'
@@ -348,7 +359,10 @@ def moth_forecast_body(forecast, validation):
         f'{best_date:%A, %b} {best_date.day}</p>'
         f'<p class="mt-1 text-sm text-hollow-300">{esc(best["action"])}</p></div>'
         f'<p class="font-serif text-4xl font-bold text-white tabular-nums">'
-        f'{best["score"]}<span class="text-sm text-white/60">/100</span></p>'
+        f'{best.get("predicted_species", best["score"])}'
+        f'<span class="text-sm text-white/60">'
+        f'{" species" if best.get("predicted_species") is not None else "/100"}'
+        '</span></p>'
         '</div>'
         f'<p class="mt-4 text-sm leading-6 {status_class}">{status_badge}</p>'
         '</div></div>'
@@ -365,21 +379,24 @@ def moth_forecast_body(forecast, validation):
         f'<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
         f'{esc(validation_copy)}</p>'
         '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
-        "The current focus score is therefore a transparent field rule, not a "
-        "species-count forecast: 35% temperature, 25% dry conditions, 20% "
-        "wind, 10% humidity, and 10% moon darkness. Published light-trap work "
-        "supports warm, calm, dry nights and often lower moonlight, but those "
-        "effects can vary by trap and moth group. "
+        "The predicted value is whole-night distinct species documented under "
+        "your historical adaptive protocol—not individual moth abundance and "
+        "not a fixed-duration count. A night enters the model as full effort "
+        "when it has more than 30 nighttime observations spanning more than "
+        "60 minutes; the full evening and morning session is then counted. "
+        "Observation totals and gaps between photos are not used as continuous "
+        "effort because you document species once and travel between stations. "
+        "Published light-trap work provides useful context "
+        "for the weather variables, but effects vary by trap and moth group. "
         '<a class="text-hollow-300 underline decoration-hollow-300/30 '
         'underline-offset-2" href="https://doi.org/10.1093/ee/26.6.1283">'
         'Study context</a>.</p>'
         '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
-        "Why the calibration run matters: high diversity causes more records "
-        "and also persuades the observer to stay out longer. Each purple "
-        "calibration night runs from 9–10 PM regardless of activity. "
-        "Those fixed-duration samples reduce that feedback loop and let the "
-        "local model learn from middling nights without turning every evening "
-        "into a full session.</p>"
+        "Effort still varies: productive nights keep you out longer, station "
+        "routes differ, and unsurveyed nights are missing rather than zero. "
+        "Predictions therefore include your historical field behavior. Logging "
+        "planned start/end time, stations completed, and travel time would let "
+        "a future version separate weather from effort more cleanly.</p>"
         '</details></div></div>'
     )
 
@@ -2196,10 +2213,11 @@ def moth_view(df, stats):
                         'Color reinforces the total. Blank dates mean no moth report, not zero species.',
                    dark=True)
         + takeaway(
-            "The raw totals are useful history, but not fair like-for-like comparisons: a diverse sheet creates "
-            "more observations and encourages a longer session. The forecast validation therefore compares the "
-            "species recorded in the fixed 9–10 PM window and treats these as selectively chosen survey "
-            "nights—not random samples of every night.", dark=True)
+            "Whole-night distinct species is the right response for this survey: each species is documented, "
+            "not every arriving moth, and the route can move among stations with travel gaps. More than 30 "
+            "nighttime observations across more than 60 minutes marks a full-effort night; neither value is "
+            "then used as a richness predictor. Effort still varies, so the result describes the historical "
+            "survey protocol rather than weather acting alone.", dark=True)
         + chart_card(viz.monthly_survey_bar(msum_monthly),
                    note='Green: species recorded that month. Terracotta: species recorded for the first time ever. '
                         'Faded months are outside the May–September core flight season. Hover for survey-night counts.',
@@ -2223,7 +2241,7 @@ def moth_view(df, stats):
             "the active community for that month. The sparse winter columns are partly real — few moths fly "
             "in January and February — and partly a survey gap, since few people run lights in the cold. "
             "Both things are true, and more data will eventually separate them.", dark=True),
-        intro="A practical queue for the next ten nights, followed by the evidence behind it: night-by-night richness, month-by-month totals, individual flight windows, and the full phenology matrix.",
+        intro="A practical queue for choosing which nights deserve a complete multi-station survey, followed by the whole-night evidence behind it.",
         dark=True))
     out.append(section(
         "moth-methods", "Find More",

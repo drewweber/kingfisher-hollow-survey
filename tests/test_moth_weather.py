@@ -15,34 +15,76 @@ import weather  # noqa: E402
 
 
 class MothWeatherAnalysisTests(unittest.TestCase):
-    def test_fixed_window_uses_local_photo_time_and_distinct_species(self):
+    def test_full_night_counts_species_and_ignores_travel_gaps(self):
         observations = pd.DataFrame([
             {
                 "id": 1, "taxon_id": 10,
                 "observed_on": pd.Timestamp("2026-08-01"),
-                "observed_at": "2026-08-01T20:59:00-04:00",
+                "observed_at": "2026-08-01T20:00:00-04:00",
             },
             {
-                "id": 2, "taxon_id": 10,
+                "id": 2, "taxon_id": 11,
                 "observed_on": pd.Timestamp("2026-08-01"),
                 "observed_at": "2026-08-01T21:15:00-04:00",
             },
             {
-                "id": 3, "taxon_id": 11,
-                "observed_on": pd.Timestamp("2026-08-01"),
-                "observed_at": "2026-08-01T22:59:00-04:00",
+                "id": 3, "taxon_id": 12,
+                "observed_on": pd.Timestamp("2026-08-02"),
+                "observed_at": "2026-08-02T05:00:00-04:00",
             },
             {
-                "id": 4, "taxon_id": 12,
+                "id": 4, "taxon_id": 99,
                 "observed_on": pd.Timestamp("2026-08-01"),
-                "observed_at": "2026-08-01T23:00:00-04:00",
+                "observed_at": "2026-08-01T14:00:00-04:00",
+            },
+            {
+                "id": 5, "taxon_id": 13,
+                "observed_on": pd.Timestamp("2026-08-02"),
+                "observed_at": "2026-08-02T20:00:00-04:00",
             },
         ])
 
-        result = analyze._moth_fixed_window_counts(observations)
+        result = analyze._moth_full_night_counts(
+            observations, min_observations=3
+        )
 
-        self.assertEqual(result.iloc[0]["species_count"], 2)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["species_count"], 3)
         self.assertEqual(result.iloc[0]["night"], pd.Timestamp("2026-08-01"))
+        self.assertGreater(result.iloc[0]["session_span_minutes"], 60)
+
+    def test_full_effort_requires_more_than_thirty_observations(self):
+        observations = []
+        for index in range(30):
+            observations.append({
+                "id": index,
+                "taxon_id": index,
+                "observed_on": pd.Timestamp("2026-08-01"),
+                "observed_at": (
+                    "2026-08-01T20:00:00-04:00"
+                    if index == 0
+                    else "2026-08-01T21:01:00-04:00"
+                ),
+            })
+
+        self.assertTrue(
+            analyze._moth_full_night_counts(
+                pd.DataFrame(observations)
+            ).empty
+        )
+
+        observations.append({
+            "id": 30,
+            "taxon_id": 30,
+            "observed_on": pd.Timestamp("2026-08-01"),
+            "observed_at": "2026-08-01T20:30:00-04:00",
+        })
+        result = analyze._moth_full_night_counts(
+            pd.DataFrame(observations)
+        )
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["observation_count"], 31)
 
     def test_focus_score_prefers_warm_calm_dry_dark_night(self):
         nights = [
@@ -70,31 +112,51 @@ class MothWeatherAnalysisTests(unittest.TestCase):
 
         self.assertGreater(ranked[0]["score"], ranked[1]["score"])
         self.assertEqual(ranked[0]["rating"], "Focus")
-        self.assertEqual(ranked[0]["action"], "2-hour focused sheet")
+        self.assertEqual(ranked[0]["action"], "Full multi-station survey")
         self.assertEqual(ranked[1]["rating"], "Skip")
 
-    def test_one_lower_scoring_safe_night_becomes_fixed_calibration(self):
-        def night(date, temp, rain):
+    def test_supported_model_ranks_by_predicted_whole_night_species(self):
+        def night(date, temp):
             return {
                 "date": date,
                 "temp_f_9pm": temp,
                 "humidity_9pm": 65,
                 "wind_mph_9pm": 4,
-                "rain_chance_pct": rain,
+                "rain_chance_pct": 10,
                 "precip_in": 0,
                 "moon_illumination_pct": 40,
+                "moon_phase": 0.2,
             }
 
+        coefficients = [50.0] + [0.0] * 9
+        coefficients[5] = 5.0
+        analysis = {
+            "status": "supported",
+            "weather_mae": 10,
+            "prediction_model": {
+                "feature_mean": [0, 0, 0, 0, 65, 65, 4, 0, 0.4],
+                "feature_scale": [1] * 9,
+                "coefficients": coefficients,
+                "historical_median": 40,
+            },
+        }
         ranked = analyze.rank_moth_forecast([
-            night("2026-08-01", 75, 0),
-            night("2026-08-02", 72, 5),
-            night("2026-08-03", 55, 40),
-            night("2026-08-04", 51, 45),
-        ])
+            night("2026-08-01", 60),
+            night("2026-08-02", 70),
+            night("2026-08-03", 65),
+        ], analysis=analysis)
 
-        calibration = [row for row in ranked if row.get("is_calibration")]
-        self.assertEqual(len(calibration), 1)
-        self.assertEqual(calibration[0]["action"], "60-minute calibration")
+        by_date = {row["date"]: row for row in ranked}
+        self.assertEqual(by_date["2026-08-02"]["rating"], "Focus")
+        self.assertEqual(
+            by_date["2026-08-02"]["action"],
+            "Full multi-station survey",
+        )
+        self.assertGreater(
+            by_date["2026-08-02"]["predicted_species"],
+            by_date["2026-08-01"]["predicted_species"],
+        )
+        self.assertEqual(by_date["2026-08-02"]["typical_error"], 10)
 
 
 class ForecastTests(unittest.TestCase):
