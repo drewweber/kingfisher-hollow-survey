@@ -23,6 +23,7 @@ import analyze  # noqa: E402
 import field_guide  # noqa: E402
 import inat_api  # noqa: E402
 import public_api  # noqa: E402
+import tiger_swallowtail  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
 from config import (  # noqa: E402
@@ -1500,7 +1501,9 @@ def nav():
                   ("#moth-families", "Families"), ("#moth-standouts", "Standouts"),
                   ("#moth-completeness", "Inventory"), ("#moth-diversity", "Diversity"),
                   ("#moth-calendar", "Calendar"), ("#moth-methods", "Find More")]
-    butterfly_links = [("#butterflies", "Found"), ("#butterfly-gap", "Gap List"),
+    butterfly_links = [("#butterflies", "Found"),
+                       (tiger_swallowtail.CASE_ROUTE, "Tiger study"),
+                       ("#butterfly-gap", "Gap List"),
                        ("#butterfly-methods", "Find More")]
     odonate_links = [("#odonates", "Found"), ("#odonate-gap", "Gap List"),
                      ("#odonate-methods", "Find More")]
@@ -2216,6 +2219,24 @@ def amphibians_view(df, stats):
     return "".join(out)
 
 
+def tiger_swallowtail_case_study_card():
+    """Route butterfly readers to the automatically rebuilt evidence page."""
+    return f"""
+    <aside class="mx-auto mb-10 max-w-4xl rounded-2xl border border-hollow-300/40 bg-white/5 p-5 md:p-6">
+      <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-sm font-semibold text-hollow-300">Living case study</p>
+          <h3 class="mt-1 text-balance font-serif text-2xl font-semibold text-white">Eastern or Midsummer Tiger Swallowtail?</h3>
+          <p class="mt-2 max-w-2xl text-pretty text-sm leading-6 text-white/65">Compare every local tiger swallowtail by date, source identification, wing view, wear, ventral-forewing evidence, and image limitations. New qualifying iNaturalist records appear after the normal site refresh.</p>
+        </div>
+        <a href="{tiger_swallowtail.CASE_ROUTE}"
+          class="inline-flex shrink-0 items-center justify-center rounded-lg bg-hollow-300 px-4 py-2.5 text-sm font-semibold text-hollow-950 hover:bg-hollow-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-hollow-950">
+          Open case study
+        </a>
+      </div>
+    </aside>"""
+
+
 def butterflies_view(df, stats):
     """Dark butterflies view: what's been found + the regional gap list."""
     butterflies = analyze.load_butterflies()
@@ -2236,7 +2257,8 @@ def butterflies_view(df, stats):
     out.append(section(
         "butterflies", "By Day",
         'The <em class="text-hollow-300">Butterflies</em>',
-        stats_band + butterfly_found_body(found),
+        stats_band + tiger_swallowtail_case_study_card()
+        + butterfly_found_body(found),
         intro="Butterflies are the daytime half of the property's Lepidoptera, and this list is still "
               f"effort-limited. {bsum['species']} species against {moth_species:,} moths says more about survey timing than habitat. "
               "July records now span the property's main daytime settings: Appalachian Brown at the sedge-wet edge, "
@@ -2747,6 +2769,7 @@ def build():
     survey_digest = hashlib.sha256(out.read_bytes()).hexdigest()
     print(f"Wrote {out}  ({out.stat().st_size // 1024} KB)")
     _timed("public-api", public_api.build)
+    _timed("tiger-swallowtail-case-study", tiger_swallowtail.build)
     _timed("field-guide", field_guide.build)
     if hashlib.sha256(out.read_bytes()).hexdigest() != survey_digest:
         raise RuntimeError("Field guide build modified the root survey document")

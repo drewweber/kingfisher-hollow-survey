@@ -218,6 +218,31 @@ CREATE TABLE IF NOT EXISTS sync_log (
     observations_added  INTEGER,
     new_species_added   INTEGER
 );
+
+-- Full, privacy-safe source snapshots for the tiger-swallowtail case study.
+-- ``original_*`` is intentionally immutable after first ingestion so a later
+-- site assessment or iNaturalist reidentification never erases the starting
+-- point.  ``payload_json`` contains every photo plus public identification and
+-- comment history, but deliberately omits exact coordinates.
+CREATE TABLE IF NOT EXISTS tiger_swallowtail_obs (
+    observation_id       INTEGER PRIMARY KEY,
+    observed_on          DATE,
+    original_taxon_id    INTEGER,
+    original_taxon_name  TEXT,
+    original_common_name TEXT,
+    original_rank        TEXT,
+    current_taxon_id     INTEGER,
+    current_taxon_name   TEXT,
+    current_common_name  TEXT,
+    current_rank         TEXT,
+    source_updated_at    TEXT,
+    payload_json         TEXT NOT NULL,
+    in_project           INTEGER NOT NULL DEFAULT 1,
+    first_ingested_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_synced_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_tiger_swallowtail_date
+    ON tiger_swallowtail_obs(observed_on);
 """
 
 
