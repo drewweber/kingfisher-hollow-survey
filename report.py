@@ -47,6 +47,15 @@ HERO_PHOTO = f"{SITE}/aerial/dji_fly_20251020_173830_305_1760996794506_photo_opt
 HERO_WEBP = "/assets/hero/dji_fly_20251020_173830_305_1760996794506_photo_optimized"
 
 
+def _asset_version(path):
+    """Return a stable content hash so changed assets bypass browser caches."""
+    try:
+        asset = Path(__file__).resolve().parent / path
+        return hashlib.sha256(asset.read_bytes()).hexdigest()[:12]
+    except OSError:
+        return "dev"
+
+
 def _timed(label, func, *args, **kwargs):
     start = time.monotonic()
     try:
@@ -1823,7 +1832,7 @@ def head(s, county_firsts, moth_species=None):
 <meta name="twitter:image" content="{HERO_PHOTO}">
 <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/survey.css">
+<link rel="stylesheet" href="/assets/survey.css?v={_asset_version("src/styles.css")}">
 <script>
 window.__plotlyQueue=[];
 window.__plotlyRender=(...args)=>window.__plotlyQueue.push(args);
