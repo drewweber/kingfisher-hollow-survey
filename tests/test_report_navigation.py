@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import report
 
@@ -81,6 +82,57 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn("not that moths are absent", html)
         self.assertIn("Temperature and moonlight are clues, not switches", html)
         self.assertIn("not the property’s true presence or absence", html)
+
+    def test_no_go_card_shows_reason_without_repeated_guidance(self):
+        ranked = [
+            {
+                "date": "2099-07-01",
+                "priority_rank": 1,
+                "rating": "Focus",
+                "action": "Full multi-station survey",
+                "predicted_species": 59,
+                "score": 73,
+                "unsafe": False,
+                "temp_f_9pm": 74,
+                "humidity_9pm": 70,
+                "wind_mph_9pm": 2,
+                "rain_chance_pct": 10,
+                "moon": "waxing gibbous",
+                "moon_illumination_pct": 96,
+                "typical_error": 22,
+            },
+            {
+                "date": "2099-07-02",
+                "rating": "Skip",
+                "action": "Rest / process records",
+                "predicted_species": 89,
+                "score": 39,
+                "unsafe": True,
+                "skip_reason": "steady rain",
+                "temp_f_9pm": 64,
+                "humidity_9pm": 99,
+                "wind_mph_9pm": 3,
+                "rain_chance_pct": 92,
+                "moon": "waxing gibbous",
+                "moon_illumination_pct": 99,
+                "typical_error": 22,
+            },
+        ]
+        with mock.patch.object(
+            report.analyze,
+            "rank_moth_forecast",
+            return_value=ranked,
+        ):
+            html = report.moth_forecast_body(
+                {"nights": ranked},
+                {"status": "insufficient", "nights": 0},
+            )
+
+        self.assertIn("Skip · steady rain", html)
+        self.assertIn('tabular-nums">39</span>', html)
+        self.assertNotIn('tabular-nums">89</span>', html)
+        self.assertNotIn("Typical error", html)
+        self.assertNotIn("Rest / process records", html)
 
     def test_section_flow_follows_the_configured_reading_order(self):
         html = report.section(

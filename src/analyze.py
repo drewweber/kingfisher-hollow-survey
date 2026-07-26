@@ -1539,6 +1539,21 @@ def moth_weather_analysis(df, moths):
     }
 
 
+def _moth_no_go_reason(row):
+    """Name the first field condition that makes a full survey impractical."""
+    peak_rain = row.get("night_peak_precip_in")
+    steady_rain = row.get("night_longest_rain_hours")
+    if peak_rain is not None and peak_rain >= 0.10:
+        return "heavy rain"
+    if steady_rain is not None and steady_rain >= 4:
+        return "steady rain"
+    if row.get("wind_mph_9pm", 99) >= 12:
+        return "wind"
+    if row.get("temp_f_9pm", 0) < 48:
+        return "cold"
+    return None
+
+
 def _moth_condition_score(row):
     """Return a transparent fallback score when the local model is unavailable."""
     def clamp(value):
@@ -1549,17 +1564,19 @@ def _moth_condition_score(row):
     wind = row.get("wind_mph_9pm")
     rain_chance = row.get("rain_chance_pct")
     precip = row.get("precip_in")
+    night_precip = row.get("night_precip_in")
     illumination = row.get("moon_illumination_pct")
     if any(value is None for value in (
         temp, humidity, wind, rain_chance, precip, illumination
     )):
         return None, None
 
+    field_precip = night_precip if night_precip is not None else precip
     components = {
         "temperature": clamp((temp - 48) / 27),
         "humidity": clamp((humidity - 42) / 38),
         "wind": clamp(1 - max(0, wind - 2) / 10),
-        "dry": clamp(1 - max(rain_chance / 75, precip / 0.25)),
+        "dry": clamp(1 - max(rain_chance / 200, field_precip / 0.25)),
         "darkness": clamp(1 - illumination / 100),
     }
     score = round(100 * (
@@ -1569,7 +1586,7 @@ def _moth_condition_score(row):
         + 0.25 * components["dry"]
         + 0.10 * components["darkness"]
     ))
-    if rain_chance >= 75 or precip >= 0.25 or wind >= 12 or temp < 48:
+    if _moth_no_go_reason(row):
         score = min(score, 39)
     return score, components
 
@@ -1631,12 +1648,8 @@ def rank_moth_forecast(nights, analysis=None):
             continue
 
         predicted = _predict_moth_species(row, fitted)
-        unsafe = (
-            row.get("rain_chance_pct", 100) >= 75
-            or row.get("precip_in", 1) >= 0.25
-            or row.get("wind_mph_9pm", 99) >= 12
-            or row.get("temp_f_9pm", 0) < 48
-        )
+        skip_reason = _moth_no_go_reason(row)
+        unsafe = skip_reason is not None
         row.update({
             "score": score,
             "components": components,
@@ -1649,6 +1662,7 @@ def rank_moth_forecast(nights, analysis=None):
                 else None
             ),
             "unsafe": unsafe,
+            "skip_reason": skip_reason,
         })
         ranked.append(row)
 
@@ -1691,11 +1705,13 @@ def rank_moth_forecast(nights, analysis=None):
         else:
             row["rating"] = "Skip"
             row["action"] = "Rest / process records"
+            row["skip_reason"] = "lower yield"
 
     for row in ranked:
         if not row.get("rating"):
             row["rating"] = "Skip"
             row["action"] = "Rest / process records"
+            row["skip_reason"] = "lower yield"
 
     return sorted(ranked, key=lambda row: row.get("date", ""))
 

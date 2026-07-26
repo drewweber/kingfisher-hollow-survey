@@ -158,6 +158,75 @@ class MothWeatherAnalysisTests(unittest.TestCase):
         )
         self.assertEqual(by_date["2026-08-02"]["typical_error"], 10)
 
+    def test_steady_rain_names_the_skip_reason(self):
+        analysis = {
+            "status": "supported",
+            "weather_mae": 22,
+            "prediction_model": {
+                "feature_mean": [0] * 9,
+                "feature_scale": [1] * 9,
+                "coefficients": [89.0] + [0.0] * 9,
+                "historical_median": 40,
+            },
+        }
+        ranked = analyze.rank_moth_forecast([{
+            "date": "2026-07-28",
+            "temp_f_9pm": 64,
+            "humidity_9pm": 99,
+            "wind_mph_9pm": 3,
+            "rain_chance_pct": 92,
+            "precip_in": 1.19,
+            "night_precip_in": 0.18,
+            "night_peak_precip_in": 0.04,
+            "night_longest_rain_hours": 4,
+            "moon_illumination_pct": 99,
+            "moon_phase": 0.49,
+        }], analysis=analysis)
+
+        self.assertEqual(ranked[0]["predicted_species"], 89)
+        self.assertEqual(ranked[0]["rating"], "Skip")
+        self.assertEqual(ranked[0]["skip_reason"], "steady rain")
+        self.assertLessEqual(ranked[0]["score"], 39)
+
+    def test_brief_light_rain_does_not_force_a_skip(self):
+        analysis = {
+            "status": "supported",
+            "weather_mae": 22,
+            "prediction_model": {
+                "feature_mean": [0] * 9,
+                "feature_scale": [1] * 9,
+                "coefficients": [89.0] + [0.0] * 9,
+                "historical_median": 40,
+            },
+        }
+        ranked = analyze.rank_moth_forecast([{
+            "date": "2026-07-28",
+            "temp_f_9pm": 64,
+            "humidity_9pm": 99,
+            "wind_mph_9pm": 3,
+            "rain_chance_pct": 92,
+            "precip_in": 1.19,
+            "night_precip_in": 0.02,
+            "night_peak_precip_in": 0.02,
+            "night_longest_rain_hours": 1,
+            "moon_illumination_pct": 99,
+            "moon_phase": 0.49,
+        }], analysis=analysis)
+
+        self.assertFalse(ranked[0]["unsafe"])
+        self.assertEqual(ranked[0]["rating"], "Focus")
+        self.assertIsNone(ranked[0]["skip_reason"])
+
+    def test_heavy_hourly_rain_is_a_no_go_condition(self):
+        reason = analyze._moth_no_go_reason({
+            "temp_f_9pm": 64,
+            "wind_mph_9pm": 3,
+            "night_peak_precip_in": 0.10,
+            "night_longest_rain_hours": 1,
+        })
+
+        self.assertEqual(reason, "heavy rain")
+
 
 class ForecastTests(unittest.TestCase):
     def test_forecast_parser_extracts_nine_pm_and_moon(self):
@@ -175,6 +244,7 @@ class ForecastTests(unittest.TestCase):
                 "wind_direction_10m": [225],
                 "cloud_cover": [60],
                 "precipitation_probability": [20],
+                "precipitation": [0.4],
             },
         }
 
@@ -184,7 +254,11 @@ class ForecastTests(unittest.TestCase):
         self.assertEqual(row["temp_f_9pm"], 68)
         self.assertEqual(row["wind_mph_9pm"], 5)
         self.assertEqual(row["precip_in"], 0.1)
-        self.assertEqual(row["rain_chance_pct"], 30)
+        self.assertEqual(row["rain_chance_pct"], 20)
+        self.assertEqual(row["night_precip_in"], 0.02)
+        self.assertEqual(row["night_peak_precip_in"], 0.02)
+        self.assertEqual(row["night_rain_hours"], 1)
+        self.assertEqual(row["night_longest_rain_hours"], 1)
         self.assertIn("moon", row)
         self.assertGreaterEqual(row["moon_illumination_pct"], 0)
         self.assertLessEqual(row["moon_illumination_pct"], 100)
@@ -218,6 +292,37 @@ class ForecastTests(unittest.TestCase):
 
         self.assertEqual(result["source"], "cache")
         self.assertEqual(result["nights"], [cached_night])
+
+    def test_legacy_cache_refreshes_for_overnight_rain_fields(self):
+        today = datetime.date.today()
+        cached_night = {
+            "date": today.isoformat(),
+            "temp_f_9pm": 65,
+        }
+        refreshed_night = {
+            **cached_night,
+            "night_peak_precip_in": 0.02,
+            "night_longest_rain_hours": 1,
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache = Path(temp_dir) / "forecast.json"
+            cache.write_text(json.dumps({
+                "fetched_at": "2026-07-26T12:00:00+00:00",
+                "nights": [cached_night],
+            }), encoding="utf-8")
+            with (
+                mock.patch.object(weather, "_FORECAST_CACHE", cache),
+                mock.patch.object(
+                    weather,
+                    "_fetch_forecast",
+                    return_value=[refreshed_night],
+                ) as fetch,
+            ):
+                result = weather.load_forecast()
+
+        fetch.assert_called_once()
+        self.assertEqual(result["source"], "live")
+        self.assertEqual(result["nights"], [refreshed_night])
 
 
 if __name__ == "__main__":

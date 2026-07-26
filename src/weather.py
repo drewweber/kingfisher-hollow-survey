@@ -208,6 +208,7 @@ def _forecast_rows(data):
     hourly_wind_dir = hourly.get("wind_direction_10m", [])
     hourly_cloud = hourly.get("cloud_cover", [])
     hourly_rain_chance = hourly.get("precipitation_probability", [])
+    hourly_precip = hourly.get("precipitation", [])
 
     def _at(date_str, hour, values):
         index = hourly_index.get(f"{date_str}T{hour:02d}:00")
@@ -222,6 +223,27 @@ def _forecast_rows(data):
         value = values[index]
         return None if value is None or value != value else value
 
+    def _night_values(date_str, values):
+        date = datetime.date.fromisoformat(date_str)
+        next_date = (date + datetime.timedelta(days=1)).isoformat()
+        values_by_hour = [
+            _at(date_str, hour, values) for hour in range(20, 24)
+        ] + [
+            _at(next_date, hour, values) for hour in range(0, 3)
+        ]
+        return values_by_hour
+
+    def _longest_wet_run(values, threshold_mm=0.1):
+        longest = 0
+        current = 0
+        for value in values:
+            if value is not None and value >= threshold_mm:
+                current += 1
+                longest = max(longest, current)
+            else:
+                current = 0
+        return longest
+
     rows = []
     for index, date_str in enumerate(daily_dates):
         date = datetime.date.fromisoformat(date_str)
@@ -229,7 +251,18 @@ def _forecast_rows(data):
         temp_c = _at(date_str, 21, hourly_temp)
         wind_kmh = _at(date_str, 21, hourly_wind)
         precip_mm = _daily(daily_precip, index)
-        rain_chance = _daily(daily_rain_chance, index)
+        night_rain_chances = [
+            value for value in _night_values(date_str, hourly_rain_chance)
+            if value is not None
+        ]
+        night_precip_values = _night_values(date_str, hourly_precip)
+        measured_night_precip = [
+            value for value in night_precip_values if value is not None
+        ]
+        rain_chance = (
+            max(night_rain_chances) if night_rain_chances
+            else _daily(daily_rain_chance, index)
+        )
         if rain_chance is None:
             rain_chance = _at(date_str, 21, hourly_rain_chance)
         rows.append({
@@ -256,6 +289,21 @@ def _forecast_rows(data):
                 round(precip_mm * 0.0393701, 2)
                 if precip_mm is not None else None
             ),
+            "night_precip_in": (
+                round(sum(measured_night_precip) * 0.0393701, 2)
+                if measured_night_precip else None
+            ),
+            "night_peak_precip_in": (
+                round(max(measured_night_precip) * 0.0393701, 2)
+                if measured_night_precip else None
+            ),
+            "night_rain_hours": sum(
+                value is not None and value >= 0.1
+                for value in night_precip_values
+            ),
+            "night_longest_rain_hours": _longest_wet_run(
+                night_precip_values
+            ),
             "moon_phase": round(phase, 4),
             "moon": moon_name,
             "moon_illumination_pct": round(moon_illumination(phase) * 100),
@@ -268,7 +316,7 @@ def _fetch_forecast(days=10):
     params = urllib.parse.urlencode({
         "latitude": PROPERTY_LAT,
         "longitude": PROPERTY_LON,
-        "forecast_days": days,
+        "forecast_days": min(days + 1, 16),
         "daily": "precipitation_sum,precipitation_probability_max",
         "hourly": ",".join([
             "temperature_2m",
@@ -277,6 +325,7 @@ def _fetch_forecast(days=10):
             "wind_direction_10m",
             "cloud_cover",
             "precipitation_probability",
+            "precipitation",
         ]),
         "timezone": "America/New_York",
         "temperature_unit": "celsius",
@@ -286,7 +335,7 @@ def _fetch_forecast(days=10):
     with urllib.request.urlopen(
         f"{_OPEN_METEO_FORECAST}?{params}", timeout=30
     ) as response:
-        return _forecast_rows(json.loads(response.read()))
+        return _forecast_rows(json.loads(response.read()))[:days]
 
 
 def load_forecast(days=10, refresh=True):
@@ -308,10 +357,23 @@ def load_forecast(days=10, refresh=True):
         time.time() - _FORECAST_CACHE.stat().st_mtime
         if cached and _FORECAST_CACHE.exists() else None
     )
+    cached_nights = cached.get("nights", []) if cached else []
+    cache_needs_rain_upgrade = bool(
+        cached is not None
+        and (
+            not cached_nights
+            or any(
+                "night_peak_precip_in" not in row
+                or "night_longest_rain_hours" not in row
+                for row in cached_nights
+            )
+        )
+    )
     should_fetch = refresh and (
         cached is None
         or cache_age is None
         or cache_age >= _FORECAST_CACHE_TTL_SECONDS
+        or cache_needs_rain_upgrade
     )
 
     if should_fetch:
