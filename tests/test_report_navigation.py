@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 import report
 
@@ -46,6 +47,15 @@ class ReportNavigationTests(unittest.TestCase):
         version = report._asset_version("src/styles.css")
         html = report.head({"species": 1}, county_firsts=0)
         self.assertIn(f'href="/assets/survey.css?v={version}"', html)
+
+    def test_dark_survey_menu_keeps_inactive_view_names_readable(self):
+        styles = (Path(report.__file__).parent / "src/styles.css").read_text()
+        rule_start = styles.index(".survey-view-grid .mode-btn {")
+        rule_end = styles.index("}", rule_start)
+        self.assertIn(
+            "color: rgba(255, 255, 255, .78);",
+            styles[rule_start:rule_end],
+        )
 
     def test_section_flow_follows_the_configured_reading_order(self):
         html = report.section(
