@@ -76,6 +76,40 @@ def fetch_taxa(ids):
     return _get(path, per_page=len(ids)).get("results", [])
 
 
+def fetch_observations(ids, batch_size=100):
+    """Fetch complete observation records, preserving the requested order.
+
+    The standard property table intentionally stores a compact subset of each
+    record.  Focused evidence pages also need every photo, the community taxon,
+    identifier history, and written comments.  iNaturalist accepts a
+    comma-separated list of observation IDs, so the extra refresh is one small
+    request for the current case study rather than a project-wide resweep.
+    """
+    requested = []
+    seen = set()
+    for value in ids or ():
+        try:
+            observation_id = int(value)
+        except (TypeError, ValueError):
+            continue
+        if observation_id <= 0 or observation_id in seen:
+            continue
+        seen.add(observation_id)
+        requested.append(observation_id)
+    if not requested:
+        return []
+
+    records = {}
+    batch_size = max(1, min(int(batch_size), 100))
+    for start in range(0, len(requested), batch_size):
+        batch = requested[start:start + batch_size]
+        path = "observations/" + ",".join(str(value) for value in batch)
+        for observation in _get(path, per_page=len(batch)).get("results", []):
+            if observation.get("id") is not None:
+                records[int(observation["id"])] = observation
+    return [records[value] for value in requested if value in records]
+
+
 def fetch_licensed_photos(taxon_id, limit=2, license_codes=None, exclude_ids=None):
     """Return distinct redistributable reference photos for a taxon.
 

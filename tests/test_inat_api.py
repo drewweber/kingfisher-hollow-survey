@@ -34,5 +34,21 @@ class UpdatedObservationIteratorTests(unittest.TestCase):
         self.assertEqual(2, second["page"])
 
 
+class FocusedObservationFetchTests(unittest.TestCase):
+    def test_fetch_observations_deduplicates_and_preserves_requested_order(self):
+        response = {
+            "results": [
+                {"id": 20, "photos": []},
+                {"id": 10, "photos": []},
+            ]
+        }
+        with patch.object(inat_api, "_get", return_value=response) as get:
+            rows = inat_api.fetch_observations([10, 20, 10, "bad", -1])
+
+        self.assertEqual([10, 20], [row["id"] for row in rows])
+        self.assertEqual("observations/10,20", get.call_args.args[0])
+        self.assertEqual(2, get.call_args.kwargs["per_page"])
+
+
 if __name__ == "__main__":
     unittest.main()

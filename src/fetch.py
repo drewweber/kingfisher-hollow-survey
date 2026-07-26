@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 import inat_api
+import tiger_swallowtail
 from config import (AMPHIBIA_TAXON_ID, BUTTERFLY_TAXON_ID, COUNTY_PLACE_ID,
                     LEPIDOPTERA_TAXON_ID, MAMMALIA_TAXON_ID,
                     ODONATA_TAXON_ID, PLANTAE_TAXON_ID,
@@ -200,6 +201,10 @@ def sync_property(incremental=False):
             observations = inat_api.iter_all(project_id=PROPERTY_PROJECT_ID)
         for obs in observations:
             conn.execute(PROPERTY_INSERT, _property_row(obs))
+            # Preserve the complete source evidence for target observations
+            # while this full iNaturalist record is already in memory. The
+            # focused refresh below also backfills older cached databases.
+            tiger_swallowtail.capture_observation(conn, obs)
             if full_reconciliation:
                 conn.execute(
                     "INSERT INTO current_property_ids (id) VALUES (?)", (obs["id"],)
@@ -223,6 +228,7 @@ def sync_property(incremental=False):
     mode = "full" if full_reconciliation else "incremental"
     print(f"[property:{mode}] total {after_count} obs (+{added}), "
           f"-{removed} removed, +{new_species} new species")
+    tiger_swallowtail.refresh_from_database()
     return added, new_species
 
 

@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "observations": {
+    "298965963": {
+      "reviewed_at": "2026-07-26",
+      "view": "ventral",
+      "wear": "worn",
+      "wear_note": "The wing margins are chipped and the tails and hindwing edges show substantial loss, so wear may blur or remove pattern boundaries.",
+      "ventral_forewing_visible": true,
+      "ventral_forewing_pattern": "midsummer",
+      "ventral_forewing_note": "Photo 538577705 shows the underside of the forewing. Its submarginal marks appear broadly coalescent and band-like rather than cleanly isolated by black along every vein, which leans Midsummer; wear and angle keep this from being strong evidence by itself.",
+      "secondary_morphology_clear": false,
+      "wing_shape": {
+        "signal": "not_assessable",
+        "note": "The most useful underside photograph is oblique, and the worn margin prevents a reliable forewing-shape reading."
+      },
+      "sex_or_dark_form": {
+        "signal": "neutral",
+        "note": "The individual is yellow, but sex and any sex-linked pattern character are not clear enough to add evidence."
+      },
+      "image_limitations": [
+        "Only one photograph presents a useful ventral forewing angle.",
+        "Substantial wear can change the apparent separation and shape of marginal marks.",
+        "No size scale or specimen examination is available."
+      ],
+      "photos": {
+        "538577704": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Dorsal view; the key underside band is hidden."
+        },
+        "538577712": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Dorsal view; useful for documenting wear, not the ventral forewing band."
+        },
+        "538577705": {
+          "view": "ventral",
+          "ventral_forewing_visible": true,
+          "note": "The underside forewing and its submarginal band are visible, though worn and oblique."
+        }
+      },
+      "focus": {
+        "photo_id": 538577705,
+        "x": 36,
+        "y": 35,
+        "scale": 2.3
+      }
+    },
+    "309234996": {
+      "reviewed_at": "2026-07-26",
+      "view": "dorsal",
+      "wear": "worn",
+      "wear_note": "The single image shows major forewing-edge loss and damaged hindwing tails.",
+      "ventral_forewing_visible": false,
+      "ventral_forewing_pattern": "not_assessable",
+      "ventral_forewing_note": "The only photograph is dorsal; the underside forewing submarginal band is not visible.",
+      "secondary_morphology_clear": false,
+      "wing_shape": {
+        "signal": "not_assessable",
+        "note": "Damage to the outer forewing prevents a reliable shape assessment."
+      },
+      "sex_or_dark_form": {
+        "signal": "not_assessable",
+        "note": "The photograph is too distant and worn for a useful sex-linked or dark-form assessment."
+      },
+      "image_limitations": [
+        "Only one distant dorsal photograph is available.",
+        "Heavy edge damage removes the outline needed for wing-shape comparison.",
+        "The current source identification and late date cannot substitute for missing ventral morphology."
+      ],
+      "photos": {
+        "557996648": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Distant dorsal view of a heavily worn individual."
+        }
+      }
+    },
+    "370207960": {
+      "reviewed_at": "2026-07-26",
+      "view": "dorsal",
+      "wear": "unknown",
+      "wear_note": "The butterfly occupies too little of the frame to separate true scale or edge wear from distance and focus.",
+      "ventral_forewing_visible": false,
+      "ventral_forewing_pattern": "not_assessable",
+      "ventral_forewing_note": "The available photograph is a distant dorsal view; the underside forewing is not shown.",
+      "secondary_morphology_clear": false,
+      "wing_shape": {
+        "signal": "not_assessable",
+        "note": "Distance and angle do not support a detailed distal-margin assessment."
+      },
+      "sex_or_dark_form": {
+        "signal": "not_assessable",
+        "note": "Sex-linked hindwing details are not resolved at this image scale."
+      },
+      "image_limitations": [
+        "The single butterfly image is distant.",
+        "No ventral surface or close wing outline is available.",
+        "The spring date and research-grade source ID are supporting context, not photographic morphology."
+      ],
+      "photos": {
+        "676342969": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Distant dorsal view; diagnostic wing regions are too small to assess."
+        }
+      }
+    },
+    "384363724": {
+      "reviewed_at": "2026-07-26",
+      "view": "dorsal",
+      "wear": "moderate",
+      "wear_note": "The wings show edge nicks and scale abrasion, but most of the outline remains.",
+      "ventral_forewing_visible": false,
+      "ventral_forewing_pattern": "not_assessable",
+      "ventral_forewing_note": "All four photographs are dorsal or oblique. None shows the underside forewing submarginal band clearly enough to compare separated versus coalescent lunules.",
+      "secondary_morphology_clear": false,
+      "wing_shape": {
+        "signal": "not_assessable",
+        "note": "The partly folded and oblique poses make the apparent forewing outline dependent on angle."
+      },
+      "sex_or_dark_form": {
+        "signal": "neutral",
+        "note": "The yellow form is visible, but the images do not provide a reliable sex-linked diagnostic character."
+      },
+      "image_limitations": [
+        "The key ventral forewing region is absent from every photograph.",
+        "Oblique wing positions make shape comparisons unreliable.",
+        "The midsummer date and source ID cannot establish species without visible diagnostic morphology."
+      ],
+      "photos": {
+        "703576941": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Open dorsal view; underside forewing hidden."
+        },
+        "703576942": {
+          "view": "partial",
+          "ventral_forewing_visible": false,
+          "note": "Oblique overlapping wings; a pale underside is present, but the diagnostic band is not readable."
+        },
+        "703576939": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Open dorsal view; useful for wear, not ventral pattern."
+        },
+        "703576940": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Dorsal view at an angle; the underside forewing is hidden."
+        }
+      }
+    },
+    "384696880": {
+      "reviewed_at": "2026-07-26",
+      "view": "dorsal",
+      "wear": "fresh",
+      "wear_note": "Wing edges, tails, and scale contrast appear crisp and substantially intact.",
+      "ventral_forewing_visible": false,
+      "ventral_forewing_pattern": "not_assessable",
+      "ventral_forewing_note": "The series is dominated by open dorsal views. The small oblique glimpse does not show the underside forewing band clearly enough for assessment.",
+      "secondary_morphology_clear": true,
+      "wing_shape": {
+        "signal": "eastern",
+        "note": "The fresh open-wing images show a distinctly concave distal forewing margin, a secondary character that leans Eastern but overlaps with Midsummer."
+      },
+      "sex_or_dark_form": {
+        "signal": "eastern",
+        "note": "The photographed yellow-form female appears to show comparatively extensive blue dorsal hindwing scaling and a prominent orange lunule. These secondary characters lean Eastern, but they are not decisive without the ventral forewing."
+      },
+      "image_limitations": [
+        "No photograph clearly shows the diagnostic underside forewing band.",
+        "The assessment relies on overlapping secondary dorsal characters.",
+        "The July date falls in the Midsummer/second-brood Eastern overlap window."
+      ],
+      "photos": {
+        "704269405": {
+          "view": "partial",
+          "ventral_forewing_visible": false,
+          "note": "Oblique mixed-surface view; the underside band is too small and angled to assess."
+        },
+        "704269403": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Sharp dorsal view showing wing shape and female hindwing pattern."
+        },
+        "704269404": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Sharp dorsal view; key underside band hidden."
+        },
+        "704269407": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Open dorsal view; useful for secondary shape and hindwing evidence."
+        }
+      }
+    },
+    "385352068": {
+      "reviewed_at": "2026-07-26",
+      "view": "ventral",
+      "wear": "moderate",
+      "wear_note": "The individual shows minor edge abrasion while retaining the forewing band and overall outline.",
+      "ventral_forewing_visible": true,
+      "ventral_forewing_pattern": "eastern",
+      "ventral_forewing_note": "Photo 705461303 clearly shows the underside forewing. The submarginal lunules are discrete and separated by black along the veins, supporting Eastern.",
+      "secondary_morphology_clear": true,
+      "wing_shape": {
+        "signal": "eastern",
+        "note": "The accompanying open-wing photographs show a clearly concave distal forewing margin, providing a second Eastern-leaning morphological character."
+      },
+      "sex_or_dark_form": {
+        "signal": "neutral",
+        "note": "The individual is yellow; no dark-form evidence is present, and the visible sex-linked characters do not add a separate directional signal."
+      },
+      "image_limitations": [
+        "Only one photograph provides the key ventral angle.",
+        "Wing-pattern variation overlaps between species, so the result still depends on a suite rather than one mark.",
+        "The late-July date conflicts with the expected seasonal direction and requires manual review."
+      ],
+      "photos": {
+        "705461303": {
+          "view": "ventral",
+          "ventral_forewing_visible": true,
+          "note": "Clear ventral view of the forewing submarginal band."
+        },
+        "705461310": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Dorsal view showing the forewing outline."
+        },
+        "705461314": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Dorsal view; useful as a shape cross-check."
+        }
+      },
+      "focus": {
+        "photo_id": 705461303,
+        "x": 35,
+        "y": 29,
+        "scale": 2.2
+      }
+    }
+  }
+}
