@@ -7,7 +7,9 @@ rather than in legends. plotly.js loads once from the page, so every fragment
 uses include_plotlyjs=False.
 """
 
+import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # --- palette (mirrors the site's `hollow` Tailwind scale) -------------------
 HOLLOW = ["#2e735c", "#5eab8d", "#8ec8b1", "#265d4b", "#bbdfd0", "#1d3d33"]
@@ -479,3 +481,269 @@ def monthly_survey_bar(summary, dark=True):
     )
     fig.update_yaxes(showgrid=False, tickfont=dict(size=12, color=c["ink"]))
     return _html(_style(fig, height=420, showlegend=True, dark=dark))
+
+
+def nightly_species_calendar(nightly, dark=True):
+    """Calendar heatmap of distinct moth species reported per survey night.
+
+    Each year is a Monday–Sunday calendar row. Dates without moth reports stay
+    blank rather than appearing as zeroes. Exact counts are printed in active
+    cells and repeated in an expandable HTML table for small screens and
+    assistive technology.
+    """
+    if nightly is None or nightly.empty:
+        return (
+            "<p class='chart-empty text-pretty'>No nightly moth reports yet. "
+            "Add observations to populate the calendar.</p>"
+        )
+
+    data = nightly.copy()
+    data["night"] = pd.to_datetime(data["night"], errors="coerce").dt.normalize()
+    data = data.dropna(subset=["night"]).sort_values("night")
+    if data.empty:
+        return (
+            "<p class='chart-empty text-pretty'>No valid survey dates yet. "
+            "Add dated observations to populate the calendar.</p>"
+        )
+
+    c = _palette(dark)
+    years = sorted(data["night"].dt.year.unique())
+    max_species = max(int(data["species_count"].max()), 1)
+    scale_max = max(max_species, 2)
+    vertical_spacing = min(0.12, 0.5 / max(len(years), 1))
+    fig = make_subplots(
+        rows=len(years),
+        cols=1,
+        vertical_spacing=vertical_spacing,
+    )
+    active_scale = [
+        [0.0, "#265d4b"],
+        [0.55, "#3d8f72"],
+        [1.0, "#bbdfd0"],
+    ]
+
+    for row_num, year in enumerate(years, start=1):
+        year_start = pd.Timestamp(year=int(year), month=1, day=1)
+        year_end = pd.Timestamp(year=int(year), month=12, day=31)
+        grid_start = year_start - pd.Timedelta(days=year_start.weekday())
+        week_count = int((year_end - grid_start).days // 7) + 1
+
+        background = [[None] * week_count for _ in range(7)]
+        values = [[None] * week_count for _ in range(7)]
+        hover = [[None] * week_count for _ in range(7)]
+
+        for date in pd.date_range(year_start, year_end, freq="D"):
+            week = int((date - grid_start).days // 7)
+            background[date.weekday()][week] = 1
+
+        year_data = data[data["night"].dt.year == year]
+        for record in year_data.itertuples(index=False):
+            date = pd.Timestamp(record.night)
+            week = int((date - grid_start).days // 7)
+            weekday = date.weekday()
+            species_count = int(record.species_count)
+            observation_count = int(record.observation_count)
+            values[weekday][week] = species_count
+            hover[weekday][week] = [
+                f"{date:%A, %B} {date.day}, {date.year}",
+                species_count,
+                observation_count,
+            ]
+
+        fig.add_trace(
+            go.Heatmap(
+                z=background,
+                x=list(range(week_count)),
+                y=list(range(7)),
+                colorscale=[
+                    [0.0, "rgba(255,255,255,0.045)"],
+                    [1.0, "rgba(255,255,255,0.045)"],
+                ],
+                zmin=0,
+                zmax=1,
+                xgap=2,
+                ygap=2,
+                showscale=False,
+                hoverinfo="skip",
+            ),
+            row=row_num,
+            col=1,
+        )
+        fig.add_trace(
+            go.Heatmap(
+                z=values,
+                customdata=hover,
+                x=list(range(week_count)),
+                y=list(range(7)),
+                colorscale=active_scale,
+                zmin=1,
+                zmax=scale_max,
+                xgap=2,
+                ygap=2,
+                showscale=row_num == 1,
+                hoverongaps=False,
+                hovertemplate=(
+                    "<b>Night of %{customdata[0]}</b><br>"
+                    "%{customdata[1]} species reported<br>"
+                    "%{customdata[2]} observations<extra></extra>"
+                ),
+                colorbar=dict(
+                    title=dict(
+                        text="Species",
+                        side="right",
+                        font=dict(size=10, color=c["muted"]),
+                    ),
+                    thickness=10,
+                    len=min(0.82, 0.28 * len(years) + 0.28),
+                    tickfont=dict(size=10, color=c["muted"]),
+                    outlinewidth=0,
+                ),
+            ),
+            row=row_num,
+            col=1,
+        )
+
+        for record in year_data.itertuples(index=False):
+            date = pd.Timestamp(record.night)
+            week = int((date - grid_start).days // 7)
+            species_count = int(record.species_count)
+            text_color = (
+                "#0d221c"
+                if species_count / scale_max >= 0.62
+                else "#f7fbf9"
+            )
+            fig.add_annotation(
+                x=week,
+                y=date.weekday(),
+                text=f"<b>{species_count}</b>",
+                showarrow=False,
+                font=dict(
+                    family=FONT,
+                    size=8 if species_count >= 100 else 9,
+                    color=text_color,
+                ),
+                row=row_num,
+                col=1,
+            )
+
+        month_starts = [
+            pd.Timestamp(year=int(year), month=month, day=1)
+            for month in range(1, 13)
+        ]
+        month_weeks = [
+            int((date - grid_start).days // 7) for date in month_starts
+        ]
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=month_weeks,
+            ticktext=MONTHS,
+            side="top",
+            ticks="",
+            showline=False,
+            showgrid=False,
+            zeroline=False,
+            fixedrange=True,
+            range=[-3.6, week_count - 0.5],
+            tickfont=dict(size=10, color=c["muted"]),
+            row=row_num,
+            col=1,
+        )
+        fig.update_yaxes(
+            tickmode="array",
+            tickvals=[0, 2, 4, 6],
+            ticktext=["Mon", "Wed", "Fri", "Sun"],
+            autorange="reversed",
+            ticks="",
+            showline=False,
+            showgrid=False,
+            zeroline=False,
+            fixedrange=True,
+            tickfont=dict(size=9, color=c["muted"]),
+            row=row_num,
+            col=1,
+        )
+        fig.add_annotation(
+            x=-2.0,
+            y=3,
+            text=f"<b>{year}</b>",
+            showarrow=False,
+            font=dict(family=FONT, size=11, color=c["ink"]),
+            row=row_num,
+            col=1,
+        )
+
+    fig.update_layout(
+        height=155 * len(years) + 70,
+        showlegend=False,
+        font=dict(family=FONT, size=12, color=c["ink"]),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=4, r=58, t=22, b=6),
+        hoverlabel=dict(
+            font=dict(family=FONT, size=12, color=c["hover_fg"]),
+            bgcolor=c["hover_bg"],
+            bordercolor=c["hover_border"],
+        ),
+    )
+
+    peak = data.loc[data["species_count"].idxmax()]
+    peak_date = pd.Timestamp(peak["night"])
+    date_range = (
+        f"{data.iloc[0]['night']:%B} {data.iloc[0]['night'].day}, "
+        f"{data.iloc[0]['night'].year} through "
+        f"{data.iloc[-1]['night']:%B} {data.iloc[-1]['night'].day}, "
+        f"{data.iloc[-1]['night'].year}"
+    )
+    accessible_summary = (
+        f"Calendar heatmap of {len(data)} Kingfisher Hollow moth-reporting "
+        f"nights from {date_range}. The highest nightly total is "
+        f"{int(peak['species_count'])} species on {peak_date:%B} "
+        f"{peak_date.day}, {peak_date.year}. Blank dates have no moth report "
+        "and do not mean zero species."
+    )
+
+    table_rows = []
+    for record in data.sort_values("night", ascending=False).itertuples(index=False):
+        date = pd.Timestamp(record.night)
+        table_rows.append(
+            "<tr class='border-t border-white/10'>"
+            f"<th scope='row' class='py-2 pr-5 text-left font-normal text-white/70'>"
+            f"{date:%b} {date.day}, {date.year}</th>"
+            f"<td class='py-2 px-4 text-right text-white tabular-nums'>"
+            f"{int(record.species_count)}</td>"
+            f"<td class='py-2 pl-4 text-right text-white/70 tabular-nums'>"
+            f"{int(record.observation_count)}</td>"
+            "</tr>"
+        )
+
+    plot_html = _html(fig)
+    return (
+        "<figure aria-labelledby='moth-night-calendar-summary'>"
+        f"<figcaption id='moth-night-calendar-summary' class='sr-only'>"
+        f"{accessible_summary}</figcaption>"
+        "<p class='mb-2 text-right text-xs text-white/40 md:hidden'>"
+        "Swipe sideways for the full year →</p>"
+        "<div class='overflow-x-auto pb-2'>"
+        f"<div class='min-w-[52rem]'>{plot_html}</div>"
+        "</div>"
+        "</figure>"
+        "<details class='mt-4 border-t border-white/10 pt-4'>"
+        "<summary class='cursor-pointer text-sm font-medium text-hollow-300 "
+        "focus-visible:outline-none focus-visible:ring-2 "
+        "focus-visible:ring-hollow-300 focus-visible:ring-offset-2 "
+        "focus-visible:ring-offset-hollow-950'>"
+        f"Night-by-night data ({len(data)} reporting nights)</summary>"
+        "<p class='mt-3 text-pretty text-xs leading-5 text-white/50'>"
+        "Counts are distinct moth species assigned to the evening session; "
+        "records before noon count toward the previous night. A missing date "
+        "means no moth report, not a zero-species survey.</p>"
+        "<div class='mt-3 max-h-80 overflow-auto'>"
+        "<table class='w-full text-sm'>"
+        "<thead class='text-white/40'>"
+        "<tr><th scope='col' class='pb-2 pr-5 text-left font-medium'>Night</th>"
+        "<th scope='col' class='pb-2 px-4 text-right font-medium'>Species</th>"
+        "<th scope='col' class='pb-2 pl-4 text-right font-medium'>Observations</th>"
+        "</tr></thead>"
+        f"<tbody>{''.join(table_rows)}</tbody>"
+        "</table></div></details>"
+    )
