@@ -293,6 +293,37 @@ class ForecastTests(unittest.TestCase):
         self.assertEqual(result["source"], "cache")
         self.assertEqual(result["nights"], [cached_night])
 
+    def test_legacy_cache_refreshes_for_overnight_rain_fields(self):
+        today = datetime.date.today()
+        cached_night = {
+            "date": today.isoformat(),
+            "temp_f_9pm": 65,
+        }
+        refreshed_night = {
+            **cached_night,
+            "night_peak_precip_in": 0.02,
+            "night_longest_rain_hours": 1,
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache = Path(temp_dir) / "forecast.json"
+            cache.write_text(json.dumps({
+                "fetched_at": "2026-07-26T12:00:00+00:00",
+                "nights": [cached_night],
+            }), encoding="utf-8")
+            with (
+                mock.patch.object(weather, "_FORECAST_CACHE", cache),
+                mock.patch.object(
+                    weather,
+                    "_fetch_forecast",
+                    return_value=[refreshed_night],
+                ) as fetch,
+            ):
+                result = weather.load_forecast()
+
+        fetch.assert_called_once()
+        self.assertEqual(result["source"], "live")
+        self.assertEqual(result["nights"], [refreshed_night])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -357,10 +357,23 @@ def load_forecast(days=10, refresh=True):
         time.time() - _FORECAST_CACHE.stat().st_mtime
         if cached and _FORECAST_CACHE.exists() else None
     )
+    cached_nights = cached.get("nights", []) if cached else []
+    cache_needs_rain_upgrade = bool(
+        cached is not None
+        and (
+            not cached_nights
+            or any(
+                "night_peak_precip_in" not in row
+                or "night_longest_rain_hours" not in row
+                for row in cached_nights
+            )
+        )
+    )
     should_fetch = refresh and (
         cached is None
         or cache_age is None
         or cache_age >= _FORECAST_CACHE_TTL_SECONDS
+        or cache_needs_rain_upgrade
     )
 
     if should_fetch:
