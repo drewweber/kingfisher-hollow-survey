@@ -42,6 +42,11 @@ class ReportNavigationTests(unittest.TestCase):
         for href, _label in report.VIEW_CONFIG["all"]["links"]:
             self.assertIn(f'href="{href}"', html)
 
+    def test_stylesheet_url_changes_with_the_stylesheet_content(self):
+        version = report._asset_version("src/styles.css")
+        html = report.head({"species": 1}, county_firsts=0)
+        self.assertIn(f'href="/assets/survey.css?v={version}"', html)
+
     def test_section_flow_follows_the_configured_reading_order(self):
         html = report.section(
             "unique",
