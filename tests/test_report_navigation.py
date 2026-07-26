@@ -57,6 +57,31 @@ class ReportNavigationTests(unittest.TestCase):
             styles[rule_start:rule_end],
         )
 
+    def test_moth_forecast_distinguishes_detection_from_presence(self):
+        forecast = {
+            "nights": [
+                {
+                    "date": "2099-07-01",
+                    "temp_f_9pm": 70,
+                    "humidity_9pm": 70,
+                    "wind_mph_9pm": 2,
+                    "wind_dir_9pm": "S",
+                    "rain_chance_pct": 5,
+                    "precip_in": 0,
+                    "moon": "waning crescent",
+                    "moon_illumination_pct": 10,
+                }
+            ]
+        }
+        html = report.moth_forecast_body(
+            forecast,
+            {"status": "insufficient", "nights": 0},
+        )
+        self.assertIn("estimates documented richness", html)
+        self.assertIn("not that moths are absent", html)
+        self.assertIn("Temperature and moonlight are clues, not switches", html)
+        self.assertIn("not the property’s true presence or absence", html)
+
     def test_section_flow_follows_the_configured_reading_order(self):
         html = report.section(
             "unique",
