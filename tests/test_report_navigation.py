@@ -108,7 +108,7 @@ class ReportNavigationTests(unittest.TestCase):
                 "predicted_species": 89,
                 "score": 39,
                 "unsafe": True,
-                "skip_reason": "rain",
+                "skip_reason": "steady rain",
                 "temp_f_9pm": 64,
                 "humidity_9pm": 99,
                 "wind_mph_9pm": 3,
@@ -128,7 +128,7 @@ class ReportNavigationTests(unittest.TestCase):
                 {"status": "insufficient", "nights": 0},
             )
 
-        self.assertIn("Skip · rain", html)
+        self.assertIn("Skip · steady rain", html)
         self.assertIn('tabular-nums">39</span>', html)
         self.assertNotIn('tabular-nums">89</span>', html)
         self.assertNotIn("Typical error", html)

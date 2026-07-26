@@ -534,9 +534,11 @@ def moth_forecast_body(forecast, validation):
         "survey is likely to document, not the property’s true presence or "
         "absence that night.</p>"
         '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
-        "Survey suitability comes first. If rain, wind, or cold crosses the "
-        "field cutoff, the card shows a condition score instead of a species "
-        "estimate and names the reason in the pill.</p>"
+        "Survey suitability comes first. Brief or light showers lower the "
+        "condition score but do not force a skip. If the forecast shows steady "
+        "rain, a heavy hourly rate, strong wind, or cold crossing the field "
+        "cutoff, the card shows a condition score instead of a species estimate "
+        "and names the reason in the pill.</p>"
         '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
         "The predicted value is whole-night distinct species documented under "
         "your historical adaptive protocol—not individual moth abundance and "
