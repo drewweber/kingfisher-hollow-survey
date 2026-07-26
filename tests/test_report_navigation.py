@@ -1,0 +1,74 @@
+import unittest
+
+import report
+
+
+class ReportNavigationTests(unittest.TestCase):
+    def test_internal_section_ids_are_unique(self):
+        ids = [
+            href
+            for config in report.VIEW_CONFIG.values()
+            for href, _label in config["links"]
+            if href.startswith("#")
+        ]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_all_life_index_covers_the_full_report_arc(self):
+        self.assertEqual(
+            [href for href, _label in report.VIEW_CONFIG["all"]["links"]],
+            [
+                "#whats-new",
+                "#discovery",
+                "#unique",
+                "#life-list",
+                "#activity",
+                "#phenology",
+                "#observers",
+                "#map",
+            ],
+        )
+
+    def test_moth_index_has_one_inventory_status_chapter(self):
+        links = report.VIEW_CONFIG["moths"]["links"]
+        self.assertIn(("#moth-completeness", "Inventory status"), links)
+        self.assertNotIn("#moth-diversity", [href for href, _label in links])
+
+    def test_navigation_has_accessible_menu_and_complete_index(self):
+        html = report.nav()
+        self.assertIn('aria-label="Survey navigation"', html)
+        self.assertIn('aria-controls="survey-menu"', html)
+        self.assertIn('aria-expanded="false"', html)
+        self.assertIn('id="skip-link"', html)
+        for href, _label in report.VIEW_CONFIG["all"]["links"]:
+            self.assertIn(f'href="{href}"', html)
+
+    def test_section_flow_follows_the_configured_reading_order(self):
+        html = report.section(
+            "unique",
+            "Distinctiveness",
+            "What Stands Out",
+            "<p>Body</p>",
+        )
+        self.assertIn('aria-labelledby="unique-title"', html)
+        self.assertIn('id="unique-title"', html)
+        self.assertIn('href="#discovery"', html)
+        self.assertIn("Growth", html)
+        self.assertIn('href="#life-list"', html)
+        self.assertIn("Life list", html)
+        self.assertIn("03 / 08", html)
+
+    def test_legacy_chapter_links_can_be_preserved_as_aliases(self):
+        html = report.anchor_alias("uniqueness", "gallery", "moth-diversity")
+        for id_ in ("uniqueness", "gallery", "moth-diversity"):
+            self.assertIn(f'id="{id_}"', html)
+        self.assertEqual(html.count('class="anchor-alias"'), 3)
+
+    def test_subsection_hashes_resolve_their_own_view(self):
+        self.assertIn("function modeForHash(hash)", report.SCRIPTS)
+        self.assertIn("closest('[id^=\"view-\"]')", report.SCRIPTS)
+        self.assertIn("const hashSection=hashTarget?.matches('section[id]')", report.SCRIPTS)
+        self.assertIn("window.addEventListener('hashchange',applyHash)", report.SCRIPTS)
+
+
+if __name__ == "__main__":
+    unittest.main()

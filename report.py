@@ -147,7 +147,141 @@ def taxon_link(taxon_id, text, cls=""):
             f'{cls_attr}>{esc(text)}</a>')
 
 
-# ── section scaffold ────────────────────────────────────────────────────────
+# ── information architecture / section scaffold ─────────────────────────────
+# This is the single source of truth for both tiers of navigation and the
+# previous/next trail at the end of each report section.  The order is the
+# intended reading order, not merely a visual sort.
+VIEW_CONFIG = {
+    "all": {
+        "label": "All life",
+        "links": [
+            ("#whats-new", "Latest"),
+            ("#discovery", "Growth"),
+            ("#unique", "Distinctiveness"),
+            ("#life-list", "Life list"),
+            ("#activity", "Survey effort"),
+            ("#phenology", "Seasonality"),
+            ("#observers", "Observers"),
+            ("#map", "Map"),
+        ],
+    },
+    "moths": {
+        "label": "Moths",
+        "links": [
+            ("#moths", "Overview"),
+            ("#moth-gallery", "Recent"),
+            ("#moth-gap", "Targets"),
+            ("#moth-families", "Gap by family"),
+            ("#moth-standouts", "Standouts"),
+            ("#moth-completeness", "Inventory status"),
+            ("#moth-calendar", "Flight calendar"),
+            ("#moth-methods", "Survey methods"),
+        ],
+    },
+    "butterflies": {
+        "label": "Butterflies",
+        "links": [
+            ("#butterflies", "Overview"),
+            (tiger_swallowtail.CASE_ROUTE, "Tiger study"),
+            ("#butterfly-gap", "Targets"),
+            ("#butterfly-methods", "Survey methods"),
+        ],
+    },
+    "odonates": {
+        "label": "Dragonflies",
+        "links": [
+            ("#odonates", "Overview"),
+            ("#odonate-gap", "Targets"),
+            ("#odonate-methods", "Survey methods"),
+        ],
+    },
+    "birds": {
+        "label": "Birds",
+        "links": [
+            ("#birds", "Overview"),
+            ("#bird-recent", "Recent"),
+            ("#bird-gap", "Seasonal targets"),
+            ("#bird-methods", "Field guide"),
+        ],
+    },
+    "mammals": {
+        "label": "Mammals",
+        "links": [
+            ("#mammals", "Overview"),
+            ("#mammal-gap", "Targets"),
+            ("#mammal-methods", "Survey methods"),
+        ],
+    },
+    "plants": {
+        "label": "Plants",
+        "links": [
+            ("#plants", "Overview"),
+            ("#plant-gap", "Targets"),
+            ("#plant-methods", "Survey methods"),
+        ],
+    },
+    "amphibians": {
+        "label": "Herps",
+        "links": [
+            ("#amphibians", "Amphibians"),
+            ("#reptiles-found", "Reptiles"),
+            ("#amphibian-gap", "Targets"),
+            ("#amphibian-methods", "Survey methods"),
+        ],
+    },
+    "log": {
+        "label": "Log",
+        "links": [("#log-journal", "Field journal")],
+    },
+}
+
+
+def anchor_alias(*ids):
+    """Preserve durable deep links when two top-level chapters are combined."""
+    return "".join(
+        f'<span id="{esc(id_)}" class="anchor-alias" aria-hidden="true"></span>'
+        for id_ in ids
+    )
+
+
+def _section_flow(id_, dark=False):
+    """Render the sequential trail between top-level sections in one view."""
+    current_href = f"#{id_}"
+    for config in VIEW_CONFIG.values():
+        internal = [(href, label) for href, label in config["links"]
+                    if href.startswith("#")]
+        hrefs = [href for href, _ in internal]
+        if current_href not in hrefs:
+            continue
+        if len(internal) < 2:
+            return ""
+        index = hrefs.index(current_href)
+        previous = internal[index - 1] if index else None
+        following = internal[index + 1] if index + 1 < len(internal) else internal[0]
+        border = "border-white/10" if dark else "border-stone-200"
+        muted = "text-white/35" if dark else "text-stone-400"
+        link = "text-white hover:text-hollow-300" if dark else "text-stone-700 hover:text-hollow-700"
+        previous_html = (
+            f'<a href="{previous[0]}" class="section-flow-link {link}">'
+            f'<span aria-hidden="true">←</span><span><small>Previous</small>{previous[1]}</span></a>'
+            if previous else '<span aria-hidden="true"></span>'
+        )
+        next_label = "Next" if index + 1 < len(internal) else "Back to start"
+        following_html = (
+            f'<a href="{following[0]}" class="section-flow-link section-flow-next {link}">'
+            f'<span><small>{next_label}</small>{following[1]}</span>'
+            f'<span aria-hidden="true">{"→" if next_label == "Next" else "↥"}</span></a>'
+        )
+        return (
+            f'<nav class="section-flow mt-16 pt-6 border-t {border}" '
+            f'aria-label="Continue through {config["label"]}">'
+            f'{previous_html}'
+            f'<span class="section-flow-count {muted}">{index + 1:02d} / {len(internal):02d}</span>'
+            f'{following_html}</nav>'
+        )
+    return ""
+
+
 def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
     bg = "bg-hollow-950" if dark else (tint or "")
     eb = "text-hollow-400" if dark else "text-hollow-500"
@@ -156,15 +290,16 @@ def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
     intro_html = (f'<p class="{ic} text-[1.05rem] leading-relaxed max-w-2xl '
                   f'mx-auto mt-5">{intro}</p>') if intro else ""
     return f"""
-<section id="{id_}" class="reveal py-24 px-6 {bg}">
+<section id="{id_}" class="reveal py-24 px-6 {bg}" aria-labelledby="{id_}-title">
   <div class="max-w-6xl mx-auto">
     <div class="text-center mb-14">
       <p class="{eb} font-medium tracking-[0.25em] uppercase text-xs mb-4">{eyebrow}</p>
       <span class="rule block mx-auto mb-6"></span>
-      <h2 class="font-serif text-4xl md:text-5xl {tc} font-bold leading-tight">{title_html}</h2>
+      <h2 id="{id_}-title" class="font-serif text-4xl md:text-5xl {tc} font-bold leading-tight">{title_html}</h2>
       {intro_html}
     </div>
     {body}
+    {_section_flow(id_, dark)}
   </div>
 </section>"""
 
@@ -1698,93 +1833,84 @@ window.__plotlyRender=(...args)=>window.__plotlyQueue.push(args);
 
 
 def nav():
-    all_links = [("#whats-new", "What's New"), ("#discovery", "Discovery"),
-                 ("#unique", "Unique Finds"), ("#life-list", "Life List"),
-                 ("#gallery", "Gallery")]
-    moth_links = [("#moths", "Overview"), ("#moth-gallery", "Recent"),
-                  ("#moth-gap", "Gap List"),
-                  ("#moth-families", "Families"), ("#moth-standouts", "Standouts"),
-                  ("#moth-completeness", "Inventory"), ("#moth-diversity", "Diversity"),
-                  ("#moth-calendar", "Calendar"), ("#moth-methods", "Find More")]
-    butterfly_links = [("#butterflies", "Found"),
-                       (tiger_swallowtail.CASE_ROUTE, "Tiger study"),
-                       ("#butterfly-gap", "Gap List"),
-                       ("#butterfly-methods", "Find More")]
-    odonate_links = [("#odonates", "Found"), ("#odonate-gap", "Gap List"),
-                     ("#odonate-methods", "Find More")]
-    bird_links = [("#birds", "Found"), ("#bird-recent", "Recent"),
-                  ("#bird-gap", "Targets"), ("#bird-methods", "Field Guide")]
-    mammal_links = [("#mammals", "Found"), ("#mammal-gap", "Gap List"),
-                    ("#mammal-methods", "Find More")]
-    plant_links = [("#plants", "Found"), ("#plant-gap", "Gap List"),
-                   ("#plant-methods", "Find More")]
-    amphibian_links = [("#amphibians", "Amphibians"), ("#reptiles-found", "Reptiles"),
-                       ("#amphibian-gap", "Gap List"), ("#amphibian-methods", "Find More")]
-    log_links = [("#log-journal", "Field Journal")]
-
-    # One source of truth for the view switcher, used by both toggles.
-    modes = [("all", "All life"), ("moths", "Moths"), ("butterflies", "Butterflies"),
-             ("odonates", "Dragonflies"),
-             ("birds", "Birds"), ("mammals", "Mammals"), ("plants", "Plants"),
-             ("amphibians", "Herps"), ("log", "Log")]
-
-    def mode_buttons():
+    def mode_buttons(context):
         return "".join(
-            f'<button class="mode-btn{" mode-active" if m == "all" else ""}" '
-            f'data-mode="{m}" aria-pressed="{"true" if m == "all" else "false"}">{label}</button>'
-            for m, label in modes)
+            f'<button class="mode-btn{" mode-active" if mode == "all" else ""}" '
+            f'data-mode="{mode}" aria-pressed="{"true" if mode == "all" else "false"}" '
+            f'data-context="{context}">{config["label"]}</button>'
+            for mode, config in VIEW_CONFIG.items())
 
-    def links_html(links, item_cls):
-        return "".join(f'<a href="{h}" class="{item_cls}">{t}</a>' for h, t in links)
-    desk_cls = "nav-link text-white/80 hover:text-white text-sm font-medium transition-colors"
-    mob_cls = "text-white/80 hover:text-white text-sm py-1"
-    desktop_links = (
-        f'<span class="links-all flex items-center gap-6">{links_html(all_links, desk_cls)}</span>'
-        f'<span class="links-moths hidden items-center gap-6">{links_html(moth_links, desk_cls)}</span>'
-        f'<span class="links-butterflies hidden items-center gap-6">{links_html(butterfly_links, desk_cls)}</span>'
-        f'<span class="links-odonates hidden items-center gap-6">{links_html(odonate_links, desk_cls)}</span>'
-        f'<span class="links-birds hidden items-center gap-6">{links_html(bird_links, desk_cls)}</span>'
-        f'<span class="links-mammals hidden items-center gap-6">{links_html(mammal_links, desk_cls)}</span>'
-        f'<span class="links-plants hidden items-center gap-6">{links_html(plant_links, desk_cls)}</span>'
-        f'<span class="links-amphibians hidden items-center gap-6">{links_html(amphibian_links, desk_cls)}</span>'
-        f'<span class="links-log hidden items-center gap-6">{links_html(log_links, desk_cls)}</span>')
-    mob_links = (
-        f'<div class="links-all flex flex-col gap-3">{links_html(all_links, mob_cls)}</div>'
-        f'<div class="links-moths hidden flex-col gap-3">{links_html(moth_links, mob_cls)}</div>'
-        f'<div class="links-butterflies hidden flex-col gap-3">{links_html(butterfly_links, mob_cls)}</div>'
-        f'<div class="links-odonates hidden flex-col gap-3">{links_html(odonate_links, mob_cls)}</div>'
-        f'<div class="links-birds hidden flex-col gap-3">{links_html(bird_links, mob_cls)}</div>'
-        f'<div class="links-mammals hidden flex-col gap-3">{links_html(mammal_links, mob_cls)}</div>'
-        f'<div class="links-plants hidden flex-col gap-3">{links_html(plant_links, mob_cls)}</div>'
-        f'<div class="links-amphibians hidden flex-col gap-3">{links_html(amphibian_links, mob_cls)}</div>'
-        f'<div class="links-log hidden flex-col gap-3">{links_html(log_links, mob_cls)}</div>')
-    toggle = (
-        '<div class="mode-toggle flex flex-wrap items-center justify-end rounded-2xl '
-        'p-0.5 gap-0.5 bg-white/10 border border-white/15" role="group" aria-label="Switch view">'
-        f'{mode_buttons()}</div>')
+    def section_links(mode, mobile=False):
+        items = []
+        sequence = 0
+        for href, label in VIEW_CONFIG[mode]["links"]:
+            external = not href.startswith("#")
+            if not external:
+                sequence += 1
+            target = ' target="_blank" rel="noopener"' if external else ""
+            item_class = "survey-index-link" if mobile else "section-index-link nav-link"
+            marker = "↗" if external else f"{sequence:02d}"
+            items.append(
+                f'<a href="{href}" class="{item_class}" data-section-href="{href}"{target}>'
+                f'<span class="section-index-number" aria-hidden="true">{marker}</span>'
+                f'<span>{label}</span></a>'
+            )
+        display = " is-active" if mode == "all" else ""
+        wrapper_class = "survey-index-grid" if mobile else "section-index-track"
+        return (
+            f'<div class="links-{mode} {wrapper_class}{display}" '
+            f'data-section-links="{mode}">{"".join(items)}</div>'
+        )
+
+    desktop_links = "".join(section_links(mode) for mode in VIEW_CONFIG)
+    mobile_links = "".join(section_links(mode, mobile=True) for mode in VIEW_CONFIG)
     return f"""
-<a href="#whats-new" class="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-1 focus:rounded">Skip to content</a>
-<nav id="navbar" class="nav-transparent fixed top-0 inset-x-0 z-50 transition-all duration-300">
-  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-    <a href="{SITE}" class="flex items-center gap-2.5 shrink-0">{LOGO}
-      <span id="nav-brand" class="font-serif text-white text-xl font-semibold tracking-wide transition-colors">Kingfisher Hollow</span></a>
-    <div class="hidden md:flex items-center gap-4">
-      {toggle}
-      <a href="{SITE}" class="text-white/60 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">← Main site</a>
+<a id="skip-link" href="#whats-new" class="sr-only focus:not-sr-only focus:fixed focus:z-[70] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-2 focus:rounded-lg focus:ring-2 focus:ring-hollow-500">Skip to survey content</a>
+<nav id="navbar" aria-label="Survey navigation" class="nav-transparent fixed top-0 inset-x-0 z-50 transition-all duration-300">
+  <div class="nav-primary max-w-6xl mx-auto px-5 sm:px-6 py-3 flex items-center justify-between gap-4">
+    <a href="/" class="survey-brand flex items-center gap-2.5 shrink-0" aria-label="Kingfisher Hollow biodiversity survey home">{LOGO}
+      <span id="nav-brand" class="font-serif text-white text-lg sm:text-xl font-semibold tracking-wide transition-colors">Kingfisher Hollow</span>
+      <span class="brand-divider hidden sm:block" aria-hidden="true"></span>
+      <span class="brand-context hidden sm:block">Survey</span></a>
+    <div class="hidden xl:flex items-center gap-4 min-w-0">
+      <div class="mode-toggle flex items-center rounded-2xl p-0.5 gap-0.5 bg-white/10 border border-white/15" role="group" aria-label="Explore survey views">
+        {mode_buttons("wide")}
+      </div>
+      <a href="{SITE}" class="main-site-link text-white/60 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
     </div>
-    <button onclick="document.getElementById('mob').classList.toggle('hidden')" class="md:hidden text-white p-1" aria-label="Menu">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-  </div>
-  <div id="section-bar" class="hidden md:block">
-    <div class="max-w-6xl mx-auto px-6 py-1.5 flex items-center gap-6">
-      {desktop_links}
+    <div class="xl:hidden flex items-center gap-2">
+      <a href="{SITE}" class="main-site-link hidden sm:inline text-white/60 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
+      <button id="survey-menu-button" type="button" class="survey-menu-button" aria-label="Open survey index" aria-expanded="false" aria-controls="survey-menu">
+        <span class="hidden sm:inline">Explore</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path class="menu-open-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/><path class="menu-close-icon hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
     </div>
   </div>
-  <div id="mob" class="hidden md:hidden bg-hollow-950/95 px-6 py-4 flex flex-col gap-4 border-t border-white/10">
-    <div class="mode-toggle flex flex-wrap gap-2" role="group" aria-label="Switch view">{mode_buttons()}</div>
-    <div class="h-px bg-white/10"></div>
-    {mob_links}
-    <a href="{SITE}" class="text-hollow-300 text-sm py-1">← Main site</a>
+  <div id="section-bar" class="hidden lg:block">
+    <div class="section-index-shell max-w-6xl mx-auto px-6">
+      <span class="field-index-label">Field index</span>
+      <div class="section-index-scroll">
+        {desktop_links}
+      </div>
+    </div>
+  </div>
+  <div id="survey-menu" class="survey-menu hidden xl:hidden" aria-hidden="true">
+    <div class="max-w-4xl mx-auto px-6 py-6">
+      <p class="survey-menu-label">Explore the survey</p>
+      <div class="mode-toggle survey-view-grid mt-3" role="group" aria-label="Explore survey views">
+        {mode_buttons("menu")}
+      </div>
+      <div class="survey-menu-rule"></div>
+      <div class="flex items-end justify-between gap-4 mb-3">
+        <div>
+          <p class="survey-menu-label">On this view</p>
+          <p id="survey-menu-view-name" class="font-serif text-2xl text-white mt-1">All life</p>
+        </div>
+        <span id="survey-menu-section-count" class="text-white/35 text-xs tabular-nums">10 sections</span>
+      </div>
+      {mobile_links}
+      <a href="{SITE}" class="inline-flex sm:hidden mt-6 text-hollow-300 text-sm">Main site ↗</a>
+    </div>
   </div>
 </nav>"""
 
@@ -1878,13 +2004,40 @@ def footer(code_updated, insights_updated, data_updated):
 
 SCRIPTS = """
 <script>
-  const navbar=document.getElementById('navbar'),brand=document.getElementById('nav-brand'),
-        navLinks=navbar.querySelectorAll('.nav-link');
+  const navbar=document.getElementById('navbar');
   function updateNav(){const p=window.scrollY>60;navbar.classList.toggle('nav-transparent',!p);
-    navbar.classList.toggle('nav-solid',p);brand.style.color=p?'#1c1917':'#fff';
-    navLinks.forEach(a=>a.style.color=p?'#44403c':'');}
+    navbar.classList.toggle('nav-solid',p);}
   window.addEventListener('scroll',updateNav,{passive:true});updateNav();
-  document.querySelectorAll('#mob a').forEach(a=>a.addEventListener('click',()=>document.getElementById('mob').classList.add('hidden')));
+
+  // Compact survey index for phone and tablet widths.
+  const surveyMenu=document.getElementById('survey-menu'),
+        surveyMenuButton=document.getElementById('survey-menu-button');
+  function setSurveyMenu(open,restoreFocus=false){
+    if(!surveyMenu||!surveyMenuButton) return;
+    surveyMenu.classList.toggle('hidden',!open);
+    surveyMenu.setAttribute('aria-hidden',open?'false':'true');
+    surveyMenuButton.setAttribute('aria-expanded',open?'true':'false');
+    surveyMenuButton.setAttribute('aria-label',open?'Close survey index':'Open survey index');
+    surveyMenuButton.querySelector('.menu-open-icon')?.classList.toggle('hidden',open);
+    surveyMenuButton.querySelector('.menu-close-icon')?.classList.toggle('hidden',!open);
+    document.body.classList.toggle('survey-menu-open',open);
+    if(!open&&restoreFocus) surveyMenuButton.focus();
+  }
+  surveyMenuButton?.addEventListener('click',()=>{
+    setSurveyMenu(surveyMenuButton.getAttribute('aria-expanded')!=='true');
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&surveyMenuButton?.getAttribute('aria-expanded')==='true'){
+      setSurveyMenu(false,true);
+    }
+  });
+  const wideNav=window.matchMedia('(min-width: 1280px)');
+  wideNav.addEventListener?.('change',event=>{if(event.matches)setSurveyMenu(false,false);});
+  document.querySelectorAll('#survey-menu a').forEach(link=>link.addEventListener('click',()=>{
+    const internal=link.getAttribute('href')?.startsWith('#');
+    setSurveyMenu(false,internal);
+    if(internal) requestAnimationFrame(()=>surveyMenuButton?.focus());
+  }));
 
   // Life-list filters: broad group first, then family within that group.
   (function(){
@@ -1974,34 +2127,130 @@ SCRIPTS = """
     charts.forEach(chart=>chartObserver.observe(chart));
   })();
 
-  // Mode toggle: one page, multiple focused views.
+  // Survey views, durable deep links, and the active field-index marker.
   (function(){
-    const MODES=['all','moths','butterflies','odonates','birds','mammals','plants','amphibians','log'];
+    const MODES=[...document.querySelectorAll('[id^="view-"]')]
+      .map(view=>view.id.replace('view-',''));
     const views=Object.fromEntries(MODES.map(m=>[m,document.getElementById('view-'+m)]));
-    function setMode(mode,force){
+    const skipLink=document.getElementById('skip-link'),
+          menuViewName=document.getElementById('survey-menu-view-name'),
+          menuSectionCount=document.getElementById('survey-menu-section-count');
+    let activeSection='';
+
+    function modeForHash(hash){
+      if(!hash||hash==='#') return 'all';
+      let target=null;
+      try{target=document.getElementById(decodeURIComponent(hash.slice(1)));}
+      catch(_error){return 'all';}
+      const view=target?.closest('[id^="view-"]');
+      return view?.id.replace('view-','')||'all';
+    }
+
+    function internalSectionLinks(mode){
+      return [...document.querySelectorAll(
+        `.section-index-track[data-section-links="${mode}"] a[data-section-href^="#"]`
+      )];
+    }
+
+    function setActiveSection(id,bringIntoView=false){
+      if(!id||id===activeSection) return;
+      activeSection=id;
+      document.querySelectorAll('[data-section-href^="#"]').forEach(link=>{
+        const current=link.dataset.sectionHref==='#'+id;
+        link.classList.toggle('is-current',current);
+        if(current) link.setAttribute('aria-current','location');
+        else link.removeAttribute('aria-current');
+      });
+      if(bringIntoView){
+        const current=document.querySelector(
+          `.section-index-track.is-active [data-section-href="#${id}"]`
+        );
+        const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        current?.scrollIntoView({block:'nearest',inline:'center',behavior:reduced?'auto':'smooth'});
+      }
+    }
+
+    function setMode(mode,{reveal=false,updateUrl=false}={}){
       if(!MODES.includes(mode)) mode='all';
       document.body.dataset.mode=mode;
-      MODES.forEach(m=>views[m]&&views[m].classList.toggle('hidden',m!==mode));
-      // Swap nav link set to match active view.
       MODES.forEach(m=>{
-        document.querySelectorAll('.links-'+m).forEach(e=>{
-          const on=mode===m;e.classList.toggle('hidden',!on);e.classList.toggle('flex',on);});});
+        const on=m===mode;
+        if(views[m]){
+          views[m].classList.toggle('hidden',!on);
+          if(on) views[m].removeAttribute('aria-hidden');
+          else views[m].setAttribute('aria-hidden','true');
+        }
+        document.querySelectorAll('[data-section-links="'+m+'"]').forEach(group=>{
+          group.classList.toggle('is-active',on);
+        });
+      });
       document.querySelectorAll('.mode-btn').forEach(b=>{const on=b.dataset.mode===mode;
         b.classList.toggle('mode-active',on);b.setAttribute('aria-pressed',on?'true':'false');});
-      const hashes={moths:'#moths',butterflies:'#butterflies',odonates:'#odonates',birds:'#birds',mammals:'#mammals',plants:'#plants',amphibians:'#amphibians',log:'#log'};
-      history.replaceState(null,'',hashes[mode]||location.pathname);
-      updateNav&&updateNav();
-      if(force){
+      const first=internalSectionLinks(mode)[0],
+            firstHref=first?.dataset.sectionHref||'',
+            label=views[mode]?.dataset.viewLabel||mode;
+      if(skipLink&&firstHref) skipLink.href=firstHref;
+      if(menuViewName) menuViewName.textContent=label;
+      if(menuSectionCount){
+        const count=internalSectionLinks(mode).length;
+        menuSectionCount.textContent=count+' section'+(count===1?'':'s');
+      }
+      if(updateUrl){
+        history.replaceState(null,'',mode==='all'?location.pathname:firstHref);
+      }
+      updateNav();
+      if(reveal){
         document.querySelectorAll('#view-'+mode+' .reveal').forEach(el=>el.classList.add('in'));
         window.dispatchEvent(new Event('resize'));
       }
+      const hashTarget=location.hash
+        ? document.getElementById(location.hash.slice(1))
+        : null;
+      const hashSection=hashTarget?.matches('section[id]')
+        ? hashTarget
+        : hashTarget?.closest('section[id]');
+      const initial=(hashTarget?.closest('[id^="view-"]')===views[mode])
+        ? (hashSection?.id||hashTarget.id)
+        : firstHref.slice(1);
+      activeSection='';
+      setActiveSection(initial,false);
     }
+
     document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{
-      setMode(b.dataset.mode,true);window.scrollTo({top:0,behavior:'smooth'});
-      document.getElementById('mob').classList.add('hidden');}));
-    const h=location.hash;
-    const fromHash={['#moths']:'moths',['#butterflies']:'butterflies',['#odonates']:'odonates',['#birds']:'birds',['#mammals']:'mammals',['#plants']:'plants',['#amphibians']:'amphibians',['#log']:'log'};
-    setMode(fromHash[h]||'all', h in fromHash);
+      const fromMenu=b.dataset.context==='menu';
+      setMode(b.dataset.mode,{reveal:true,updateUrl:true});
+      setSurveyMenu(false,fromMenu);
+      window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    }));
+
+    document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{
+      const target=document.getElementById(link.getAttribute('href').slice(1)),
+            targetView=target?.closest('[id^="view-"]');
+      if(targetView&&targetView.classList.contains('hidden')){
+        setMode(targetView.id.replace('view-',''),{reveal:true,updateUrl:false});
+      }
+    }));
+
+    const sectionObserver=new IntersectionObserver(entries=>{
+      const visible=entries.filter(entry=>entry.isIntersecting)
+        .sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
+      if(visible[0]) setActiveSection(visible[0].target.id,true);
+    },{rootMargin:'-18% 0px -68% 0px',threshold:0});
+    document.querySelectorAll('#survey-content > [id^="view-"] > section[id]')
+      .forEach(section=>sectionObserver.observe(section));
+
+    function applyHash(){
+      const hash=location.hash,mode=modeForHash(hash);
+      setMode(mode,{reveal:Boolean(hash),updateUrl:false});
+      if(hash){
+        const target=document.getElementById(hash.slice(1));
+        if(target){
+          requestAnimationFrame(()=>target.scrollIntoView({block:'start'}));
+        }
+      }
+    }
+    window.addEventListener('hashchange',applyHash);
+    applyHash();
   })();
 
   // Log view: trigger a private survey data refresh.
@@ -2151,13 +2400,18 @@ def moth_view(df, stats):
             _dark_stat(f"{comp['q2']}", "On just two nights"),
             _dark_stat(f"{comp['nights']}", "Survey nights"),
         ]) + '</div>')
-    out.append(section(
-        "moth-completeness", "How Complete?",
-        'The Inventory, <em class="text-hollow-300">Estimated</em>',
-        once_band
-        + chart_card(viz.completeness_curve(eff, comp),
-                     note=f"Chao2 uses the ratio of species seen on exactly one night (Q1) vs. exactly two nights (Q2) across {comp['nights']} survey sessions to project undetected species. Shaded band: 95% CI. The curve hasn't flattened yet.",
-                     dark=True)
+    inventory_status_body = (
+        '<div class="mb-8 text-center">'
+          '<p class="text-hollow-300 text-xs font-semibold uppercase tracking-[0.18em]">'
+            'Status 1 · Coverage</p>'
+          '<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
+            'How much remains?</h3>'
+        '</div>'
+        + once_band
+        + chart_card(
+            viz.completeness_curve(eff, comp),
+            note=f"Chao2 uses the ratio of species seen on exactly one night (Q1) vs. exactly two nights (Q2) across {comp['nights']} survey sessions to project undetected species. Shaded band: 95% CI. The curve hasn't flattened yet.",
+            dark=True)
         + takeaway(
             f"Of the <strong>{comp['observed']}</strong> moth species confirmed here, "
             f"<strong>{comp['q1']}</strong> have appeared on exactly one night — seen once and not since. "
@@ -2169,16 +2423,23 @@ def moth_view(df, stats):
             f"it may be conservative. The roughly {comp['remaining']} undetected "
             f"species aren't evenly distributed; they're concentrated in cold-season moths, bait-feeders, canopy "
             f"species, and micro-moth families that a UV sheet samples poorly. Targeted work on the photo-workable "
-            f"Tortricidae and host-linked micros would close the most useful part of the gap.", dark=True),
-        intro=f"{comp['observed']:,} species confirmed. Statistical modeling puts the true total around {comp['estimated']:,}. Here's the evidence for that gap — and how fast it's closing.",
-        dark=True))
-    out.append(section(
-        "moth-diversity", "Diversity",
-        'A <em class="text-hollow-300">Balanced</em> Community',
-        moth_diversity_body(div)
-        + chart_card(viz.rank_abundance(div.get("rank_abundance", [])),
-                     note="Species ranked by total records, log scale. A steep initial drop followed by a long flat tail indicates high evenness — no species dominates. Terracotta: species recorded only once or twice.",
-                     dark=True)
+            f"Tortricidae and host-linked micros would close the most useful part of the gap.", dark=True)
+        + anchor_alias("moth-diversity")
+        + '<div class="mt-16 border-t border-white/10 pt-14">'
+          '<div class="mx-auto mb-9 max-w-3xl text-center">'
+            '<p class="text-hollow-300 text-xs font-semibold uppercase tracking-[0.18em]">'
+              'Status 2 · Community structure</p>'
+            '<h3 class="mt-2 font-serif text-3xl font-bold text-white md:text-4xl">'
+              'How evenly is life distributed?</h3>'
+            '<p class="mt-3 text-sm leading-6 text-white/55">'
+              'Completeness estimates how much remains unseen. Evenness tests whether the documented '
+              'community is broad or dominated by only a few common species.</p>'
+          '</div>'
+        + moth_diversity_body(div)
+        + chart_card(
+            viz.rank_abundance(div.get("rank_abundance", [])),
+            note="Species ranked by total records, log scale. A steep initial drop followed by a long flat tail indicates high evenness — no species dominates. Terracotta: species recorded only once or twice.",
+            dark=True)
         + takeaway(
             "A rank-abundance curve for a degraded habitat drops steeply: one or two species dominate, the "
             "rest are noise. This one doesn't. It slopes gently across hundreds of species — no single "
@@ -2187,8 +2448,14 @@ def moth_view(df, stats):
             f"predict from a site with {plant_count:,} wild/established plant species on 30 acres, each supporting distinct moth guilds, "
             "with the three-province ecotone adding guild diversity on top. "
             "The long flat tail on the right — all the once-or-twice-seen species — is the frontier of "
-            "what's still being found.", dark=True),
-        intro="Is the moth community dominated by a handful of species, or is it broadly distributed? The diversity metrics give an unusually clear answer.",
+            "what's still being found.", dark=True)
+        + '</div>'
+    )
+    out.append(section(
+        "moth-completeness", "Inventory Status",
+        'Inventory <em class="text-hollow-300">Status</em>',
+        inventory_status_body,
+        intro=f"{comp['observed']:,} species are confirmed, with the true property total estimated near {comp['estimated']:,}. Coverage and community evenness answer two different questions about how mature—and how ecologically broad—the inventory has become.",
         dark=True))
 
     # Combined calendar section: Month by Month + On the Wing + Phenology
@@ -2809,15 +3076,32 @@ def build():
     moths_for_header = _timed("load-moths-header", analyze.load_moths)
     moth_head_count = _timed("moth-summary-header", analyze.moth_summary, df, moths_for_header)["species"]
     parts = [head(public_s, county_firsts, moth_head_count), nav()]
+    parts.append('<main id="survey-content">')
 
     # ── All-life view (light) ────────────────────────────────────────────────
     section_start = time.monotonic()
-    parts.append('<div id="view-all">')
+    parts.append('<div id="view-all" data-view-label="All life">')
     parts.append(hero(public_s, county_firsts))
+    latest_body = (
+        whats_new_body(analyze.whats_new(df, stats))
+        + anchor_alias("gallery")
+        + '<div class="mt-16 border-t border-stone-200 pt-12">'
+          '<div class="mb-7 text-center">'
+            '<p class="text-hollow-500 font-medium tracking-[0.2em] uppercase text-xs mb-3">'
+              'Recent evidence</p>'
+            '<h3 class="font-serif text-3xl md:text-4xl font-bold text-stone-900">'
+              'More from the latest survey work</h3>'
+            '<p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-stone-500">'
+              'Recent research-grade photographs from iNaturalist—the visual record '
+              'behind both new additions and return sightings.</p>'
+          '</div>'
+        + gallery_body(analyze.photo_highlights(df))
+        + '</div>'
+    )
     parts.append(section(
         "whats-new", "Latest", 'What\'s <em class="text-hollow-600">New</em>',
-        whats_new_body(analyze.whats_new(df, stats)),
-        intro="Species recorded at Kingfisher Hollow for the first time. Some are also first iNaturalist records for Tioga County, which makes them important additions to the public record even when the species is probably present elsewhere nearby.",
+        latest_body,
+        intro="Start with species added to the Kingfisher Hollow list, then scan the latest photographic evidence—including return sightings that show what remains active now.",
         tint="bg-stone-100"))
     parts.append(section(
         "discovery", "The Story So Far",
@@ -2835,11 +3119,15 @@ def build():
             "different slice of the site."),
         intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
-    # ── Rarity arc: emotional hook (county firsts) → the analytical payoff ────
-    parts.append(section(
-        "unique", "How Unique",
-        'County <em class="text-hollow-300">Firsts</em>',
-        showcase_body(analyze.county_first_showcase(df, stats))
+    # ── Distinctiveness arc: public county contribution → rarity test ─────────
+    distinctiveness_body = (
+        '<div class="mb-7 text-center">'
+          '<p class="text-hollow-300 text-xs font-semibold uppercase tracking-[0.18em]">'
+            'Evidence 1 · County contribution</p>'
+          '<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
+            'First in the public county record</h3>'
+        '</div>'
+        + showcase_body(analyze.county_first_showcase(df, stats))
         + takeaway(
             f"{county_firsts:,} county-first iNaturalist records means Kingfisher Hollow has added {county_firsts:,} species "
             "to Tioga County's public, photo-vouchered baseline. That is not the same as proving each species "
@@ -2848,26 +3136,41 @@ def build():
             "regional likelihood into documented county evidence, especially for moths and plants tied to "
             "Michigan Creek's transition-zone habitats. The newest cluster is especially instructive: leafminers, "
             "leafrollers, small beetles, flies, barklice, and planthoppers dominate it, exactly the groups most likely "
-            "to be missed where close photography and specialist attention are sparse.", dark=True),
-        intro="For each of these species, Kingfisher Hollow currently holds the first iNaturalist record in Tioga County. That strengthens the county baseline and flags records worth checking against other sources when they look unusual.",
-        dark=True))
-    rarity_body = (
-        chart_card(viz.uniqueness_scatter(stats),
-                   note="Each dot is one species. X-axis: NY public-record scarcity (further left = fewer statewide records). Y-axis: frequency at Kingfisher Hollow. Terracotta: first iNaturalist record for Tioga County.")
+            "to be missed where close photography and specialist attention are sparse.", dark=True)
+        + anchor_alias("uniqueness")
+        + '<div class="mt-16 rounded-3xl bg-stone-100 p-5 text-stone-900 shadow-2xl '
+          'shadow-black/15 md:p-10">'
+          '<div class="mx-auto mb-9 max-w-3xl text-center">'
+            '<p class="text-hollow-600 text-xs font-semibold uppercase tracking-[0.18em]">'
+              'Evidence 2 · Rarity test</p>'
+            '<h3 class="mt-2 font-serif text-3xl font-bold md:text-4xl">'
+              'Then test the signal</h3>'
+            '<p class="mt-3 text-sm leading-6 text-stone-500">'
+              'Statewide scarcity and repeated local presence separate records that merely fill '
+              'a county data gap from patterns that deserve closer ecological or identification review.</p>'
+          '</div>'
+        + chart_card(
+            viz.uniqueness_scatter(stats),
+            note="Each dot is one species. X-axis: NY public-record scarcity (further left = fewer statewide records). Y-axis: frequency at Kingfisher Hollow. Terracotta: first iNaturalist record for Tioga County.")
         + takeaway(
             "Upper-left is the territory to investigate: few public New York records, but repeated records here. "
             "Some dots may be genuinely notable; others are under-documented groups, hard IDs, or observer-bias "
             "artifacts. The expert move is to check evidence quality, host plant, habitat, and outside sources "
             "before turning a low iNaturalist count into a rarity claim.")
-        + '<h3 class="font-serif text-2xl font-bold text-stone-900 text-center mt-14 mb-6">'
-          'The rarest of them</h3>'
-        + rarest_body(analyze.rarest_finds(df, stats)))
+        + '<h3 class="mt-14 mb-2 text-center font-serif text-2xl font-bold text-stone-900">'
+            'Records that deserve a closer look</h3>'
+          '<p class="mx-auto mb-6 max-w-2xl text-center text-sm leading-6 text-stone-500">'
+            'These have especially small New York iNaturalist footprints. They are review priorities, '
+            'not automatic rarity claims.</p>'
+        + rarest_body(analyze.rarest_finds(df, stats))
+        + '</div>'
+    )
     parts.append(section(
-        "uniqueness", "The Big Picture",
-        'Common Here, <em class="text-hollow-600">Rare There</em>',
-        rarity_body,
-        intro="Each dot is a species, plotted by public New York record scarcity against frequency here. The upper-left corner is where the site may be saying something real, but it needs expert context before it becomes a rarity claim.",
-        tint="bg-stone-100"))
+        "unique", "Distinctiveness",
+        'What Stands Out — <em class="text-hollow-300">and Why</em>',
+        distinctiveness_body,
+        intro="County-first records show where Kingfisher Hollow strengthens Tioga County’s public baseline. Statewide scarcity, repeat observations, habitat, and evidence quality then show which records may carry a stronger signal.",
+        dark=True))
 
     parts.append(section(
         "life-list", "The Full Roll",
@@ -2913,11 +3216,6 @@ def build():
         intro="The survey exists because people showed up and submitted what they found. Each bar is one person's contribution; hover to see how many species only they have found here.",
         tint="bg-stone-100"))
     parts.append(section(
-        "gallery", "In Pictures",
-        'Recent <em class="text-hollow-600">Sightings</em>',
-        gallery_body(analyze.photo_highlights(df)),
-        intro="Recent research-grade photographs from iNaturalist — the visual evidence behind the species count."))
-    parts.append(section(
         "map", "Where", 'On the <em class="text-hollow-600">Land</em>',
         chart_card(viz.obs_map(df))
         + takeaway(
@@ -2931,42 +3229,42 @@ def build():
     _log_timing("all-life-view", section_start)
 
     # ── Moths view (dark) ────────────────────────────────────────────────────
-    parts.append('<div id="view-moths" class="hidden">')
+    parts.append('<div id="view-moths" class="hidden" data-view-label="Moths" aria-hidden="true">')
     parts.append(_timed("moth-view", moth_view, df, stats))
     parts.append('</div>')  # /view-moths
 
     # ── Butterflies view (dark) ──────────────────────────────────────────────
-    parts.append('<div id="view-butterflies" class="hidden">')
+    parts.append('<div id="view-butterflies" class="hidden" data-view-label="Butterflies" aria-hidden="true">')
     parts.append(_timed("butterflies-view", butterflies_view, df, stats))
     parts.append('</div>')  # /view-butterflies
 
     # ── Dragonflies and damselflies view (dark) ──────────────────────────────
-    parts.append('<div id="view-odonates" class="hidden">')
+    parts.append('<div id="view-odonates" class="hidden" data-view-label="Dragonflies" aria-hidden="true">')
     parts.append(_timed("odonates-view", odonates_view, df, stats))
     parts.append('</div>')  # /view-odonates
 
     # ── Birds view (dark, eBird-backed) ──────────────────────────────────────
-    parts.append('<div id="view-birds" class="hidden">')
+    parts.append('<div id="view-birds" class="hidden" data-view-label="Birds" aria-hidden="true">')
     parts.append(_timed("birds-view", birds_view))
     parts.append('</div>')  # /view-birds
 
     # ── Mammals view (dark) ──────────────────────────────────────────────────
-    parts.append('<div id="view-mammals" class="hidden">')
+    parts.append('<div id="view-mammals" class="hidden" data-view-label="Mammals" aria-hidden="true">')
     parts.append(_timed("mammals-view", mammals_view, df, stats))
     parts.append('</div>')  # /view-mammals
 
     # ── Plants view (dark) ───────────────────────────────────────────────────
-    parts.append('<div id="view-plants" class="hidden">')
+    parts.append('<div id="view-plants" class="hidden" data-view-label="Plants" aria-hidden="true">')
     parts.append(_timed("plants-view", plants_view, df, stats))
     parts.append('</div>')  # /view-plants
 
     # ── Amphibians view (dark) ───────────────────────────────────────────────
-    parts.append('<div id="view-amphibians" class="hidden">')
+    parts.append('<div id="view-amphibians" class="hidden" data-view-label="Herps" aria-hidden="true">')
     parts.append(_timed("amphibians-view", amphibians_view, df, stats))
     parts.append('</div>')  # /view-amphibians
 
     # ── Log view (light, journal) ────────────────────────────────────────────
-    parts.append('<div id="view-log" class="hidden">')
+    parts.append('<div id="view-log" class="hidden" data-view-label="Log" aria-hidden="true">')
     log_entries = _timed("activity-log", analyze.activity_log, df, stats)
     weather_cache = _timed("load-weather", weather.load_weather)
     id_changes = _timed("id-changes", _load_id_changes)
@@ -2977,6 +3275,7 @@ def build():
         + id_changes_body(id_changes),
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
     parts.append('</div>')  # /view-log
+    parts.append('</main>')
 
     parts.append(footer(_code_updated(), _insights_updated(), data_updated_date()))
     parts.append(SCRIPTS.replace("__PLOTLY_CDN__", PLOTLY_CDN))
