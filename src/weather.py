@@ -1,12 +1,24 @@
-"""Weather data for the activity log: Open-Meteo historical API + moon phase."""
+"""Weather data for the activity log and moth-night planning.
+
+Historical conditions are cached in SQLite.  The shorter-lived Open-Meteo
+forecast is cached as JSON so a temporary API failure does not remove the
+planning panel from the published report.
+"""
 
 import datetime
+import json
+import math
 import time
+import urllib.parse
+import urllib.request
 
-from config import PROPERTY_LAT, PROPERTY_LON
+from config import DATA_DIR, PROPERTY_LAT, PROPERTY_LON
 from db import connect
 
 _OPEN_METEO_ARCHIVE = "https://archive-api.open-meteo.com/v1/archive"
+_OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast"
+_FORECAST_CACHE = DATA_DIR / "cache" / "moth_forecast.json"
+_FORECAST_CACHE_TTL_SECONDS = 3 * 60 * 60
 
 # Cardinal direction labels for wind bearing (16 points).
 _WIND_DIRS = [
@@ -86,10 +98,6 @@ def _fetch_range(start_date, end_date):
                         temp_f_9pm, humidity_9pm, wind_mph_9pm, wind_dir_9pm}}
     Open-Meteo archive has a ~5-day lag; dates too recent are silently absent.
     """
-    import urllib.request
-    import json
-    import urllib.parse
-
     params = urllib.parse.urlencode({
         "latitude": PROPERTY_LAT,
         "longitude": PROPERTY_LON,
@@ -175,6 +183,171 @@ def _fetch_range(start_date, end_date):
             "wind_dir_9pm": round(wd9) if wd9 is not None else None,
         }
     return out
+
+
+def moon_illumination(fraction):
+    """Approximate illuminated fraction of the moon, from 0 (new) to 1 (full)."""
+    if fraction is None:
+        return None
+    return (1 - math.cos(2 * math.pi * fraction)) / 2
+
+
+def _forecast_rows(data):
+    """Normalize one Open-Meteo forecast response into nightly planning rows."""
+    daily = data.get("daily", {})
+    hourly = data.get("hourly", {})
+    daily_dates = daily.get("time", [])
+    daily_precip = daily.get("precipitation_sum", [])
+    daily_rain_chance = daily.get("precipitation_probability_max", [])
+
+    hourly_times = hourly.get("time", [])
+    hourly_index = {stamp: i for i, stamp in enumerate(hourly_times)}
+    hourly_temp = hourly.get("temperature_2m", [])
+    hourly_humidity = hourly.get("relative_humidity_2m", [])
+    hourly_wind = hourly.get("wind_speed_10m", [])
+    hourly_wind_dir = hourly.get("wind_direction_10m", [])
+    hourly_cloud = hourly.get("cloud_cover", [])
+    hourly_rain_chance = hourly.get("precipitation_probability", [])
+
+    def _at(date_str, hour, values):
+        index = hourly_index.get(f"{date_str}T{hour:02d}:00")
+        if index is None or index >= len(values):
+            return None
+        value = values[index]
+        return None if value is None or value != value else value
+
+    def _daily(values, index):
+        if index >= len(values):
+            return None
+        value = values[index]
+        return None if value is None or value != value else value
+
+    rows = []
+    for index, date_str in enumerate(daily_dates):
+        date = datetime.date.fromisoformat(date_str)
+        phase, moon_name = moon_phase(date)
+        temp_c = _at(date_str, 21, hourly_temp)
+        wind_kmh = _at(date_str, 21, hourly_wind)
+        precip_mm = _daily(daily_precip, index)
+        rain_chance = _daily(daily_rain_chance, index)
+        if rain_chance is None:
+            rain_chance = _at(date_str, 21, hourly_rain_chance)
+        rows.append({
+            "date": date_str,
+            "temp_f_9pm": round(_c_to_f(temp_c)) if temp_c is not None else None,
+            "humidity_9pm": (
+                round(_at(date_str, 21, hourly_humidity))
+                if _at(date_str, 21, hourly_humidity) is not None else None
+            ),
+            "wind_mph_9pm": (
+                round(_kmh_to_mph(wind_kmh), 1)
+                if wind_kmh is not None else None
+            ),
+            "wind_dir_9pm": (
+                round(_at(date_str, 21, hourly_wind_dir))
+                if _at(date_str, 21, hourly_wind_dir) is not None else None
+            ),
+            "cloud_pct_9pm": (
+                round(_at(date_str, 21, hourly_cloud))
+                if _at(date_str, 21, hourly_cloud) is not None else None
+            ),
+            "rain_chance_pct": round(rain_chance) if rain_chance is not None else None,
+            "precip_in": (
+                round(precip_mm * 0.0393701, 2)
+                if precip_mm is not None else None
+            ),
+            "moon_phase": round(phase, 4),
+            "moon": moon_name,
+            "moon_illumination_pct": round(moon_illumination(phase) * 100),
+        })
+    return rows
+
+
+def _fetch_forecast(days=10):
+    """Fetch upcoming nightly conditions from Open-Meteo."""
+    params = urllib.parse.urlencode({
+        "latitude": PROPERTY_LAT,
+        "longitude": PROPERTY_LON,
+        "forecast_days": days,
+        "daily": "precipitation_sum,precipitation_probability_max",
+        "hourly": ",".join([
+            "temperature_2m",
+            "relative_humidity_2m",
+            "wind_speed_10m",
+            "wind_direction_10m",
+            "cloud_cover",
+            "precipitation_probability",
+        ]),
+        "timezone": "America/New_York",
+        "temperature_unit": "celsius",
+        "wind_speed_unit": "kmh",
+        "precipitation_unit": "mm",
+    })
+    with urllib.request.urlopen(
+        f"{_OPEN_METEO_FORECAST}?{params}", timeout=30
+    ) as response:
+        return _forecast_rows(json.loads(response.read()))
+
+
+def load_forecast(days=10, refresh=True):
+    """Return a resilient upcoming-night forecast with freshness metadata.
+
+    A successful response is cached for later report builds.  If Open-Meteo is
+    unavailable, unexpired future rows from the last response remain visible
+    and are clearly marked as cached.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cached = None
+    if _FORECAST_CACHE.exists():
+        try:
+            cached = json.loads(_FORECAST_CACHE.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            cached = None
+
+    cache_age = (
+        time.time() - _FORECAST_CACHE.stat().st_mtime
+        if cached and _FORECAST_CACHE.exists() else None
+    )
+    should_fetch = refresh and (
+        cached is None
+        or cache_age is None
+        or cache_age >= _FORECAST_CACHE_TTL_SECONDS
+    )
+
+    if should_fetch:
+        try:
+            nights = _fetch_forecast(days=days)
+            cached = {
+                "fetched_at": now.isoformat(),
+                "nights": nights,
+            }
+            _FORECAST_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            _FORECAST_CACHE.write_text(
+                json.dumps(cached, indent=2), encoding="utf-8"
+            )
+            cache_age = 0
+        except Exception as exc:
+            print(f"[report-warning] using cached forecast after API error: {exc}")
+
+    if not cached:
+        return {
+            "fetched_at": None,
+            "nights": [],
+            "is_stale": True,
+            "source": "unavailable",
+        }
+
+    today = datetime.date.today().isoformat()
+    future = [
+        row for row in cached.get("nights", [])
+        if row.get("date", "") >= today
+    ][:days]
+    return {
+        "fetched_at": cached.get("fetched_at"),
+        "nights": future,
+        "is_stale": bool(cache_age is None or cache_age >= 24 * 60 * 60),
+        "source": "cache" if cache_age else "live",
+    }
 
 
 def sync_weather(dates):

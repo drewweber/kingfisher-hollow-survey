@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from html.parser import HTMLParser
 
+import numpy as np
 import pandas as pd
 import requests
 
@@ -1310,6 +1311,393 @@ def moth_nightly_species(df, moths):
         ["species_count", "observation_count"]
     ].astype(int)
     return nightly[columns]
+
+
+def _moth_full_night_counts(
+    sub, min_span_minutes=60, min_observations=31
+):
+    """Distinct species across documented, multi-hour nighttime sessions.
+
+    Timestamps are used only to distinguish a real survey session from an
+    incidental moth record.  Observation count and timestamp density are not
+    treated as effort because this survey documents each species rather than
+    every moth, and travel between stations creates intentional gaps.
+    """
+    columns = [
+        "night",
+        "species_count",
+        "observation_count",
+        "session_span_minutes",
+    ]
+    if sub.empty:
+        return pd.DataFrame(columns=columns)
+    timed = sub.dropna(
+        subset=["id", "taxon_id", "observed_on", "observed_at"]
+    ).drop_duplicates("id").copy()
+    if timed.empty:
+        return pd.DataFrame(columns=columns)
+    timed["timestamp"] = pd.to_datetime(
+        timed["observed_at"], errors="coerce", utc=True
+    )
+    timed["local_hour"] = pd.to_numeric(
+        timed["observed_at"].str[11:13], errors="coerce"
+    )
+    timed = timed.dropna(
+        subset=["timestamp", "local_hour"]
+    ).copy()
+    if timed.empty:
+        return pd.DataFrame(columns=columns)
+    timed = timed[
+        (timed["local_hour"] >= 18) | (timed["local_hour"] < 12)
+    ].copy()
+    if timed.empty:
+        return pd.DataFrame(columns=columns)
+    timed["night"] = pd.to_datetime(_session_dates(timed))
+
+    rows = []
+    for night, group in timed.groupby("night"):
+        group = group.sort_values("timestamp")
+        span_minutes = (
+            group["timestamp"].max() - group["timestamp"].min()
+        ).total_seconds() / 60
+        observation_count = int(group["id"].nunique())
+        if (
+            span_minutes > min_span_minutes
+            and observation_count >= min_observations
+        ):
+            rows.append({
+                "night": pd.Timestamp(night),
+                "species_count": int(group["taxon_id"].nunique()),
+                "observation_count": observation_count,
+                "session_span_minutes": float(span_minutes),
+            })
+    return pd.DataFrame(rows, columns=columns).sort_values(
+        "night"
+    ).reset_index(drop=True)
+
+
+def _ridge_loo_result(features, target):
+    """Best leave-one-out MAE and alpha across a deterministic ridge grid."""
+    if len(target) < 3:
+        return None
+    alphas = (0.1, 0.3, 1.0, 3.0, 10.0, 30.0)
+    best = None
+    for alpha in alphas:
+        predictions = []
+        for held_out in range(len(target)):
+            train = np.arange(len(target)) != held_out
+            train_x = features[train]
+            test_x = features[held_out:held_out + 1]
+            mean = train_x.mean(axis=0)
+            scale = train_x.std(axis=0)
+            scale[scale < 1e-8] = 1
+            train_z = (train_x - mean) / scale
+            test_z = (test_x - mean) / scale
+            train_design = np.column_stack(
+                [np.ones(len(train_z)), train_z]
+            )
+            test_design = np.column_stack([np.ones(1), test_z])
+            penalty = np.eye(train_design.shape[1])
+            penalty[0, 0] = 0
+            coefficients = np.linalg.solve(
+                train_design.T @ train_design + alpha * penalty,
+                train_design.T @ target[train],
+            )
+            predictions.append(float((test_design @ coefficients)[0]))
+        mae = float(np.mean(np.abs(np.asarray(predictions) - target)))
+        if best is None or mae < best["mae"]:
+            best = {"mae": mae, "alpha": alpha}
+    return best
+
+
+def _ridge_loo_mae(features, target):
+    """Compatibility wrapper returning only the best leave-one-out MAE."""
+    result = _ridge_loo_result(features, target)
+    return result["mae"] if result else None
+
+
+def _fit_ridge_model(features, target, alpha):
+    """Fit a standardized ridge model and return portable numeric parameters."""
+    mean = features.mean(axis=0)
+    scale = features.std(axis=0)
+    scale[scale < 1e-8] = 1
+    design = np.column_stack([
+        np.ones(len(features)),
+        (features - mean) / scale,
+    ])
+    penalty = np.eye(design.shape[1])
+    penalty[0, 0] = 0
+    coefficients = np.linalg.solve(
+        design.T @ design + alpha * penalty,
+        design.T @ target,
+    )
+    return {
+        "feature_mean": mean.tolist(),
+        "feature_scale": scale.tolist(),
+        "coefficients": coefficients.tolist(),
+    }
+
+
+def moth_weather_analysis(df, moths):
+    """Test whether weather/moon improves whole-night documented richness.
+
+    Raw observation count is deliberately not used as an effort covariate:
+    this survey documents distinct species, not every arriving moth.  A session
+    is included when it has more than 30 nighttime observations spanning more
+    than an hour.  Those fields classify full-effort nights but are not modeled
+    as continuous effort because station travel creates real gaps.
+
+    Predictions therefore describe species documented under the observer's
+    historical adaptive, multi-station protocol.  They do not isolate a causal
+    weather effect or assume equal effort on every night.
+    """
+    sub = moth_obs(df, moths)
+    empty = {
+        "status": "insufficient",
+        "nights": 0,
+        "window": "whole night",
+        "baseline_mae": None,
+        "weather_mae": None,
+        "lift_pct": None,
+        "prediction_model": None,
+    }
+    if sub.empty:
+        return empty
+
+    full_nights = _moth_full_night_counts(sub)
+    if full_nights.empty:
+        return empty
+
+    with connect() as conn:
+        conditions = pd.read_sql_query(
+            "SELECT date, temp_f_9pm, humidity_9pm, wind_mph_9pm, "
+            "precip_in, moon_phase FROM weather_cache",
+            conn,
+        )
+    conditions["date"] = pd.to_datetime(conditions["date"], errors="coerce")
+    model = full_nights.merge(
+        conditions, left_on="night", right_on="date", how="inner"
+    ).dropna(subset=[
+        "temp_f_9pm",
+        "humidity_9pm",
+        "wind_mph_9pm",
+        "precip_in",
+        "moon_phase",
+    ])
+    if len(model) < 12:
+        result = empty.copy()
+        result["nights"] = len(model)
+        return result
+
+    day = model["night"].dt.dayofyear.to_numpy(dtype=float)
+    phase = model["moon_phase"].to_numpy(dtype=float)
+    seasonal = np.column_stack([
+        np.sin(2 * np.pi * day / 365.25),
+        np.cos(2 * np.pi * day / 365.25),
+        np.sin(4 * np.pi * day / 365.25),
+        np.cos(4 * np.pi * day / 365.25),
+    ])
+    conditions_x = np.column_stack([
+        model["temp_f_9pm"].to_numpy(dtype=float),
+        model["humidity_9pm"].to_numpy(dtype=float),
+        model["wind_mph_9pm"].to_numpy(dtype=float),
+        np.log1p(model["precip_in"].to_numpy(dtype=float)),
+        (1 - np.cos(2 * np.pi * phase)) / 2,
+    ])
+    target = model["species_count"].to_numpy(dtype=float)
+    full_features = np.column_stack([seasonal, conditions_x])
+    baseline_result = _ridge_loo_result(seasonal, target)
+    weather_result = _ridge_loo_result(full_features, target)
+    baseline_mae = baseline_result["mae"]
+    weather_mae = weather_result["mae"]
+    lift_pct = (
+        100 * (baseline_mae - weather_mae) / baseline_mae
+        if baseline_mae else None
+    )
+    fitted = _fit_ridge_model(
+        full_features, target, weather_result["alpha"]
+    )
+    fitted.update({
+        "historical_p10": float(np.quantile(target, 0.10)),
+        "historical_median": float(np.quantile(target, 0.50)),
+        "historical_p90": float(np.quantile(target, 0.90)),
+    })
+    return {
+        "status": (
+            "supported"
+            if lift_pct is not None and lift_pct >= 5
+            else "not_yet_supported"
+        ),
+        "nights": len(model),
+        "window": empty["window"],
+        "baseline_mae": baseline_mae,
+        "weather_mae": weather_mae,
+        "lift_pct": lift_pct,
+        "first_night": model["night"].min(),
+        "last_night": model["night"].max(),
+        "prediction_model": fitted,
+    }
+
+
+def _moth_condition_score(row):
+    """Return a transparent fallback score when the local model is unavailable."""
+    def clamp(value):
+        return max(0.0, min(1.0, value))
+
+    temp = row.get("temp_f_9pm")
+    humidity = row.get("humidity_9pm")
+    wind = row.get("wind_mph_9pm")
+    rain_chance = row.get("rain_chance_pct")
+    precip = row.get("precip_in")
+    illumination = row.get("moon_illumination_pct")
+    if any(value is None for value in (
+        temp, humidity, wind, rain_chance, precip, illumination
+    )):
+        return None, None
+
+    components = {
+        "temperature": clamp((temp - 48) / 27),
+        "humidity": clamp((humidity - 42) / 38),
+        "wind": clamp(1 - max(0, wind - 2) / 10),
+        "dry": clamp(1 - max(rain_chance / 75, precip / 0.25)),
+        "darkness": clamp(1 - illumination / 100),
+    }
+    score = round(100 * (
+        0.35 * components["temperature"]
+        + 0.10 * components["humidity"]
+        + 0.20 * components["wind"]
+        + 0.25 * components["dry"]
+        + 0.10 * components["darkness"]
+    ))
+    if rain_chance >= 75 or precip >= 0.25 or wind >= 12 or temp < 48:
+        score = min(score, 39)
+    return score, components
+
+
+def _predict_moth_species(row, fitted):
+    """Predict whole-night documented species from one normalized forecast row."""
+    if not fitted:
+        return None
+    required = (
+        "date",
+        "temp_f_9pm",
+        "humidity_9pm",
+        "wind_mph_9pm",
+        "precip_in",
+        "moon_phase",
+    )
+    if any(row.get(key) is None for key in required):
+        return None
+    date = pd.Timestamp(row["date"])
+    day = float(date.dayofyear)
+    phase = float(row["moon_phase"])
+    features = np.asarray([
+        np.sin(2 * np.pi * day / 365.25),
+        np.cos(2 * np.pi * day / 365.25),
+        np.sin(4 * np.pi * day / 365.25),
+        np.cos(4 * np.pi * day / 365.25),
+        float(row["temp_f_9pm"]),
+        float(row["humidity_9pm"]),
+        float(row["wind_mph_9pm"]),
+        np.log1p(float(row["precip_in"])),
+        (1 - np.cos(2 * np.pi * phase)) / 2,
+    ])
+    mean = np.asarray(fitted["feature_mean"], dtype=float)
+    scale = np.asarray(fitted["feature_scale"], dtype=float)
+    coefficients = np.asarray(fitted["coefficients"], dtype=float)
+    design = np.concatenate([[1.0], (features - mean) / scale])
+    return max(0.0, float(design @ coefficients))
+
+
+def rank_moth_forecast(nights, analysis=None):
+    """Rank upcoming nights for a complete, adaptive multi-station survey."""
+    analysis = analysis or {}
+    fitted = (
+        analysis.get("prediction_model")
+        if analysis.get("status") == "supported"
+        else None
+    )
+    ranked = []
+    for source in nights or []:
+        row = dict(source)
+        score, components = _moth_condition_score(row)
+        if score is None:
+            row.update({
+                "score": None,
+                "rating": "Incomplete",
+                "action": "Check forecast",
+            })
+            ranked.append(row)
+            continue
+
+        predicted = _predict_moth_species(row, fitted)
+        unsafe = (
+            row.get("rain_chance_pct", 100) >= 75
+            or row.get("precip_in", 1) >= 0.25
+            or row.get("wind_mph_9pm", 99) >= 12
+            or row.get("temp_f_9pm", 0) < 48
+        )
+        row.update({
+            "score": score,
+            "components": components,
+            "predicted_species": (
+                round(predicted) if predicted is not None else None
+            ),
+            "typical_error": (
+                round(float(analysis["weather_mae"]))
+                if predicted is not None and analysis.get("weather_mae") is not None
+                else None
+            ),
+            "unsafe": unsafe,
+        })
+        ranked.append(row)
+
+    usable = sorted(
+        [
+            row for row in ranked
+            if row.get("score") is not None and not row.get("unsafe")
+            and (fitted is not None or row["score"] >= 45)
+        ],
+        key=lambda row: (
+            -(
+                row["predicted_species"]
+                if row.get("predicted_species") is not None
+                else row["score"]
+            ),
+            row["date"],
+        ),
+    )
+    median = (fitted or {}).get("historical_median")
+    for row in ranked:
+        if row.get("unsafe"):
+            row["rating"] = "Skip"
+            row["action"] = "Rest / process records"
+
+    for priority, row in enumerate(usable, start=1):
+        row["priority_rank"] = priority
+        if priority == 1:
+            row["rating"] = "Focus"
+            row["action"] = "Full multi-station survey"
+        elif priority == 2:
+            row["rating"] = "Worth it"
+            row["action"] = "Fallback full survey"
+        elif (
+            row.get("predicted_species") is not None
+            and median is not None
+            and row["predicted_species"] >= median
+        ) or (row.get("predicted_species") is None and row["score"] >= 45):
+            row["rating"] = "Backup"
+            row["action"] = "Watch the forecast"
+        else:
+            row["rating"] = "Skip"
+            row["action"] = "Rest / process records"
+
+    for row in ranked:
+        if not row.get("rating"):
+            row["rating"] = "Skip"
+            row["action"] = "Rest / process records"
+
+    return sorted(ranked, key=lambda row: row.get("date", ""))
 
 
 def moth_effort(df, moths):
