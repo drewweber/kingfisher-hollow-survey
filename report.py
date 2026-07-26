@@ -46,6 +46,11 @@ OBS_URL   = "https://www.inaturalist.org/observations/"  # + obs_id → observat
 HERO_PHOTO = f"{SITE}/aerial/dji_fly_20251020_173830_305_1760996794506_photo_optimized.JPG"
 HERO_WEBP = "/assets/hero/dji_fly_20251020_173830_305_1760996794506_photo_optimized"
 
+# Change this only after the section-writer makes a substantial editorial
+# refresh across the report. Routine data syncs, generated output, code work,
+# and small copy corrections must not move the public "Content updated" date.
+MAJOR_CONTENT_UPDATED_AT = "2026-07-26T19:19:09-04:00"
+
 
 def _asset_version(path):
     """Return a stable content hash so changed assets bypass browser caches."""
@@ -1976,17 +1981,11 @@ def _code_updated():
     return _fmt_dt(datetime.fromtimestamp(Path(__file__).stat().st_mtime).astimezone())
 
 
-def _insights_updated():
-    """Last commit where an AI agent wrote or refreshed content (Co-Authored-By: Claude)."""
+def _content_updated():
+    """When the section-writer last made a substantial editorial refresh."""
     try:
-        out = subprocess.run(
-            ["git", "-C", str(Path(__file__).resolve().parent),
-             "log", "-1", "--format=%cI", "--grep=Co-Authored-By: Claude"],
-            capture_output=True, text=True, timeout=10)
-        iso = (out.stdout or "").strip()
-        if iso:
-            return _fmt_dt(datetime.fromisoformat(iso).astimezone())
-    except (subprocess.SubprocessError, ValueError, OSError):
+        return _fmt_dt(datetime.fromisoformat(MAJOR_CONTENT_UPDATED_AT))
+    except ValueError:
         pass
     return "—"
 
@@ -2003,7 +2002,7 @@ def data_updated_date():
     return _fmt_dt(datetime.now(timezone.utc).astimezone())
 
 
-def footer(code_updated, insights_updated, data_updated):
+def footer(code_updated, content_updated, data_updated):
     def ts(label, value):
         return (f'<span class="flex flex-col items-center gap-0.5">'
                 f'<span class="text-white/25 text-[0.6rem] uppercase tracking-[0.15em]">{label}</span>'
@@ -2024,7 +2023,7 @@ def footer(code_updated, insights_updated, data_updated):
     <div class="flex flex-wrap items-start justify-center gap-x-8 gap-y-3 text-xs tracking-wide mb-4">
       {ts("Data synced", data_updated)}
       <span class="hidden sm:inline text-white/15 self-center">·</span>
-      {ts("Insights updated", insights_updated)}
+      {ts("Content updated", content_updated)}
       <span class="hidden sm:inline text-white/15 self-center">·</span>
       {ts("Code updated", code_updated)}
     </div>
@@ -2491,6 +2490,7 @@ def moth_view(df, stats):
 
     # Combined calendar section: Month by Month + On the Wing + Phenology
     msum_monthly = analyze.monthly_survey_summary(df, moths)
+    july_summary = next((row for row in msum_monthly if row["month_num"] == 7), None)
     nightly_species = analyze.moth_nightly_species(df, moths)
     moth_forecast = weather.load_forecast(days=10)
     moth_weather_validation = analyze.moth_weather_analysis(df, moths)
@@ -2503,6 +2503,24 @@ def moth_view(df, stats):
         "The core season runs late June through August; cool nights tend to narrow flight activity, while "
         "bright moonlight can reduce what reaches or is detected at the sheet."
     ) if best_roi else ''
+    season_shape_text = (
+        "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
+        f"The faint line reaches its earliest and latest confirmed dates. Read all {msum['species']:,} rows together and "
+        "you get the season's shape: a small March opening, a sharp June rise, and "
+    )
+    if july_summary:
+        season_shape_text += (
+            f"the broadest sampled community in July — {july_summary['species_count']:,} species across "
+            f"{july_summary['nights_surveyed']} nights — before the list narrows through late summer and fall. "
+        )
+    else:
+        season_shape_text += (
+            "the broadest sampled community in midsummer before the list narrows through late summer and fall. "
+        )
+    season_shape_text += (
+        "These windows now combine two partial field seasons. They are useful search calendars, not fixed "
+        "flight limits; additional early spring, late fall, and repeat midsummer nights will keep changing them."
+    )
     out.append(section(
         "moth-calendar", "The Calendar",
         'Flight <em class="text-hollow-300">Seasons</em>',
@@ -2525,13 +2543,7 @@ def moth_view(df, stats):
         + chart_card(viz.seasonal_cascade(analyze.moth_seasonal(df, moths), dark=True),
                      note="Faint line: full observed date range. Thick bar: middle 50% of records (core flight window). Dot: median date. Species with fewer than 3 records omitted. Sorted by median flight date.",
                      dark=True)
-        + takeaway(
-            "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
-            f"The faint line reaches its earliest and latest confirmed dates. Read all {msum['species']:,} rows together and "
-            "you get the season's shape: sparse in April, a sharp peak in June, a gap in July where the "
-            "lights weren't running, a full second plateau through August, fading through September and "
-            "October. After one field season these windows are first drafts; they'll sharpen as more nights "
-            "accumulate.", dark=True)
+        + takeaway(season_shape_text, dark=True)
         + chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
                      note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
                      dark=True)
@@ -2576,7 +2588,7 @@ def mammals_view(df, stats):
         'The <em class="text-hollow-300">Mammals</em>',
         stats_band
         + takeaway(
-            "What stands out in 22 species is the carnivore set: ten carnivores on 30 acres, including all "
+            f"What stands out in {msum['species']} species is the carnivore set: ten carnivores on 30 acres, including all "
             "four native mustelids (fisher, mink, long-tailed weasel, and ermine), both foxes, and the full "
             "black bear, coyote, and bobcat trio. That density on a parcel this small is the mark of the "
             "Michigan Creek corridor working as a travel route, with the stream-tied fisher and mink the "
@@ -2695,7 +2707,7 @@ def amphibians_view(df, stats):
         'The <em class="text-hollow-300">Amphibians</em>',
         stats_band
         + takeaway(
-            "Ten amphibian species is a strong incidental list, but the habitat says there is more to find. "
+            f"The {asum['species']}-species amphibian list is strong for incidental records, but the habitat says there is more to find. "
             "The late-July sequence of pickerel frog, eastern newt, gray treefrog, and spring peeper shows that "
             "the pond, wet margins, and forest floor remain active well beyond the spring chorus. Red-backed, "
             "northern slimy, and spotted salamanders add upland forest and vernal-pool evidence. The obvious hole "
@@ -2868,12 +2880,13 @@ def birds_view():
         'The <em class="text-hollow-300">Birds</em>',
         stats_band
         + takeaway(
-            "The bird list reflects the full shape of the property: creek, pond, wet meadow, "
+            f"The {bsum['species']}-species bird list reflects the full shape of the property: creek, pond, wet meadow, "
             "hemlock-hardwood slope, shrub edge, and open sky. Waterbirds and shorebirds turn up along "
             "Michigan Creek, forest songbirds use the hollow, flycatchers and swallows work the openings, "
-            "and migrants follow the corridor in spring and fall. July records should shift from simple "
-            "presence toward breeding evidence: singing territories, fledglings, food carrying, and repeated "
-            "use of the same creek, shrub, or forest patch.",
+            f"and migrants follow the corridor in spring and fall. With the latest addition dated "
+            f"{fdate(bsum['latest'], '%b %-d')}, the "
+            "next summer gain is not simply another name: it is breeding evidence through repeated territories, "
+            "fledglings, food carrying, and sustained use of the same creek, shrub, or forest patch.",
             dark=True)
         + bird_life_list_body(birds),
         intro="Birds recorded at the Michigan Hollow, silo house eBird location, shown alongside the rest of the Kingfisher Hollow biodiversity survey.",
@@ -3139,10 +3152,9 @@ def build():
         "discovery", "The Story So Far",
         'A Growing <em class="text-hollow-600">Life List</em>',
         chart_card(viz.discovery_curve(firsts),
-                   note=f"Each step marks a species' first record at Kingfisher Hollow. A curve still rising steeply after {public_s['observations']:,} records indicates a long way still to go.")
+                   note=f"Each step marks a species' first record at Kingfisher Hollow. New steps after {public_s['observations']:,} records show that the inventory is still actively growing.")
         + takeaway(
-            "The line is still climbing almost as steeply as it did on day one. Most well-studied reserves "
-            "show a curve that flattens within the first season; this one hasn't. Late July shows why. Little "
+            f"The curve is still gaining species after {public_s['observations']:,} records. Late July shows why. Little "
             "Glassywing widened the daytime grass-edge list, common evening-primrose sharpened a moth-host search, "
             "and night work added Hermit Sphinx and Splendid Dagger. Close inspection produced an even larger wave "
             "of leafminers, gall makers, aphids, flies, barklice, and other small insects that broad surveys overlook. "
@@ -3309,7 +3321,7 @@ def build():
     parts.append('</div>')  # /view-log
     parts.append('</main>')
 
-    parts.append(footer(_code_updated(), _insights_updated(), data_updated_date()))
+    parts.append(footer(_code_updated(), _content_updated(), data_updated_date()))
     parts.append(SCRIPTS.replace("__PLOTLY_CDN__", PLOTLY_CDN))
 
     html = "".join(parts)
