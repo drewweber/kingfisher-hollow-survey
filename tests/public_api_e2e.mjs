@@ -59,6 +59,20 @@ test("family statistics return filtered counts and local-date bounds", async () 
   assert.equal(response.headers.get("access-control-allow-origin"), "*");
 });
 
+test("combined biodiversity summary returns pollable integer totals", async () => {
+  const { body, response, elapsed } = await fetchJson("/api/summary");
+  assert.ok(elapsed < MAX_RESPONSE_MS, `summary took ${Math.round(elapsed)} ms`);
+  for (const field of ["birds", "moths", "totalSpecies"]) {
+    assert.equal(Number.isInteger(body[field]), true);
+    assert.ok(body[field] >= 0);
+  }
+  assert.ok(body.totalSpecies >= body.birds);
+  assert.ok(body.totalSpecies >= body.moths);
+  assert.match(body.updatedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+  assert.match(response.headers.get("cache-control") || "", /max-age=300/);
+  assert.equal(response.headers.get("access-control-allow-origin"), "*");
+});
+
 test("recorded Saturniidae species contain required occurrence summaries", async () => {
   const { body, elapsed } = await fetchJson("/api/species?family=Saturniidae&limit=500");
   assert.ok(elapsed < MAX_RESPONSE_MS, `species took ${Math.round(elapsed)} ms`);
@@ -113,20 +127,21 @@ test("Saturniidae night totals agree across aggregate and collection endpoints",
   assert.equal(new Set(nights.body.results.map((row) => row.date)).size, nights.body.total);
 });
 
-test("OpenAPI exposes exactly four GPT Action operations", async () => {
+test("OpenAPI exposes exactly five GPT Action operations", async () => {
   const { body } = await fetchJson("/api/openapi.json");
   assert.equal(body.openapi, "3.1.0");
   assert.deepEqual(body.servers, [{ url: "https://survey.kingfisher-hollow.com" }]);
   assert.deepEqual(body.security, []);
   const operationIds = Object.values(body.paths).map((path) => path.get.operationId).sort();
   assert.deepEqual(operationIds, [
+    "getBiodiversitySummary",
     "getSurveyStats",
     "listObservationNights",
     "listObservations",
     "listSpecies",
   ]);
   for (const path of Object.values(body.paths)) {
-    for (const parameter of path.get.parameters) {
+    for (const parameter of path.get.parameters || []) {
       assert.equal(typeof parameter.name, "string");
       assert.equal(parameter.in, "query");
       assert.equal(parameter.$ref, undefined);
@@ -145,7 +160,7 @@ test("documentation is actionable and all public operations are read-only", asyn
   assert.match(docs, /\/api\/openapi\.json/);
 
   for (const path of [
-    "/api", "/api/species", "/api/observations", "/api/nights", "/api/stats",
+    "/api", "/api/summary", "/api/species", "/api/observations", "/api/nights", "/api/stats",
     "/api/openapi.json", "/api/docs",
   ]) {
     for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {

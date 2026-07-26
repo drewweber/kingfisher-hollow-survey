@@ -122,12 +122,13 @@ project:
 Without those variables, the link is visible but the endpoint returns a
 configuration error instead of starting a workflow.
 
-### Public read-only moth API
+### Public read-only survey API
 
-The Pages deployment also publishes a small public API for tools that need to
-query Kingfisher Hollow moth occurrences without accessing SQLite or calling
-iNaturalist directly:
+The Pages deployment also publishes a small public API for tools that need
+combined Kingfisher Hollow species totals or moth occurrences without accessing
+SQLite or calling iNaturalist directly:
 
+- `/api/summary` — bird, moth, and deduplicated all-taxa species totals
 - `/api/observations` — observation-level records
 - `/api/species` — species counts and first/last dates
 - `/api/nights` — one row per matching local calendar date
@@ -136,11 +137,14 @@ iNaturalist directly:
 - `/api/openapi.json` — OpenAPI 3.1 contract
 
 `report.py` calls `src/public_api.py` during every rebuild. The generator writes
-a compact snapshot to `public/_api-data/moths.json`; Pages Functions read that
-asset through Cloudflare's `ASSETS` binding. The deployed snapshot contains only
-taxon names and IDs, taxonomic rank, family, observation dates/times, and public
-iNaturalist links. It excludes coordinates, observers, photos, and every other
-private pipeline field.
+compact snapshots to `public/_api-data/summary.json` and
+`public/_api-data/moths.json`; Pages Functions read those assets through
+Cloudflare's `ASSETS` binding. The biodiversity summary uses the countable eBird
+location life list for birds, the current moth roster for moths, and the same
+species-level deduplication rules as the report for the all-taxa total. The moth
+snapshot contains only taxon names and IDs, taxonomic rank, family, observation
+dates/times, and public iNaturalist links. It excludes coordinates, observers,
+photos, and every other private pipeline field.
 
 All API filters use AND semantics. Names and families are case-insensitive exact
 matches. A "night" is a distinct `America/New_York` calendar date derived from
@@ -150,10 +154,11 @@ endpoints default to 100 rows and reject limits above 500. Their `count` is the
 number of rows in the current page; `total` is the number matching the filters.
 Add `format=csv` for CSV output.
 
-The OpenAPI document exposes exactly four GPT Action operation IDs:
-`listSpecies`, `listObservations`, `listObservationNights`, and
-`getSurveyStats`. `/api/docs` includes clickable examples and the copy-ready GPT
-instructions that require answers to be grounded in API results.
+The OpenAPI document exposes five GPT Action operation IDs:
+`getBiodiversitySummary`, `listSpecies`, `listObservations`,
+`listObservationNights`, and `getSurveyStats`. `/api/docs` includes clickable
+examples and the copy-ready GPT instructions that require answers to be grounded
+in API results.
 
 The Functions enforce a lightweight per-client fallback limit of 120 requests
 per minute. If the Pages project later receives an `API_RATE_LIMITER` Cloudflare

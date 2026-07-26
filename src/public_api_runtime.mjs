@@ -1,6 +1,7 @@
-export const API_VERSION = "1.1.1";
+export const API_VERSION = "1.2.0";
 
 const SNAPSHOT_PATH = "/_api-data/moths.json";
+const SUMMARY_PATH = "/_api-data/summary.json";
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 const RATE_LIMIT = 120;
@@ -44,6 +45,7 @@ const CSV_FIELDS = {
 };
 
 let snapshotPromise = null;
+let summaryPromise = null;
 const rateBuckets = new Map();
 
 class ApiError extends Error {
@@ -57,6 +59,7 @@ class ApiError extends Error {
 
 export function __resetForTests() {
   snapshotPromise = null;
+  summaryPromise = null;
   rateBuckets.clear();
 }
 
@@ -171,6 +174,54 @@ async function loadSnapshot(env, requestUrl) {
     });
   }
   return snapshotPromise;
+}
+
+function normalizeSummary(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("Unsupported or malformed biodiversity summary");
+  }
+  const fields = ["birds", "moths", "totalSpecies"];
+  for (const field of fields) {
+    if (!Number.isSafeInteger(raw[field]) || raw[field] < 0) {
+      throw new Error(`Biodiversity summary contains an invalid ${field}`);
+    }
+  }
+  if (raw.totalSpecies < raw.birds || raw.totalSpecies < raw.moths) {
+    throw new Error("Biodiversity summary totalSpecies is inconsistent");
+  }
+  const updatedAt = requiredSnapshotText(raw.updatedAt, "updatedAt");
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(updatedAt)
+    || !isIsoDateTime(updatedAt)
+  ) {
+    throw new Error("Biodiversity summary contains an invalid updatedAt date-time");
+  }
+  return {
+    birds: raw.birds,
+    moths: raw.moths,
+    totalSpecies: raw.totalSpecies,
+    updatedAt,
+  };
+}
+
+async function loadSummary(env, requestUrl) {
+  if (!summaryPromise) {
+    summaryPromise = (async () => {
+      if (!env?.ASSETS || typeof env.ASSETS.fetch !== "function") {
+        throw new Error("The Pages ASSETS binding is unavailable");
+      }
+      const assetUrl = new URL(SUMMARY_PATH, requestUrl);
+      const response = await env.ASSETS.fetch(assetUrl);
+      if (!response.ok) {
+        throw new Error(`Biodiversity summary returned HTTP ${response.status}`);
+      }
+      return normalizeSummary(await response.json());
+    })().catch((error) => {
+      summaryPromise = null;
+      throw error;
+    });
+  }
+  return summaryPromise;
 }
 
 function corsHeaders() {
@@ -672,6 +723,60 @@ export async function handleEndpoint(endpoint, context) {
       rate,
     );
   }
+}
+
+export async function handleSummary(context) {
+  const method = context.request.method.toUpperCase();
+  if (method === "OPTIONS") return optionsResponse();
+  if (!new Set(["GET", "HEAD"]).has(method)) return methodNotAllowed();
+
+  const rate = await checkRateLimit(context, "summary");
+  if (!rate.success) {
+    return errorResponse(
+      "rate_limited",
+      "Too many API requests; try again shortly.",
+      429,
+      rate,
+      { "Retry-After": String(rate.resetSeconds) },
+    );
+  }
+
+  const url = new URL(context.request.url);
+  const firstParameter = url.searchParams.keys().next();
+  if (!firstParameter.done) {
+    return errorResponse(
+      "unknown_parameter",
+      `${firstParameter.value} is not supported for /api/summary`,
+      400,
+      rate,
+    );
+  }
+
+  let summary;
+  try {
+    summary = await loadSummary(context.env, context.request.url);
+  } catch (error) {
+    console.error("Unable to load the biodiversity summary", error);
+    return errorResponse(
+      "server_error",
+      "The biodiversity summary data could not be loaded.",
+      500,
+      rate,
+    );
+  }
+
+  const body = JSON.stringify(summary);
+  const etag = `W/"summary-${hashText(body)}"`;
+  const headers = baseHeaders({
+    cache: true,
+    contentType: "application/json; charset=utf-8",
+    rate,
+  });
+  headers.set("ETag", etag);
+  if (context.request.headers.get("if-none-match") === etag) {
+    return new Response(null, { status: 304, headers });
+  }
+  return new Response(method === "HEAD" ? null : body, { status: 200, headers });
 }
 
 export function handleNotFound(context) {
