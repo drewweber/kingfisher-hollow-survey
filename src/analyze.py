@@ -1282,6 +1282,36 @@ def moth_survey_nights(df, moths):
             "first": sub["observed_on"].min(), "last": sub["observed_on"].max()}
 
 
+def moth_nightly_species(df, moths):
+    """Distinct moth species and observations reported per survey night.
+
+    Uses the same noon cutoff as the completeness analysis: records made after
+    midnight but before noon belong to the evening session that began the day
+    before. The result intentionally contains only nights with moth reports;
+    absent dates are unknown effort, not zero-diversity surveys.
+    """
+    columns = ["night", "species_count", "observation_count"]
+    sub = moth_obs(df, moths).dropna(
+        subset=["taxon_id", "observed_on"]
+    ).copy()
+    if sub.empty:
+        return pd.DataFrame(columns=columns)
+    sub["night"] = pd.to_datetime(_session_dates(sub))
+    nightly = (
+        sub.groupby("night", as_index=False)
+        .agg(
+            species_count=("taxon_id", "nunique"),
+            observation_count=("id", "nunique"),
+        )
+        .sort_values("night")
+        .reset_index(drop=True)
+    )
+    nightly[["species_count", "observation_count"]] = nightly[
+        ["species_count", "observation_count"]
+    ].astype(int)
+    return nightly[columns]
+
+
 def moth_effort(df, moths):
     """Cumulative moth species vs. cumulative observations (the discovery/effort
     curve), for seeing how fast new species are still turning up."""

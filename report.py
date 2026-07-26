@@ -1988,6 +1988,7 @@ def moth_view(df, stats):
 
     # Combined calendar section: Month by Month + On the Wing + Phenology
     msum_monthly = analyze.monthly_survey_summary(df, moths)
+    nightly_species = analyze.moth_nightly_species(df, moths)
     season_months = [r for r in msum_monthly if r['survey_season'] and r['nights_surveyed'] > 0]
     best_roi = max(season_months, key=lambda r: r['new_species_count'] / r['nights_surveyed']) if season_months else None
     best_roi_text = (
@@ -1999,7 +2000,16 @@ def moth_view(df, stats):
     out.append(section(
         "moth-calendar", "The Calendar",
         'Flight <em class="text-hollow-300">Seasons</em>',
-        chart_card(viz.monthly_survey_bar(msum_monthly),
+        chart_card(viz.nightly_species_calendar(nightly_species),
+                   note='Each filled square is one evening survey session; the printed number is the distinct moth species reported that night. '
+                        'Color reinforces the total. Blank dates mean no moth report, not zero species.',
+                   dark=True)
+        + takeaway(
+            "Nightly richness is the response variable for the next analysis. Because every square uses the "
+            "same evening-session date as the weather cache, these totals can be compared directly with 9 PM "
+            "temperature, humidity, wind, precipitation, and moon phase without splitting a single overnight "
+            "survey across two calendar days.", dark=True)
+        + chart_card(viz.monthly_survey_bar(msum_monthly),
                    note='Green: species recorded that month. Terracotta: species recorded for the first time ever. '
                         'Faded months are outside the May–September core flight season. Hover for survey-night counts.',
                    dark=True)
@@ -2022,7 +2032,7 @@ def moth_view(df, stats):
             "the active community for that month. The sparse winter columns are partly real — few moths fly "
             "in January and February — and partly a survey gap, since few people run lights in the cold. "
             "Both things are true, and more data will eventually separate them.", dark=True),
-        intro="Month-by-month totals and first records, individual flight windows for every species, and the full phenology matrix — the complete calendar of Kingfisher Hollow's moth season.",
+        intro="Night-by-night richness, month-by-month totals and first records, individual flight windows for every species, and the full phenology matrix — the complete calendar of Kingfisher Hollow's moth season.",
         dark=True))
     out.append(section(
         "moth-methods", "Find More",
