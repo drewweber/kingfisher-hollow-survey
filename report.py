@@ -488,9 +488,13 @@ def moth_forecast_body(forecast, validation):
         f'<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
         f'{esc(target_names)}</h3>'
         '<p class="mt-3 max-w-xl text-sm leading-6 text-white/60">'
-        "These are the two best candidates for your normal complete, "
-        "multi-station survey. Other nights can be used for processing records "
-        "unless the forecast changes materially.</p>"
+        "These are the two strongest candidates for a complete, multi-station "
+        "survey. The ranking estimates documented richness: how many distinct "
+        "species the usual route is likely to record. Warmer evenings often "
+        "keep more of the season’s moth community in flight, while a bright "
+        "moon can reduce what a light sheet draws or reveals. A lower "
+        "prediction means a narrower expected catch—not that moths are "
+        "absent.</p>"
         f'<p class="mt-4 text-xs text-white/55">{esc(fetched_text)} · '
         '<a class="underline decoration-white/20 underline-offset-2 '
         'hover:text-white" href="https://open-meteo.com/en/docs">'
@@ -523,6 +527,15 @@ def moth_forecast_body(forecast, validation):
         f'<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
         f'{esc(validation_copy)}</p>'
         '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
+        "Temperature and moonlight are clues, not switches. Moths are "
+        "ectotherms, so warmer air generally supports more flight and more "
+        "species-level detections. Moonlight is harder to read: a bright sky "
+        "may weaken the lamp’s relative pull or alter flight activity, while "
+        "cloud and canopy can soften the effect. The model considers both "
+        "alongside season, humidity, wind, and rain. It predicts what the "
+        "survey is likely to document, not the property’s true presence or "
+        "absence that night.</p>"
+        '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
         "The predicted value is whole-night distinct species documented under "
         "your historical adaptive protocol—not individual moth abundance and "
         "not a fixed-duration count. A night enters the model as full effort "
@@ -530,11 +543,16 @@ def moth_forecast_body(forecast, validation):
         "60 minutes; the full evening and morning session is then counted. "
         "Observation totals and gaps between photos are not used as continuous "
         "effort because you document species once and travel between stations. "
-        "Published light-trap work provides useful context "
-        "for the weather variables, but effects vary by trap and moth group. "
+        "Published light-trap work likewise finds richer samples on warmer "
+        "nights and lower catches under brighter moonlight, while cautioning "
+        "that effects vary by method, cloud cover, and moth group. "
+        '<a class="text-hollow-300 underline decoration-hollow-300/30 '
+        'underline-offset-2" '
+        'href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3956935/">'
+        'Temperature and richness study</a> · '
         '<a class="text-hollow-300 underline decoration-hollow-300/30 '
         'underline-offset-2" href="https://doi.org/10.1093/ee/26.6.1283">'
-        'Study context</a>.</p>'
+        'Moonlight and light-trap study</a>.</p>'
         '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
         "Effort still varies: productive nights keep you out longer, station "
         "routes differ, and unsurveyed nights are missing rather than zero. "
@@ -2478,7 +2496,8 @@ def moth_view(df, stats):
         f"<strong>{best_roi['month_name']}</strong> has produced the most new species per survey night "
         f"({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} nights). "
         "Months with a tall terracotta bar but a short green one are where additional effort would pay off. "
-        "The core season runs late June through August; nights below 55°F or near a full moon are mostly quiet."
+        "The core season runs late June through August; cool nights tend to narrow flight activity, while "
+        "bright moonlight can reduce what reaches or is detected at the sheet."
     ) if best_roi else ''
     out.append(section(
         "moth-calendar", "The Calendar",
