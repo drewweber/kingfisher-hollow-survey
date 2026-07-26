@@ -385,6 +385,9 @@ def moth_forecast_body(forecast, validation):
         badge_class = rating_classes.get(
             rating, rating_classes["Incomplete"]
         )
+        badge_label = rating
+        if rating == "Skip" and row.get("skip_reason"):
+            badge_label = f"Skip · {row['skip_reason']}"
         wind_desc = weather.wind_description(
             row.get("wind_mph_9pm"), row.get("wind_dir_9pm")
         )
@@ -397,17 +400,15 @@ def moth_forecast_body(forecast, validation):
             f"{moon} · {row.get('moon_illumination_pct')}% lit",
         ]
         predicted = row.get("predicted_species")
-        if predicted is not None:
+        if row.get("unsafe"):
+            metric = str(row.get("score", "—"))
+            metric_suffix = "/ 100"
+        elif predicted is not None:
             metric = str(predicted)
             metric_suffix = "species"
-            error_note = (
-                f"Typical error ±{row['typical_error']} species"
-                if row.get("typical_error") is not None else ""
-            )
         else:
             metric = str(row.get("score", "—"))
             metric_suffix = "/ 100"
-            error_note = "Provisional field score"
         cards.append(
             '<li class="min-w-[15.5rem] snap-start rounded-xl border '
             'md:min-w-0 '
@@ -416,14 +417,11 @@ def moth_forecast_body(forecast, validation):
             f'<div><p class="text-xs text-white/60">{date:%a}</p>'
             f'<h4 class="text-white font-semibold">{date:%b} {date.day}</h4></div>'
             f'<span class="{badge_class} rounded-full px-2.5 py-1 text-[0.65rem] '
-            f'font-semibold uppercase tracking-wide">{rating}</span></div>'
+            f'font-semibold uppercase tracking-wide">{esc(badge_label)}</span></div>'
             '<div class="mt-4 flex items-end gap-2">'
             f'<span class="font-serif text-4xl font-bold text-white tabular-nums">'
             f'{metric}</span>'
             f'<span class="pb-1 text-xs text-white/60">{metric_suffix}</span></div>'
-            f'<p class="mt-1 text-[0.68rem] text-white/60">{esc(error_note)}</p>'
-            f'<p class="mt-2 text-sm font-medium text-hollow-300">'
-            f'{esc(row.get("action"))}</p>'
             '<ul class="mt-3 space-y-1 text-xs leading-5 text-white/55">'
             + "".join(f"<li>{esc(value)}</li>" for value in conditions)
             + "</ul></li>"
@@ -535,6 +533,10 @@ def moth_forecast_body(forecast, validation):
         "alongside season, humidity, wind, and rain. It predicts what the "
         "survey is likely to document, not the property’s true presence or "
         "absence that night.</p>"
+        '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
+        "Survey suitability comes first. If rain, wind, or cold crosses the "
+        "field cutoff, the card shows a condition score instead of a species "
+        "estimate and names the reason in the pill.</p>"
         '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
         "The predicted value is whole-night distinct species documented under "
         "your historical adaptive protocol—not individual moth abundance and "

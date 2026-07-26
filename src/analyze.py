@@ -1539,6 +1539,20 @@ def moth_weather_analysis(df, moths):
     }
 
 
+def _moth_no_go_reason(row):
+    """Name the first field condition that makes a full survey impractical."""
+    if (
+        row.get("rain_chance_pct", 100) >= 75
+        or row.get("precip_in", 1) >= 0.25
+    ):
+        return "rain"
+    if row.get("wind_mph_9pm", 99) >= 12:
+        return "wind"
+    if row.get("temp_f_9pm", 0) < 48:
+        return "cold"
+    return None
+
+
 def _moth_condition_score(row):
     """Return a transparent fallback score when the local model is unavailable."""
     def clamp(value):
@@ -1569,7 +1583,7 @@ def _moth_condition_score(row):
         + 0.25 * components["dry"]
         + 0.10 * components["darkness"]
     ))
-    if rain_chance >= 75 or precip >= 0.25 or wind >= 12 or temp < 48:
+    if _moth_no_go_reason(row):
         score = min(score, 39)
     return score, components
 
@@ -1631,12 +1645,8 @@ def rank_moth_forecast(nights, analysis=None):
             continue
 
         predicted = _predict_moth_species(row, fitted)
-        unsafe = (
-            row.get("rain_chance_pct", 100) >= 75
-            or row.get("precip_in", 1) >= 0.25
-            or row.get("wind_mph_9pm", 99) >= 12
-            or row.get("temp_f_9pm", 0) < 48
-        )
+        skip_reason = _moth_no_go_reason(row)
+        unsafe = skip_reason is not None
         row.update({
             "score": score,
             "components": components,
@@ -1649,6 +1659,7 @@ def rank_moth_forecast(nights, analysis=None):
                 else None
             ),
             "unsafe": unsafe,
+            "skip_reason": skip_reason,
         })
         ranked.append(row)
 
@@ -1691,11 +1702,13 @@ def rank_moth_forecast(nights, analysis=None):
         else:
             row["rating"] = "Skip"
             row["action"] = "Rest / process records"
+            row["skip_reason"] = "lower yield"
 
     for row in ranked:
         if not row.get("rating"):
             row["rating"] = "Skip"
             row["action"] = "Rest / process records"
+            row["skip_reason"] = "lower yield"
 
     return sorted(ranked, key=lambda row: row.get("date", ""))
 

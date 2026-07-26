@@ -158,6 +158,33 @@ class MothWeatherAnalysisTests(unittest.TestCase):
         )
         self.assertEqual(by_date["2026-08-02"]["typical_error"], 10)
 
+    def test_no_go_weather_names_the_skip_reason(self):
+        analysis = {
+            "status": "supported",
+            "weather_mae": 22,
+            "prediction_model": {
+                "feature_mean": [0] * 9,
+                "feature_scale": [1] * 9,
+                "coefficients": [89.0] + [0.0] * 9,
+                "historical_median": 40,
+            },
+        }
+        ranked = analyze.rank_moth_forecast([{
+            "date": "2026-07-28",
+            "temp_f_9pm": 64,
+            "humidity_9pm": 99,
+            "wind_mph_9pm": 3,
+            "rain_chance_pct": 92,
+            "precip_in": 1.19,
+            "moon_illumination_pct": 99,
+            "moon_phase": 0.49,
+        }], analysis=analysis)
+
+        self.assertEqual(ranked[0]["predicted_species"], 89)
+        self.assertEqual(ranked[0]["rating"], "Skip")
+        self.assertEqual(ranked[0]["skip_reason"], "rain")
+        self.assertLessEqual(ranked[0]["score"], 39)
+
 
 class ForecastTests(unittest.TestCase):
     def test_forecast_parser_extracts_nine_pm_and_moon(self):
