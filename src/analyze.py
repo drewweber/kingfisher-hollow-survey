@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from html.parser import HTMLParser
 
+import numpy as np
 import pandas as pd
 import requests
 
@@ -1310,6 +1311,247 @@ def moth_nightly_species(df, moths):
         ["species_count", "observation_count"]
     ].astype(int)
     return nightly[columns]
+
+
+def _moth_fixed_window_counts(sub, start_hour=21, duration_hours=2):
+    """Species recorded in the same local-clock window on each survey night."""
+    columns = ["night", "species_count"]
+    if sub.empty:
+        return pd.DataFrame(columns=columns)
+    timed = sub.dropna(
+        subset=["id", "taxon_id", "observed_on", "observed_at"]
+    ).drop_duplicates("id").copy()
+    if timed.empty:
+        return pd.DataFrame(columns=columns)
+    hour = pd.to_numeric(timed["observed_at"].str[11:13], errors="coerce")
+    minute = pd.to_numeric(timed["observed_at"].str[14:16], errors="coerce")
+    clock_minutes = hour * 60 + minute
+    start = start_hour * 60
+    end = start + duration_hours * 60
+    timed = timed[(clock_minutes >= start) & (clock_minutes < end)].copy()
+    if timed.empty:
+        return pd.DataFrame(columns=columns)
+    timed["night"] = pd.to_datetime(_session_dates(timed))
+    return (
+        timed.groupby("night", as_index=False)
+        .agg(species_count=("taxon_id", "nunique"))
+        .sort_values("night")
+        .reset_index(drop=True)
+    )[columns]
+
+
+def _ridge_loo_mae(features, target):
+    """Best leave-one-out MAE across a small deterministic ridge grid."""
+    if len(target) < 3:
+        return None
+    alphas = (0.1, 0.3, 1.0, 3.0, 10.0, 30.0)
+    best = None
+    for alpha in alphas:
+        predictions = []
+        for held_out in range(len(target)):
+            train = np.arange(len(target)) != held_out
+            train_x = features[train]
+            test_x = features[held_out:held_out + 1]
+            mean = train_x.mean(axis=0)
+            scale = train_x.std(axis=0)
+            scale[scale < 1e-8] = 1
+            train_z = (train_x - mean) / scale
+            test_z = (test_x - mean) / scale
+            train_design = np.column_stack(
+                [np.ones(len(train_z)), train_z]
+            )
+            test_design = np.column_stack([np.ones(1), test_z])
+            penalty = np.eye(train_design.shape[1])
+            penalty[0, 0] = 0
+            coefficients = np.linalg.solve(
+                train_design.T @ train_design + alpha * penalty,
+                train_design.T @ target[train],
+            )
+            predictions.append(float((test_design @ coefficients)[0]))
+        mae = float(np.mean(np.abs(np.asarray(predictions) - target)))
+        if best is None or mae < best:
+            best = mae
+    return best
+
+
+def moth_weather_analysis(df, moths, start_hour=21, duration_hours=1):
+    """Test whether weather/moon improves effort-standardized moth richness.
+
+    Species are counted only within the same local-clock window on every night.
+    Raw observation count is deliberately not used as an effort covariate:
+    high diversity itself creates more observations and encourages a longer
+    session.  The result remains associational because unsurveyed nights were
+    not selected at random.
+    """
+    sub = moth_obs(df, moths)
+    empty = {
+        "status": "insufficient",
+        "nights": 0,
+        "window": f"{start_hour % 12 or 12}–{(start_hour + duration_hours) % 12 or 12} PM",
+        "baseline_mae": None,
+        "weather_mae": None,
+        "lift_pct": None,
+    }
+    if sub.empty:
+        return empty
+
+    fixed_window = _moth_fixed_window_counts(
+        sub, start_hour=start_hour, duration_hours=duration_hours
+    )
+    if fixed_window.empty:
+        return empty
+
+    with connect() as conn:
+        conditions = pd.read_sql_query(
+            "SELECT date, temp_f_9pm, humidity_9pm, wind_mph_9pm, "
+            "precip_in, moon_phase FROM weather_cache",
+            conn,
+        )
+    conditions["date"] = pd.to_datetime(conditions["date"], errors="coerce")
+    model = fixed_window.merge(
+        conditions, left_on="night", right_on="date", how="inner"
+    ).dropna(subset=[
+        "temp_f_9pm",
+        "humidity_9pm",
+        "wind_mph_9pm",
+        "precip_in",
+        "moon_phase",
+    ])
+    if len(model) < 12:
+        result = empty.copy()
+        result["nights"] = len(model)
+        return result
+
+    day = model["night"].dt.dayofyear.to_numpy(dtype=float)
+    phase = model["moon_phase"].to_numpy(dtype=float)
+    seasonal = np.column_stack([
+        np.sin(2 * np.pi * day / 365.25),
+        np.cos(2 * np.pi * day / 365.25),
+        np.sin(4 * np.pi * day / 365.25),
+        np.cos(4 * np.pi * day / 365.25),
+    ])
+    conditions_x = np.column_stack([
+        model["temp_f_9pm"].to_numpy(dtype=float),
+        model["humidity_9pm"].to_numpy(dtype=float),
+        model["wind_mph_9pm"].to_numpy(dtype=float),
+        np.log1p(model["precip_in"].to_numpy(dtype=float)),
+        (1 - np.cos(2 * np.pi * phase)) / 2,
+    ])
+    target = model["species_count"].to_numpy(dtype=float)
+    baseline_mae = _ridge_loo_mae(seasonal, target)
+    weather_mae = _ridge_loo_mae(
+        np.column_stack([seasonal, conditions_x]), target
+    )
+    lift_pct = (
+        100 * (baseline_mae - weather_mae) / baseline_mae
+        if baseline_mae else None
+    )
+    return {
+        "status": (
+            "supported"
+            if lift_pct is not None and lift_pct >= 5
+            else "not_yet_supported"
+        ),
+        "nights": len(model),
+        "window": empty["window"],
+        "baseline_mae": baseline_mae,
+        "weather_mae": weather_mae,
+        "lift_pct": lift_pct,
+        "first_night": model["night"].min(),
+        "last_night": model["night"].max(),
+    }
+
+
+def rank_moth_forecast(nights):
+    """Assign transparent field-priority scores to upcoming forecast nights.
+
+    This is an operational score based on published light-trapping factors,
+    not a fitted species-count claim.  A deliberately short calibration session
+    is selected outside the top choices to reduce selective-sampling bias.
+    """
+    def clamp(value):
+        return max(0.0, min(1.0, value))
+
+    ranked = []
+    for source in nights or []:
+        row = dict(source)
+        temp = row.get("temp_f_9pm")
+        humidity = row.get("humidity_9pm")
+        wind = row.get("wind_mph_9pm")
+        rain_chance = row.get("rain_chance_pct")
+        precip = row.get("precip_in")
+        illumination = row.get("moon_illumination_pct")
+        if any(value is None for value in (
+            temp, humidity, wind, rain_chance, precip, illumination
+        )):
+            row.update({
+                "score": None,
+                "rating": "Incomplete",
+                "action": "Check forecast",
+            })
+            ranked.append(row)
+            continue
+
+        components = {
+            "temperature": clamp((temp - 48) / 27),
+            "humidity": clamp((humidity - 42) / 38),
+            "wind": clamp(1 - max(0, wind - 2) / 10),
+            "dry": clamp(1 - max(rain_chance / 75, precip / 0.25)),
+            "darkness": clamp(1 - illumination / 100),
+        }
+        score = round(100 * (
+            0.35 * components["temperature"]
+            + 0.10 * components["humidity"]
+            + 0.20 * components["wind"]
+            + 0.25 * components["dry"]
+            + 0.10 * components["darkness"]
+        ))
+        if rain_chance >= 75 or precip >= 0.25 or wind >= 12 or temp < 48:
+            score = min(score, 39)
+        if score >= 75:
+            rating = "Focus"
+        elif score >= 60:
+            rating = "Worth it"
+        elif score >= 45:
+            rating = "Backup"
+        else:
+            rating = "Skip"
+        row.update({
+            "score": score,
+            "rating": rating,
+            "components": components,
+        })
+        ranked.append(row)
+
+    usable = sorted(
+        [row for row in ranked if row.get("score") is not None],
+        key=lambda row: (-row["score"], row["date"]),
+    )
+    for priority, row in enumerate(usable, start=1):
+        row["priority_rank"] = priority
+        if priority == 1 and row["score"] >= 60:
+            row["action"] = "2-hour focused sheet"
+        elif priority == 2 and row["score"] >= 60:
+            row["action"] = "90-minute fallback"
+        elif row["score"] >= 60:
+            row["action"] = "60-minute check"
+        else:
+            row["action"] = "Rest / process records"
+
+    calibration_pool = [
+        row for row in usable[2:]
+        if 45 <= row["score"] < 60
+        and row.get("rain_chance_pct", 100) < 60
+        and row.get("wind_mph_9pm", 99) < 10
+    ]
+    if calibration_pool:
+        calibration = min(
+            calibration_pool, key=lambda row: abs(row["score"] - 48)
+        )
+        calibration["is_calibration"] = True
+        calibration["action"] = "60-minute calibration"
+
+    return sorted(ranked, key=lambda row: row.get("date", ""))
 
 
 def moth_effort(df, moths):

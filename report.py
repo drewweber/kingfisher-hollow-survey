@@ -16,6 +16,7 @@ import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
@@ -194,6 +195,193 @@ def takeaway(text, dark=False):
             f'<span class="{badge} text-[0.62rem] font-semibold tracking-[0.18em] uppercase">'
             f'What this shows</span>'
             f'<p class="{body} text-[0.97rem] leading-relaxed mt-1.5">{text}</p></div>')
+
+
+def moth_forecast_body(forecast, validation):
+    """Phone-friendly upcoming-night queue with an honest validation readout."""
+    ranked = analyze.rank_moth_forecast(forecast.get("nights", []))
+    scored = sorted(
+        [row for row in ranked if row.get("score") is not None],
+        key=lambda row: (-row["score"], row["date"]),
+    )
+    if not scored:
+        return (
+            '<div class="bg-white/[0.04] border border-white/10 rounded-2xl '
+            'p-6 md:p-8 mb-10">'
+            '<p class="text-hollow-300 text-xs font-semibold uppercase '
+            'tracking-[0.18em]">Night planner</p>'
+            '<h3 class="font-serif text-2xl text-white font-bold mt-2">'
+            'Forecast temporarily unavailable</h3>'
+            '<p class="text-white/60 leading-relaxed mt-3">The historical '
+            'calendar remains below. The next successful daily build will '
+            'restore the planning queue.</p></div>'
+        )
+
+    best = scored[0]
+    best_date = datetime.fromisoformat(best["date"])
+    top_targets = [
+        row for row in scored[:2]
+        if row["score"] >= 60
+    ]
+    target_names = " and ".join(
+        datetime.fromisoformat(row["date"]).strftime("%A, %b %-d")
+        for row in sorted(top_targets, key=lambda item: item["date"])
+    ) or "No long session is justified in this forecast window"
+
+    rating_classes = {
+        "Focus": "bg-hollow-300 text-hollow-950",
+        "Worth it": "bg-sky-200 text-sky-950",
+        "Backup": "bg-amber-200 text-amber-950",
+        "Skip": "bg-white/10 text-white/60",
+        "Incomplete": "bg-white/10 text-white/60",
+    }
+    cards = []
+    for row in ranked:
+        date = datetime.fromisoformat(row["date"])
+        rating = "Calibration" if row.get("is_calibration") else row["rating"]
+        badge_class = (
+            "bg-violet-200 text-violet-950"
+            if row.get("is_calibration")
+            else rating_classes.get(row["rating"], rating_classes["Incomplete"])
+        )
+        wind_desc = weather.wind_description(
+            row.get("wind_mph_9pm"), row.get("wind_dir_9pm")
+        )
+        moon = str(row.get("moon") or "moon unavailable")
+        conditions = [
+            f"{row.get('temp_f_9pm')}°F at 9 PM",
+            f"{row.get('humidity_9pm')}% humidity",
+            wind_desc or f"{row.get('wind_mph_9pm')} mph wind",
+            f"{row.get('rain_chance_pct')}% rain",
+            f"{moon} · {row.get('moon_illumination_pct')}% lit",
+        ]
+        cards.append(
+            '<li class="min-w-[15.5rem] snap-start rounded-xl border '
+            'md:min-w-0 '
+            'border-white/10 bg-black/10 p-4">'
+            '<div class="flex items-start justify-between gap-3">'
+            f'<div><p class="text-xs text-white/60">{date:%a}</p>'
+            f'<h4 class="text-white font-semibold">{date:%b} {date.day}</h4></div>'
+            f'<span class="{badge_class} rounded-full px-2.5 py-1 text-[0.65rem] '
+            f'font-semibold uppercase tracking-wide">{rating}</span></div>'
+            '<div class="mt-4 flex items-end gap-2">'
+            f'<span class="font-serif text-4xl font-bold text-white tabular-nums">'
+            f'{row.get("score", "—")}</span>'
+            '<span class="pb-1 text-xs text-white/60">/ 100</span></div>'
+            f'<p class="mt-2 text-sm font-medium text-hollow-300">'
+            f'{esc(row.get("action"))}</p>'
+            '<ul class="mt-3 space-y-1 text-xs leading-5 text-white/55">'
+            + "".join(f"<li>{esc(value)}</li>" for value in conditions)
+            + "</ul></li>"
+        )
+
+    fetched_text = "Forecast time unavailable"
+    if forecast.get("fetched_at"):
+        try:
+            fetched = datetime.fromisoformat(
+                forecast["fetched_at"].replace("Z", "+00:00")
+            ).astimezone(ZoneInfo("America/New_York"))
+            fetched_text = f"Updated {fetched:%b} {fetched.day} at {fetched:%-I:%M %p}"
+        except (ValueError, TypeError):
+            pass
+    if forecast.get("source") == "cache":
+        fetched_text += " · cached forecast"
+    if forecast.get("is_stale"):
+        fetched_text += " · may be stale"
+
+    validation_nights = validation.get("nights", 0)
+    if validation.get("status") == "supported":
+        lift = validation.get("lift_pct") or 0
+        validation_copy = (
+            f"On {validation_nights} comparable survey nights, adding 9 PM "
+            f"weather and moon reduced held-out error by {lift:.0f}% beyond "
+            "season alone. The local model now has a measurable signal, but "
+            "the selectively chosen survey nights still limit causal claims."
+        )
+        status_badge = "Local signal detected"
+        status_class = "text-hollow-300"
+    elif validation.get("status") == "not_yet_supported":
+        baseline = validation.get("baseline_mae")
+        weather_error = validation.get("weather_mae")
+        validation_copy = (
+            f"On {validation_nights} comparable survey nights, season alone "
+            f"had {baseline:.1f} species of held-out error in the fixed "
+            f"{validation.get('window')} window; adding weather "
+            f"and moon changed that to {weather_error:.1f}. That small "
+            f"{max(validation.get('lift_pct') or 0, 0):.0f}% gain is below "
+            "the 5% threshold set for calling the local signal predictive."
+        )
+        status_badge = "Not locally predictive yet"
+        status_class = "text-amber-200"
+    else:
+        validation_copy = (
+            f"Only {validation_nights} effort-comparable nights currently have "
+            "complete weather. More standardized short runs are needed before "
+            "a local model can be validated."
+        )
+        status_badge = "Building the sample"
+        status_class = "text-amber-200"
+
+    return (
+        '<div class="mb-10 overflow-hidden rounded-2xl border border-white/10 '
+        'bg-gradient-to-br from-white/[0.07] to-white/[0.025]">'
+        '<div class="grid gap-7 border-b border-white/10 p-6 md:grid-cols-[1.15fr_0.85fr] '
+        'md:p-8">'
+        '<div>'
+        '<p class="text-hollow-300 text-xs font-semibold uppercase '
+        'tracking-[0.18em]">Next 10 nights</p>'
+        f'<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
+        f'{esc(target_names)}</h3>'
+        '<p class="mt-3 max-w-xl text-sm leading-6 text-white/60">'
+        "These are the two best candidates for concentrated effort. The queue "
+        "protects your time: one primary two-hour sheet, one shorter fallback, "
+        "and at most one standardized one-hour calibration run.</p>"
+        f'<p class="mt-4 text-xs text-white/55">{esc(fetched_text)} · '
+        '<a class="underline decoration-white/20 underline-offset-2 '
+        'hover:text-white" href="https://open-meteo.com/en/docs">'
+        'Open-Meteo forecast</a></p></div>'
+        '<div class="rounded-xl border border-white/10 bg-black/15 p-5">'
+        '<p class="text-xs font-medium uppercase tracking-[0.16em] text-white/55">'
+        'Best available night</p>'
+        '<div class="mt-3 flex items-end justify-between gap-4">'
+        f'<div><p class="font-serif text-2xl font-bold text-white">'
+        f'{best_date:%A, %b} {best_date.day}</p>'
+        f'<p class="mt-1 text-sm text-hollow-300">{esc(best["action"])}</p></div>'
+        f'<p class="font-serif text-4xl font-bold text-white tabular-nums">'
+        f'{best["score"]}<span class="text-sm text-white/60">/100</span></p>'
+        '</div>'
+        f'<p class="mt-4 text-sm leading-6 {status_class}">{status_badge}</p>'
+        '</div></div>'
+        '<div class="p-5 md:p-7">'
+        '<p class="mb-3 text-xs text-white/60 md:hidden">Swipe for all nights →</p>'
+        '<ol class="flex snap-x gap-3 overflow-x-auto pb-3 md:grid '
+        'md:grid-cols-2 lg:grid-cols-5 md:overflow-visible">'
+        + "".join(cards)
+        + '</ol>'
+        '<details class="mt-5 border-t border-white/10 pt-5">'
+        '<summary class="cursor-pointer text-sm font-medium text-hollow-300 '
+        'focus-visible:outline-none focus-visible:ring-2 '
+        'focus-visible:ring-hollow-300">How to read this prediction</summary>'
+        f'<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
+        f'{esc(validation_copy)}</p>'
+        '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
+        "The current focus score is therefore a transparent field rule, not a "
+        "species-count forecast: 35% temperature, 25% dry conditions, 20% "
+        "wind, 10% humidity, and 10% moon darkness. Published light-trap work "
+        "supports warm, calm, dry nights and often lower moonlight, but those "
+        "effects can vary by trap and moth group. "
+        '<a class="text-hollow-300 underline decoration-hollow-300/30 '
+        'underline-offset-2" href="https://doi.org/10.1093/ee/26.6.1283">'
+        'Study context</a>.</p>'
+        '<p class="mt-3 max-w-3xl text-sm leading-6 text-white/60">'
+        "Why the calibration run matters: high diversity causes more records "
+        "and also persuades the observer to stay out longer. Each purple "
+        "calibration night runs from 9–10 PM regardless of activity. "
+        "Those fixed-duration samples reduce that feedback loop and let the "
+        "local model learn from middling nights without turning every evening "
+        "into a full session.</p>"
+        '</details></div></div>'
+    )
 
 
 # ── hero ─────────────────────────────────────────────────────────────────────
@@ -1989,6 +2177,8 @@ def moth_view(df, stats):
     # Combined calendar section: Month by Month + On the Wing + Phenology
     msum_monthly = analyze.monthly_survey_summary(df, moths)
     nightly_species = analyze.moth_nightly_species(df, moths)
+    moth_forecast = weather.load_forecast(days=10)
+    moth_weather_validation = analyze.moth_weather_analysis(df, moths)
     season_months = [r for r in msum_monthly if r['survey_season'] and r['nights_surveyed'] > 0]
     best_roi = max(season_months, key=lambda r: r['new_species_count'] / r['nights_surveyed']) if season_months else None
     best_roi_text = (
@@ -2000,15 +2190,16 @@ def moth_view(df, stats):
     out.append(section(
         "moth-calendar", "The Calendar",
         'Flight <em class="text-hollow-300">Seasons</em>',
-        chart_card(viz.nightly_species_calendar(nightly_species),
+        moth_forecast_body(moth_forecast, moth_weather_validation)
+        + chart_card(viz.nightly_species_calendar(nightly_species),
                    note='Each filled square is one evening survey session; the printed number is the distinct moth species reported that night. '
                         'Color reinforces the total. Blank dates mean no moth report, not zero species.',
                    dark=True)
         + takeaway(
-            "Nightly richness is the response variable for the next analysis. Because every square uses the "
-            "same evening-session date as the weather cache, these totals can be compared directly with 9 PM "
-            "temperature, humidity, wind, precipitation, and moon phase without splitting a single overnight "
-            "survey across two calendar days.", dark=True)
+            "The raw totals are useful history, but not fair like-for-like comparisons: a diverse sheet creates "
+            "more observations and encourages a longer session. The forecast validation therefore compares the "
+            "species recorded in the fixed 9–10 PM window and treats these as selectively chosen survey "
+            "nights—not random samples of every night.", dark=True)
         + chart_card(viz.monthly_survey_bar(msum_monthly),
                    note='Green: species recorded that month. Terracotta: species recorded for the first time ever. '
                         'Faded months are outside the May–September core flight season. Hover for survey-night counts.',
@@ -2032,7 +2223,7 @@ def moth_view(df, stats):
             "the active community for that month. The sparse winter columns are partly real — few moths fly "
             "in January and February — and partly a survey gap, since few people run lights in the cold. "
             "Both things are true, and more data will eventually separate them.", dark=True),
-        intro="Night-by-night richness, month-by-month totals and first records, individual flight windows for every species, and the full phenology matrix — the complete calendar of Kingfisher Hollow's moth season.",
+        intro="A practical queue for the next ten nights, followed by the evidence behind it: night-by-night richness, month-by-month totals, individual flight windows, and the full phenology matrix.",
         dark=True))
     out.append(section(
         "moth-methods", "Find More",
