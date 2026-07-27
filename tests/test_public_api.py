@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pandas as pd
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -150,6 +152,95 @@ class PublicApiSnapshotTests(unittest.TestCase):
             self.assertTrue(text.endswith("\n"))
             self.assertIn('"dataset":"kingfisher-hollow-moths"', text)
             self.assertEqual(payload["observation_count"], 2)
+
+
+class PublicApiSummaryTests(unittest.TestCase):
+    def setUp(self):
+        self.conn = sqlite3.connect(":memory:")
+        self.conn.row_factory = sqlite3.Row
+        self.conn.executescript(
+            """
+            CREATE TABLE property_obs (
+                taxon_id INTEGER,
+                iconic_taxon TEXT,
+                rank TEXT
+            );
+            CREATE TABLE moth_taxa (taxon_id INTEGER);
+            CREATE TABLE sync_log (synced_at TEXT);
+            """
+        )
+        self.conn.executemany(
+            "INSERT INTO property_obs VALUES (?, ?, ?)",
+            [
+                (1, "Plantae", "species"),
+                (1, "Plantae", "species"),
+                (2, "Insecta", "species"),
+                (3, "Aves", "species"),
+                (4, "Fungi", "genus"),
+                (5, "Mammalia", "subspecies"),
+            ],
+        )
+        self.conn.executemany(
+            "INSERT INTO moth_taxa VALUES (?)",
+            [(2,), (2,), (7,)],
+        )
+        self.conn.executemany(
+            "INSERT INTO sync_log VALUES (?)",
+            [("2026-07-23 22:00:00",), ("2026-07-24 03:00:00",)],
+        )
+        self.birds = pd.DataFrame(
+            [
+                {"taxon_name": "Setophaga ruticilla", "common_name": "American Redstart"},
+                {"taxon_name": "Catharus fuscescens", "common_name": "Veery"},
+                {"taxon_name": "Setophaga ruticilla", "common_name": "American Redstart"},
+            ]
+        )
+
+    def tearDown(self):
+        self.conn.close()
+
+    def test_summary_uses_current_lists_and_deduplicates_the_all_taxa_total(self):
+        summary = public_api.summary_from_connection(self.conn, birds=self.birds)
+        self.assertEqual(
+            summary,
+            {
+                "birds": 2,
+                "moths": 2,
+                "totalSpecies": 5,
+                "updatedAt": "2026-07-24T03:00:00Z",
+            },
+        )
+
+    def test_summary_supports_zero_and_empty_datasets(self):
+        self.conn.execute("DELETE FROM property_obs")
+        self.conn.execute("DELETE FROM moth_taxa")
+        empty_birds = pd.DataFrame(columns=["taxon_name", "common_name"])
+        summary = public_api.summary_from_connection(
+            self.conn,
+            birds=empty_birds,
+            updated_at="2026-07-24T03:00:00Z",
+        )
+        self.assertEqual(summary["birds"], 0)
+        self.assertEqual(summary["moths"], 0)
+        self.assertEqual(summary["totalSpecies"], 0)
+        self.assertIsInstance(summary["birds"], int)
+        self.assertIsInstance(summary["moths"], int)
+        self.assertIsInstance(summary["totalSpecies"], int)
+
+    def test_summary_writer_creates_the_generated_api_asset(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "_api-data" / "summary.json"
+            payload = public_api.write_summary(
+                self.conn,
+                output_path=output,
+                birds=self.birds,
+            )
+            self.assertEqual(payload["totalSpecies"], 5)
+            self.assertEqual(
+                output.read_text(encoding="utf-8"),
+                '{"birds":2,"moths":2,"totalSpecies":5,'
+                '"updatedAt":"2026-07-24T03:00:00Z"}\n',
+            )
 
 
 if __name__ == "__main__":

@@ -69,6 +69,10 @@ const jsonResponse = (schema) => ({
     "text/csv": { schema: { type: "string" } },
   },
 });
+const jsonOnlyResponse = (schema) => ({
+  description: "Successful JSON response.",
+  content: { "application/json": { schema } },
+});
 const commonErrors = {
   "400": { $ref: "#/components/responses/BadRequest" },
   "405": { $ref: "#/components/responses/MethodNotAllowed" },
@@ -103,10 +107,10 @@ const collectionSchema = (itemRef) => ({
 export const OPENAPI_DOCUMENT = {
   openapi: "3.1.0",
   info: {
-    title: "Kingfisher Hollow Moth Survey API",
+    title: "Kingfisher Hollow Survey API",
     version: API_VERSION,
     description: [
-      "Public, read-only access to moth observations recorded at Kingfisher Hollow.",
+      "Public, read-only access to the combined biodiversity summary and moth observations recorded at Kingfisher Hollow.",
       "A night is a distinct America/New_York calendar date represented by observed_on.",
       "Name and family filters are case-insensitive exact matches. Multiple filters use AND semantics.",
     ].join(" "),
@@ -118,12 +122,29 @@ export const OPENAPI_DOCUMENT = {
     url: "https://survey.kingfisher-hollow.com/api/docs",
   },
   tags: [
+    { name: "Summary", description: "Combined species totals across the survey's tracked taxa." },
     { name: "Observations", description: "Observation-level iNaturalist records." },
     { name: "Species", description: "Species summaries derived from matching observations." },
     { name: "Nights", description: "One row per matching local calendar date." },
     { name: "Stats", description: "Aggregate counts and date range." },
   ],
   paths: {
+    "/api/summary": {
+      get: {
+        operationId: "getBiodiversitySummary",
+        tags: ["Summary"],
+        summary: "Return the combined Kingfisher Hollow biodiversity summary",
+        description: "Returns the current countable eBird property list total, moth roster total, deduplicated all-taxa species total, and latest successful data refresh.",
+        parameters: [],
+        responses: {
+          "200": jsonOnlyResponse({ $ref: "#/components/schemas/BiodiversitySummary" }),
+          "400": { $ref: "#/components/responses/BadRequest" },
+          "405": { $ref: "#/components/responses/MethodNotAllowed" },
+          "429": { $ref: "#/components/responses/RateLimited" },
+          "500": { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
     "/api/observations": {
       get: {
         operationId: "listObservations",
@@ -197,6 +218,33 @@ export const OPENAPI_DOCUMENT = {
   },
   components: {
     schemas: {
+      BiodiversitySummary: {
+        type: "object",
+        required: ["birds", "moths", "totalSpecies", "updatedAt"],
+        additionalProperties: false,
+        properties: {
+          birds: {
+            type: "integer",
+            minimum: 0,
+            description: "Countable species on the current Kingfisher Hollow eBird location life list.",
+          },
+          moths: {
+            type: "integer",
+            minimum: 0,
+            description: "Species on the current Kingfisher Hollow moth roster.",
+          },
+          totalSpecies: {
+            type: "integer",
+            minimum: 0,
+            description: "Deduplicated species total across all taxa tracked by the survey report.",
+          },
+          updatedAt: {
+            type: "string",
+            format: "date-time",
+            description: "UTC time of the latest successful survey data refresh.",
+          },
+        },
+      },
       Observation: {
         type: "object",
         required: [
@@ -316,8 +364,8 @@ export const API_DOCS_HTML = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kingfisher Hollow Moth Survey API</title>
-  <meta name="description" content="Public read-only API documentation for Kingfisher Hollow moth observations.">
+  <title>Kingfisher Hollow Survey API</title>
+  <meta name="description" content="Public read-only API documentation for the Kingfisher Hollow biodiversity summary and moth observations.">
   <style>
     :root { color-scheme: light; --ink:#17231f; --muted:#64706b; --line:#d7dfdb; --green:#216b59; --paper:#f7f9f8; }
     * { box-sizing:border-box; }
@@ -346,8 +394,8 @@ export const API_DOCS_HTML = `<!doctype html>
 <body>
   <header>
     <p>Kingfisher Hollow Biodiversity Survey</p>
-    <h1>Moth Survey API</h1>
-    <p>Public, read-only occurrence data for moths documented on the 30-acre Kingfisher Hollow property in Tioga County, New York.</p>
+    <h1>Survey API</h1>
+    <p>Public, read-only biodiversity totals and moth occurrence data for the 30-acre Kingfisher Hollow property in Tioga County, New York.</p>
     <nav aria-label="API links">
       <a href="/api/openapi.json">OpenAPI schema</a>
       <a href="/">Survey site</a>
@@ -356,10 +404,11 @@ export const API_DOCS_HTML = `<!doctype html>
   </header>
   <main>
     <h2>Read-only actions</h2>
-    <p>No authentication is required. The four operations accept <code>GET</code> requests and return JSON by default. Names and families use case-insensitive exact matching; combined filters use AND semantics.</p>
+    <p>No authentication is required. The five operations accept <code>GET</code> requests and return JSON by default. Names and families use case-insensitive exact matching; combined filters use AND semantics.</p>
     <table>
       <thead><tr><th>Action and endpoint</th><th>Returns</th><th>Supported query parameters</th></tr></thead>
       <tbody>
+        <tr><td><strong>getBiodiversitySummary</strong><br><a href="/api/summary"><code>/api/summary</code></a></td><td>Bird, moth, and deduplicated all-taxa species totals from the current survey rebuild.</td><td>None</td></tr>
         <tr><td><strong>listSpecies</strong><br><a href="/api/species"><code>/api/species</code></a></td><td>Recorded taxa with observation totals, distinct-date counts, and first and last dates.</td><td><code>taxon_id, scientific_name, common_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
         <tr><td><strong>listObservations</strong><br><a href="/api/observations"><code>/api/observations</code></a></td><td>Unique observation records with local dates and canonical iNaturalist links.</td><td><code>observation_id, taxon_id, scientific_name, common_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
         <tr><td><strong>listObservationNights</strong><br><a href="/api/nights"><code>/api/nights</code></a></td><td>One row per matching local calendar date.</td><td><code>taxon_id, scientific_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
@@ -370,6 +419,7 @@ export const API_DOCS_HTML = `<!doctype html>
     <h2>Try the API</h2>
     <p>These examples are live and clickable:</p>
     <ul>
+      <li><a href="/api/summary"><code>/api/summary</code></a></li>
       <li><a href="/api/species?family=Saturniidae"><code>/api/species?family=Saturniidae</code></a></li>
       <li><a href="/api/observations?scientific_name=Actias%20luna&amp;limit=1"><code>/api/observations?scientific_name=Actias%20luna&amp;limit=1</code></a></li>
       <li><a href="/api/stats?family=Saturniidae"><code>/api/stats?family=Saturniidae</code></a></li>
@@ -378,6 +428,15 @@ export const API_DOCS_HTML = `<!doctype html>
     </ul>
 
     <h2>Responses</h2>
+    <h3>Biodiversity summary response shape</h3>
+    <p>The values below are illustrative. Call <a href="/api/summary"><code>/api/summary</code></a> for counts from the latest survey rebuild.</p>
+    <pre><code>{
+  "birds": 152,
+  "moths": 794,
+  "totalSpecies": 1680,
+  "updatedAt": "2026-07-23T23:31:43Z"
+}</code></pre>
+    <p><code>birds</code> comes from the countable eBird property life list, <code>moths</code> comes from the current moth roster, and <code>totalSpecies</code> applies the survey report's species-level inclusion and deduplication rules across every tracked taxon.</p>
     <h3>Filtered statistics</h3>
     <pre><code>{
   "filters": { "family": "Saturniidae" },
@@ -413,12 +472,13 @@ export const API_DOCS_HTML = `<!doctype html>
     <ol>
       <li>In the GPT Action editor, import <a href="/api/openapi.json"><code>https://survey.kingfisher-hollow.com/api/openapi.json</code></a>.</li>
       <li>Choose no authentication.</li>
-      <li>Test the four actions, then add the instructions below to the GPT.</li>
+      <li>Test the five actions, then add the instructions below to the GPT.</li>
     </ol>
     <pre><code>Use the Kingfisher Hollow Survey API for every question about survey
 observations, species, dates, nights, and counts.
 Never infer that a species was observed based on geography, taxonomy,
 or general knowledge.
+Use getBiodiversitySummary for current bird, moth, and all-taxa totals.
 Use listSpecies to determine which taxa have been recorded.
 Use listObservations to retrieve individual records and direct
 iNaturalist links.
@@ -486,13 +546,15 @@ export function handleContract(kind, context) {
     contentType = "text/html; charset=utf-8";
   } else {
     body = JSON.stringify({
-      name: "Kingfisher Hollow Moth Survey API",
+      name: "Kingfisher Hollow Survey API",
       version: API_VERSION,
-      dataset: "kingfisher-hollow-moths",
+      dataset: "kingfisher-hollow-survey",
       timezone: "America/New_York",
       documentation: "/api/docs",
       openapi: "/api/openapi.json",
-      endpoints: ["/api/observations", "/api/species", "/api/nights", "/api/stats"],
+      endpoints: [
+        "/api/summary", "/api/observations", "/api/species", "/api/nights", "/api/stats",
+      ],
     });
     contentType = "application/json; charset=utf-8";
   }

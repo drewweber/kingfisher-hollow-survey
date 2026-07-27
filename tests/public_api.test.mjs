@@ -5,6 +5,7 @@ import {
   __resetForTests,
   handleEndpoint,
   handleNotFound,
+  handleSummary,
 } from "../src/public_api_runtime.mjs";
 import {
   API_DOCS_HTML,
@@ -13,6 +14,7 @@ import {
 } from "../src/public_api_contract.mjs";
 import { onRequest as catchAllRoute } from "../functions/api/[[path]].js";
 import { onRequest as observationsRoute } from "../functions/api/observations.js";
+import { onRequest as summaryRoute } from "../functions/api/summary.js";
 
 
 const fixture = {
@@ -98,6 +100,13 @@ const fixture = {
   ],
 };
 
+const summaryFixture = {
+  birds: 152,
+  moths: 794,
+  totalSpecies: 1680,
+  updatedAt: "2026-07-24T03:00:00Z",
+};
+
 function paginatedFixture(size = 105) {
   return {
     ...fixture,
@@ -121,10 +130,23 @@ function paginatedFixture(size = 105) {
   };
 }
 
-function context(path, { method = "GET", headers = {}, snapshot = fixture, limiter = null } = {}) {
+function context(
+  path,
+  {
+    method = "GET",
+    headers = {},
+    snapshot = fixture,
+    summary = summaryFixture,
+    limiter = null,
+  } = {},
+) {
   const env = {
     ASSETS: {
-      fetch: async () => new Response(JSON.stringify(snapshot), {
+      fetch: async (request) => new Response(JSON.stringify(
+        new URL(request.url || request.toString()).pathname === "/_api-data/summary.json"
+          ? summary
+          : snapshot,
+      ), {
         status: 200,
         headers: { "content-type": "application/json" },
       }),
@@ -163,6 +185,90 @@ function assertLocalRefsResolve(document) {
 
 beforeEach(() => {
   __resetForTests();
+});
+
+test("summary returns public integer totals, refresh time, and polling cache headers", async () => {
+  const response = await summaryRoute(context("/api/summary"));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), "*");
+  assert.match(response.headers.get("cache-control"), /max-age=300/);
+  assert.match(response.headers.get("cache-control"), /s-maxage=3600/);
+  assert.deepEqual(await json(response), summaryFixture);
+  for (const field of ["birds", "moths", "totalSpecies"]) {
+    assert.equal(Number.isInteger(summaryFixture[field]), true);
+  }
+});
+
+test("summary preserves valid zero and empty dataset counts", async () => {
+  const response = await handleSummary(context("/api/summary", {
+    summary: {
+      birds: 0,
+      moths: 0,
+      totalSpecies: 0,
+      updatedAt: "2026-07-24T03:00:00Z",
+    },
+  }));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await json(response), {
+    birds: 0,
+    moths: 0,
+    totalSpecies: 0,
+    updatedAt: "2026-07-24T03:00:00Z",
+  });
+});
+
+test("summary supports validators and the complete read-only HTTP contract", async () => {
+  let response = await handleSummary(context("/api/summary"));
+  const etag = response.headers.get("etag");
+  assert.ok(etag);
+
+  response = await handleSummary(context("/api/summary", {
+    headers: { "if-none-match": etag },
+  }));
+  assert.equal(response.status, 304);
+  assert.equal(await response.text(), "");
+
+  response = await handleSummary(context("/api/summary", { method: "HEAD" }));
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), "");
+
+  response = await handleSummary(context("/api/summary", { method: "OPTIONS" }));
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get("access-control-allow-origin"), "*");
+
+  response = await handleSummary(context("/api/summary?format=json"));
+  assert.equal(response.status, 400);
+  assert.equal((await json(response)).error, "unknown_parameter");
+
+  for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
+    response = await handleSummary(context("/api/summary", { method }));
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get("allow"), "GET, HEAD, OPTIONS");
+    assert.equal((await json(response)).error, "method_not_allowed");
+  }
+});
+
+test("summary rejects malformed generated assets", async () => {
+  const invalidSummaries = [
+    { ...summaryFixture, birds: -1 },
+    { ...summaryFixture, totalSpecies: 100 },
+    { ...summaryFixture, updatedAt: "2026-07-24" },
+  ];
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    for (const summary of invalidSummaries) {
+      __resetForTests();
+      const response = await handleSummary(context("/api/summary", { summary }));
+      assert.equal(response.status, 500);
+      assert.deepEqual(await json(response), {
+        error: "server_error",
+        message: "The biodiversity summary data could not be loaded.",
+      });
+    }
+  } finally {
+    console.error = originalError;
+  }
 });
 
 test("observations filter, sort, paginate, and expose only stable public fields", async () => {
@@ -508,7 +614,7 @@ test("unknown API paths return a CORS-enabled JSON 404", async () => {
 test("the Pages catch-all preserves the API landing route", async () => {
   let response = catchAllRoute(context("/api"));
   assert.equal(response.status, 200);
-  assert.equal((await json(response)).name, "Kingfisher Hollow Moth Survey API");
+  assert.equal((await json(response)).name, "Kingfisher Hollow Survey API");
 
   response = catchAllRoute(context("/api/not-a-route"));
   assert.equal(response.status, 404);
@@ -529,8 +635,26 @@ test("missing data snapshot returns a structured 500 response", async () => {
   }
 });
 
+test("missing biodiversity summary returns a clear structured 500 response", async () => {
+  const broken = context("/api/summary");
+  broken.env.ASSETS.fetch = async () => new Response("missing", { status: 404 });
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const response = await handleSummary(broken);
+    assert.equal(response.status, 500);
+    assert.deepEqual(await json(response), {
+      error: "server_error",
+      message: "The biodiversity summary data could not be loaded.",
+    });
+  } finally {
+    console.error = originalError;
+  }
+});
+
 test("OpenAPI and human documentation describe every public endpoint", async () => {
   const operations = {
+    "/api/summary": "getBiodiversitySummary",
     "/api/species": "listSpecies",
     "/api/observations": "listObservations",
     "/api/nights": "listObservationNights",
@@ -551,10 +675,14 @@ test("OpenAPI and human documentation describe every public endpoint", async () 
     assert.equal(operation.operationId, operationId);
     operationIds.push(operation.operationId);
     assert.ok(operation.responses["200"].content["application/json"]);
-    assert.ok(operation.responses["200"].content["text/csv"]);
+    if (path === "/api/summary") {
+      assert.equal(operation.responses["200"].content["text/csv"], undefined);
+    } else {
+      assert.ok(operation.responses["200"].content["text/csv"]);
+    }
     assert.match(API_DOCS_HTML, new RegExp(path.replaceAll("/", "\\/")));
   }
-  assert.equal(new Set(operationIds).size, 4);
+  assert.equal(new Set(operationIds).size, 5);
 
   const parameterNames = (path) => OPENAPI_DOCUMENT.paths[path].get.parameters
     .map((item) => {
@@ -581,6 +709,13 @@ test("OpenAPI and human documentation describe every public endpoint", async () 
     "common_name", "date_from", "date_to", "family", "format",
     "scientific_name", "taxon_id", "year",
   ]);
+  assert.deepEqual(parameterNames("/api/summary"), []);
+  const summarySchema = OPENAPI_DOCUMENT.components.schemas.BiodiversitySummary;
+  assert.deepEqual(
+    summarySchema.required,
+    ["birds", "moths", "totalSpecies", "updatedAt"],
+  );
+  assert.equal(summarySchema.properties.updatedAt.format, "date-time");
   const metadata = OPENAPI_DOCUMENT.components.schemas.ObservationCollection;
   assert.ok(metadata.required.includes("count"));
   assert.ok(metadata.required.includes("total"));
@@ -601,6 +736,8 @@ test("OpenAPI and human documentation describe every public endpoint", async () 
   assert.match(docsResponse.headers.get("content-type"), /^text\/html/);
   const docs = await docsResponse.text();
   assert.match(docs, /America\/New_York/);
+  assert.match(docs, /href="\/api\/summary"/);
+  assert.match(docs, /values below are illustrative/i);
   assert.match(docs, /href="\/api\/species\?family=Saturniidae"/);
   assert.match(docs, /"error": "invalid_date"/);
   assert.match(docs, /Use the Kingfisher Hollow Survey API for every question/);

@@ -1,4 +1,4 @@
-"""Build the privacy-safe data snapshot consumed by the public moth API."""
+"""Build the privacy-safe data snapshots consumed by the public survey API."""
 
 import hashlib
 import json
@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from config import PUBLIC_DIR
+import analyze
+from config import PUBLIC_DIR, SPECIES_RANKS
 from db import connect
 
 
@@ -14,6 +15,7 @@ API_DATASET = "kingfisher-hollow-moths"
 API_SCHEMA_VERSION = 1
 LOCAL_TIMEZONE = "America/New_York"
 SNAPSHOT_PATH = PUBLIC_DIR / "_api-data" / "moths.json"
+SUMMARY_PATH = PUBLIC_DIR / "_api-data" / "summary.json"
 
 _MOTH_OBSERVATIONS_SQL = """
 SELECT
@@ -38,6 +40,74 @@ def _timestamp(value=None):
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
         "+00:00", "Z"
     )
+
+
+def _utc_timestamp(value):
+    """Normalize a SQLite/ISO timestamp to the API's UTC date-time form."""
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = "" if value is None else str(value).strip()
+        if not text:
+            raise ValueError("The survey database has no successful data refresh")
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except ValueError as error:
+            raise ValueError("The latest survey data refresh timestamp is invalid") from error
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
+def _latest_successful_refresh(conn):
+    row = conn.execute("SELECT MAX(synced_at) AS synced_at FROM sync_log").fetchone()
+    return _utc_timestamp(row["synced_at"] if row else None)
+
+
+def _bird_species_keys(birds):
+    """Return unique countable eBird taxa from analyze.load_birds()."""
+    if birds is None or birds.empty:
+        return set()
+    keys = set()
+    for row in birds.to_dict("records"):
+        scientific = str(row.get("taxon_name") or "").strip().casefold()
+        common = str(row.get("common_name") or "").strip().casefold()
+        if scientific or common:
+            keys.add(scientific or f"common:{common}")
+    return keys
+
+
+def summary_from_connection(conn, birds=None, updated_at=None):
+    """Build the combined biodiversity summary using the report's inclusion rules."""
+    birds = analyze.load_birds() if birds is None else birds
+    rank_placeholders = ",".join("?" for _rank in SPECIES_RANKS)
+    property_rows = conn.execute(
+        "SELECT DISTINCT taxon_id FROM property_obs "
+        "WHERE taxon_id IS NOT NULL "
+        "AND (iconic_taxon IS NULL OR iconic_taxon != 'Aves') "
+        f"AND rank IN ({rank_placeholders})",
+        tuple(SPECIES_RANKS),
+    ).fetchall()
+    moth_rows = conn.execute(
+        "SELECT DISTINCT taxon_id FROM moth_taxa WHERE taxon_id IS NOT NULL"
+    ).fetchall()
+
+    property_taxa = {int(row["taxon_id"]) for row in property_rows}
+    moth_taxa = {int(row["taxon_id"]) for row in moth_rows}
+    bird_taxa = _bird_species_keys(birds)
+    refreshed_at = (
+        _utc_timestamp(updated_at)
+        if updated_at is not None
+        else _latest_successful_refresh(conn)
+    )
+    return {
+        "birds": len(bird_taxa),
+        "moths": len(moth_taxa),
+        "totalSpecies": len(property_taxa) + len(bird_taxa),
+        "updatedAt": refreshed_at,
+    }
 
 
 def _required_text(value, field, observation_id):
@@ -141,14 +211,37 @@ def write_snapshot(conn, output_path=SNAPSHOT_PATH, generated_at=None):
     return payload
 
 
-def build(output_path=SNAPSHOT_PATH):
-    """Build the deployed API snapshot from the current survey database."""
+def write_summary(
+    conn,
+    output_path=SUMMARY_PATH,
+    birds=None,
+    updated_at=None,
+):
+    """Write the combined biodiversity summary asset."""
+    payload = summary_from_connection(conn, birds=birds, updated_at=updated_at)
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(payload, ensure_ascii=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    return payload
+
+
+def build(output_path=SNAPSHOT_PATH, summary_output_path=SUMMARY_PATH):
+    """Build the deployed API snapshots from the current survey data."""
     with connect() as conn:
         payload = write_snapshot(conn, output_path=output_path)
+        summary = write_summary(conn, output_path=summary_output_path)
     size_kb = Path(output_path).stat().st_size // 1024
     print(
         f"Wrote {output_path} ({size_kb:,} KB; "
         f"{payload['observation_count']:,} moth observations)"
+    )
+    print(
+        f"Wrote {summary_output_path} "
+        f"({summary['totalSpecies']:,} total species; "
+        f"{summary['birds']:,} birds; {summary['moths']:,} moths)"
     )
     return Path(output_path)
 
