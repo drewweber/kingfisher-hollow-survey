@@ -559,8 +559,11 @@ export function jsonResponse(payload, status = 200, extraHeaders = {}) {
   });
 }
 
-export function errorResponse(error) {
+export function errorResponse(error, { includeDebug = false } = {}) {
   const known = error instanceof SocialExportError;
+  const debug = !known && includeDebug
+    ? `${error?.name || "Error"}: ${error?.message || String(error)}`
+    : undefined;
   return jsonResponse({
     error: {
       code: known ? error.code : "internal_error",
@@ -568,6 +571,7 @@ export function errorResponse(error) {
         ? error.message
         : "The export tool hit an unexpected error. Retry the request.",
       retryable: known ? error.retryable : true,
+      ...(debug ? { debug } : {}),
     },
   }, known ? error.status : 500);
 }
@@ -602,7 +606,9 @@ export async function handleObservationSearch(context) {
       ...grouped,
     });
   } catch (error) {
-    return errorResponse(error);
+    return errorResponse(error, {
+      includeDebug: context.request.headers.get("x-social-export-debug") === "1",
+    });
   }
 }
 
