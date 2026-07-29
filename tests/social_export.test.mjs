@@ -131,6 +131,54 @@ test("iNaturalist pagination uses 200 records per request and follows all pages"
   assert.equal(calls[0].get("user_id"), "drewweber");
 });
 
+test("iNaturalist rate limits are retried using Retry-After before surfacing an error", async () => {
+  let calls = 0;
+  const delays = [];
+  const results = await fetchMatchingObservations(mothQuery, {
+    cache: null,
+    delay: async (milliseconds) => delays.push(milliseconds),
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) {
+        return new Response(null, {
+          status: 429,
+          headers: { "retry-after": "2" },
+        });
+      }
+      return new Response(JSON.stringify({
+        total_results: 1,
+        results: [{ id: 1 }],
+      }), {
+        headers: { "content-type": "application/json" },
+      });
+    },
+  });
+  assert.equal(calls, 2);
+  assert.deepEqual(delays, [2_000]);
+  assert.equal(results.length, 1);
+});
+
+test("concurrent identical iNaturalist pages share one upstream request", async () => {
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    return new Response(JSON.stringify({
+      total_results: 1,
+      results: [{ id: 1 }],
+    }), {
+      headers: { "content-type": "application/json" },
+    });
+  };
+  const [left, right] = await Promise.all([
+    fetchMatchingObservations(mothQuery, { fetchImpl, cache: null, delay: async () => {} }),
+    fetchMatchingObservations(mothQuery, { fetchImpl, cache: null, delay: async () => {} }),
+  ]);
+  assert.equal(calls, 1);
+  assert.equal(left.length, 1);
+  assert.equal(right.length, 1);
+});
+
 test("pixel analysis returns bounded visual-quality metrics and a stable hash", () => {
   const width = 32;
   const height = 32;

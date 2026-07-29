@@ -4,7 +4,9 @@ const API_USER_AGENT = "Kingfisher-Hollow-Social-Export/1.0 (survey.kingfisher-h
 const CACHE_TTL_SECONDS = 30 * 60;
 const MAX_API_RESULTS = 10_000;
 const API_PAGE_SIZE = 200;
+const INAT_MAX_ATTEMPTS = 3;
 const BUTTERFLY_TAXON_ID = 47224;
+const inFlightInatPages = new Map();
 
 export const TAXON_GROUPS = Object.freeze({
   moths: { label: "Moths", taxonId: 47157, excludeTaxonId: BUTTERFLY_TAXON_ID },
@@ -405,66 +407,110 @@ function cacheKeyFor(url) {
   });
 }
 
-async function fetchInatPage(url, { fetchImpl, cache, executionContext }) {
+function retryDelayMilliseconds(response, attempt) {
+  const retryAfter = response.headers.get("retry-after");
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return Math.min(15_000, Math.max(1_000, seconds * 1_000));
+    }
+    const date = Date.parse(retryAfter);
+    if (Number.isFinite(date)) {
+      return Math.min(15_000, Math.max(1_000, date - Date.now()));
+    }
+  }
+  return [2_000, 5_000][attempt] || 5_000;
+}
+
+async function fetchInatPage(url, {
+  fetchImpl,
+  cache,
+  executionContext,
+  delay,
+}) {
   const key = cacheKeyFor(url);
   if (cache) {
     const cached = await cache.match(key);
     if (cached) return cached.json();
   }
 
-  let response;
+  const inFlightKey = url.toString();
+  if (inFlightInatPages.has(inFlightKey)) {
+    return inFlightInatPages.get(inFlightKey);
+  }
+
+  const request = (async () => {
+    let response;
+    for (let attempt = 0; attempt < INAT_MAX_ATTEMPTS; attempt += 1) {
+      try {
+        response = await fetchImpl(url, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": API_USER_AGENT,
+          },
+          cf: {
+            cacheEverything: true,
+            cacheTtl: CACHE_TTL_SECONDS,
+          },
+        });
+      } catch (_error) {
+        throw new SocialExportError(
+          "inat_unavailable",
+          "iNaturalist could not be reached. Check the connection and try again.",
+          502,
+          true,
+        );
+      }
+      if (response.status !== 429) break;
+      if (attempt < INAT_MAX_ATTEMPTS - 1) {
+        await delay(retryDelayMilliseconds(response, attempt));
+      }
+    }
+    if (response.status === 429) {
+      throw new SocialExportError(
+        "inat_rate_limited",
+        "iNaturalist is still limiting requests after automatic retries. Try again in a minute.",
+        503,
+        true,
+      );
+    }
+    if (!response.ok) {
+      throw new SocialExportError(
+        "inat_request_failed",
+        `iNaturalist returned HTTP ${response.status}. Retry the request in a moment.`,
+        502,
+        true,
+      );
+    }
+    const payload = await response.json();
+    if (!payload || !Array.isArray(payload.results)) {
+      throw new SocialExportError(
+        "inat_malformed_response",
+        "iNaturalist returned an unexpected response. Retry the request.",
+        502,
+        true,
+      );
+    }
+    if (cache) {
+      const cachedResponse = new Response(JSON.stringify(payload), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}`,
+        },
+      });
+      const put = cache.put(key, cachedResponse);
+      if (executionContext?.waitUntil) executionContext.waitUntil(put);
+      else await put;
+    }
+    return payload;
+  })();
+
+  inFlightInatPages.set(inFlightKey, request);
   try {
-    response = await fetchImpl(url, {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": API_USER_AGENT,
-      },
-    });
-  } catch (_error) {
-    throw new SocialExportError(
-      "inat_unavailable",
-      "iNaturalist could not be reached. Check the connection and try again.",
-      502,
-      true,
-    );
+    return await request;
+  } finally {
+    inFlightInatPages.delete(inFlightKey);
   }
-  if (response.status === 429) {
-    throw new SocialExportError(
-      "inat_rate_limited",
-      "iNaturalist is temporarily limiting requests. Wait a minute, then retry.",
-      503,
-      true,
-    );
-  }
-  if (!response.ok) {
-    throw new SocialExportError(
-      "inat_request_failed",
-      `iNaturalist returned HTTP ${response.status}. Retry the request in a moment.`,
-      502,
-      true,
-    );
-  }
-  const payload = await response.json();
-  if (!payload || !Array.isArray(payload.results)) {
-    throw new SocialExportError(
-      "inat_malformed_response",
-      "iNaturalist returned an unexpected response. Retry the request.",
-      502,
-      true,
-    );
-  }
-  if (cache) {
-    const cachedResponse = new Response(JSON.stringify(payload), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}`,
-      },
-    });
-    const put = cache.put(key, cachedResponse);
-    if (executionContext?.waitUntil) executionContext.waitUntil(put);
-    else await put;
-  }
-  return payload;
 }
 
 export async function fetchMatchingObservations(
@@ -499,6 +545,7 @@ export async function fetchMatchingObservations(
       fetchImpl,
       cache,
       executionContext,
+      delay,
     });
     totalResults = Math.min(Number(payload.total_results) || 0, MAX_API_RESULTS);
     results.push(...payload.results);
