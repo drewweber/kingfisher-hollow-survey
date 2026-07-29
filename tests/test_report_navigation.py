@@ -44,6 +44,14 @@ class ReportNavigationTests(unittest.TestCase):
         for href, _label in report.VIEW_CONFIG["all"]["links"]:
             self.assertIn(f'href="{href}"', html)
 
+    def test_log_links_to_social_export_and_tiger_swallowtail_guide(self):
+        html = report.log_resource_links()
+        self.assertIn('aria-labelledby="log-resources-title"', html)
+        self.assertIn('href="/tools/social-export/"', html)
+        self.assertIn("Social Media Export", html)
+        self.assertIn(f'href="{report.tiger_swallowtail.CASE_ROUTE}"', html)
+        self.assertIn("Tiger Swallowtail ID Guide", html)
+
     def test_stylesheet_url_changes_with_the_stylesheet_content(self):
         version = report._asset_version("src/styles.css")
         html = report.head({"species": 1}, county_firsts=0)
