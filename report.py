@@ -1617,6 +1617,44 @@ def id_changes_body(changes):
     )
 
 
+def log_resource_links():
+    """Link the journal to tools that build on the survey observations."""
+    resources = [
+        (
+            "/tools/social-export/",
+            "Social Media Export",
+            "Turn selected iNaturalist observations into a finished, downloadable image carousel.",
+        ),
+        (
+            tiger_swallowtail.CASE_ROUTE,
+            "Tiger Swallowtail ID Guide",
+            "Compare the evidence for Eastern and Midsummer Tiger Swallowtails in the Hollow.",
+        ),
+    ]
+    items = "".join(
+        f"""
+        <li>
+          <a href="{href}"
+            class="group block h-full rounded-xl border border-stone-200 bg-white p-5 transition-colors hover:border-hollow-300 hover:bg-hollow-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500 focus-visible:ring-offset-2">
+            <span class="flex items-start justify-between gap-4">
+              <span>
+                <span class="block font-serif text-xl font-bold text-stone-900">{title}</span>
+                <span class="mt-2 block text-sm leading-6 text-stone-500">{description}</span>
+              </span>
+              <span class="mt-1 shrink-0 text-hollow-600 transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+            </span>
+          </a>
+        </li>"""
+        for href, title, description in resources
+    )
+    return f"""
+    <nav class="mx-auto mt-14 max-w-3xl border-t border-stone-200 pt-8" aria-labelledby="log-resources-title">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-hollow-600">Explore further</p>
+      <h3 id="log-resources-title" class="mt-2 font-serif text-2xl font-bold text-stone-900">Survey tools and guides</h3>
+      <ul class="mt-5 grid gap-4 sm:grid-cols-2">{items}</ul>
+    </nav>"""
+
+
 def _ordinal(n):
     if 11 <= (n % 100) <= 13:
         return f"{n}th"
@@ -3317,7 +3355,8 @@ def build():
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
         activity_log_body(log_entries, weather_cache)
-        + id_changes_body(id_changes),
+        + id_changes_body(id_changes)
+        + log_resource_links(),
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
     parts.append('</div>')  # /view-log
     parts.append('</main>')
