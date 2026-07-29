@@ -441,10 +441,6 @@ async function fetchInatPage(url, {
           Accept: "application/json",
           "User-Agent": API_USER_AGENT,
         },
-        cf: {
-          cacheEverything: true,
-          cacheTtl: CACHE_TTL_SECONDS,
-        },
       });
     } catch (_error) {
       throw new SocialExportError(
