@@ -404,7 +404,9 @@ function wait(milliseconds) {
 }
 
 function cacheKeyFor(url) {
-  return new Request(url.toString(), {
+  const keyUrl = new URL("https://survey.kingfisher-hollow.com/__social-export-cache/inaturalist-observations-v2");
+  keyUrl.search = url.search;
+  return new Request(keyUrl, {
     headers: { Accept: "application/json" },
   });
 }
@@ -437,6 +439,7 @@ async function fetchInatPage(url, {
   }
 
   let response;
+  let payload;
   for (let attempt = 0; attempt < INAT_MAX_ATTEMPTS; attempt += 1) {
     try {
       response = await fetchImpl(url, {
@@ -453,10 +456,23 @@ async function fetchInatPage(url, {
         true,
       );
     }
-    if (response.status !== 429) break;
-    if (attempt < INAT_MAX_ATTEMPTS - 1) {
-      await delay(retryDelayMilliseconds(response, attempt));
+    if (response.status === 429) {
+      if (attempt < INAT_MAX_ATTEMPTS - 1) {
+        await delay(retryDelayMilliseconds(response, attempt));
+        continue;
+      }
+      break;
     }
+    if (!response.ok) break;
+    try {
+      payload = await response.json();
+    } catch (_error) {
+      if (attempt < INAT_MAX_ATTEMPTS - 1) {
+        await delay([1_000, 2_000][attempt] || 2_000);
+        continue;
+      }
+    }
+    break;
   }
   if (response.status === 429) {
     throw new SocialExportError(
@@ -474,7 +490,6 @@ async function fetchInatPage(url, {
       true,
     );
   }
-  const payload = await response.json();
   if (!payload || !Array.isArray(payload.results)) {
     throw new SocialExportError(
       "inat_malformed_response",
@@ -559,11 +574,8 @@ export function jsonResponse(payload, status = 200, extraHeaders = {}) {
   });
 }
 
-export function errorResponse(error, { includeDebug = false } = {}) {
+export function errorResponse(error) {
   const known = error instanceof SocialExportError;
-  const debug = !known && includeDebug
-    ? `${error?.name || "Error"}: ${error?.message || String(error)}`
-    : undefined;
   return jsonResponse({
     error: {
       code: known ? error.code : "internal_error",
@@ -571,7 +583,6 @@ export function errorResponse(error, { includeDebug = false } = {}) {
         ? error.message
         : "The export tool hit an unexpected error. Retry the request.",
       retryable: known ? error.retryable : true,
-      ...(debug ? { debug } : {}),
     },
   }, known ? error.status : 500);
 }
@@ -606,9 +617,7 @@ export async function handleObservationSearch(context) {
       ...grouped,
     });
   } catch (error) {
-    return errorResponse(error, {
-      includeDebug: context.request.headers.get("x-social-export-debug") === "1",
-    });
+    return errorResponse(error);
   }
 }
 

@@ -158,6 +158,32 @@ test("iNaturalist rate limits are retried using Retry-After before surfacing an 
   assert.equal(results.length, 1);
 });
 
+test("malformed successful iNaturalist responses are retried before use", async () => {
+  let calls = 0;
+  const delays = [];
+  const results = await fetchMatchingObservations(mothQuery, {
+    cache: null,
+    delay: async (milliseconds) => delays.push(milliseconds),
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) {
+        return new Response("<?xml version=\"1.0\"?><Error>temporary</Error>", {
+          headers: { "content-type": "application/xml" },
+        });
+      }
+      return new Response(JSON.stringify({
+        total_results: 1,
+        results: [{ id: 1 }],
+      }), {
+        headers: { "content-type": "application/json" },
+      });
+    },
+  });
+  assert.equal(calls, 2);
+  assert.deepEqual(delays, [1_000]);
+  assert.equal(results.length, 1);
+});
+
 test("pixel analysis returns bounded visual-quality metrics and a stable hash", () => {
   const width = 32;
   const height = 32;
