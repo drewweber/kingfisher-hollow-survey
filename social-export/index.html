@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d221c">
+  <meta name="description" content="Create finished social-media image sets from Kingfisher Hollow survey observations.">
+  <title>Social Media Export · Kingfisher Hollow Survey</title>
+  <link rel="stylesheet" href="/assets/social-export.css?v=__ASSET_VERSION__">
+  <script type="module" src="/assets/social-export.js?v=__ASSET_VERSION__"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to export settings</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Kingfisher Hollow biodiversity survey home">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M19 11l-1.2-4 1.4 2.2-.4-4.5 1.6 3.2.6-4.2 1 3.5 1.4-3.2.2 3.2 1.2-2.2-.2 3" fill="#8ec8b1"/>
+        <ellipse cx="22" cy="12.5" rx="5" ry="4" fill="#8ec8b1"/>
+        <circle cx="23.5" cy="11.8" r="1.3" fill="#0d221c"/>
+        <path d="M27 12l8.5.8L27 14z" fill="#b7c8bf"/>
+        <path d="M13 16c-1.5 3-2 7-1 10 .8 2.5 3 4 6 4.2h4c3.5-.5 6-3 6-6.5 0-3.5-1.5-6.5-4-8l-5-1.5c-3-.3-5 .5-6 1.8z" fill="#5b8fa8"/>
+        <path d="M15 24c.3-2.5 2-4.5 4.5-5h3.5c2.2 0 3.8 1.5 4 3.8.2 2.5-1.5 5-4 5.5h-3.5c-3 0-4.8-1.8-4.5-4.3z" fill="#edf2ef"/>
+      </svg>
+      <span>
+        <strong>Kingfisher Hollow</strong>
+        <small>Survey tools</small>
+      </span>
+    </a>
+    <a class="back-link" href="/">Back to survey</a>
+  </header>
+
+  <main id="main">
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-copy">
+        <p class="eyebrow">Social media export</p>
+        <h1 id="page-title">From field records to a finished carousel.</h1>
+        <p>Choose a survey window, review one observer’s own photos, then download every finished PNG and its attribution manifest in one ZIP.</p>
+      </div>
+      <div class="contact-sheet" aria-hidden="true">
+        <div></div><div></div><div></div><div></div>
+        <span>NMW / 2026</span>
+      </div>
+    </section>
+
+    <section class="workspace" aria-labelledby="settings-title">
+      <form id="export-form" class="settings-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="step-label">Set 01</p>
+            <h2 id="settings-title">Choose observations</h2>
+          </div>
+          <p>Only public iNaturalist observations with photos are included.</p>
+        </div>
+
+        <div class="field field-wide">
+          <label for="preset">Preset</label>
+          <select id="preset" name="preset">
+            <option value="national-moth-week-2026">National Moth Week 2026</option>
+            <option value="">Custom export</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="date-from">Date from</label>
+            <input id="date-from" name="dateFrom" type="date" required value="2026-07-18">
+          </div>
+          <div class="field">
+            <label for="date-to">Date to</label>
+            <input id="date-to" name="dateTo" type="date" required value="2026-07-26">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="taxon-group">Taxon group</label>
+            <select id="taxon-group" name="taxonGroup">
+              <option value="moths">Moths</option>
+              <option value="butterflies">Butterflies</option>
+              <option value="birds">Birds</option>
+              <option value="fungi">Fungi</option>
+              <option value="plants">Plants</option>
+              <option value="amphibians">Amphibians</option>
+              <option value="reptiles">Reptiles</option>
+              <option value="mammals">Mammals</option>
+              <option value="insects">Insects</option>
+              <option value="arachnids">Arachnids</option>
+              <option value="mollusks">Mollusks</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="observer">Observer username</label>
+            <input id="observer" name="observer" type="text" required
+              autocomplete="off" autocapitalize="none" spellcheck="false" value="drewweber">
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>Carousel</legend>
+          <div class="field-row">
+            <div class="field">
+              <label for="output-format">Output format</label>
+              <select id="output-format" name="outputFormat">
+                <option value="instagram-square">Instagram square · 1080×1080</option>
+                <option value="instagram-story">Instagram story · 1080×1920</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="grid-size">Grid size</label>
+              <select id="grid-size" name="gridSize">
+                <option value="3x3">3×3 · 9 species</option>
+                <option value="4x4">4×4 · 16 species</option>
+                <option value="5x4" selected>5×4 · 20 species</option>
+                <option value="5x5">5×5 · 25 species</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="maximum-slides">Maximum slides</label>
+              <input id="maximum-slides" name="maximumSlides" type="number" min="1" max="20" value="10">
+            </div>
+            <div class="field">
+              <label for="theme">Theme</label>
+              <select id="theme" name="theme">
+                <option value="kingfisher-quiet">Kingfisher quiet</option>
+                <option value="midnight-sheet">Midnight sheet</option>
+                <option value="field-note">Field note</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="checks">
+          <label><input id="include-cover" type="checkbox" checked> Include cover slide</label>
+          <label><input id="include-labels" type="checkbox" checked> Include species labels</label>
+          <label><input id="include-unresolved" type="checkbox"> Include unresolved taxa</label>
+        </div>
+
+        <div id="search-error" class="inline-error" role="alert" hidden>
+          <p></p>
+          <button id="retry-search" type="button">Retry iNaturalist request</button>
+        </div>
+
+        <button id="find-photos" class="primary-action" type="submit">
+          Review automatic photo choices
+        </button>
+        <p id="search-status" class="status-line" role="status" aria-live="polite"></p>
+      </form>
+
+      <aside class="process-panel" aria-label="How the export works">
+        <p class="step-label">Built for the final file</p>
+        <ol>
+          <li><strong>Retrieve</strong><span>All matching photo observations, with pagination and caching.</span></li>
+          <li><strong>Choose</strong><span>One species, one observer-owned photo, scored for usable image quality.</span></li>
+          <li><strong>Review</strong><span>Replace any choice with another photo from the same observations.</span></li>
+          <li><strong>Render</strong><span>Your browser composes each PNG, then downloads every slide in one ZIP.</span></li>
+        </ol>
+        <div class="format-note">
+          <span>Default set</span>
+          <strong>1 cover + 9 grids</strong>
+          <small>180 species at 5×4</small>
+        </div>
+      </aside>
+    </section>
+
+    <section id="review" class="review-section" aria-labelledby="review-title" hidden>
+      <div class="review-heading">
+        <div>
+          <p class="step-label">Set 02</p>
+          <h2 id="review-title">Review photo choices</h2>
+          <p id="review-summary"></p>
+        </div>
+        <div class="review-capacity" aria-label="Carousel capacity">
+          <strong id="capacity-count" class="tabular">0 / 0</strong>
+          <span>species selected</span>
+        </div>
+      </div>
+      <div id="species-grid" class="species-grid"></div>
+      <div class="export-dock">
+        <div>
+          <strong id="export-description">Ten browser-rendered slides</strong>
+          <span>PNG files + attribution manifest in one ZIP</span>
+        </div>
+        <button id="download-export" class="primary-action" type="button">Download carousel ZIP</button>
+        <p id="export-status" class="status-line" role="status" aria-live="polite"></p>
+        <div id="export-error" class="inline-error" role="alert" hidden>
+          <p></p>
+          <button id="retry-export" type="button">Retry export</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="photo-dialog" aria-labelledby="photo-dialog-title">
+    <div class="dialog-heading">
+      <div>
+        <p class="step-label">Alternative photos</p>
+        <h2 id="photo-dialog-title">Choose a photo</h2>
+        <p id="photo-dialog-species"></p>
+      </div>
+      <button id="close-photo-dialog" class="quiet-button" type="button">Close</button>
+    </div>
+    <div id="candidate-grid" class="candidate-grid"></div>
+  </dialog>
+</body>
+</html>

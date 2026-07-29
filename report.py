@@ -24,6 +24,7 @@ import analyze  # noqa: E402
 import field_guide  # noqa: E402
 import inat_api  # noqa: E402
 import public_api  # noqa: E402
+import social_export  # noqa: E402
 import tiger_swallowtail  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
@@ -3331,6 +3332,7 @@ def build():
     survey_digest = hashlib.sha256(out.read_bytes()).hexdigest()
     print(f"Wrote {out}  ({out.stat().st_size // 1024} KB)")
     _timed("public-api", public_api.build)
+    _timed("social-export", social_export.build)
     _timed("tiger-swallowtail-case-study", tiger_swallowtail.build)
     _timed("field-guide", field_guide.build)
     if hashlib.sha256(out.read_bytes()).hexdigest() != survey_digest:
