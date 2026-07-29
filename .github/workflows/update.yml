@@ -32,6 +32,7 @@ on:
       - "assets/**"
       - "field-guide/**"
       - "functions/**"
+      - "social-export/**"
       - "tests/**"
       - "requirements.txt"
       - ".node-version"
@@ -128,7 +129,7 @@ jobs:
         run: python report.py
 
       - name: Test public API
-        run: node --test tests/public_api.test.mjs
+        run: node --test tests/*.test.mjs
 
       - name: Install Wrangler
         run: npm ci --prefix field-alerts --ignore-scripts

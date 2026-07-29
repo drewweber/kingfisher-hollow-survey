@@ -9,5 +9,9 @@
   },
   "devDependencies": {
     "tailwindcss": "3.4.19"
+  },
+  "dependencies": {
+    "@cf-wasm/photon": "^0.3.7",
+    "@cf-wasm/resvg": "^0.1.17"
   }
 }
