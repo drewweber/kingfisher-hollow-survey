@@ -397,6 +397,9 @@ export function groupObservations(rawObservations, query) {
 }
 
 function wait(milliseconds) {
+  if (globalThis.scheduler?.wait) {
+    return globalThis.scheduler.wait(milliseconds);
+  }
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
