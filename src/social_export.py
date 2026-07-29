@@ -13,7 +13,7 @@ SOURCE_DIR = ROOT / "social-export"
 
 def _source_digest():
     digest = hashlib.sha256()
-    for filename in ("index.html", "styles.css", "app.js"):
+    for filename in ("index.html", "styles.css", "app.js", "browser-export.js"):
         digest.update((SOURCE_DIR / filename).read_bytes())
     return digest.hexdigest()[:12]
 
@@ -30,5 +30,11 @@ def build():
     output = route_dir / "index.html"
     output.write_text(html, encoding="utf-8")
     shutil.copyfile(SOURCE_DIR / "styles.css", assets_dir / "social-export.css")
-    shutil.copyfile(SOURCE_DIR / "app.js", assets_dir / "social-export.js")
+    script = (SOURCE_DIR / "app.js").read_text(encoding="utf-8")
+    script = script.replace("__ASSET_VERSION__", version)
+    (assets_dir / "social-export.js").write_text(script, encoding="utf-8")
+    shutil.copyfile(
+        SOURCE_DIR / "browser-export.js",
+        assets_dir / "social-export-render.js",
+    )
     return output

@@ -22,6 +22,10 @@ import {
   gridSlideSvg,
   wrapCommonName,
 } from "../src/social_export_render.mjs";
+import {
+  createManifest as createBrowserManifest,
+  createZipBlob,
+} from "../social-export/browser-export.js";
 
 function photo(id, dimensions = { width: 2400, height: 1800 }) {
   return {
@@ -419,6 +423,41 @@ test("ZIP output uses valid local, central, and end records", () => {
   assert.equal(view.getUint16(zip.length - 12, true), 2);
   assert.match(new TextDecoder().decode(zip), /moth-week-2026-01\.png/);
   assert.match(new TextDecoder().decode(zip), /attribution\.txt/);
+});
+
+test("browser export creates valid ZIP records and observer-owned attribution", async () => {
+  const settings = normalizeSettings({
+    ...PRESETS["national-moth-week-2026"],
+    maximumSlides: 2,
+  }, mothQuery);
+  const grouped = groupObservations([
+    observation({ id: 91, taxonId: 909, photos: [photo(910)] }),
+  ], mothQuery);
+  grouped.species[0].rotation = 90;
+  const slides = [
+    { type: "cover", slideNumber: 1 },
+    { type: "grid", slideNumber: 2, species: grouped.species },
+  ];
+  const manifest = createBrowserManifest(
+    mothQuery,
+    settings,
+    slides,
+    "2026-07-29T12:00:00.000Z",
+  );
+  assert.equal(manifest.export.renderer, "browser-canvas");
+  assert.equal(manifest.photos[0].photographer, "drewweber");
+  assert.equal(manifest.photos[0].rotation_degrees, 90);
+
+  const zipBlob = await createZipBlob([
+    { name: "moth-week-2026-01.png", data: new Blob([new Uint8Array([1, 2, 3])]) },
+    { name: "attribution.json", data: JSON.stringify(manifest) },
+  ], new Date("2026-07-29T12:00:00Z"));
+  const zip = new Uint8Array(await zipBlob.arrayBuffer());
+  const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+  assert.equal(view.getUint32(0, true), 0x04034b50);
+  assert.equal(view.getUint32(zip.length - 22, true), 0x06054b50);
+  assert.match(new TextDecoder().decode(zip), /moth-week-2026-01\.png/);
+  assert.match(new TextDecoder().decode(zip), /browser-canvas/);
 });
 
 test("complete export re-verifies the selected iNaturalist photo and names ten PNG files", async () => {

@@ -21,8 +21,11 @@ class SocialExportBuildTests(unittest.TestCase):
             self.assertNotIn("__ASSET_VERSION__", html)
             self.assertTrue((public / "assets" / "social-export.css").exists())
             self.assertTrue((public / "assets" / "social-export.js").exists())
+            self.assertTrue(
+                (public / "assets" / "social-export-render.js").exists()
+            )
 
-    def test_page_exposes_accessible_controls_and_server_export_endpoint(self):
+    def test_page_exposes_accessible_controls_and_browser_zip_export(self):
         html = (social_export.SOURCE_DIR / "index.html").read_text(encoding="utf-8")
         script = (social_export.SOURCE_DIR / "app.js").read_text(encoding="utf-8")
         for control in (
@@ -41,8 +44,9 @@ class SocialExportBuildTests(unittest.TestCase):
         self.assertIn('role="status"', html)
         self.assertIn('role="alert"', html)
         self.assertIn('aria-labelledby="photo-dialog-title"', html)
-        self.assertIn('fetch("/api/social-export/export"', script)
-        self.assertIn("downloadBlob(await response.blob()", script)
+        self.assertIn("renderCarouselZip(", script)
+        self.assertIn("downloadBlob(result.zip", script)
+        self.assertIn("social-export-render.js?v=", script)
 
 
 if __name__ == "__main__":

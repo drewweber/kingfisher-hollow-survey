@@ -1,3 +1,5 @@
+import { renderCarouselZip } from "./social-export-render.js?v=__ASSET_VERSION__";
+
 const PRESET = {
   dateFrom: "2026-07-18",
   dateTo: "2026-07-26",
@@ -35,6 +37,10 @@ let exportSpecies = [];
 let activeSpeciesKey = null;
 let lastDialogTrigger = null;
 
+function proxiedPhotoUrl(url) {
+  return `/api/social-export/photo?url=${encodeURIComponent(url)}`;
+}
+
 function setValue(selector, value) {
   document.querySelector(selector).value = value;
 }
@@ -62,7 +68,6 @@ function invalidateReview() {
 }
 
 function markCustom(event) {
-  if (presetControl.value) presetControl.value = "";
   const queryControls = new Set([
     "date-from",
     "date-to",
@@ -71,6 +76,7 @@ function markCustom(event) {
     "include-unresolved",
   ]);
   if (queryControls.has(event.currentTarget.id)) {
+    if (presetControl.value) presetControl.value = "";
     invalidateReview();
   } else if (searchData) {
     renderReview();
@@ -235,7 +241,7 @@ function makeSpeciesCard(group) {
   const photo = document.createElement("div");
   photo.className = "species-photo";
   const image = document.createElement("img");
-  image.src = candidate.renderUrl;
+  image.src = proxiedPhotoUrl(candidate.renderUrl);
   image.alt = `${group.commonName || group.scientificName}, iNaturalist observation ${candidate.observationId}`;
   image.loading = "lazy";
   image.decoding = "async";
@@ -311,7 +317,7 @@ function renderReview() {
       (settings.includeCover ? 1 : 0)
         + Math.ceil(exportSpecies.length / (settings.gridColumns * settings.gridRows)),
     );
-  exportDescription.textContent = `${slideCount} server-rendered slide${slideCount === 1 ? "" : "s"}`;
+  exportDescription.textContent = `${slideCount} browser-rendered slide${slideCount === 1 ? "" : "s"}`;
   review.hidden = false;
 }
 
@@ -327,7 +333,7 @@ function openPhotoDialog(group, trigger) {
     button.setAttribute("aria-pressed", candidate.photoId === group.selectedPhotoId ? "true" : "false");
     button.setAttribute("aria-label", `Use photo ${candidate.photoId} from observation ${candidate.observationId}`);
     const image = document.createElement("img");
-    image.src = candidate.renderUrl;
+    image.src = proxiedPhotoUrl(candidate.renderUrl);
     image.alt = "";
     image.loading = "lazy";
     const detail = document.createElement("span");
@@ -415,31 +421,26 @@ async function exportCarousel() {
   clearInlineError(exportError);
   downloadButton.disabled = true;
   downloadButton.textContent = "Rendering PNG files…";
-  exportStatus.textContent = "The server is composing each slide and its attribution manifest.";
+  exportStatus.textContent = "Preparing the reviewed photos for slide 1.";
   const settings = currentSettings();
-  const filename = settings.presetId === "national-moth-week-2026"
-    ? "moth-week-2026.zip"
-    : `social-export-${searchData.query.dateFrom}.zip`;
   try {
-    const response = await fetch("/api/social-export/export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/zip, application/json" },
-      body: JSON.stringify({
-        query: searchData.query,
-        settings,
-        selections: exportSpecies.map((group) => ({
-          speciesKey: group.speciesKey,
-          photoId: group.selectedPhotoId,
-          rotation: group.rotation || 0,
-        })),
-      }),
-    });
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      throw new Error(body?.error?.message || `Export returned HTTP ${response.status}.`);
-    }
-    downloadBlob(await response.blob(), filename);
-    exportStatus.textContent = `${filename} is ready. If Safari did not open the download, tap “Download carousel ZIP” again.`;
+    const result = await renderCarouselZip(
+      searchData.query,
+      settings,
+      exportSpecies,
+      (progress) => {
+        if (progress.phase === "package") {
+          exportStatus.textContent = "Packaging PNG files and attribution into one ZIP.";
+          return;
+        }
+        const photoProgress = progress.photoCount
+          ? ` · photo ${progress.photo} of ${progress.photoCount}`
+          : "";
+        exportStatus.textContent = `Rendering slide ${progress.slide} of ${progress.slideCount}${photoProgress}`;
+      },
+    );
+    downloadBlob(result.zip, result.filename);
+    exportStatus.textContent = `${result.filename} is ready with ${result.slideCount} PNG files. If Safari did not open the download, tap “Download carousel ZIP” again.`;
   } catch (error) {
     exportStatus.textContent = "";
     showInlineError(exportError, error.message);
