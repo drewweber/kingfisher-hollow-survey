@@ -134,7 +134,7 @@ export const OPENAPI_DOCUMENT = {
         operationId: "getBiodiversitySummary",
         tags: ["Summary"],
         summary: "Return the combined Kingfisher Hollow biodiversity summary",
-        description: "Returns the current countable eBird property list total, moth roster total, deduplicated all-taxa species total, and latest successful data refresh.",
+        description: "Returns the current countable eBird property list total, tracked roster totals for moths, mammals, amphibians, odonates, and butterflies, the deduplicated all-taxa species total, and latest successful data refresh.",
         parameters: [],
         responses: {
           "200": jsonOnlyResponse({ $ref: "#/components/schemas/BiodiversitySummary" }),
@@ -220,7 +220,10 @@ export const OPENAPI_DOCUMENT = {
     schemas: {
       BiodiversitySummary: {
         type: "object",
-        required: ["birds", "moths", "totalSpecies", "updatedAt"],
+        required: [
+          "birds", "moths", "mammals", "amphibians", "odonates", "butterflies",
+          "totalSpecies", "updatedAt",
+        ],
         additionalProperties: false,
         properties: {
           birds: {
@@ -231,7 +234,27 @@ export const OPENAPI_DOCUMENT = {
           moths: {
             type: "integer",
             minimum: 0,
-            description: "Species on the current Kingfisher Hollow moth roster.",
+            description: "Distinct taxa in the current Kingfisher Hollow moth roster.",
+          },
+          mammals: {
+            type: "integer",
+            minimum: 0,
+            description: "Distinct taxa in the current Kingfisher Hollow mammal roster.",
+          },
+          amphibians: {
+            type: "integer",
+            minimum: 0,
+            description: "Distinct taxa in the current Kingfisher Hollow amphibian roster.",
+          },
+          odonates: {
+            type: "integer",
+            minimum: 0,
+            description: "Distinct dragonfly and damselfly taxa in the current Kingfisher Hollow odonate roster.",
+          },
+          butterflies: {
+            type: "integer",
+            minimum: 0,
+            description: "Distinct taxa in the current Kingfisher Hollow butterfly roster.",
           },
           totalSpecies: {
             type: "integer",
@@ -408,7 +431,7 @@ export const API_DOCS_HTML = `<!doctype html>
     <table>
       <thead><tr><th>Action and endpoint</th><th>Returns</th><th>Supported query parameters</th></tr></thead>
       <tbody>
-        <tr><td><strong>getBiodiversitySummary</strong><br><a href="/api/summary"><code>/api/summary</code></a></td><td>Bird, moth, and deduplicated all-taxa species totals from the current survey rebuild.</td><td>None</td></tr>
+        <tr><td><strong>getBiodiversitySummary</strong><br><a href="/api/summary"><code>/api/summary</code></a></td><td>Bird, moth, mammal, amphibian, odonate, butterfly, and deduplicated all-taxa species totals from the current survey rebuild.</td><td>None</td></tr>
         <tr><td><strong>listSpecies</strong><br><a href="/api/species"><code>/api/species</code></a></td><td>Recorded taxa with observation totals, distinct-date counts, and first and last dates.</td><td><code>taxon_id, scientific_name, common_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
         <tr><td><strong>listObservations</strong><br><a href="/api/observations"><code>/api/observations</code></a></td><td>Unique observation records with local dates and canonical iNaturalist links.</td><td><code>observation_id, taxon_id, scientific_name, common_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
         <tr><td><strong>listObservationNights</strong><br><a href="/api/nights"><code>/api/nights</code></a></td><td>One row per matching local calendar date.</td><td><code>taxon_id, scientific_name, family, year, date_from, date_to, limit, offset, format</code></td></tr>
@@ -433,10 +456,14 @@ export const API_DOCS_HTML = `<!doctype html>
     <pre><code>{
   "birds": 152,
   "moths": 794,
+  "mammals": 22,
+  "amphibians": 10,
+  "odonates": 22,
+  "butterflies": 22,
   "totalSpecies": 1680,
   "updatedAt": "2026-07-23T23:31:43Z"
 }</code></pre>
-    <p><code>birds</code> comes from the countable eBird property life list, <code>moths</code> comes from the current moth roster, and <code>totalSpecies</code> applies the survey report's species-level inclusion and deduplication rules across every tracked taxon.</p>
+    <p><code>birds</code> comes from the countable eBird property life list. The tracked taxa fields come from their current survey rosters; <code>odonates</code> includes dragonflies and damselflies. <code>totalSpecies</code> applies the survey report's species-level inclusion and deduplication rules across every tracked taxon.</p>
     <h3>Filtered statistics</h3>
     <pre><code>{
   "filters": { "family": "Saturniidae" },
@@ -478,7 +505,8 @@ export const API_DOCS_HTML = `<!doctype html>
 observations, species, dates, nights, and counts.
 Never infer that a species was observed based on geography, taxonomy,
 or general knowledge.
-Use getBiodiversitySummary for current bird, moth, and all-taxa totals.
+Use getBiodiversitySummary for current bird, moth, mammal, amphibian, odonate,
+butterfly, and all-taxa totals.
 Use listSpecies to determine which taxa have been recorded.
 Use listObservations to retrieve individual records and direct
 iNaturalist links.

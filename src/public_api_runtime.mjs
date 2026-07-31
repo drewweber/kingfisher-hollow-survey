@@ -1,4 +1,4 @@
-export const API_VERSION = "1.2.0";
+export const API_VERSION = "1.3.0";
 
 const SNAPSHOT_PATH = "/_api-data/moths.json";
 const SUMMARY_PATH = "/_api-data/summary.json";
@@ -180,7 +180,10 @@ function normalizeSummary(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     throw new Error("Unsupported or malformed biodiversity summary");
   }
-  const fields = ["birds", "moths", "totalSpecies"];
+  const fields = [
+    "birds", "moths", "mammals", "amphibians", "odonates", "butterflies",
+    "totalSpecies",
+  ];
   for (const field of fields) {
     if (!Number.isSafeInteger(raw[field]) || raw[field] < 0) {
       throw new Error(`Biodiversity summary contains an invalid ${field}`);
@@ -199,6 +202,10 @@ function normalizeSummary(raw) {
   return {
     birds: raw.birds,
     moths: raw.moths,
+    mammals: raw.mammals,
+    amphibians: raw.amphibians,
+    odonates: raw.odonates,
+    butterflies: raw.butterflies,
     totalSpecies: raw.totalSpecies,
     updatedAt,
   };

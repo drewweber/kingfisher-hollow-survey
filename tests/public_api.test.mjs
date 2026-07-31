@@ -103,6 +103,10 @@ const fixture = {
 const summaryFixture = {
   birds: 152,
   moths: 794,
+  mammals: 22,
+  amphibians: 10,
+  odonates: 22,
+  butterflies: 22,
   totalSpecies: 1680,
   updatedAt: "2026-07-24T03:00:00Z",
 };
@@ -194,7 +198,10 @@ test("summary returns public integer totals, refresh time, and polling cache hea
   assert.match(response.headers.get("cache-control"), /max-age=300/);
   assert.match(response.headers.get("cache-control"), /s-maxage=3600/);
   assert.deepEqual(await json(response), summaryFixture);
-  for (const field of ["birds", "moths", "totalSpecies"]) {
+  for (const field of [
+    "birds", "moths", "mammals", "amphibians", "odonates", "butterflies",
+    "totalSpecies",
+  ]) {
     assert.equal(Number.isInteger(summaryFixture[field]), true);
   }
 });
@@ -204,6 +211,10 @@ test("summary preserves valid zero and empty dataset counts", async () => {
     summary: {
       birds: 0,
       moths: 0,
+      mammals: 0,
+      amphibians: 0,
+      odonates: 0,
+      butterflies: 0,
       totalSpecies: 0,
       updatedAt: "2026-07-24T03:00:00Z",
     },
@@ -212,6 +223,10 @@ test("summary preserves valid zero and empty dataset counts", async () => {
   assert.deepEqual(await json(response), {
     birds: 0,
     moths: 0,
+    mammals: 0,
+    amphibians: 0,
+    odonates: 0,
+    butterflies: 0,
     totalSpecies: 0,
     updatedAt: "2026-07-24T03:00:00Z",
   });
@@ -251,6 +266,7 @@ test("summary supports validators and the complete read-only HTTP contract", asy
 test("summary rejects malformed generated assets", async () => {
   const invalidSummaries = [
     { ...summaryFixture, birds: -1 },
+    { ...summaryFixture, odonates: -1 },
     { ...summaryFixture, totalSpecies: 100 },
     { ...summaryFixture, updatedAt: "2026-07-24" },
   ];
@@ -713,7 +729,10 @@ test("OpenAPI and human documentation describe every public endpoint", async () 
   const summarySchema = OPENAPI_DOCUMENT.components.schemas.BiodiversitySummary;
   assert.deepEqual(
     summarySchema.required,
-    ["birds", "moths", "totalSpecies", "updatedAt"],
+    [
+      "birds", "moths", "mammals", "amphibians", "odonates", "butterflies",
+      "totalSpecies", "updatedAt",
+    ],
   );
   assert.equal(summarySchema.properties.updatedAt.format, "date-time");
   const metadata = OPENAPI_DOCUMENT.components.schemas.ObservationCollection;

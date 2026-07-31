@@ -79,6 +79,14 @@ def _bird_species_keys(birds):
     return keys
 
 
+def _roster_taxa(conn, table_name):
+    """Return the distinct taxon IDs in one curated property roster."""
+    rows = conn.execute(
+        f"SELECT DISTINCT taxon_id FROM {table_name} WHERE taxon_id IS NOT NULL"
+    ).fetchall()
+    return {int(row["taxon_id"]) for row in rows}
+
+
 def summary_from_connection(conn, birds=None, updated_at=None):
     """Build the combined biodiversity summary using the report's inclusion rules."""
     birds = analyze.load_birds() if birds is None else birds
@@ -90,12 +98,12 @@ def summary_from_connection(conn, birds=None, updated_at=None):
         f"AND rank IN ({rank_placeholders})",
         tuple(SPECIES_RANKS),
     ).fetchall()
-    moth_rows = conn.execute(
-        "SELECT DISTINCT taxon_id FROM moth_taxa WHERE taxon_id IS NOT NULL"
-    ).fetchall()
-
     property_taxa = {int(row["taxon_id"]) for row in property_rows}
-    moth_taxa = {int(row["taxon_id"]) for row in moth_rows}
+    moth_taxa = _roster_taxa(conn, "moth_taxa")
+    mammal_taxa = _roster_taxa(conn, "mammal_taxa")
+    amphibian_taxa = _roster_taxa(conn, "amphibian_taxa")
+    odonate_taxa = _roster_taxa(conn, "odonate_taxa")
+    butterfly_taxa = _roster_taxa(conn, "butterfly_taxa")
     bird_taxa = _bird_species_keys(birds)
     refreshed_at = (
         _utc_timestamp(updated_at)
@@ -105,6 +113,10 @@ def summary_from_connection(conn, birds=None, updated_at=None):
     return {
         "birds": len(bird_taxa),
         "moths": len(moth_taxa),
+        "mammals": len(mammal_taxa),
+        "amphibians": len(amphibian_taxa),
+        "odonates": len(odonate_taxa),
+        "butterflies": len(butterfly_taxa),
         "totalSpecies": len(property_taxa) + len(bird_taxa),
         "updatedAt": refreshed_at,
     }
@@ -241,7 +253,9 @@ def build(output_path=SNAPSHOT_PATH, summary_output_path=SUMMARY_PATH):
     print(
         f"Wrote {summary_output_path} "
         f"({summary['totalSpecies']:,} total species; "
-        f"{summary['birds']:,} birds; {summary['moths']:,} moths)"
+        f"{summary['birds']:,} birds; {summary['moths']:,} moths; "
+        f"{summary['mammals']:,} mammals; {summary['amphibians']:,} amphibians; "
+        f"{summary['odonates']:,} odonates; {summary['butterflies']:,} butterflies)"
     )
     return Path(output_path)
 
