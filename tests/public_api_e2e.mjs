@@ -62,7 +62,10 @@ test("family statistics return filtered counts and local-date bounds", async () 
 test("combined biodiversity summary returns pollable integer totals", async () => {
   const { body, response, elapsed } = await fetchJson("/api/summary");
   assert.ok(elapsed < MAX_RESPONSE_MS, `summary took ${Math.round(elapsed)} ms`);
-  for (const field of ["birds", "moths", "totalSpecies"]) {
+  for (const field of [
+    "birds", "moths", "mammals", "amphibians", "odonates", "butterflies",
+    "totalSpecies",
+  ]) {
     assert.equal(Number.isInteger(body[field]), true);
     assert.ok(body[field] >= 0);
   }

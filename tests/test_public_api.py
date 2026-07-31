@@ -166,6 +166,10 @@ class PublicApiSummaryTests(unittest.TestCase):
                 rank TEXT
             );
             CREATE TABLE moth_taxa (taxon_id INTEGER);
+            CREATE TABLE mammal_taxa (taxon_id INTEGER);
+            CREATE TABLE amphibian_taxa (taxon_id INTEGER);
+            CREATE TABLE odonate_taxa (taxon_id INTEGER);
+            CREATE TABLE butterfly_taxa (taxon_id INTEGER);
             CREATE TABLE sync_log (synced_at TEXT);
             """
         )
@@ -184,6 +188,10 @@ class PublicApiSummaryTests(unittest.TestCase):
             "INSERT INTO moth_taxa VALUES (?)",
             [(2,), (2,), (7,)],
         )
+        self.conn.executemany("INSERT INTO mammal_taxa VALUES (?)", [(5,), (5,)])
+        self.conn.execute("INSERT INTO amphibian_taxa VALUES (?)", (6,))
+        self.conn.execute("INSERT INTO odonate_taxa VALUES (?)", (8,))
+        self.conn.execute("INSERT INTO butterfly_taxa VALUES (?)", (3,))
         self.conn.executemany(
             "INSERT INTO sync_log VALUES (?)",
             [("2026-07-23 22:00:00",), ("2026-07-24 03:00:00",)],
@@ -206,6 +214,10 @@ class PublicApiSummaryTests(unittest.TestCase):
             {
                 "birds": 2,
                 "moths": 2,
+                "mammals": 1,
+                "amphibians": 1,
+                "odonates": 1,
+                "butterflies": 1,
                 "totalSpecies": 5,
                 "updatedAt": "2026-07-24T03:00:00Z",
             },
@@ -214,6 +226,10 @@ class PublicApiSummaryTests(unittest.TestCase):
     def test_summary_supports_zero_and_empty_datasets(self):
         self.conn.execute("DELETE FROM property_obs")
         self.conn.execute("DELETE FROM moth_taxa")
+        self.conn.execute("DELETE FROM mammal_taxa")
+        self.conn.execute("DELETE FROM amphibian_taxa")
+        self.conn.execute("DELETE FROM odonate_taxa")
+        self.conn.execute("DELETE FROM butterfly_taxa")
         empty_birds = pd.DataFrame(columns=["taxon_name", "common_name"])
         summary = public_api.summary_from_connection(
             self.conn,
@@ -222,9 +238,17 @@ class PublicApiSummaryTests(unittest.TestCase):
         )
         self.assertEqual(summary["birds"], 0)
         self.assertEqual(summary["moths"], 0)
+        self.assertEqual(summary["mammals"], 0)
+        self.assertEqual(summary["amphibians"], 0)
+        self.assertEqual(summary["odonates"], 0)
+        self.assertEqual(summary["butterflies"], 0)
         self.assertEqual(summary["totalSpecies"], 0)
         self.assertIsInstance(summary["birds"], int)
         self.assertIsInstance(summary["moths"], int)
+        self.assertIsInstance(summary["mammals"], int)
+        self.assertIsInstance(summary["amphibians"], int)
+        self.assertIsInstance(summary["odonates"], int)
+        self.assertIsInstance(summary["butterflies"], int)
         self.assertIsInstance(summary["totalSpecies"], int)
 
     def test_summary_writer_creates_the_generated_api_asset(self):
@@ -238,7 +262,8 @@ class PublicApiSummaryTests(unittest.TestCase):
             self.assertEqual(payload["totalSpecies"], 5)
             self.assertEqual(
                 output.read_text(encoding="utf-8"),
-                '{"birds":2,"moths":2,"totalSpecies":5,'
+                '{"birds":2,"moths":2,"mammals":1,"amphibians":1,'
+                '"odonates":1,"butterflies":1,"totalSpecies":5,'
                 '"updatedAt":"2026-07-24T03:00:00Z"}\n',
             )
 

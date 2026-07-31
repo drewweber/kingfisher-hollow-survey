@@ -128,7 +128,7 @@ The Pages deployment also publishes a small public API for tools that need
 combined Kingfisher Hollow species totals or moth occurrences without accessing
 SQLite or calling iNaturalist directly:
 
-- `/api/summary` — bird, moth, and deduplicated all-taxa species totals
+- `/api/summary` — bird, moth, mammal, amphibian, odonate, butterfly, and deduplicated all-taxa species totals
 - `/api/observations` — observation-level records
 - `/api/species` — species counts and first/last dates
 - `/api/nights` — one row per matching local calendar date
@@ -140,8 +140,9 @@ SQLite or calling iNaturalist directly:
 compact snapshots to `public/_api-data/summary.json` and
 `public/_api-data/moths.json`; Pages Functions read those assets through
 Cloudflare's `ASSETS` binding. The biodiversity summary uses the countable eBird
-location life list for birds, the current moth roster for moths, and the same
-species-level deduplication rules as the report for the all-taxa total. The moth
+location life list for birds, the current tracked rosters for moths, mammals,
+amphibians, odonates, and butterflies, and the same species-level deduplication
+rules as the report for the all-taxa total. The moth
 snapshot contains only taxon names and IDs, taxonomic rank, family, observation
 dates/times, and public iNaturalist links. It excludes coordinates, observers,
 photos, and every other private pipeline field.
