@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d221c">
+  <meta name="description" content="Find species newly added to any iNaturalist place during a selected date range.">
+  <title>New County Species Detector · Kingfisher Hollow Survey</title>
+  <link rel="stylesheet" href="/assets/new-county-species.css?v=__ASSET_VERSION__">
+  <script type="module" src="/assets/new-county-species.js?v=__ASSET_VERSION__"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to detector settings</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Kingfisher Hollow biodiversity survey home">
+      <span aria-hidden="true" class="brand-mark">KH</span>
+      <span><strong>Kingfisher Hollow</strong><small>Survey tools</small></span>
+    </a>
+    <a class="back-link" href="/">Back to survey</a>
+  </header>
+  <main id="main">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">Place-list scanner</p>
+      <h1 id="page-title">What species were newly recorded here?</h1>
+      <p>Search any iNaturalist place ID and date range. The detector finds species-level observations in that window, then checks each one for a prior qualifying record in the same place.</p>
+    </section>
+    <section class="workspace" aria-labelledby="settings-title">
+      <form id="detector-form" class="settings-panel">
+        <div class="panel-heading">
+          <div><p class="step-label">Set the search</p><h2 id="settings-title">Place and period</h2></div>
+          <p>Enter a place ID from the URL of an iNaturalist place page. This works for counties and any other iNaturalist place.</p>
+        </div>
+        <div class="field">
+          <label for="place-id">iNaturalist place ID</label>
+          <input id="place-id" name="placeId" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 653" required>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="date-from">Date from</label><input id="date-from" name="dateFrom" type="date" required></div>
+          <div class="field"><label for="date-to">Date to</label><input id="date-to" name="dateTo" type="date" required></div>
+        </div>
+        <label class="check"><input id="include-casual" name="includeCasual" type="checkbox"> Include casual observations</label>
+        <p class="hint">By default, iNaturalist’s verifiable observations (Needs ID and Research Grade) are included; casual observations are excluded.</p>
+        <div id="search-error" class="inline-error" role="alert" hidden><p></p></div>
+        <button id="run-detector" class="primary-action" type="submit">Find new place species</button>
+        <p id="search-status" class="status-line" role="status" aria-live="polite"></p>
+      </form>
+      <aside class="method-panel" aria-label="Detector method">
+        <p class="step-label">Method</p>
+        <ol>
+          <li><strong>Collect</strong><span>All qualifying species-level observations in the chosen period.</span></li>
+          <li><strong>Deduplicate</strong><span>Keep the first observation for each exact species taxon.</span></li>
+          <li><strong>Check history</strong><span>Query iNaturalist for an earlier qualifying observation of each species in the same place.</span></li>
+        </ol>
+        <p class="caveat">A result is new to iNaturalist’s place records under these filters—not proof that the species is biologically new to the county or region.</p>
+      </aside>
+    </section>
+    <section id="results" class="results" aria-labelledby="results-title" hidden>
+      <div class="results-heading"><div><p class="step-label">Results</p><h2 id="results-title">New place species</h2><p id="result-summary"></p></div><strong id="result-total" class="total" aria-label="New species total">0</strong></div>
+      <div class="table-wrap"><table><thead><tr><th scope="col">Species</th><th scope="col">First observation</th><th scope="col">Observer</th><th scope="col">Record</th></tr></thead><tbody id="result-rows"></tbody></table></div>
+      <p id="empty-results" class="empty" hidden>No new species were found for this place, period, and observation filter.</p>
+    </section>
+  </main>
+</body>
+</html>

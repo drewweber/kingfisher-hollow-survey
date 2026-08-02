@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 import analyze  # noqa: E402
 import field_guide  # noqa: E402
 import inat_api  # noqa: E402
+import new_county_species  # noqa: E402
 import public_api  # noqa: E402
 import social_export  # noqa: E402
 import tiger_swallowtail  # noqa: E402
@@ -1624,6 +1625,11 @@ def log_resource_links():
             "/tools/social-export/",
             "Social Media Export",
             "Turn selected iNaturalist observations into a finished, downloadable image carousel.",
+        ),
+        (
+            "/tools/new-county-species/",
+            "New County Species Detector",
+            "Find species newly recorded in any iNaturalist place during a selected period.",
         ),
         (
             tiger_swallowtail.CASE_ROUTE,
@@ -3372,6 +3378,7 @@ def build():
     print(f"Wrote {out}  ({out.stat().st_size // 1024} KB)")
     _timed("public-api", public_api.build)
     _timed("social-export", social_export.build)
+    _timed("new-county-species", new_county_species.build)
     _timed("tiger-swallowtail-case-study", tiger_swallowtail.build)
     _timed("field-guide", field_guide.build)
     if hashlib.sha256(out.read_bytes()).hexdigest() != survey_digest:

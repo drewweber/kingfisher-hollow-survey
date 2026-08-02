@@ -49,6 +49,8 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn('aria-labelledby="log-resources-title"', html)
         self.assertIn('href="/tools/social-export/"', html)
         self.assertIn("Social Media Export", html)
+        self.assertIn('href="/tools/new-county-species/"', html)
+        self.assertIn("New County Species Detector", html)
         self.assertIn(f'href="{report.tiger_swallowtail.CASE_ROUTE}"', html)
         self.assertIn("Tiger Swallowtail ID Guide", html)
 
