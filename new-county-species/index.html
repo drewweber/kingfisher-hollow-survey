@@ -22,7 +22,7 @@
     <section class="intro" aria-labelledby="page-title">
       <p class="eyebrow">Place-list scanner</p>
       <h1 id="page-title">What species were newly recorded here?</h1>
-      <p>Search any iNaturalist place ID and date range. The detector finds species-level observations in that window, then checks each one for a prior qualifying record in the same place.</p>
+      <p>Search any iNaturalist place ID and date range. The detector compares the species recorded in that window with earlier records for only those taxa.</p>
     </section>
     <section class="workspace" aria-labelledby="settings-title">
       <form id="detector-form" class="settings-panel">
@@ -49,7 +49,7 @@
         <ol>
           <li><strong>Collect</strong><span>All qualifying species-level taxa in the chosen period.</span></li>
           <li><strong>Deduplicate</strong><span>Keep each exact species taxon once.</span></li>
-          <li><strong>Check history</strong><span>Compare the selected-period species list with the earlier qualifying species list for the same place.</span></li>
+          <li><strong>Check history</strong><span>Check only those period taxa for an earlier qualifying record, in compact batches.</span></li>
         </ol>
         <p class="caveat">A result is new to iNaturalist’s place records under these filters—not proof that the species is biologically new to the county or region.</p>
       </aside>

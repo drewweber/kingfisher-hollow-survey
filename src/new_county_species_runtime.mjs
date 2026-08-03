@@ -1,11 +1,15 @@
-const INAT_API = "https://api.inaturalist.org/v1/observations";
-const INAT_SPECIES_COUNTS_API = `${INAT_API}/species_counts`;
+const INAT_SPECIES_COUNTS_API = "https://api.inaturalist.org/v2/observations/species_counts";
 const SPECIES_COUNT_PAGE_SIZE = 500;
-const MAX_SPECIES_COUNT_PAGES = 25;
-const MAX_ATTEMPTS = 3;
+const HISTORY_BATCH_SIZE = 300;
+const MAX_PERIOD_SPECIES = 2_000;
+const MAX_PERIOD_PAGES = MAX_PERIOD_SPECIES / SPECIES_COUNT_PAGE_SIZE;
+const MAX_ATTEMPTS = 2;
+const MAX_AUTOMATIC_RETRY_DELAY_MS = 10_000;
 const INAT_REQUEST_INTERVAL_MS = 1_100;
 const INAT_USER_AGENT = "KingfisherHollowCountySpeciesDetector/1.0 (+https://survey.kingfisher-hollow.com/tools/new-county-species/)";
 const RESULT_CACHE_SECONDS = 60 * 60;
+const SPECIES_FIELDS = "(count:!t,taxon:(id:!t,rank:!t,name:!t,preferred_common_name:!t))";
+const HISTORY_FIELDS = "(taxon:(id:!t,rank:!t))";
 
 export class NewCountySpeciesError extends Error {
   constructor(code, message, status = 400, retryable = false) {
@@ -30,7 +34,7 @@ function previousDate(value) {
 
 function retryDelay(response, attempt) {
   const retryAfter = Number(response?.headers?.get("retry-after"));
-  if (Number.isFinite(retryAfter) && retryAfter > 0) return Math.min(retryAfter * 1_000, 120_000);
+  if (Number.isFinite(retryAfter) && retryAfter > 0) return retryAfter * 1_000;
   return Math.min(1_000 * (2 ** attempt), 10_000);
 }
 
@@ -84,21 +88,31 @@ export function normalizeQuery(searchParams) {
 function qualifyingParams(query) {
   return {
     place_id: String(query.placeId),
-    taxon_rank: "species",
+    // species_counts normalizes finer IDs to taxon.min_species_taxon_id. hrank
+    // keeps subspecies observations while the returned buckets remain species.
+    hrank: "species",
     ...(query.includeCasual ? {} : { verifiable: "true" }),
   };
 }
 
-async function fetchPage(url, { fetchImpl = fetch, delay = wait, pacer } = {}) {
+async function fetchPage(url, {
+  fetchImpl = fetch,
+  delay = wait,
+  pacer,
+  sendUserAgent = true,
+  onRequest,
+} = {}) {
   let response;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
       await pacer?.beforeRequest();
+      onRequest?.({ url: String(url), attempt: attempt + 1 });
+      const headers = { Accept: "application/json" };
+      if (sendUserAgent) headers["User-Agent"] = INAT_USER_AGENT;
       response = await fetchImpl(url, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": INAT_USER_AGENT,
-        },
+        cache: "default",
+        credentials: "omit",
+        headers,
       });
     } catch (_error) {
       if (attempt < MAX_ATTEMPTS - 1) {
@@ -112,9 +126,12 @@ async function fetchPage(url, { fetchImpl = fetch, delay = wait, pacer } = {}) {
         true,
       );
     }
-    if ((response.status === 429 || response.status >= 500) && attempt < MAX_ATTEMPTS - 1) {
-      await delay(retryDelay(response, attempt));
-      continue;
+    if (response.status >= 500 && attempt < MAX_ATTEMPTS - 1) {
+      const delayMs = retryDelay(response, attempt);
+      if (delayMs <= MAX_AUTOMATIC_RETRY_DELAY_MS) {
+        await delay(delayMs);
+        continue;
+      }
     }
     break;
   }
@@ -158,7 +175,9 @@ async function fetchPage(url, { fetchImpl = fetch, delay = wait, pacer } = {}) {
 
 function urlWith(path, params) {
   const url = new URL(path);
-  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, Array.isArray(value) ? value.join(",") : value);
+  }
   return url;
 }
 
@@ -180,56 +199,113 @@ function speciesCandidate(result) {
   };
 }
 
-async function fetchSpeciesCounts(query, { dateFrom, dateTo }, options = {}) {
+export async function fetchPeriodSpecies(query, options = {}) {
   const species = new Map();
-  for (let page = 1; page <= MAX_SPECIES_COUNT_PAGES; page += 1) {
+  options.onProgress?.({ phase: "period", message: "Fetching species recorded in the selected period…" });
+  for (let page = 1; page <= MAX_PERIOD_PAGES; page += 1) {
     const payload = await fetchPage(urlWith(INAT_SPECIES_COUNTS_API, {
       ...qualifyingParams(query),
-      ...(dateFrom ? { d1: dateFrom } : {}),
-      d2: dateTo,
+      d1: query.dateFrom,
+      d2: query.dateTo,
       per_page: String(SPECIES_COUNT_PAGE_SIZE),
       page: String(page),
+      ttl: "300",
+      fields: SPECIES_FIELDS,
     }), options);
+    const total = Number(payload.total_results);
+    if (Number.isSafeInteger(total) && total > MAX_PERIOD_SPECIES) {
+      throw new NewCountySpeciesError(
+        "inat_species_list_too_broad",
+        "The selected period contains more than 2,000 species. Use a shorter period.",
+        422,
+        false,
+      );
+    }
     for (const result of payload.results) {
       const candidate = speciesCandidate(result);
       if (!candidate) continue;
       species.set(candidate.taxonId, candidate);
     }
-    const total = Number(payload.total_results);
     if (payload.results.length < SPECIES_COUNT_PAGE_SIZE
       || (Number.isSafeInteger(total) && page * SPECIES_COUNT_PAGE_SIZE >= total)) {
-      return species;
+      return [...species.values()];
     }
   }
 
   throw new NewCountySpeciesError(
     "inat_species_list_too_broad",
-    "This place has too many matching species for an immediate check. Use a smaller place or a shorter period.",
+    "The selected period contains too many species for an immediate check. Use a shorter period.",
     422,
     false,
   );
 }
 
-export async function fetchPeriodSpecies(query, options = {}) {
-  return [...(await fetchSpeciesCounts(query, {
-    dateFrom: query.dateFrom,
-    dateTo: query.dateTo,
-  }, options)).values()];
+function taxonBatches(taxonIds) {
+  const batches = [];
+  for (let index = 0; index < taxonIds.length; index += HISTORY_BATCH_SIZE) {
+    batches.push(taxonIds.slice(index, index + HISTORY_BATCH_SIZE));
+  }
+  return batches;
 }
 
-export async function fetchHistoricalSpeciesTaxonIds(query, options = {}) {
-  return new Set((await fetchSpeciesCounts(query, {
-    dateTo: previousDate(query.dateFrom),
-  }, options)).keys());
+export async function fetchHistoricalSpeciesTaxonIds(query, taxonIds, options = {}) {
+  const historicTaxonIds = new Set();
+  const batches = taxonBatches(taxonIds);
+  options.onProgress?.({
+    phase: "history",
+    message: `Checking prior records for ${taxonIds.length.toLocaleString()} period species…`,
+  });
+
+  for (const batch of batches) {
+    const payload = await fetchPage(urlWith(INAT_SPECIES_COUNTS_API, {
+      ...qualifyingParams(query),
+      d2: previousDate(query.dateFrom),
+      taxon_id: batch,
+      per_page: String(SPECIES_COUNT_PAGE_SIZE),
+      page: "1",
+      ttl: "300",
+      fields: HISTORY_FIELDS,
+    }), options);
+    if (Number(payload.total_results) > SPECIES_COUNT_PAGE_SIZE) {
+      throw new NewCountySpeciesError(
+        "inat_malformed_response",
+        "iNaturalist returned more historical taxa than were requested.",
+        502,
+        true,
+      );
+    }
+    for (const result of payload.results) {
+      const id = Number(result?.taxon?.id);
+      if (Number.isSafeInteger(id) && id > 0 && result?.taxon?.rank === "species") {
+        historicTaxonIds.add(id);
+      }
+    }
+  }
+  return historicTaxonIds;
 }
 
 export async function detectNewCountySpecies(query, options = {}) {
+  let upstreamRequests = 0;
+  const callerOnRequest = options.onRequest;
   const requestOptions = {
     ...options,
     pacer: options.pacer ?? createRequestPacer(),
+    onRequest: (details) => {
+      upstreamRequests += 1;
+      callerOnRequest?.(details);
+    },
   };
   const candidates = await fetchPeriodSpecies(query, requestOptions);
-  const historicTaxonIds = await fetchHistoricalSpeciesTaxonIds(query, requestOptions);
+  const candidateTaxonIds = candidates
+    .map((candidate) => candidate.taxonId)
+    .sort((left, right) => left - right);
+  const historicTaxonIds = candidates.length === 0
+    ? new Set()
+    : await fetchHistoricalSpeciesTaxonIds(
+      query,
+      candidateTaxonIds,
+      requestOptions,
+    );
   const species = candidates.filter((candidate) => !historicTaxonIds.has(candidate.taxonId));
   species.sort((left, right) => (
     left.scientificName.localeCompare(right.scientificName)
@@ -239,27 +315,33 @@ export async function detectNewCountySpecies(query, options = {}) {
     query,
     totalNewSpecies: species.length,
     species,
+    meta: {
+      source: "iNaturalist v2 observation species counts",
+      upstreamRequests,
+    },
   };
 }
 
 function response(payload, status = 200, requestMethod = "GET", cacheable = false) {
   const headers = new Headers({
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
     "Access-Control-Allow-Headers": "Accept, Content-Type",
     "Cache-Control": cacheable
-      ? `public, max-age=${RESULT_CACHE_SECONDS}, s-maxage=${RESULT_CACHE_SECONDS}, stale-while-revalidate=86400`
+      ? `public, max-age=${RESULT_CACHE_SECONDS}, s-maxage=${RESULT_CACHE_SECONDS}`
       : "no-store",
     "Content-Type": "application/json; charset=utf-8",
     "X-Content-Type-Options": "nosniff",
   });
-  return new Response(requestMethod === "HEAD" ? null : JSON.stringify(payload), { status, headers });
+  const body = requestMethod === "HEAD" || status === 204 ? null : JSON.stringify(payload);
+  return new Response(body, { status, headers });
 }
 
 export async function handleNewCountySpecies(context) {
   const method = context.request.method;
   if (method === "OPTIONS") return response(null, 204, method);
-  if (method !== "GET" && method !== "HEAD") {
+  if (method === "HEAD") return response(null, 204, method);
+  if (method !== "GET") {
     const result = response({
       error: { code: "method_not_allowed", message: "Use GET, HEAD, or OPTIONS." },
     }, 405, method);
@@ -267,7 +349,7 @@ export async function handleNewCountySpecies(context) {
     return result;
   }
   try {
-    const cache = method === "GET" ? globalThis.caches?.default : null;
+    const cache = globalThis.caches?.default;
     if (cache) {
       const cached = await cache.match(context.request);
       if (cached) return cached;
