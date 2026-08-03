@@ -15,6 +15,20 @@ function speciesCount(taxonId, name, commonName = null, count = 1) {
   };
 }
 
+function observationRecord(speciesTaxonId, observationId, observedOn = "2026-07-15", taxon = {}) {
+  return {
+    id: observationId,
+    uri: `https://www.inaturalist.org/observations/${observationId}`,
+    observed_on: observedOn,
+    taxon: {
+      id: speciesTaxonId,
+      rank: "species",
+      min_species_taxon_id: speciesTaxonId,
+      ...taxon,
+    },
+  };
+}
+
 test("detector compares the selected-period and prior species lists", async () => {
   const calls = [];
   const query = normalizeQuery(new URLSearchParams({
@@ -24,18 +38,32 @@ test("detector compares the selected-period and prior species lists", async () =
     const params = new URL(url).searchParams;
     calls.push(new URL(url));
     assert.match(init.headers["User-Agent"], /KingfisherHollowCountySpeciesDetector/);
-    assert.equal(new URL(url).pathname, "/v2/observations/species_counts");
-    if (params.get("d1")) return Response.json({
-      total_results: 2,
-      results: [
-        speciesCount(11, "Newus species", "New Species", 2),
-        speciesCount(22, "Oldus species", null, 5),
-      ],
-    });
-    assert.equal(params.get("taxon_id"), "11,22");
+    const path = new URL(url).pathname;
+    if (path === "/v2/observations/species_counts") {
+      if (params.get("d1")) return Response.json({
+        total_results: 2,
+        results: [
+          speciesCount(11, "Newus species", "New Species", 2),
+          speciesCount(22, "Oldus species", null, 5),
+        ],
+      });
+      assert.equal(params.get("taxon_id"), "11,22");
+      return Response.json({
+        total_results: 1,
+        results: [speciesCount(22, "Oldus species", null, 25)],
+      });
+    }
+    assert.equal(path, "/v2/observations");
+    assert.equal(params.get("taxon_id"), "11");
+    assert.equal(params.get("order_by"), "observed_on");
+    assert.match(params.get("fields"), /min_species_taxon_id/);
+    assert.match(params.get("fields"), /uri/);
     return Response.json({
       total_results: 1,
-      results: [speciesCount(22, "Oldus species", null, 25)],
+      results: [observationRecord(11, 991, "2026-07-12", {
+        id: 111,
+        rank: "subspecies",
+      })],
     });
   };
   const result = await detectNewCountySpecies(query, {
@@ -48,21 +76,25 @@ test("detector compares the selected-period and prior species lists", async () =
     scientificName: "Newus species",
     commonName: "New Species",
     periodObservationCount: 2,
+    recordUrl: "https://www.inaturalist.org/observations/991",
+    recordObservedOn: "2026-07-12",
   }]);
   assert.deepEqual(result.meta, {
-    source: "iNaturalist v2 observation species counts",
-    upstreamRequests: 2,
+    source: "iNaturalist v2 species counts and observations",
+    upstreamRequests: 3,
   });
   assert.equal(calls[0].searchParams.get("per_page"), "500");
   assert.equal(calls[0].searchParams.get("verifiable"), "true");
   assert.equal(calls[0].searchParams.get("hrank"), "species");
   assert.equal(calls[0].searchParams.get("ttl"), "300");
   assert.match(calls[0].searchParams.get("fields"), /preferred_common_name/);
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
   assert.equal(calls[0].searchParams.get("d1"), "2026-07-01");
   assert.equal(calls[0].searchParams.get("d2"), "2026-07-31");
   assert.equal(calls[1].searchParams.get("d1"), null);
   assert.equal(calls[1].searchParams.get("d2"), "2026-06-30");
+  assert.equal(calls[2].searchParams.get("d1"), "2026-07-01");
+  assert.equal(calls[2].searchParams.get("d2"), "2026-07-31");
 });
 
 test("browser-direct mode omits the forbidden User-Agent header and skips history for an empty period", async () => {
@@ -92,23 +124,135 @@ test("history checks are batched instead of making one request per species", asy
     place_id: "653", d1: "2026-07-01", d2: "2026-07-31", include_casual: "false",
   }));
   const historyBatchSizes = [];
+  const recordBatchSizes = [];
   const periodResults = Array.from({ length: 301 }, (_, index) => (
     speciesCount(index + 1, `Species ${index + 1}`)
   ));
   const result = await detectNewCountySpecies(query, {
     fetchImpl: async (url) => {
+      const path = new URL(url).pathname;
       const params = new URL(url).searchParams;
-      if (params.get("d1")) {
+      if (path.endsWith("/species_counts") && params.get("d1")) {
         return Response.json({ total_results: periodResults.length, results: periodResults });
       }
-      historyBatchSizes.push(params.get("taxon_id").split(",").length);
-      return Response.json({ total_results: 0, results: [] });
+      const taxonIds = params.get("taxon_id").split(",").map(Number);
+      if (path.endsWith("/species_counts")) {
+        historyBatchSizes.push(taxonIds.length);
+        return Response.json({ total_results: 0, results: [] });
+      }
+      recordBatchSizes.push(taxonIds.length);
+      return Response.json({
+        total_results: taxonIds.length,
+        results: taxonIds.map((taxonId) => observationRecord(taxonId, 10_000 + taxonId)),
+      });
     },
     pacer: { beforeRequest: async () => {} },
   });
   assert.equal(result.totalNewSpecies, 301);
   assert.deepEqual(historyBatchSizes, [300, 1]);
-  assert.equal(result.meta.upstreamRequests, 3);
+  assert.deepEqual(recordBatchSizes, [180, 121]);
+  assert.equal(result.meta.upstreamRequests, 5);
+});
+
+test("record lookups isolate high-volume species and map infrataxa to parent species", async () => {
+  const query = normalizeQuery(new URLSearchParams({
+    place_id: "653", d1: "2026-07-01", d2: "2026-07-31", include_casual: "false",
+  }));
+  const recordRequests = [];
+  const periodResults = [
+    speciesCount(1, "Species one", null, 181),
+    speciesCount(2, "Species two", null, 100),
+    speciesCount(3, "Species three", null, 80),
+  ];
+  const result = await detectNewCountySpecies(query, {
+    fetchImpl: async (url) => {
+      const path = new URL(url).pathname;
+      const params = new URL(url).searchParams;
+      if (path.endsWith("/species_counts") && params.get("d1")) {
+        return Response.json({ total_results: periodResults.length, results: periodResults });
+      }
+      if (path.endsWith("/species_counts")) {
+        return Response.json({ total_results: 0, results: [] });
+      }
+      const taxonIds = params.get("taxon_id").split(",").map(Number);
+      recordRequests.push({ perPage: Number(params.get("per_page")), taxonIds });
+      return Response.json({
+        total_results: taxonIds.length,
+        results: taxonIds.map((taxonId) => observationRecord(
+          taxonId,
+          20_000 + taxonId,
+          "2026-07-20",
+          taxonId === 2 ? { id: 222, rank: "subspecies" } : {},
+        )),
+      });
+    },
+    pacer: { beforeRequest: async () => {} },
+  });
+  assert.deepEqual(recordRequests, [
+    { perPage: 1, taxonIds: [1] },
+    { perPage: 200, taxonIds: [2, 3] },
+  ]);
+  assert.deepEqual(result.species.map((species) => species.recordUrl), [
+    "https://www.inaturalist.org/observations/20001",
+    "https://www.inaturalist.org/observations/20003",
+    "https://www.inaturalist.org/observations/20002",
+  ]);
+});
+
+test("record lookup budget is enforced before any evidence requests", async () => {
+  const query = normalizeQuery(new URLSearchParams({
+    place_id: "653", d1: "2026-07-01", d2: "2026-07-31", include_casual: "false",
+  }));
+  const periodResults = Array.from({ length: 9 }, (_, index) => (
+    speciesCount(index + 1, `Species ${index + 1}`, null, 181)
+  ));
+  let evidenceRequests = 0;
+  await assert.rejects(detectNewCountySpecies(query, {
+    fetchImpl: async (url) => {
+      const path = new URL(url).pathname;
+      const params = new URL(url).searchParams;
+      if (path.endsWith("/species_counts") && params.get("d1")) {
+        return Response.json({ total_results: periodResults.length, results: periodResults });
+      }
+      if (path.endsWith("/species_counts")) {
+        return Response.json({ total_results: 0, results: [] });
+      }
+      evidenceRequests += 1;
+      return Response.json({ total_results: 0, results: [] });
+    },
+    pacer: { beforeRequest: async () => {} },
+  }), (error) => error.code === "inat_record_lookup_too_broad"
+    && error.status === 422 && !error.retryable);
+  assert.equal(evidenceRequests, 0);
+});
+
+test("an unsafe record URI fails instead of returning an unlinked species", async () => {
+  const query = normalizeQuery(new URLSearchParams({
+    place_id: "653", d1: "2026-07-01", d2: "2026-07-31", include_casual: "false",
+  }));
+  let calls = 0;
+  await assert.rejects(detectNewCountySpecies(query, {
+    fetchImpl: async (url) => {
+      calls += 1;
+      const path = new URL(url).pathname;
+      const params = new URL(url).searchParams;
+      if (path.endsWith("/species_counts") && params.get("d1")) {
+        return Response.json({ total_results: 1, results: [speciesCount(11, "Missing record")] });
+      }
+      if (path.endsWith("/species_counts")) {
+        return Response.json({ total_results: 0, results: [] });
+      }
+      return Response.json({
+        total_results: 1,
+        results: [{
+          ...observationRecord(11, 99),
+          uri: "https://attacker@www.inaturalist.org/observations/99?redirect=1#bad",
+        }],
+      });
+    },
+    pacer: { beforeRequest: async () => {} },
+  }), (error) => error.code === "inat_record_lookup_inconsistent" && error.retryable);
+  assert.equal(calls, 3);
 });
 
 test("overly broad periods stop after the first aggregate response", async () => {
@@ -184,15 +328,25 @@ test("HEAD is a metadata-only response and never starts an iNaturalist lookup", 
 
 test("route serves a cached completed detector result without contacting iNaturalist", async () => {
   const previousCaches = globalThis.caches;
+  let matchedCacheUrl;
   globalThis.caches = {
     default: {
-      match: async () => Response.json({ cached: true }),
+      match: async (request) => {
+        matchedCacheUrl = new URL(request.url);
+        return Response.json({ cached: true });
+      },
     },
   };
   try {
-    const response = await onRequest({ request: new Request("https://survey.example/api/new-county-species?place_id=653&d1=2026-01-01&d2=2026-01-02") });
+    const response = await onRequest({ request: new Request("https://survey.example/api/new-county-species?nonce=123&d2=2026-01-02&place_id=653&d1=2026-01-01") });
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { cached: true });
+    assert.equal(matchedCacheUrl.searchParams.get("_result_schema"), "record-links-v2");
+    assert.equal(matchedCacheUrl.searchParams.get("include_casual"), "false");
+    assert.equal(matchedCacheUrl.searchParams.get("nonce"), null);
+    assert.deepEqual([...matchedCacheUrl.searchParams.keys()], [
+      "place_id", "d1", "d2", "include_casual", "_result_schema",
+    ]);
   } finally {
     globalThis.caches = previousCaches;
   }

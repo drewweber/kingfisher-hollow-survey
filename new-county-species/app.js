@@ -12,11 +12,24 @@ const rows = document.querySelector("#result-rows");
 const empty = document.querySelector("#empty-results");
 const total = document.querySelector("#result-total");
 const summary = document.querySelector("#result-summary");
-const CLIENT_CACHE_NAME = "kh-new-county-species-v1";
+const CLIENT_CACHE_NAME = "kh-new-county-species-v2";
 const FRESH_CACHE_MS = 5 * 60 * 1_000;
 const STALE_CACHE_MS = 24 * 60 * 60 * 1_000;
 const REQUEST_INTERVAL_MS = 1_100;
 const PACER_STORAGE_KEY = "khInatApiNextRequestAt";
+
+function validRecordUrl(value) {
+  if (typeof value !== "string") return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && url.hostname === "www.inaturalist.org"
+      && !url.username && !url.password && !url.port && !url.search && !url.hash
+      && /^\/observations\/\d+\/?$/.test(url.pathname);
+  } catch (_error) {
+    return false;
+  }
+}
 
 function isoDateToday() {
   return new Date().toISOString().slice(0, 10);
@@ -60,7 +73,10 @@ async function readCachedResult(query, maxAge) {
     if (!response) return null;
     const entry = await response.json();
     const age = Date.now() - Number(entry?.cachedAt);
-    if (!Number.isFinite(age) || age < 0 || age > maxAge || !Array.isArray(entry?.payload?.species)) {
+    if (!Number.isFinite(age) || age < 0 || age > maxAge || !Array.isArray(entry?.payload?.species)
+      || entry.payload.species.some((species) => (
+        !validRecordUrl(species?.recordUrl)
+      ))) {
       return null;
     }
     return { age, payload: entry.payload };
@@ -148,7 +164,17 @@ function renderResults(payload) {
     common.textContent = species.commonName || species.scientificName;
     const scientific = document.createElement("em");
     scientific.textContent = species.scientificName;
-    speciesCell.append(common, scientific);
+    const recordLink = document.createElement("a");
+    recordLink.className = "record-link";
+    recordLink.href = species.recordUrl;
+    recordLink.target = "_blank";
+    recordLink.rel = "noopener noreferrer";
+    recordLink.textContent = "View iNaturalist record ↗";
+    recordLink.setAttribute(
+      "aria-label",
+      `View the iNaturalist record for ${species.commonName || species.scientificName} (opens in a new tab)`,
+    );
+    speciesCell.append(common, scientific, recordLink);
     row.append(
       speciesCell,
       textCell(species.periodObservationCount.toLocaleString(), "tabular"),
@@ -156,7 +182,8 @@ function renderResults(payload) {
     rows.append(row);
   }
   results.hidden = false;
-  results.scrollIntoView({ behavior: "smooth", block: "start" });
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  results.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
 form.addEventListener("submit", async (event) => {

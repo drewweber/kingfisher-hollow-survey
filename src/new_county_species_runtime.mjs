@@ -1,6 +1,11 @@
 const INAT_SPECIES_COUNTS_API = "https://api.inaturalist.org/v2/observations/species_counts";
+const INAT_OBSERVATIONS_API = "https://api.inaturalist.org/v2/observations";
 const SPECIES_COUNT_PAGE_SIZE = 500;
 const HISTORY_BATCH_SIZE = 300;
+const OBSERVATION_PAGE_SIZE = 200;
+const OBSERVATION_BATCH_MAX_TAXA = 180;
+const OBSERVATION_BATCH_MAX_EXPECTED_RECORDS = 180;
+const MAX_OBSERVATION_BATCHES = 8;
 const MAX_PERIOD_SPECIES = 2_000;
 const MAX_PERIOD_PAGES = MAX_PERIOD_SPECIES / SPECIES_COUNT_PAGE_SIZE;
 const MAX_ATTEMPTS = 2;
@@ -8,8 +13,10 @@ const MAX_AUTOMATIC_RETRY_DELAY_MS = 10_000;
 const INAT_REQUEST_INTERVAL_MS = 1_100;
 const INAT_USER_AGENT = "KingfisherHollowCountySpeciesDetector/1.0 (+https://survey.kingfisher-hollow.com/tools/new-county-species/)";
 const RESULT_CACHE_SECONDS = 60 * 60;
+const RESULT_CACHE_VERSION = "record-links-v2";
 const SPECIES_FIELDS = "(count:!t,taxon:(id:!t,rank:!t,name:!t,preferred_common_name:!t))";
 const HISTORY_FIELDS = "(taxon:(id:!t,rank:!t))";
+const OBSERVATION_FIELDS = "(uri:!t,observed_on:!t,taxon:(min_species_taxon_id:!t))";
 
 export class NewCountySpeciesError extends Error {
   constructor(code, message, status = 400, retryable = false) {
@@ -24,6 +31,22 @@ function validDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function validatedObservationUrl(value) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:"
+      || url.hostname !== "www.inaturalist.org"
+      || url.username || url.password || url.port || url.search || url.hash
+      || !/^\/observations\/\d+\/?$/.test(url.pathname)) {
+      return null;
+    }
+    return url.toString();
+  } catch (_error) {
+    return null;
+  }
 }
 
 function previousDate(value) {
@@ -284,6 +307,99 @@ export async function fetchHistoricalSpeciesTaxonIds(query, taxonIds, options = 
   return historicTaxonIds;
 }
 
+function observationRecordBatches(species) {
+  const batches = [];
+  let current = [];
+  let expectedRecords = 0;
+  const flush = () => {
+    if (current.length === 0) return;
+    batches.push({
+      species: current,
+      perPage: OBSERVATION_PAGE_SIZE,
+    });
+    current = [];
+    expectedRecords = 0;
+  };
+
+  for (const candidate of [...species].sort((left, right) => left.taxonId - right.taxonId)) {
+    const candidateRecords = Math.max(1, candidate.periodObservationCount);
+    if (candidateRecords > OBSERVATION_BATCH_MAX_EXPECTED_RECORDS) {
+      flush();
+      batches.push({ species: [candidate], perPage: 1 });
+      continue;
+    }
+    if (current.length >= OBSERVATION_BATCH_MAX_TAXA
+      || expectedRecords + candidateRecords > OBSERVATION_BATCH_MAX_EXPECTED_RECORDS) {
+      flush();
+    }
+    current.push(candidate);
+    expectedRecords += candidateRecords;
+  }
+  flush();
+  return batches;
+}
+
+async function fetchObservationRecordBatches(query, batches, options, records) {
+  for (const batch of batches) {
+    const requestedTaxonIds = new Set(batch.species.map((candidate) => candidate.taxonId));
+    const payload = await fetchPage(urlWith(INAT_OBSERVATIONS_API, {
+      ...qualifyingParams(query),
+      d1: query.dateFrom,
+      d2: query.dateTo,
+      taxon_id: [...requestedTaxonIds],
+      order: "asc",
+      order_by: "observed_on",
+      per_page: String(batch.perPage),
+      page: "1",
+      ttl: "300",
+      fields: OBSERVATION_FIELDS,
+    }), options);
+    for (const result of payload.results) {
+      const taxon = result?.taxon;
+      const speciesTaxonId = Number(taxon?.min_species_taxon_id);
+      const recordUrl = validatedObservationUrl(result?.uri);
+      if (!recordUrl || !requestedTaxonIds.has(speciesTaxonId)
+        || records.has(speciesTaxonId)) {
+        continue;
+      }
+      records.set(speciesTaxonId, {
+        recordUrl,
+        recordObservedOn: validDate(result?.observed_on) ? result.observed_on : null,
+      });
+    }
+  }
+}
+
+export async function fetchObservationRecords(query, species, options = {}) {
+  const records = new Map();
+  if (species.length === 0) return records;
+  options.onProgress?.({
+    phase: "records",
+    message: `Finding an iNaturalist record for ${species.length.toLocaleString()} new species…`,
+  });
+
+  const batches = observationRecordBatches(species);
+  if (batches.length > MAX_OBSERVATION_BATCHES) {
+    throw new NewCountySpeciesError(
+      "inat_record_lookup_too_broad",
+      "The result needs too many record lookups for an immediate check. Use a shorter period.",
+      422,
+      false,
+    );
+  }
+  await fetchObservationRecordBatches(query, batches, options, records);
+  const missing = species.filter((candidate) => !records.has(candidate.taxonId));
+  if (missing.length > 0) {
+    throw new NewCountySpeciesError(
+      "inat_record_lookup_inconsistent",
+      "iNaturalist changed while the detector was linking records. Retry the search.",
+      502,
+      true,
+    );
+  }
+  return records;
+}
+
 export async function detectNewCountySpecies(query, options = {}) {
   let upstreamRequests = 0;
   const callerOnRequest = options.onRequest;
@@ -306,7 +422,12 @@ export async function detectNewCountySpecies(query, options = {}) {
       candidateTaxonIds,
       requestOptions,
     );
-  const species = candidates.filter((candidate) => !historicTaxonIds.has(candidate.taxonId));
+  const newSpecies = candidates.filter((candidate) => !historicTaxonIds.has(candidate.taxonId));
+  const records = await fetchObservationRecords(query, newSpecies, requestOptions);
+  const species = newSpecies.map((candidate) => ({
+    ...candidate,
+    ...records.get(candidate.taxonId),
+  }));
   species.sort((left, right) => (
     left.scientificName.localeCompare(right.scientificName)
       || left.taxonId - right.taxonId
@@ -316,7 +437,7 @@ export async function detectNewCountySpecies(query, options = {}) {
     totalNewSpecies: species.length,
     species,
     meta: {
-      source: "iNaturalist v2 observation species counts",
+      source: "iNaturalist v2 species counts and observations",
       upstreamRequests,
     },
   };
@@ -337,6 +458,18 @@ function response(payload, status = 200, requestMethod = "GET", cacheable = fals
   return new Response(body, { status, headers });
 }
 
+function resultCacheRequest(request, query) {
+  const url = new URL(request.url);
+  url.search = new URLSearchParams({
+    place_id: String(query.placeId),
+    d1: query.dateFrom,
+    d2: query.dateTo,
+    include_casual: String(query.includeCasual),
+    _result_schema: RESULT_CACHE_VERSION,
+  });
+  return new Request(url.toString(), { method: "GET" });
+}
+
 export async function handleNewCountySpecies(context) {
   const method = context.request.method;
   if (method === "OPTIONS") return response(null, 204, method);
@@ -349,17 +482,18 @@ export async function handleNewCountySpecies(context) {
     return result;
   }
   try {
+    const query = normalizeQuery(new URL(context.request.url).searchParams);
     const cache = globalThis.caches?.default;
+    const cacheRequest = cache ? resultCacheRequest(context.request, query) : null;
     if (cache) {
-      const cached = await cache.match(context.request);
+      const cached = await cache.match(cacheRequest);
       if (cached) return cached;
     }
-    const query = normalizeQuery(new URL(context.request.url).searchParams);
     const payload = await detectNewCountySpecies(query);
     const result = response(payload, 200, method, true);
     if (cache) {
       try {
-        await cache.put(context.request, result.clone());
+        await cache.put(cacheRequest, result.clone());
       } catch (_error) {
         // A cache miss must never prevent a successful, rate-limited result.
       }
