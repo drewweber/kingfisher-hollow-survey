@@ -1,5 +1,8 @@
 const INAT_API = "https://api.inaturalist.org/v1/observations";
+const INAT_SPECIES_COUNTS_API = `${INAT_API}/species_counts`;
 const PAGE_SIZE = 200;
+const SPECIES_COUNT_PAGE_SIZE = 500;
+const MAX_HISTORY_PAGES = 25;
 const MAX_ATTEMPTS = 3;
 const INAT_REQUEST_INTERVAL_MS = 1_100;
 const INAT_USER_AGENT = "KingfisherHollowCountySpeciesDetector/1.0 (+https://survey.kingfisher-hollow.com/tools/new-county-species/)";
@@ -154,8 +157,8 @@ async function fetchPage(url, { fetchImpl = fetch, delay = wait, pacer } = {}) {
   return payload;
 }
 
-function urlWith(params) {
-  const url = new URL(INAT_API);
+function urlWith(path, params) {
+  const url = new URL(path);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   return url;
 }
@@ -190,7 +193,7 @@ export async function fetchPeriodSpecies(query, options = {}) {
   const species = new Map();
   let idAbove = 0;
   while (true) {
-    const payload = await fetchPage(urlWith({
+    const payload = await fetchPage(urlWith(INAT_API, {
       ...qualifyingParams(query),
       d1: query.dateFrom,
       d2: query.dateTo,
@@ -220,24 +223,40 @@ export async function fetchPeriodSpecies(query, options = {}) {
   return [...species.values()];
 }
 
-export async function hasEarlierObservation(query, taxonId, options = {}) {
-  const payload = await fetchPage(urlWith({
-    ...qualifyingParams(query),
-    taxon_id: String(taxonId),
-    d2: previousDate(query.dateFrom),
-    per_page: "1",
-    order: "asc",
-    order_by: "observed_on",
-  }), options);
-  return payload.results.length > 0;
+function speciesTaxonId(result) {
+  const id = Number(result?.taxon?.id);
+  return Number.isSafeInteger(id) && id > 0 && result?.taxon?.rank === "species" ? id : null;
 }
 
-async function filterSequential(values, predicate) {
-  const kept = [];
-  for (const value of values) {
-    if (await predicate(value)) kept.push(value);
+export async function fetchHistoricalSpeciesTaxonIds(query, options = {}) {
+  const taxonIds = new Set();
+  const historicDate = previousDate(query.dateFrom);
+
+  for (let page = 1; page <= MAX_HISTORY_PAGES; page += 1) {
+    const payload = await fetchPage(urlWith(INAT_SPECIES_COUNTS_API, {
+      ...qualifyingParams(query),
+      d2: historicDate,
+      per_page: String(SPECIES_COUNT_PAGE_SIZE),
+      page: String(page),
+    }), options);
+    for (const result of payload.results) {
+      const taxonId = speciesTaxonId(result);
+      if (taxonId) taxonIds.add(taxonId);
+    }
+
+    const total = Number(payload.total_results);
+    if (payload.results.length < SPECIES_COUNT_PAGE_SIZE
+      || (Number.isSafeInteger(total) && page * SPECIES_COUNT_PAGE_SIZE >= total)) {
+      return taxonIds;
+    }
   }
-  return kept;
+
+  throw new NewCountySpeciesError(
+    "inat_history_too_broad",
+    "This place has too much prior iNaturalist history for an immediate check. Use a smaller place.",
+    422,
+    false,
+  );
 }
 
 export async function detectNewCountySpecies(query, options = {}) {
@@ -246,10 +265,8 @@ export async function detectNewCountySpecies(query, options = {}) {
     pacer: options.pacer ?? createRequestPacer(),
   };
   const candidates = await fetchPeriodSpecies(query, requestOptions);
-  const species = await filterSequential(
-    candidates,
-    async (candidate) => !(await hasEarlierObservation(query, candidate.taxonId, requestOptions)),
-  );
+  const historicTaxonIds = await fetchHistoricalSpeciesTaxonIds(query, requestOptions);
+  const species = candidates.filter((candidate) => !historicTaxonIds.has(candidate.taxonId));
   species.sort((left, right) => (
     left.firstObservationDate.localeCompare(right.firstObservationDate)
       || left.scientificName.localeCompare(right.scientificName)

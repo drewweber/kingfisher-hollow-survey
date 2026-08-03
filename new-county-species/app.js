@@ -86,7 +86,12 @@ form.addEventListener("submit", async (event) => {
   try {
     const response = await fetch(`/api/new-county-species?${params}`, { headers: { Accept: "application/json" } });
     const payload = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(payload?.error?.message || `Request returned HTTP ${response.status}.`);
+    if (!response.ok) {
+      throw new Error(payload?.error?.message
+        || (response.status === 502
+          ? "The iNaturalist lookup did not complete. Please try again in a minute."
+          : `Request returned HTTP ${response.status}.`));
+    }
     renderResults(payload);
     status.textContent = "Search complete.";
   } catch (error) {

@@ -24,9 +24,8 @@ test("detector deduplicates species, keeps the first period record, and excludes
   }));
   const fetchImpl = async (url, init) => {
     const params = new URL(url).searchParams;
-    calls.push(params);
+    calls.push(new URL(url));
     assert.match(init.headers["User-Agent"], /KingfisherHollowCountySpeciesDetector/);
-    const taxonId = params.get("taxon_id");
     if (params.get("d1")) {
       if (params.get("id_above") === "0") return Response.json({ results: [
         observation(10, 11, "2026-07-12", "Newus species", "New Species"),
@@ -35,7 +34,11 @@ test("detector deduplicates species, keeps the first period record, and excludes
       ] });
       return Response.json({ results: [] });
     }
-    return Response.json({ results: taxonId === "22" ? [observation(2, 22, "2020-05-06", "Oldus species")] : [] });
+    assert.equal(new URL(url).pathname, "/v1/observations/species_counts");
+    return Response.json({
+      total_results: 1,
+      results: [{ taxon: { id: 22, rank: "species" } }],
+    });
   };
   const result = await detectNewCountySpecies(query, {
     fetchImpl,
@@ -50,12 +53,14 @@ test("detector deduplicates species, keeps the first period record, and excludes
     observer: "observer-11",
     observationUrl: "https://www.inaturalist.org/observations/11",
   }]);
-  assert.equal(calls[0].get("per_page"), "200");
-  assert.equal(calls[0].get("id_above"), "0");
-  assert.equal(calls[0].get("verifiable"), "true");
-  const historyCalls = calls.filter((params) => params.get("taxon_id"));
-  assert.equal(historyCalls.length, 2);
-  assert.ok(historyCalls.every((params) => params.get("d2") === "2026-06-30"));
+  assert.equal(calls[0].searchParams.get("per_page"), "200");
+  assert.equal(calls[0].searchParams.get("id_above"), "0");
+  assert.equal(calls[0].searchParams.get("verifiable"), "true");
+  const historyCalls = calls.filter((url) => url.pathname.endsWith("/species_counts"));
+  assert.equal(historyCalls.length, 1);
+  assert.equal(historyCalls[0].searchParams.get("per_page"), "500");
+  assert.equal(historyCalls[0].searchParams.get("page"), "1");
+  assert.equal(historyCalls[0].searchParams.get("d2"), "2026-06-30");
 });
 
 test("iNaturalist requests are paced at roughly one per second", async () => {
