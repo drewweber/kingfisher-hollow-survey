@@ -55,17 +55,8 @@ function renderResults(payload) {
     speciesCell.append(common, scientific);
     row.append(
       speciesCell,
-      textCell(species.firstObservationDate, "tabular"),
-      textCell(species.observer),
+      textCell(species.periodObservationCount.toLocaleString(), "tabular"),
     );
-    const linkCell = document.createElement("td");
-    const link = document.createElement("a");
-    link.href = species.observationUrl;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "View on iNaturalist ↗";
-    linkCell.append(link);
-    row.append(linkCell);
     rows.append(row);
   }
   results.hidden = false;
@@ -82,7 +73,7 @@ form.addEventListener("submit", async (event) => {
   const includeCasual = document.querySelector("#include-casual").checked;
   const params = new URLSearchParams({ place_id: placeId, d1: dateFrom, d2: dateTo, include_casual: String(includeCasual) });
   button.disabled = true;
-  status.textContent = "Searching iNaturalist at a respectful pace and checking each species’ place history…";
+  status.textContent = "Comparing the selected-period and earlier iNaturalist species lists at a respectful pace…";
   try {
     const response = await fetch(`/api/new-county-species?${params}`, { headers: { Accept: "application/json" } });
     const payload = await response.json().catch(() => null);

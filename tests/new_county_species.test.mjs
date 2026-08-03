@@ -8,16 +8,14 @@ import {
 } from "../src/new_county_species_runtime.mjs";
 import { onRequest } from "../functions/api/new-county-species.js";
 
-function observation(id, taxonId, observedOn, name, commonName = null) {
+function speciesCount(taxonId, name, commonName = null, count = 1) {
   return {
-    id,
-    observed_on: observedOn,
-    user: { login: `observer-${id}` },
     taxon: { id: taxonId, rank: "species", name, preferred_common_name: commonName },
+    count,
   };
 }
 
-test("detector deduplicates species, keeps the first period record, and excludes taxa with prior records", async () => {
+test("detector compares the selected-period and prior species lists", async () => {
   const calls = [];
   const query = normalizeQuery(new URLSearchParams({
     place_id: "653", d1: "2026-07-01", d2: "2026-07-31", include_casual: "false",
@@ -26,18 +24,17 @@ test("detector deduplicates species, keeps the first period record, and excludes
     const params = new URL(url).searchParams;
     calls.push(new URL(url));
     assert.match(init.headers["User-Agent"], /KingfisherHollowCountySpeciesDetector/);
-    if (params.get("d1")) {
-      if (params.get("id_above") === "0") return Response.json({ results: [
-        observation(10, 11, "2026-07-12", "Newus species", "New Species"),
-        observation(11, 11, "2026-07-03", "Newus species", "New Species"),
-        observation(12, 22, "2026-07-08", "Oldus species"),
-      ] });
-      return Response.json({ results: [] });
-    }
     assert.equal(new URL(url).pathname, "/v1/observations/species_counts");
+    if (params.get("d1")) return Response.json({
+      total_results: 2,
+      results: [
+        speciesCount(11, "Newus species", "New Species", 2),
+        speciesCount(22, "Oldus species", null, 5),
+      ],
+    });
     return Response.json({
       total_results: 1,
-      results: [{ taxon: { id: 22, rank: "species" } }],
+      results: [speciesCount(22, "Oldus species", null, 25)],
     });
   };
   const result = await detectNewCountySpecies(query, {
@@ -49,18 +46,15 @@ test("detector deduplicates species, keeps the first period record, and excludes
     taxonId: 11,
     scientificName: "Newus species",
     commonName: "New Species",
-    firstObservationDate: "2026-07-03",
-    observer: "observer-11",
-    observationUrl: "https://www.inaturalist.org/observations/11",
+    periodObservationCount: 2,
   }]);
-  assert.equal(calls[0].searchParams.get("per_page"), "200");
-  assert.equal(calls[0].searchParams.get("id_above"), "0");
+  assert.equal(calls[0].searchParams.get("per_page"), "500");
   assert.equal(calls[0].searchParams.get("verifiable"), "true");
-  const historyCalls = calls.filter((url) => url.pathname.endsWith("/species_counts"));
-  assert.equal(historyCalls.length, 1);
-  assert.equal(historyCalls[0].searchParams.get("per_page"), "500");
-  assert.equal(historyCalls[0].searchParams.get("page"), "1");
-  assert.equal(historyCalls[0].searchParams.get("d2"), "2026-06-30");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].searchParams.get("d1"), "2026-07-01");
+  assert.equal(calls[0].searchParams.get("d2"), "2026-07-31");
+  assert.equal(calls[1].searchParams.get("d1"), null);
+  assert.equal(calls[1].searchParams.get("d2"), "2026-06-30");
 });
 
 test("iNaturalist requests are paced at roughly one per second", async () => {

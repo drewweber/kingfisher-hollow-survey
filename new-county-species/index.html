@@ -47,16 +47,16 @@
       <aside class="method-panel" aria-label="Detector method">
         <p class="step-label">Method</p>
         <ol>
-          <li><strong>Collect</strong><span>All qualifying species-level observations in the chosen period.</span></li>
-          <li><strong>Deduplicate</strong><span>Keep the first observation for each exact species taxon.</span></li>
-          <li><strong>Check history</strong><span>Query iNaturalist for an earlier qualifying observation of each species in the same place.</span></li>
+          <li><strong>Collect</strong><span>All qualifying species-level taxa in the chosen period.</span></li>
+          <li><strong>Deduplicate</strong><span>Keep each exact species taxon once.</span></li>
+          <li><strong>Check history</strong><span>Compare the selected-period species list with the earlier qualifying species list for the same place.</span></li>
         </ol>
         <p class="caveat">A result is new to iNaturalist’s place records under these filters—not proof that the species is biologically new to the county or region.</p>
       </aside>
     </section>
     <section id="results" class="results" aria-labelledby="results-title" hidden>
       <div class="results-heading"><div><p class="step-label">Results</p><h2 id="results-title">New place species</h2><p id="result-summary"></p></div><strong id="result-total" class="total" aria-label="New species total">0</strong></div>
-      <div class="table-wrap"><table><thead><tr><th scope="col">Species</th><th scope="col">First observation</th><th scope="col">Observer</th><th scope="col">Record</th></tr></thead><tbody id="result-rows"></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th scope="col">Species</th><th scope="col">Qualifying records in period</th></tr></thead><tbody id="result-rows"></tbody></table></div>
       <p id="empty-results" class="empty" hidden>No new species were found for this place, period, and observation filter.</p>
     </section>
   </main>
