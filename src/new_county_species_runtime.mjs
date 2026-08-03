@@ -1,7 +1,9 @@
 const INAT_API = "https://api.inaturalist.org/v1/observations";
 const PAGE_SIZE = 200;
 const MAX_ATTEMPTS = 3;
-const PRIOR_CHECK_CONCURRENCY = 4;
+const INAT_REQUEST_INTERVAL_MS = 1_100;
+const INAT_USER_AGENT = "KingfisherHollowCountySpeciesDetector/1.0 (+https://survey.kingfisher-hollow.com/tools/new-county-species/)";
+const RESULT_CACHE_SECONDS = 60 * 60;
 
 export class NewCountySpeciesError extends Error {
   constructor(code, message, status = 400, retryable = false) {
@@ -31,6 +33,22 @@ function retryDelay(response, attempt) {
 }
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+export function createRequestPacer({
+  delay = wait,
+  now = () => Date.now(),
+  intervalMs = INAT_REQUEST_INTERVAL_MS,
+} = {}) {
+  let nextRequestAt = 0;
+  return {
+    async beforeRequest() {
+      const current = now();
+      const scheduled = Math.max(current, nextRequestAt);
+      nextRequestAt = scheduled + intervalMs;
+      if (scheduled > current) await delay(scheduled - current);
+    },
+  };
+}
 
 export function normalizeQuery(searchParams) {
   const placeId = Number(searchParams.get("place_id"));
@@ -69,11 +87,17 @@ function qualifyingParams(query) {
   };
 }
 
-async function fetchPage(url, { fetchImpl = fetch, delay = wait } = {}) {
+async function fetchPage(url, { fetchImpl = fetch, delay = wait, pacer } = {}) {
   let response;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     try {
-      response = await fetchImpl(url, { headers: { Accept: "application/json" } });
+      await pacer?.beforeRequest();
+      response = await fetchImpl(url, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": INAT_USER_AGENT,
+        },
+      });
     } catch (_error) {
       if (attempt < MAX_ATTEMPTS - 1) {
         await delay(retryDelay(null, attempt));
@@ -208,25 +232,23 @@ export async function hasEarlierObservation(query, taxonId, options = {}) {
   return payload.results.length > 0;
 }
 
-async function filterConcurrent(values, predicate, concurrency = PRIOR_CHECK_CONCURRENCY) {
+async function filterSequential(values, predicate) {
   const kept = [];
-  let next = 0;
-  async function worker() {
-    while (next < values.length) {
-      const index = next;
-      next += 1;
-      if (await predicate(values[index])) kept.push(values[index]);
-    }
+  for (const value of values) {
+    if (await predicate(value)) kept.push(value);
   }
-  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, worker));
   return kept;
 }
 
 export async function detectNewCountySpecies(query, options = {}) {
-  const candidates = await fetchPeriodSpecies(query, options);
-  const species = await filterConcurrent(
+  const requestOptions = {
+    ...options,
+    pacer: options.pacer ?? createRequestPacer(),
+  };
+  const candidates = await fetchPeriodSpecies(query, requestOptions);
+  const species = await filterSequential(
     candidates,
-    async (candidate) => !(await hasEarlierObservation(query, candidate.taxonId, options)),
+    async (candidate) => !(await hasEarlierObservation(query, candidate.taxonId, requestOptions)),
   );
   species.sort((left, right) => (
     left.firstObservationDate.localeCompare(right.firstObservationDate)
@@ -240,12 +262,14 @@ export async function detectNewCountySpecies(query, options = {}) {
   };
 }
 
-function response(payload, status = 200, requestMethod = "GET") {
+function response(payload, status = 200, requestMethod = "GET", cacheable = false) {
   const headers = new Headers({
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Accept, Content-Type",
-    "Cache-Control": "no-store",
+    "Cache-Control": cacheable
+      ? `public, max-age=${RESULT_CACHE_SECONDS}, s-maxage=${RESULT_CACHE_SECONDS}, stale-while-revalidate=86400`
+      : "no-store",
     "Content-Type": "application/json; charset=utf-8",
     "X-Content-Type-Options": "nosniff",
   });
@@ -263,9 +287,22 @@ export async function handleNewCountySpecies(context) {
     return result;
   }
   try {
+    const cache = method === "GET" ? globalThis.caches?.default : null;
+    if (cache) {
+      const cached = await cache.match(context.request);
+      if (cached) return cached;
+    }
     const query = normalizeQuery(new URL(context.request.url).searchParams);
     const payload = await detectNewCountySpecies(query);
-    return response(payload, 200, method);
+    const result = response(payload, 200, method, true);
+    if (cache) {
+      try {
+        await cache.put(context.request, result.clone());
+      } catch (_error) {
+        // A cache miss must never prevent a successful, rate-limited result.
+      }
+    }
+    return result;
   } catch (error) {
     const known = error instanceof NewCountySpeciesError;
     return response({

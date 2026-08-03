@@ -82,7 +82,7 @@ form.addEventListener("submit", async (event) => {
   const includeCasual = document.querySelector("#include-casual").checked;
   const params = new URLSearchParams({ place_id: placeId, d1: dateFrom, d2: dateTo, include_casual: String(includeCasual) });
   button.disabled = true;
-  status.textContent = "Searching iNaturalist and checking each species’ place history…";
+  status.textContent = "Searching iNaturalist at a respectful pace and checking each species’ place history…";
   try {
     const response = await fetch(`/api/new-county-species?${params}`, { headers: { Accept: "application/json" } });
     const payload = await response.json().catch(() => null);
