@@ -33,6 +33,7 @@ on:
       - "field-guide/**"
       - "functions/**"
       - "social-export/**"
+      - "new-county-species/**"
       - "tests/**"
       - "requirements.txt"
       - ".node-version"
