@@ -51,7 +51,7 @@ HERO_WEBP = "/assets/hero/dji_fly_20251020_173830_305_1760996794506_photo_optimi
 # Change this only after the section-writer makes a substantial editorial
 # refresh across the report. Routine data syncs, generated output, code work,
 # and small copy corrections must not move the public "Content updated" date.
-MAJOR_CONTENT_UPDATED_AT = "2026-07-26T19:19:09-04:00"
+MAJOR_CONTENT_UPDATED_AT = "2026-08-06T22:05:08-04:00"
 
 
 def _asset_version(path):
@@ -2402,21 +2402,20 @@ def moth_view(df, stats):
         moth_stats(msum, comp)
         + property_profile_body(plant_count, msum["species"])
         + takeaway(
-            "July has made the host-plant connection unusually concrete. Greater burdock "
-            "(<em>Arctium lappa</em>), an established introduced plant, was documented on July 12, "
-            "and Burdock Conch (<em>Aethes rubigana</em>) appeared three days later. The late-July "
-            "Sumac Leaf Blotch Miner matches recorded staghorn sumac, while Hermit Sphinx fits a "
-            "plant list that now includes scarlet beebalm, wild basil, and other mint-family hosts. "
-            "Ash Leaf Cone Roller, Willow Leafcone Caterpillar Moth, Apple Skeletonizer, and Drab "
-            "Prominent reinforce the same pattern around white ash, shining willow, apple, and the "
-            "property's cottonwood/aspen hosts. The plant inventory and moth inventory are now "
-            "predicting useful searches in both directions.", dark=True),
-        intro=f"{msum['species']:,} moth species on 30 riparian acres, and {moth_county_firsts:,} of them are first iNaturalist records for "
-              "Tioga County. That says two things at once: the county has been thinly sampled, and this stretch "
-              "of Michigan Creek is a real moth engine. The regional comparison is shaped by heavy Tompkins "
-              "County effort, especially on micromoths, so the gap list is a target list rather than a verdict. "
-              "The strongest KH signal is ecological: humid creek nights, oak-hickory and northern-hardwood "
-              f"canopy, wetland edges, and {plant_count:,} recorded wild/established plant species supporting many host-linked guilds.",
+            "The strongest next step is to connect adult moth records to the plants and "
+            "microhabitats that can support them. Willow, ash, sumac, apple, poplar and aspen, "
+            "oak, and hickory give practical places to look for larvae, rolls, mines, and feeding "
+            "sign. Adult photographs alone don't prove breeding or host use on the property, so "
+            "repeat records and host-linked evidence matter more than another isolated name. That "
+            "work should also add small moths a night sheet under-samples.", dark=True),
+        intro=f"{msum['species']:,} moth species are confirmed on 30 riparian acres, including "
+              f"{moth_county_firsts:,} first iNaturalist records for Tioga County. That county-first "
+              "total strengthens a thin public baseline; it does not make every species rare. The "
+              "clearest property signal is a broad fauna spanning humid creek margins, wetland edge, "
+              "northern-hardwood slope, and oak-hickory upland. With "
+              f"{plant_count:,} wild or established plant species recorded, the most informative next "
+              "gains should come from sugar bait, canopy lighting, cold-season surveys, dusk walks, "
+              "and host-focused searches.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
@@ -2450,15 +2449,13 @@ def moth_view(df, stats):
                    note="Solid bar: species recorded here. Faint bar: species known within ~50 miles. Numbers at bar ends show the recorded-to-regional ratio. Sorted by recorded species count.",
                    dark=True)
         + takeaway(
-            "The large, conspicuous families — Noctuidae (owlet moths), Geometridae (geometers), Erebidae "
-            "(tiger moths and kin) — are well represented because they're big enough to identify at the sheet. "
-            "The micro-moth families tell a different story. Tortricidae, Gelechiidae, Coleophoridae, and "
-            "Nepticulidae hold a large share of temperate moth diversity, but many records require leaf-mine "
-            "work, host association, expert review, or collection-level evidence. KH should prioritize the "
-            "photo-workable and host-informative micros, not chase every dissection-only species. Tortricidae "
-            f"has now reached {tortricid_count} species here, so the leaf-roller gap is starting to close; the remaining "
-            "undetected fauna is concentrated in methods the standard UV sheet barely samples.", dark=True),
-        intro="The moth fauna isn't evenly sampled. Some families are nearly fully inventoried by the current approach; others are mostly visible only through host-plant work, bait, canopy sampling, or expert micro review.",
+            "Large, conspicuous families are the best represented because their adults are easier "
+            "to photograph and identify at lights. The remaining gap is concentrated in small or "
+            "difficult families and in species reached through host searches, bait, canopy work, "
+            "and colder-season surveys. "
+            f"Tortricidae now has {tortricid_count} species documented here; further useful gains "
+            "will depend on sharp photographs, host association, and expert review.", dark=True),
+        intro="The moth fauna isn't evenly sampled. Large, photo-workable families are well represented, while other groups need host-plant work, bait, canopy sampling, colder-season surveys, or expert micro review.",
         dark=True))
     out.append(section(
         "moth-standouts", "Standouts",
@@ -2489,16 +2486,13 @@ def moth_view(df, stats):
             dark=True)
         + takeaway(
             f"Of the <strong>{comp['observed']}</strong> moth species confirmed here, "
-            f"<strong>{comp['q1']}</strong> have appeared on exactly one night — seen once and not since. "
-            f"That single-night rate drives the Chao2 estimate: roughly "
-            f"<strong>{comp['estimated']}</strong> species total (95% CI: {comp['low']}–{comp['high']}), "
-            f"putting the survey about <strong>{comp['pct_complete']}%</strong> complete. The regional pool is "
-            f"larger, and many records in it come from better-sampled Tompkins County or from habitats this property doesn't have. "
-            f"The ~{comp['estimated']:,} ceiling is a realistic figure for this specific place — and Chao2 is a lower bound, so "
-            f"it may be conservative. The roughly {comp['remaining']} undetected "
-            f"species aren't evenly distributed; they're concentrated in cold-season moths, bait-feeders, canopy "
-            f"species, and micro-moth families that a UV sheet samples poorly. Targeted work on the photo-workable "
-            f"Tortricidae and host-linked micros would close the most useful part of the gap.", dark=True)
+            f"<strong>{comp['q1']}</strong> have appeared on exactly one night. That high single-night "
+            f"count keeps the accumulation curve rising and yields a Chao2 estimate near "
+            f"<strong>{comp['estimated']}</strong> species (95% CI: {comp['low']}–{comp['high']}), or "
+            f"about <strong>{comp['pct_complete']}%</strong> observed. Treat that as a sampling-based "
+            f"estimate, not a fixed property ceiling. The roughly {comp['remaining']} undetected "
+            "species are most likely concentrated in cold seasons, bait-feeders, canopy species, and "
+            "host-linked micros poorly sampled by a ground-level UV sheet.", dark=True)
         + anchor_alias("moth-diversity")
         + '<div class="mt-16 border-t border-white/10 pt-14">'
           '<div class="mx-auto mb-9 max-w-3xl text-center">'
@@ -2516,21 +2510,19 @@ def moth_view(df, stats):
             note="Species ranked by total records, log scale. A steep initial drop followed by a long flat tail indicates high evenness — no species dominates. Terracotta: species recorded only once or twice.",
             dark=True)
         + takeaway(
-            "A rank-abundance curve for a degraded habitat drops steeply: one or two species dominate, the "
-            "rest are noise. This one doesn't. It slopes gently across hundreds of species — no single "
-            "species has crowded out the rest. Ecologists call that high evenness, and it's a reliable "
-            f"indicator of structurally complex habitat. The gentle slope across {msum['species']:,} species is what you'd "
-            f"predict from a site with {plant_count:,} wild/established plant species on 30 acres, each supporting distinct moth guilds, "
-            "with the three-province ecotone adding guild diversity on top. "
-            "The long flat tail on the right — all the once-or-twice-seen species — is the frontier of "
-            "what's still being found.", dark=True)
+            f"Across {msum['species']:,} documented moth species, the gentle slope shows that no single "
+            "species dominates this photo-vouchered sample. That is consistent with a broad habitat "
+            f"mosaic and {plant_count:,} recorded wild or established plants, but the curve also "
+            "reflects survey method and the long tail of one- and two-record species; it is not by "
+            "itself a habitat-quality test. Repeat records and stronger evidence for that tail will "
+            "be more informative than attaching a single ecological verdict to the curve.", dark=True)
         + '</div>'
     )
     out.append(section(
         "moth-completeness", "Inventory Status",
         'Inventory <em class="text-hollow-300">Status</em>',
         inventory_status_body,
-        intro=f"{comp['observed']:,} species are confirmed, with the true property total estimated near {comp['estimated']:,}. Coverage and community evenness answer two different questions about how mature—and how ecologically broad—the inventory has become.",
+        intro=f"{comp['observed']:,} species are confirmed, while a sampling model estimates about {comp['estimated']:,}. Coverage and evenness describe the documented sample from different angles; neither is a complete habitat-quality test.",
         dark=True))
 
     # Combined calendar section: Month by Month + On the Wing + Phenology
@@ -2633,15 +2625,15 @@ def mammals_view(df, stats):
         'The <em class="text-hollow-300">Mammals</em>',
         stats_band
         + takeaway(
-            f"What stands out in {msum['species']} species is the carnivore set: ten carnivores on 30 acres, including all "
-            "four native mustelids (fisher, mink, long-tailed weasel, and ermine), both foxes, and the full "
-            "black bear, coyote, and bobcat trio. That density on a parcel this small is the mark of the "
-            "Michigan Creek corridor working as a travel route, with the stream-tied fisher and mink the "
-            "most-documented of them. Eastern cottontail is the newest first record, logged this June. The "
-            "rarest holding stays the eastern woodland jumping mouse, a riparian-forest indicator with only "
-            "two records in all of Tioga County.", dark=True)
+            f"What stands out in {msum['species']} species is the carnivore set: ten species on 30 acres, "
+            "including four mustelids (fisher, mink, long-tailed weasel, and ermine), both foxes, "
+            "raccoon, black bear, coyote, and bobcat. The records fit Michigan Creek as a travel and "
+            "foraging corridor: mink follows the water, while fisher, foxes, coyotes, bobcats, bears, "
+            "and raccoons move through the forested valley. Eastern cottontail remains the newest "
+            "addition, first recorded June 15. Eastern woodland jumping mouse adds an uncommon "
+            "moist-forest record and remains sparsely documented across Tioga County.", dark=True)
         + mammal_found_body(found),
-        intro="The mammal list is detection-limited. Trail cameras and incidental tracks show the mid-sized corridor users well, but bats, shrews, voles, mice, moles, and semi-aquatic mammals need their own methods. July is prime time for bat acoustics over Michigan Creek and careful checks for otter, skunk, porcupine, and small-mammal sign.",
+        intro="The mammal list is detection-limited. Trail cameras and incidental sign show the mid-sized corridor users well, while bats, shrews, voles, mice, moles, and semi-aquatic mammals need targeted methods. Warm-season nights suit bat acoustics over Michigan Creek; wet forest edges, culverts, and log crossings are better places to look for overlooked small mammals and sign of otter, skunk, or porcupine.",
         dark=True))
     out.append(section(
         "mammal-gap", "Who's Missing?",
@@ -2653,7 +2645,7 @@ def mammals_view(df, stats):
         "mammal-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MAMMAL_METHODS),
-        intro=f"{msum['species']} species, and not one bat. These methods target the guilds a trail camera misses: acoustic "
+        intro=f"{msum['species']} species, with no bat yet confirmed. These methods target the guilds a trail camera misses: acoustic "
               "fliers over the creek, small mammals in leaf litter, and semi-aquatic mammals moving through "
               "culverts, riffles, and log crossings.",
         dark=True))
@@ -2694,21 +2686,19 @@ def plants_view(df, stats):
         'The <em class="text-hollow-300">Plants</em>',
         stats_band
         + takeaway(
-            "The plant list reads like a compact Tioga County cross-section: oak-hickory upland, northern-hardwood "
-            "slope, hemlock shade, wet meadow, pond edge, and creek corridor all packed into 30 acres. July closed "
-            "several especially useful host gaps. Eastern cottonwood and established greater burdock were documented, "
-            "then Drab Prominent and Burdock Conch followed. Ash Leaf Cone Roller, Willow Leafcone Caterpillar Moth, "
-            "Apple Skeletonizer, and Sumac Leaf Blotch Miner reinforce the same pattern around white ash, shining "
-            "willow, apple, and staghorn sumac. Native common evening-primrose is the newest addition and turns "
-            "Primrose Moth from a generic regional gap into a host-supported dusk target. The next botanical gains "
-            "should come from similarly focused searches, especially sunflowers, cattails, wood nettle, and wet-edge "
-            "graminoids. <em>Salix</em> still stands at one species and <em>Carex</em> at two; those remain survey "
-            "gaps, not ecological absences.", dark=True)
+            "The uneven list is as useful as the total. Flowering plants dominate the confirmed flora, "
+            "while sedges, willows, aquatics, late composites, ferns and allies, and bryophytes still "
+            "need identification-ready passes. August targets include great blue lobelia, cardinal flower, "
+            "swamp milkweed, broadleaf arrowhead, woolgrass, flat-topped goldenrod, woodland sunflower, "
+            "and mountain mints; these are search priorities, not presumed residents. <em>Salix</em> "
+            "still stands at one species and <em>Carex</em> at two. Those are survey gaps, not ecological "
+            "absences.", dark=True)
         + plant_found_body(found),
-        intro=f"{psum['species']:,} wild/established plant species on 30 acres, with a transition-zone signature: "
-              "Appalachian ravine plants, northern hardwoods, wetland/riparian flora, old-field edge, and "
-              "southern-edge woody possibilities all close together. Each native or established genus recorded "
-              "here is potential structure, food, or larval host for the rest of the survey.",
+        intro=f"{psum['species']:,} wild or established plant species on 30 acres. The confirmed flora "
+              "spans oak-hickory upland, northern-hardwood and hemlock slope, creek and pond margins, "
+              "and old-field edge. Together these plants provide canopy, understory, fruit, nectar, "
+              "bank structure, and larval hosts; southern-edge woody plants remain habitat-filtered "
+              "search targets rather than presumed residents.",
         dark=True))
     out.append(section(
         "plant-gap", "What's Unrecorded?",
@@ -2752,27 +2742,29 @@ def amphibians_view(df, stats):
         'The <em class="text-hollow-300">Amphibians</em>',
         stats_band
         + takeaway(
-            f"The {asum['species']}-species amphibian list is strong for incidental records, but the habitat says there is more to find. "
-            "The late-July sequence of pickerel frog, eastern newt, gray treefrog, and spring peeper shows that "
-            "the pond, wet margins, and forest floor remain active well beyond the spring chorus. Red-backed, "
-            "northern slimy, and spotted salamanders add upland forest and vernal-pool evidence. The obvious hole "
-            "is stream salamanders: riffles and seepage zones should be checked for two-lined, dusky, and spring "
-            "salamanders before the site is treated as well sampled.", dark=True)
+            f"The {asum['species']}-species amphibian list is strong for incidental records, and activity "
+            "continues well beyond the spring chorus. Pickerel frog, eastern newt, gray treefrog, and "
+            "spring peeper all appeared in late July, followed by green frog on August 6. Red-backed and "
+            "northern slimy salamanders document the upland forest; the spotted salamander record makes "
+            "spring migration and egg-mass checks worthwhile. The clearest gap is the stream assemblage: "
+            "two-lined, Allegheny mountain dusky, northern dusky, and spring salamanders are all well "
+            "represented nearby but remain unrecorded here.", dark=True)
         + amphibian_found_body(amp_found),
-        intro="Frogs and salamanders are method- and season-dependent. The current list already points to "
-              "clean water, wet forest floor, and breeding wetlands, but it is still mostly incidental. In "
-              "July, careful creek and seep checks are the useful next step for stream salamanders, while "
-              "warm evenings keep frogs visible around the pond and wet margins.",
+        intro="Frogs and salamanders are method- and season-dependent. The current list spans pond, "
+              "wet-margin, and forest-floor species, but targeted stream and breeding-season surveys "
+              "remain sparse. Cool, damp days favor creek and seep checks for stream salamanders, while "
+              "warm evenings keep frogs visible around the pond and wet margins. Early-spring rainy "
+              "nights remain essential for migration, choruses, and egg-mass searches.",
         dark=True))
     out.append(section(
         "reptiles-found", "Sun & Scale",
         'The <em class="text-hollow-300">Reptiles</em>',
         reptile_found_body(rep_found),
-        intro=f"{rsum['species']} reptile species are confirmed, including watersnake, snapping turtle, painted turtle, "
-              "milksnake, DeKay's brownsnake, and Central Ratsnake. Recent snapping turtle and garter snake records "
-              "show that ordinary pond-edge and trail encounters are still adding useful seasonal evidence. July "
-              "favors slow basking checks, pond-edge turtle scans, and careful cover-object work for small secretive "
-              "snakes.",
+        intro=f"{rsum['species']} reptile species are confirmed: Common Watersnake, Common Snapping Turtle, "
+              "Painted Turtle, Eastern Milksnake, DeKay's Brownsnake, Common Garter Snake, and Central "
+              "Ratsnake. Recent turtle and garter snake records show that ordinary pond-edge and trail "
+              "encounters still add useful seasonal evidence. Warm days favor slow basking checks, pond-edge "
+              "turtle scans, and careful cover-object work for small secretive snakes.",
         dark=True))
     out.append(section(
         "amphibian-gap", "Yet to Find",
@@ -2834,30 +2826,31 @@ def butterflies_view(df, stats):
         'The <em class="text-hollow-300">Butterflies</em>',
         stats_band + tiger_swallowtail_case_study_card()
         + butterfly_found_body(found),
-        intro="Butterflies are the daytime half of the property's Lepidoptera, and this list is still "
-              f"effort-limited. {bsum['species']} species against {moth_species:,} moths says more about survey timing than habitat. "
-              "July records now span the property's main daytime settings: Appalachian Brown at the sedge-wet edge, "
-              "Northern Pearly-eye in shaded woodland, Orange Sulphur in open ground, Little Glassywing along grassy "
-              "margin, and Midsummer Tiger Swallowtail at the canopy edge. That spread confirms that repeated sunny "
-              "transects are sampling the property rather than one nectar patch. Violets, nettles, willows, oaks, "
-              "hickories, cherries, sedges, turtlehead, milkweeds, asters, and goldenrods still point to many missing "
-              "skippers, hairstreaks, swallowtails, and brushfoots.",
+        intro="The butterfly list is still effort-limited. "
+              f"{bsum['species']} species beside {moth_species:,} moths says more about day-versus-night "
+              "survey effort than habitat. Recent additions of Dun Skipper and Common Wood-Nymph, plus "
+              "repeated Appalachian Brown, Northern Broken-Dash, Pearl Crescent, Eastern Tiger "
+              "Swallowtail, and Monarch records, show that daytime work is still adding grass-edge, "
+              "wet-edge, and woodland-associated species. The best next gains should come from repeated "
+              "spring and midsummer transects with both wing surfaces photographed.",
         dark=True))
     out.append(section(
         "butterfly-gap", "Yet to Find",
         'Butterfly <em class="text-hollow-300">Gap List</em>',
         butterfly_gap_body(gap),
-        intro="Butterflies recorded within ~50 miles but not yet found here. The first wins are daytime method "
-              "gaps: skippers in grass and wet edges, hairstreaks around oak-hickory canopy and shrub edges, "
-              "and conspicuous brushfoots that need repeated sunny walks.",
+        intro="The regional pool is a target list, not a promise. Prioritize species whose season, habitat, "
+              "and survey method fit the property: wet-edge skippers, oak-hickory hairstreaks, early-spring "
+              "woodland adults, and conspicuous brushfoots. Regional frequency raises survey priority; it "
+              "does not establish that a species occurs here.",
         dark=True))
     out.append(section(
         "butterfly-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(BUTTERFLY_METHODS),
-        intro=f"{bsum['species']} species are a barely-started list. Repeated sunny transects, dorsal and ventral photos, "
-              "fruit bait, puddling checks, and host-plant searches across spring, midsummer, and fall would "
-              "multiply it quickly.",
+        intro=f"With {bsum['species']} species confirmed, the daytime inventory is still early. Repeated "
+              "sunny transects, dorsal and ventral photographs, fruit bait, puddling checks, and "
+              "host-plant searches across spring, midsummer, and fall offer the best route to broader "
+              "coverage.",
         dark=True))
     return "".join(out)
 
@@ -2921,20 +2914,23 @@ def birds_view():
         ]) + '</div>')
     out = []
     out.append(section(
-        "birds", "On eBird",
+        "birds", "Creek, Forest & Sky",
         'The <em class="text-hollow-300">Birds</em>',
         stats_band
         + takeaway(
-            f"The {bsum['species']}-species bird list reflects the full shape of the property: creek, pond, wet meadow, "
-            "hemlock-hardwood slope, shrub edge, and open sky. Waterbirds and shorebirds turn up along "
-            "Michigan Creek, forest songbirds use the hollow, flycatchers and swallows work the openings, "
-            f"and migrants follow the corridor in spring and fall. With the latest addition dated "
-            f"{fdate(bsum['latest'], '%b %-d')}, the "
-            "next summer gain is not simply another name: it is breeding evidence through repeated territories, "
-            "fledglings, food carrying, and sustained use of the same creek, shrub, or forest patch.",
+            f"The {bsum['species']}-species list reaches well beyond backyard birds. Spotted and Solitary "
+            "Sandpipers, Great Egret, Pied-billed Grebe, and several ducks show the wetland or flyover "
+            "opportunity; Wood Thrush, Louisiana Waterthrush, Ovenbird, Scarlet Tanager, Blackburnian "
+            "Warbler, and Black-throated Green Warbler mark the forest signal; Cape May, Bay-breasted, "
+            "Blackpoll, and Wilson's Warblers show migration in the hollow. The latest addition is dated "
+            f"{fdate(bsum['latest'], '%b %-d')}. Occurrence doesn't prove breeding: repeated territories, "
+            "food carrying, fledglings, and habitat-specific checklists are the next layer of evidence.",
             dark=True)
         + bird_life_list_body(birds),
-        intro="Birds recorded at the Michigan Hollow, silo house eBird location, shown alongside the rest of the Kingfisher Hollow biodiversity survey.",
+        intro=f"{bsum['species']} species are recorded at the Michigan Hollow, silo house eBird location. "
+              "The list includes birds associated with creek, pond, forest, and shrub-edge habitat, "
+              "along with migrants and open-sky flyovers; a location record alone does not establish "
+              "breeding or sustained use of a particular habitat patch.",
         dark=True))
     out.append(section(
         "bird-recent", "New Additions",
@@ -3199,13 +3195,13 @@ def build():
         chart_card(viz.discovery_curve(firsts),
                    note=f"Each step marks a species' first record at Kingfisher Hollow. New steps after {public_s['observations']:,} records show that the inventory is still actively growing.")
         + takeaway(
-            f"The curve is still gaining species after {public_s['observations']:,} records. Late July shows why. Little "
-            "Glassywing widened the daytime grass-edge list, common evening-primrose sharpened a moth-host search, "
-            "and night work added Hermit Sphinx and Splendid Dagger. Close inspection produced an even larger wave "
-            "of leafminers, gall makers, aphids, flies, barklice, and other small insects that broad surveys overlook. "
-            "Moth lighting still drives the steepest runs, but no single method owns the remaining frontier. Each "
-            "plant genus documented on the property sharpens the insect search, and each new method reaches a "
-            "different slice of the site."),
+            f"The curve is still gaining species after {public_s['observations']:,} records. The latest rise "
+            "came from close inspection as much as broad coverage: Dun Skipper and Common Wood-Nymph "
+            "extended the daytime butterfly list, while night work added underwings, leafminers, "
+            "leaffolders, and other small moths. Aspen Serpentine Leafminer, Sycamore Leaffolder, Cherry "
+            "Fruitworm, and Zimmerman Pine Moth also show how the plant inventory can guide the search, "
+            "although adult records alone don't prove host use on the property. Moth lighting still drives "
+            "the steepest runs, but no single method owns the remaining frontier."),
         intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Distinctiveness arc: public county contribution → rarity test ─────────
