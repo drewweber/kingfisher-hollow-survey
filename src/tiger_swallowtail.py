@@ -1256,6 +1256,10 @@ def _page_html(records, analyses, cache_dir):
     .paper-figure-row img {{ position: absolute; inset: 0; width: 100%; height: auto; max-width: none; }}
     .paper-figure-row[data-row="b"] img {{ transform: translateY(-33.333%); }}
     .paper-figure-row[data-row="c"] img {{ transform: translateY(-66.666%); }}
+    .hindwing-paper-crop {{ aspect-ratio: 4 / 1; }}
+    .hindwing-paper-crop img {{ position: absolute; inset: 0 auto auto 0; width: 300%; height: auto; max-width: none; }}
+    .hindwing-paper-crop[data-column="b"] img {{ transform: translateX(-33.333%); }}
+    .hindwing-paper-crop[data-column="c"] img {{ transform: translateX(-66.666%); }}
     @media (prefers-reduced-motion: reduce) {{ html {{ scroll-behavior: auto; }} }}
   </style>
 </head>
@@ -1357,24 +1361,82 @@ def _page_html(records, analyses, cache_dir):
           <p class="mt-4 text-pretty text-xs leading-5 text-stone-500">Cropped quick views from DeRoller et al. (2025), Figure 6 · CC0. <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="font-semibold text-hollow-800 underline decoration-hollow-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500">Open the complete figure and caption</a>.</p>
         </div>
 
-        <div class="mt-12 grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-start">
-          <div>
+        <div class="mt-12">
+          <div class="max-w-4xl">
             <p class="font-semibold text-hollow-700">Quick view · paper Figure 7</p>
-            <h3 class="mt-2 text-balance font-serif text-2xl font-semibold text-stone-950">Then check the hindwing underside</h3>
-            <p class="mt-3 text-pretty leading-7 text-stone-700">Compare the black band along the inner, abdominal edge of the hindwing. Midsummer is typically intermediate, but the ranges overlap.</p>
-            <dl class="mt-5 grid gap-3 sm:grid-cols-3">
-              <div class="rounded-xl border border-hollow-200 bg-hollow-50 p-4"><dt class="font-semibold text-hollow-950">Midsummer</dt><dd class="tabular-nums mt-1 text-sm text-hollow-800">about 30–55%</dd></div>
-              <div class="rounded-xl border border-stone-200 bg-white p-4"><dt class="font-semibold text-stone-950">Canadian</dt><dd class="tabular-nums mt-1 text-sm text-stone-600">about 55–90%</dd></div>
-              <div class="rounded-xl border border-stone-200 bg-white p-4"><dt class="font-semibold text-stone-950">Eastern</dt><dd class="tabular-nums mt-1 text-sm text-stone-600">about 10–40%</dd></div>
-            </dl>
-            <p class="mt-4 text-pretty text-sm leading-6 text-stone-600">The paper also describes Midsummer’s hindwing boundary as intermediate in scalloping: straighter than typical Eastern, less uniformly straight than Canadian.</p>
+            <h3 class="mt-2 text-balance font-serif text-2xl font-semibold text-stone-950 md:text-3xl">Find the black strip at the hairy lower edge</h3>
+            <p class="mt-3 text-pretty leading-7 text-stone-700">This is the underside of the hindwing, zoomed in on the inner edge nearest the butterfly’s abdomen. Find the blue-and-orange spot at the wing corner, then follow the hairy lower edge to the left. The feature is the black strip immediately above those hairs.</p>
           </div>
-          <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-            <a href="{PAPER_FIGURE_7_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral hindwing bands">
-              <img src="{PAPER_FIGURE_7_IMAGE}" alt="Paper figure comparing underside hindwing anal bands in Midsummer, Canadian, and Eastern Tiger Swallowtails" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="h-auto w-full bg-stone-100">
-            </a>
-            <figcaption class="p-4 text-pretty text-xs leading-5 text-stone-500">DeRoller et al. (2025), Figure 7: a Midsummer · b Canadian · c Eastern · CC0. <a href="{PAPER_FIGURE_7_URL}" target="_blank" rel="noopener" class="font-semibold text-hollow-800 underline decoration-hollow-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500">Open full figure</a>.</figcaption>
-          </figure>
+
+          <aside class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+            <p class="font-semibold">What does “30–55%” mean?</p>
+            <p class="mt-1 text-pretty text-sm leading-6">It is a body measurement, not an identification confidence. Compare the black strip’s thickness with the full width of the pale wing cell it occupies: a small percentage is a thin strip; a large percentage is a thick strip.</p>
+          </aside>
+
+          <div class="mt-6 grid gap-5 lg:grid-cols-3">
+            <figure class="overflow-hidden rounded-2xl border border-hollow-200 bg-white">
+              <div class="hindwing-paper-crop relative overflow-hidden bg-stone-100" data-column="a">
+                <img src="{PAPER_FIGURE_7_IMAGE}" alt="Cropped paper specimen showing the medium-width black anal-margin band of Midsummer Tiger Swallowtail" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                <span class="absolute left-1/2 top-2 -translate-x-1/2 rounded-lg bg-hollow-950 px-2 py-1 text-xs font-semibold text-white">black strip ↓</span>
+                <span class="absolute bottom-4 left-1/2 size-3 -translate-x-1/2 rounded-full bg-amber-400 ring-2 ring-white" aria-hidden="true"></span>
+              </div>
+              <figcaption class="p-5">
+                <p class="text-sm font-semibold text-hollow-700">a · Medium</p>
+                <p class="mt-1 font-serif text-xl font-semibold text-stone-950">Midsummer</p>
+                <p class="tabular-nums mt-2 text-sm font-semibold text-stone-700">About 30–55% of the cell</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600">Usually broader than Eastern and narrower than Canadian, but it overlaps both.</p>
+                <div class="relative mt-4 h-2 rounded-full bg-stone-200" aria-hidden="true"><span class="absolute inset-y-0 rounded-full bg-hollow-700" style="left: 30%; width: 25%"></span></div>
+                <div class="tabular-nums mt-1 flex justify-between text-xs text-stone-500"><span>0%</span><span>100%</span></div>
+              </figcaption>
+            </figure>
+
+            <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <div class="hindwing-paper-crop relative overflow-hidden bg-stone-100" data-column="b">
+                <img src="{PAPER_FIGURE_7_IMAGE}" alt="Cropped paper specimen showing the thick black anal-margin band of Canadian Tiger Swallowtail" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                <span class="absolute left-1/2 top-2 -translate-x-1/2 rounded-lg bg-hollow-950 px-2 py-1 text-xs font-semibold text-white">black strip ↓</span>
+                <span class="absolute bottom-4 left-1/2 size-3 -translate-x-1/2 rounded-full bg-amber-400 ring-2 ring-white" aria-hidden="true"></span>
+              </div>
+              <figcaption class="p-5">
+                <p class="text-sm font-semibold text-stone-500">b · Thickest</p>
+                <p class="mt-1 font-serif text-xl font-semibold text-stone-950">Canadian</p>
+                <p class="tabular-nums mt-2 text-sm font-semibold text-stone-700">About 55–90% of the cell</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600">The black usually fills more than half of the cell and can occupy nearly all of it.</p>
+                <div class="relative mt-4 h-2 rounded-full bg-stone-200" aria-hidden="true"><span class="absolute inset-y-0 rounded-full bg-hollow-700" style="left: 55%; width: 35%"></span></div>
+                <div class="tabular-nums mt-1 flex justify-between text-xs text-stone-500"><span>0%</span><span>100%</span></div>
+              </figcaption>
+            </figure>
+
+            <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <div class="hindwing-paper-crop relative overflow-hidden bg-stone-100" data-column="c">
+                <img src="{PAPER_FIGURE_7_IMAGE}" alt="Cropped paper specimen showing the thin black anal-margin band of Eastern Tiger Swallowtail" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                <span class="absolute left-1/2 top-2 -translate-x-1/2 rounded-lg bg-hollow-950 px-2 py-1 text-xs font-semibold text-white">black strip ↓</span>
+                <span class="absolute bottom-4 left-1/2 size-3 -translate-x-1/2 rounded-full bg-amber-400 ring-2 ring-white" aria-hidden="true"></span>
+              </div>
+              <figcaption class="p-5">
+                <p class="text-sm font-semibold text-stone-500">c · Thinnest</p>
+                <p class="mt-1 font-serif text-xl font-semibold text-stone-950">Eastern</p>
+                <p class="tabular-nums mt-2 text-sm font-semibold text-stone-700">About 10–40% of the cell</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600">The black usually reads as a narrower strip along the hairy edge.</p>
+                <div class="relative mt-4 h-2 rounded-full bg-stone-200" aria-hidden="true"><span class="absolute inset-y-0 rounded-full bg-hollow-700" style="left: 10%; width: 30%"></span></div>
+                <div class="tabular-nums mt-1 flex justify-between text-xs text-stone-500"><span>0%</span><span>100%</span></div>
+              </figcaption>
+            </figure>
+          </div>
+
+          <div class="mt-6 border-l-4 border-hollow-300 pl-5">
+            <h4 class="text-balance font-serif text-xl font-semibold text-stone-950">A second clue: straight versus scalloped</h4>
+            <p class="mt-2 text-pretty text-sm leading-6 text-stone-600">Now follow the boundary where pale yellow meets the black outer wing. Canadian is usually straighter. Eastern is more scalloped—a repeated wavy edge. Midsummer tends to fall between them. This clue also overlaps, so use it with band thickness rather than by itself.</p>
+          </div>
+
+          <details class="mt-6 rounded-2xl border border-stone-200 bg-white p-5">
+            <summary class="cursor-pointer font-semibold text-hollow-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500">See all paper specimens in Figure 7</summary>
+            <figure class="mt-5 overflow-hidden rounded-xl border border-stone-200">
+              <a href="{PAPER_FIGURE_7_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral hindwing bands">
+                <img src="{PAPER_FIGURE_7_IMAGE}" alt="Paper figure comparing underside hindwing anal bands in Midsummer, Canadian, and Eastern Tiger Swallowtails" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="h-auto w-full bg-stone-100">
+              </a>
+              <figcaption class="p-4 text-pretty text-xs leading-5 text-stone-500">DeRoller et al. (2025), Figure 7: a Midsummer · b Canadian · c Eastern · CC0. <a href="{PAPER_FIGURE_7_URL}" target="_blank" rel="noopener" class="font-semibold text-hollow-800 underline decoration-hollow-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500">Open the complete figure and caption</a>.</figcaption>
+            </figure>
+          </details>
         </div>
 
         <div class="mt-10">
