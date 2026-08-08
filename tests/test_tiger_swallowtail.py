@@ -355,6 +355,18 @@ class TigerSwallowtailBuildTests(unittest.TestCase):
             "transform-origin: var(--focus-x, 50%) var(--focus-y, 50%)",
             html,
         )
+        self.assertIn(
+            "TL;DR: a distinct midsummer species—but not a one-mark ID",
+            html,
+        )
+        self.assertIn("The underside is the useful side.", html)
+        self.assertIn(tiger.PAPER_FIGURE_6_IMAGE, html)
+        self.assertIn(tiger.PAPER_FIGURE_7_IMAGE, html)
+        self.assertIn("a · Midsummer", html)
+        self.assertIn("b · Canadian", html)
+        self.assertIn("c · Eastern", html)
+        self.assertIn("about 30–55%", html)
+        self.assertIn("some specimens cannot be separated", html)
         self.assertIn('value="384363724"', html)
         self.assertIn('value="384696880"', html)
         self.assertNotIn("42.2744", html)
