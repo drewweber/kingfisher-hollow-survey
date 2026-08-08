@@ -50,6 +50,18 @@ MORPHOLOGY_SIGNALS = ("eastern", "midsummer", "mixed", "neutral", "not_assessabl
 CASE_ROUTE = "/case-studies/tiger-swallowtails/"
 CASE_URL = f"https://survey.kingfisher-hollow.com{CASE_ROUTE}"
 PAPER_URL = "https://doi.org/10.3897/zookeys.1228.142202"
+PAPER_FIGURE_6_URL = (
+    "https://zookeys.pensoft.net/article/142202/zoom/fig/16/"
+)
+PAPER_FIGURE_6_IMAGE = (
+    "https://zookeys.pensoft.net/showimg/oo_1251221.jpg"
+)
+PAPER_FIGURE_7_URL = (
+    "https://zookeys.pensoft.net/article/142202/zoom/fig/17/"
+)
+PAPER_FIGURE_7_IMAGE = (
+    "https://zookeys.pensoft.net/showimg/oo_1251222.jpg"
+)
 PROJECT_URL = (
     "https://www.inaturalist.org/projects/"
     "kingfisher-hollow-biodiversity-survey"
@@ -1240,6 +1252,10 @@ def _page_html(records, analyses, cache_dir):
   <link rel="stylesheet" href="/assets/survey.css">
   <style>
     .focus-frame img {{ transform: scale(var(--focus-scale, 1)); transform-origin: var(--focus-x, 50%) var(--focus-y, 50%); object-position: var(--focus-x, 50%) var(--focus-y, 50%); }}
+    .paper-figure-row {{ aspect-ratio: 5 / 3; }}
+    .paper-figure-row img {{ position: absolute; inset: 0; width: 100%; height: auto; max-width: none; }}
+    .paper-figure-row[data-row="b"] img {{ transform: translateY(-33.333%); }}
+    .paper-figure-row[data-row="c"] img {{ transform: translateY(-66.666%); }}
     @media (prefers-reduced-motion: reduce) {{ html {{ scroll-behavior: auto; }} }}
   </style>
 </head>
@@ -1266,6 +1282,114 @@ def _page_html(records, analyses, cache_dir):
   </header>
 
   <main id="main">
+    <section class="border-b border-stone-200 bg-stone-50 px-6 py-12 md:py-16" aria-labelledby="paper-guide-title">
+      <div class="mx-auto max-w-6xl">
+        <div class="max-w-4xl">
+          <p class="font-semibold text-hollow-700">The 2025 paper, in plain English</p>
+          <h2 id="paper-guide-title" class="mt-2 text-balance font-serif text-3xl font-semibold text-stone-950 md:text-4xl">TL;DR: a distinct midsummer species—but not a one-mark ID</h2>
+          <p class="mt-4 text-pretty text-lg leading-8 text-stone-700">These butterflies are close look-alikes. The paper describes Midsummer Tiger Swallowtail as its own species, <i>Papilio solstitius</i>, rather than a recent Eastern × Canadian hybrid. The case rests on its delayed, single annual flight together with molecular, wing-pattern, and natural-history evidence—not on one stripe.</p>
+        </div>
+
+        <dl class="mt-8 grid gap-4 md:grid-cols-3">
+          <div class="rounded-2xl border border-stone-200 bg-white p-5">
+            <dt class="font-serif text-lg font-semibold text-stone-950">What changed</dt>
+            <dd class="mt-2 text-pretty text-sm leading-6 text-stone-600">The midsummer form now has the scientific name <i>Papilio solstitius</i>.</dd>
+          </div>
+          <div class="rounded-2xl border border-stone-200 bg-white p-5">
+            <dt class="font-serif text-lg font-semibold text-stone-950">Why it matters</dt>
+            <dd class="mt-2 text-pretty text-sm leading-6 text-stone-600">Its unusual post-diapause delay produces a separate midsummer flight, supported by several independent kinds of evidence.</dd>
+          </div>
+          <div class="rounded-2xl border border-stone-200 bg-white p-5">
+            <dt class="font-serif text-lg font-semibold text-stone-950">The photo rule</dt>
+            <dd class="mt-2 text-pretty text-sm leading-6 text-stone-600">Use a suite of traits. The authors note that some specimens cannot be separated by wing pattern alone.</dd>
+          </div>
+        </dl>
+
+        <aside class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+          <p class="font-semibold">The underside is the useful side.</p>
+          <p class="mt-1 text-pretty text-sm leading-6">A dorsal-only snapshot usually cannot show the paper’s strongest comparative feature. If the underside is missing, “unresolved” is often the most defensible answer.</p>
+        </aside>
+
+        <div class="mt-12">
+          <div class="max-w-4xl">
+            <p class="font-semibold text-hollow-700">Quick view · paper Figure 6</p>
+            <h3 class="mt-2 text-balance font-serif text-2xl font-semibold text-stone-950 md:text-3xl">Start with the pale band near the forewing edge</h3>
+            <p class="mt-3 text-pretty leading-7 text-stone-700">On the underside of the forewing, compare the row of pale marks just inside the black outer edge. Each paper row includes several specimens to show real variation—not a perfect field-guide example.</p>
+          </div>
+
+          <div class="mt-6 grid gap-5 md:grid-cols-3">
+            <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral forewing bands">
+                <div class="paper-figure-row relative overflow-hidden bg-stone-100" data-row="a">
+                  <img src="{PAPER_FIGURE_6_IMAGE}" alt="Paper figure row showing variation in the ventral forewing band of Midsummer Tiger Swallowtail" width="1010" height="1903" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                </div>
+              </a>
+              <figcaption class="p-5">
+                <p class="font-serif text-lg font-semibold text-stone-950">a · Midsummer</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600"><i>P. solstitius</i>: broadly joined pale lunules, usually with a scalloped inner edge.</p>
+              </figcaption>
+            </figure>
+
+            <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral forewing bands">
+                <div class="paper-figure-row relative overflow-hidden bg-stone-100" data-row="b">
+                  <img src="{PAPER_FIGURE_6_IMAGE}" alt="Paper figure row showing variation in the ventral forewing band of Canadian Tiger Swallowtail" width="1010" height="1903" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                </div>
+              </a>
+              <figcaption class="p-5">
+                <p class="font-serif text-lg font-semibold text-stone-950">b · Canadian</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600"><i>P. canadensis</i>: usually the most continuous, even-edged band; the lunules are not well separated by black.</p>
+              </figcaption>
+            </figure>
+
+            <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral forewing bands">
+                <div class="paper-figure-row relative overflow-hidden bg-stone-100" data-row="c">
+                  <img src="{PAPER_FIGURE_6_IMAGE}" alt="Paper figure row showing variation in the ventral forewing band of Eastern Tiger Swallowtail" width="1010" height="1903" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                </div>
+              </a>
+              <figcaption class="p-5">
+                <p class="font-serif text-lg font-semibold text-stone-950">c · Eastern</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600"><i>P. glaucus</i>: usually separate pale lunules divided by black lines along the veins, though some coalesce.</p>
+              </figcaption>
+            </figure>
+          </div>
+          <p class="mt-4 text-pretty text-xs leading-5 text-stone-500">Cropped quick views from DeRoller et al. (2025), Figure 6 · CC0. <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="font-semibold text-hollow-800 underline decoration-hollow-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500">Open the complete figure and caption</a>.</p>
+        </div>
+
+        <div class="mt-12 grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div>
+            <p class="font-semibold text-hollow-700">Quick view · paper Figure 7</p>
+            <h3 class="mt-2 text-balance font-serif text-2xl font-semibold text-stone-950">Then check the hindwing underside</h3>
+            <p class="mt-3 text-pretty leading-7 text-stone-700">Compare the black band along the inner, abdominal edge of the hindwing. Midsummer is typically intermediate, but the ranges overlap.</p>
+            <dl class="mt-5 grid gap-3 sm:grid-cols-3">
+              <div class="rounded-xl border border-hollow-200 bg-hollow-50 p-4"><dt class="font-semibold text-hollow-950">Midsummer</dt><dd class="tabular-nums mt-1 text-sm text-hollow-800">about 30–55%</dd></div>
+              <div class="rounded-xl border border-stone-200 bg-white p-4"><dt class="font-semibold text-stone-950">Canadian</dt><dd class="tabular-nums mt-1 text-sm text-stone-600">about 55–90%</dd></div>
+              <div class="rounded-xl border border-stone-200 bg-white p-4"><dt class="font-semibold text-stone-950">Eastern</dt><dd class="tabular-nums mt-1 text-sm text-stone-600">about 10–40%</dd></div>
+            </dl>
+            <p class="mt-4 text-pretty text-sm leading-6 text-stone-600">The paper also describes Midsummer’s hindwing boundary as intermediate in scalloping: straighter than typical Eastern, less uniformly straight than Canadian.</p>
+          </div>
+          <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+            <a href="{PAPER_FIGURE_7_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral hindwing bands">
+              <img src="{PAPER_FIGURE_7_IMAGE}" alt="Paper figure comparing underside hindwing anal bands in Midsummer, Canadian, and Eastern Tiger Swallowtails" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="h-auto w-full bg-stone-100">
+            </a>
+            <figcaption class="p-4 text-pretty text-xs leading-5 text-stone-500">DeRoller et al. (2025), Figure 7: a Midsummer · b Canadian · c Eastern · CC0. <a href="{PAPER_FIGURE_7_URL}" target="_blank" rel="noopener" class="font-semibold text-hollow-800 underline decoration-hollow-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500">Open full figure</a>.</figcaption>
+          </figure>
+        </div>
+
+        <div class="mt-10">
+          <h3 class="text-balance font-serif text-2xl font-semibold text-stone-950">Supporting clues—not shortcuts</h3>
+          <dl class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl border border-stone-200 bg-white p-5"><dt class="font-semibold text-stone-950">Forewing outline</dt><dd class="mt-2 text-pretty text-sm leading-6 text-stone-600">Eastern is more often distinctly concave. Angle, sex, and overlap limit this clue.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-5"><dt class="font-semibold text-stone-950">Flight timing</dt><dd class="mt-2 text-pretty text-sm leading-6 text-stone-600">Midsummer emergence starts in late June to early July in the study. Date adds context; it does not replace morphology.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-5"><dt class="font-semibold text-stone-950">Female colour</dt><dd class="mt-2 text-pretty text-sm leading-6 text-stone-600">The dark female form occurs in Eastern, not Midsummer. A yellow female alone proves nothing.</dd></div>
+            <div class="rounded-2xl border border-stone-200 bg-white p-5"><dt class="font-semibold text-stone-950">Size and colour</dt><dd class="mt-2 text-pretty text-sm leading-6 text-stone-600">Midsummer averages smaller than summer Eastern and richer yellow than Canadian, but photographs rarely provide a reliable scale or colour standard.</dd></div>
+          </dl>
+          <a href="{PAPER_URL}" target="_blank" rel="noopener" class="mt-6 inline-flex font-semibold text-hollow-800 underline decoration-hollow-300 underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500">Read the full open-access species description</a>
+        </div>
+      </div>
+    </section>
+
     <section class="border-b border-stone-200 bg-white px-6 py-10">
       <div class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div>
