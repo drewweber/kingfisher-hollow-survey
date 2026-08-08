@@ -173,6 +173,25 @@ class TigerSwallowtailSourceTests(unittest.TestCase):
         self.assertEqual(47225, row["current_taxon_id"])
         self.assertEqual(tiger.MIDSUMMER_TAXON_ID, row["original_taxon_id"])
 
+    def test_manual_review_can_include_broader_source_identification(self):
+        broader = observation(taxon_id=47225, ancestor_ids=[47225])
+        broader["taxon"].update({
+            "name": "Papilio",
+            "preferred_common_name": "Common Swallowtails",
+            "rank": "genus",
+        })
+
+        self.assertFalse(tiger.capture_observation(self.conn, broader))
+        self.assertTrue(tiger.capture_observation(
+            self.conn, broader, manual_include=True
+        ))
+        row = self.conn.execute(
+            "SELECT current_taxon_id, current_taxon_name "
+            "FROM tiger_swallowtail_obs"
+        ).fetchone()
+        self.assertEqual(47225, row["current_taxon_id"])
+        self.assertEqual("Papilio", row["current_taxon_name"])
+
 
 class TigerSwallowtailAssessmentTests(unittest.TestCase):
     def setUp(self):
@@ -331,6 +350,10 @@ class TigerSwallowtailBuildTests(unittest.TestCase):
         self.assertIn("Ventral forewing not visible clearly enough", html)
         self.assertIn(
             '["384363724","384696880"]', html
+        )
+        self.assertIn(
+            "transform-origin: var(--focus-x, 50%) var(--focus-y, 50%)",
+            html,
         )
         self.assertIn('value="384363724"', html)
         self.assertIn('value="384696880"', html)
