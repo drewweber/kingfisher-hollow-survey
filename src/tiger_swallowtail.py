@@ -1239,7 +1239,7 @@ def _page_html(records, analyses, cache_dir):
   <link rel="preload" href="/assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/survey.css">
   <style>
-    .focus-frame img {{ transform: scale(var(--focus-scale, 1)); object-position: var(--focus-x, 50%) var(--focus-y, 50%); }}
+    .focus-frame img {{ transform: scale(var(--focus-scale, 1)); transform-origin: var(--focus-x, 50%) var(--focus-y, 50%); object-position: var(--focus-x, 50%) var(--focus-y, 50%); }}
     @media (prefers-reduced-motion: reduce) {{ html {{ scroll-behavior: auto; }} }}
   </style>
 </head>

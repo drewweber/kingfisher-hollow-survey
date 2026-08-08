@@ -351,6 +351,10 @@ class TigerSwallowtailBuildTests(unittest.TestCase):
         self.assertIn(
             '["384363724","384696880"]', html
         )
+        self.assertIn(
+            "transform-origin: var(--focus-x, 50%) var(--focus-y, 50%)",
+            html,
+        )
         self.assertIn('value="384363724"', html)
         self.assertIn('value="384696880"', html)
         self.assertNotIn("42.2744", html)
