@@ -242,6 +242,56 @@
         "y": 29,
         "scale": 2.2
       }
+    },
+    "389421351": {
+      "reviewed_at": "2026-08-08",
+      "include_in_case_study": true,
+      "view": "ventral",
+      "wear": "fresh",
+      "wear_note": "The wing margins, tails, and pattern boundaries are substantially intact; slight scale abrasion does not obscure the photographed characters.",
+      "ventral_forewing_visible": true,
+      "ventral_forewing_pattern": "eastern",
+      "ventral_forewing_note": "Photo 713310709 clearly shows the underside of the forewing. The pale submarginal lunules remain discrete and are separated by black along the veins, supporting Eastern.",
+      "secondary_morphology_clear": true,
+      "wing_shape": {
+        "signal": "eastern",
+        "note": "Photo 713310713 shows a distinctly concave distal forewing margin, a secondary character that leans Eastern but overlaps with Midsummer."
+      },
+      "sex_or_dark_form": {
+        "signal": "neutral",
+        "note": "The individual is yellow, but the visible sex-linked characters do not add a separate directional signal."
+      },
+      "image_limitations": [
+        "The teasel flower and stems partly obscure the forewing bases and portions of one wing.",
+        "The result remains a photographic assessment without a specimen, size measurement, or genetic evidence.",
+        "August 8 falls at the end of the Midsummer and summer-Eastern overlap window, so date alone points in the other direction."
+      ],
+      "manual_review_reasons": [
+        "The current iNaturalist source identification stops at the genus Papilio; case-study inclusion and the site assessment depend on the photographed tiger-swallowtail characters."
+      ],
+      "photos": {
+        "713310702": {
+          "view": "ventral",
+          "ventral_forewing_visible": true,
+          "note": "Side-on ventral view; a stem obscures part of the wing, but the submarginal marks are visible."
+        },
+        "713310713": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Sharp dorsal view showing the forewing outline; the diagnostic underside band is hidden."
+        },
+        "713310709": {
+          "view": "ventral",
+          "ventral_forewing_visible": true,
+          "note": "The clearest ventral view, showing discrete submarginal lunules separated by black along the veins."
+        }
+      },
+      "focus": {
+        "photo_id": 713310709,
+        "x": 25,
+        "y": 67,
+        "scale": 2.1
+      }
     }
   }
 }

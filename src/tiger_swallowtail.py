@@ -185,14 +185,20 @@ def normalize_observation(observation):
     }
 
 
-def capture_observation(conn, observation, in_project=True):
+def capture_observation(
+    conn, observation, in_project=True, manual_include=False
+):
     """Insert/update a source record while preserving its first-ingested ID."""
     row = conn.execute(
         "SELECT observation_id FROM tiger_swallowtail_obs "
         "WHERE observation_id = ?",
         (observation.get("id"),),
     ).fetchone()
-    if not row and not qualifies_observation(observation):
+    if (
+        not row
+        and not manual_include
+        and not qualifies_observation(observation)
+    ):
         return False
 
     payload = normalize_observation(observation)
@@ -335,6 +341,12 @@ def _payloads_from_connection(conn, active_only=True):
 
 def refresh_from_database():
     """Backfill/refresh full case-study records after the property sync."""
+    reviews = _read_reviews()
+    manual_candidate_ids = {
+        int(observation_id)
+        for observation_id, review in reviews["observations"].items()
+        if review.get("include_in_case_study")
+    }
     with connect() as conn:
         property_ids = {
             int(row["id"])
@@ -369,7 +381,10 @@ def refresh_from_database():
                 tuple(sorted(active_historical)),
             )
 
-    candidate_ids = sorted(known_candidates | active_historical)
+    manual_candidate_ids &= property_ids
+    candidate_ids = sorted(
+        known_candidates | active_historical | manual_candidate_ids
+    )
     observations = []
     try:
         observations = inat_api.fetch_observations(candidate_ids)
@@ -386,6 +401,9 @@ def refresh_from_database():
                     conn,
                     observation,
                     in_project=int(observation["id"]) in property_ids,
+                    manual_include=(
+                        int(observation["id"]) in manual_candidate_ids
+                    ),
                 )
 
     with connect() as conn:
