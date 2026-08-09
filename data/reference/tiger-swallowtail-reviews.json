@@ -2,7 +2,7 @@
   "schema_version": 1,
   "observations": {
     "298965963": {
-      "reviewed_at": "2026-07-26",
+      "reviewed_at": "2026-08-09",
       "view": "ventral",
       "wear": "worn",
       "wear_note": "The wing margins are chipped and the tails and hindwing edges show substantial loss, so wear may blur or remove pattern boundaries.",
@@ -25,9 +25,9 @@
       ],
       "photos": {
         "538577704": {
-          "view": "dorsal",
+          "view": "ventral",
           "ventral_forewing_visible": false,
-          "note": "Dorsal view; the key underside band is hidden."
+          "note": "Ventral side view; useful for orientation, but the forewing band is less clear than in photo 538577705."
         },
         "538577712": {
           "view": "dorsal",
@@ -198,7 +198,7 @@
       }
     },
     "385352068": {
-      "reviewed_at": "2026-07-26",
+      "reviewed_at": "2026-08-09",
       "view": "ventral",
       "wear": "moderate",
       "wear_note": "The individual shows minor edge abrasion while retaining the forewing band and overall outline.",
@@ -231,9 +231,9 @@
           "note": "Dorsal view showing the forewing outline."
         },
         "705461314": {
-          "view": "dorsal",
+          "view": "ventral",
           "ventral_forewing_visible": false,
-          "note": "Dorsal view; useful as a shape cross-check."
+          "note": "Ventral side view; useful as a wing-shape cross-check, but photo 705461303 remains the clearer view of the diagnostic forewing band."
         }
       },
       "focus": {
