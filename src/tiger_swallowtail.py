@@ -1324,18 +1324,6 @@ def _page_html(records, analyses, cache_dir):
           <div class="mt-6 grid gap-5 md:grid-cols-3">
             <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
               <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral forewing bands">
-                <div class="paper-figure-row relative overflow-hidden bg-stone-100" data-row="a">
-                  <img src="{PAPER_FIGURE_6_IMAGE}" alt="Paper figure row showing variation in the ventral forewing band of Midsummer Tiger Swallowtail" width="1010" height="1903" loading="lazy" decoding="async" referrerpolicy="no-referrer">
-                </div>
-              </a>
-              <figcaption class="p-5">
-                <p class="font-serif text-lg font-semibold text-stone-950">a · Midsummer</p>
-                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600"><i>P. solstitius</i>: broadly joined pale lunules, usually with a scalloped inner edge.</p>
-              </figcaption>
-            </figure>
-
-            <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-              <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral forewing bands">
                 <div class="paper-figure-row relative overflow-hidden bg-stone-100" data-row="b">
                   <img src="{PAPER_FIGURE_6_IMAGE}" alt="Paper figure row showing variation in the ventral forewing band of Canadian Tiger Swallowtail" width="1010" height="1903" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                 </div>
@@ -1343,6 +1331,18 @@ def _page_html(records, analyses, cache_dir):
               <figcaption class="p-5">
                 <p class="font-serif text-lg font-semibold text-stone-950">b · Canadian</p>
                 <p class="mt-2 text-pretty text-sm leading-6 text-stone-600"><i>P. canadensis</i>: usually the most continuous, even-edged band; the lunules are not well separated by black.</p>
+              </figcaption>
+            </figure>
+
+            <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <a href="{PAPER_FIGURE_6_URL}" target="_blank" rel="noopener" class="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hollow-500" aria-label="Open the full paper figure comparing ventral forewing bands">
+                <div class="paper-figure-row relative overflow-hidden bg-stone-100" data-row="a">
+                  <img src="{PAPER_FIGURE_6_IMAGE}" alt="Paper figure row showing variation in the ventral forewing band of Midsummer Tiger Swallowtail" width="1010" height="1903" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                </div>
+              </a>
+              <figcaption class="p-5">
+                <p class="font-serif text-lg font-semibold text-stone-950">a · Midsummer</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600"><i>P. solstitius</i>: broadly joined pale lunules, usually with a scalloped inner edge.</p>
               </figcaption>
             </figure>
 
@@ -1374,22 +1374,6 @@ def _page_html(records, analyses, cache_dir):
           </aside>
 
           <div class="mt-6 grid gap-5 lg:grid-cols-3">
-            <figure class="overflow-hidden rounded-2xl border border-hollow-200 bg-white">
-              <div class="hindwing-paper-crop relative overflow-hidden bg-stone-100" data-column="a">
-                <img src="{PAPER_FIGURE_7_IMAGE}" alt="Cropped paper specimen showing the medium-width black anal-margin band of Midsummer Tiger Swallowtail" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer">
-                <span class="absolute left-1/2 top-2 -translate-x-1/2 rounded-lg bg-hollow-950 px-2 py-1 text-xs font-semibold text-white">black strip ↓</span>
-                <span class="absolute bottom-4 left-1/2 size-3 -translate-x-1/2 rounded-full bg-amber-400 ring-2 ring-white" aria-hidden="true"></span>
-              </div>
-              <figcaption class="p-5">
-                <p class="text-sm font-semibold text-hollow-700">a · Medium</p>
-                <p class="mt-1 font-serif text-xl font-semibold text-stone-950">Midsummer</p>
-                <p class="tabular-nums mt-2 text-sm font-semibold text-stone-700">About 30–55% of the cell</p>
-                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600">Usually broader than Eastern and narrower than Canadian, but it overlaps both.</p>
-                <div class="relative mt-4 h-2 rounded-full bg-stone-200" aria-hidden="true"><span class="absolute inset-y-0 rounded-full bg-hollow-700" style="left: 30%; width: 25%"></span></div>
-                <div class="tabular-nums mt-1 flex justify-between text-xs text-stone-500"><span>0%</span><span>100%</span></div>
-              </figcaption>
-            </figure>
-
             <figure class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
               <div class="hindwing-paper-crop relative overflow-hidden bg-stone-100" data-column="b">
                 <img src="{PAPER_FIGURE_7_IMAGE}" alt="Cropped paper specimen showing the thick black anal-margin band of Canadian Tiger Swallowtail" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer">
@@ -1402,6 +1386,22 @@ def _page_html(records, analyses, cache_dir):
                 <p class="tabular-nums mt-2 text-sm font-semibold text-stone-700">About 55–90% of the cell</p>
                 <p class="mt-2 text-pretty text-sm leading-6 text-stone-600">The black usually fills more than half of the cell and can occupy nearly all of it.</p>
                 <div class="relative mt-4 h-2 rounded-full bg-stone-200" aria-hidden="true"><span class="absolute inset-y-0 rounded-full bg-hollow-700" style="left: 55%; width: 35%"></span></div>
+                <div class="tabular-nums mt-1 flex justify-between text-xs text-stone-500"><span>0%</span><span>100%</span></div>
+              </figcaption>
+            </figure>
+
+            <figure class="overflow-hidden rounded-2xl border border-hollow-200 bg-white">
+              <div class="hindwing-paper-crop relative overflow-hidden bg-stone-100" data-column="a">
+                <img src="{PAPER_FIGURE_7_IMAGE}" alt="Cropped paper specimen showing the medium-width black anal-margin band of Midsummer Tiger Swallowtail" width="1975" height="962" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                <span class="absolute left-1/2 top-2 -translate-x-1/2 rounded-lg bg-hollow-950 px-2 py-1 text-xs font-semibold text-white">black strip ↓</span>
+                <span class="absolute bottom-4 left-1/2 size-3 -translate-x-1/2 rounded-full bg-amber-400 ring-2 ring-white" aria-hidden="true"></span>
+              </div>
+              <figcaption class="p-5">
+                <p class="text-sm font-semibold text-hollow-700">a · Medium</p>
+                <p class="mt-1 font-serif text-xl font-semibold text-stone-950">Midsummer</p>
+                <p class="tabular-nums mt-2 text-sm font-semibold text-stone-700">About 30–55% of the cell</p>
+                <p class="mt-2 text-pretty text-sm leading-6 text-stone-600">Usually broader than Eastern and narrower than Canadian, but it overlaps both.</p>
+                <div class="relative mt-4 h-2 rounded-full bg-stone-200" aria-hidden="true"><span class="absolute inset-y-0 rounded-full bg-hollow-700" style="left: 30%; width: 25%"></span></div>
                 <div class="tabular-nums mt-1 flex justify-between text-xs text-stone-500"><span>0%</span><span>100%</span></div>
               </figcaption>
             </figure>

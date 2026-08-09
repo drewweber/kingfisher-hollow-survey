@@ -365,11 +365,27 @@ class TigerSwallowtailBuildTests(unittest.TestCase):
         self.assertIn("a · Midsummer", html)
         self.assertIn("b · Canadian", html)
         self.assertIn("c · Eastern", html)
+        self.assertLess(html.index("b · Canadian"), html.index("a · Midsummer"))
+        self.assertLess(html.index("a · Midsummer"), html.index("c · Eastern"))
         self.assertIn("Find the black strip at the hairy lower edge", html)
         self.assertIn("It is a body measurement, not an identification confidence", html)
         self.assertIn("a · Medium", html)
         self.assertIn("b · Thickest", html)
         self.assertIn("c · Thinnest", html)
+        canadian_card = (
+            '<p class="mt-1 font-serif text-xl font-semibold text-stone-950">'
+            "Canadian</p>"
+        )
+        midsummer_card = (
+            '<p class="mt-1 font-serif text-xl font-semibold text-stone-950">'
+            "Midsummer</p>"
+        )
+        eastern_card = (
+            '<p class="mt-1 font-serif text-xl font-semibold text-stone-950">'
+            "Eastern</p>"
+        )
+        self.assertLess(html.index(canadian_card), html.index(midsummer_card))
+        self.assertLess(html.index(midsummer_card), html.index(eastern_card))
         self.assertIn("About 30–55% of the cell", html)
         self.assertIn("A second clue: straight versus scalloped", html)
         self.assertIn("See all paper specimens in Figure 7", html)
