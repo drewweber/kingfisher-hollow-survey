@@ -285,6 +285,19 @@ class TigerSwallowtailAssessmentTests(unittest.TestCase):
 
 
 class TigerSwallowtailBuildTests(unittest.TestCase):
+    def test_corrected_side_view_photos_are_classified_as_ventral(self):
+        reviews = tiger._read_reviews()
+        corrected = (
+            ("298965963", "538577704"),
+            ("385352068", "705461314"),
+        )
+        for observation_id, photo_id in corrected:
+            with self.subTest(observation_id=observation_id, photo_id=photo_id):
+                photo = reviews["observations"][observation_id]["photos"][photo_id]
+                self.assertEqual("ventral", photo["view"])
+                self.assertFalse(photo["ventral_forewing_visible"])
+                self.assertTrue(photo["note"].startswith("Ventral side view"))
+
     def test_photo_cache_attempts_every_distinct_photo(self):
         payload = tiger.normalize_observation(observation())
         with patch.object(
