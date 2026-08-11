@@ -292,6 +292,87 @@
         "y": 67,
         "scale": 2.1
       }
+    },
+    "389822759": {
+      "reviewed_at": "2026-08-09",
+      "view": "dorsal",
+      "wear": "worn",
+      "wear_note": "The wings show extensive scale loss, torn distal margins, and substantial tail and hindwing-edge damage. That wear obscures both pattern boundaries and the original wing outline.",
+      "ventral_forewing_visible": false,
+      "ventral_forewing_pattern": "not_assessable",
+      "ventral_forewing_note": "Both photographs show the upper wing surface. The underside forewing submarginal band is hidden, so its lunules cannot be compared.",
+      "secondary_morphology_clear": false,
+      "wing_shape": {
+        "signal": "not_assessable",
+        "note": "The open-wing pose would normally show the forewing outline, but extensive edge loss and asymmetrical damage prevent a reliable shape comparison."
+      },
+      "sex_or_dark_form": {
+        "signal": "neutral",
+        "note": "The individual is yellow, but the worn dorsal photographs do not provide a separate reliable sex-linked or dark-form character."
+      },
+      "image_limitations": [
+        "No photograph shows the diagnostic ventral forewing band.",
+        "Heavy wear removes parts of the margins used for secondary shape comparisons.",
+        "The August 9 date and current source identification support Midsummer only as context; neither resolves the photographs morphologically.",
+        "No independent current identifier or written identification rationale is present."
+      ],
+      "photos": {
+        "714092897": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Open dorsal view showing extensive wear; the diagnostic underside forewing band is hidden."
+        },
+        "714092888": {
+          "view": "dorsal",
+          "ventral_forewing_visible": false,
+          "note": "Open dorsal view partly obscured by vegetation; wear prevents a reliable wing-shape comparison."
+        }
+      }
+    },
+    "390127990": {
+      "reviewed_at": "2026-08-10",
+      "view": "ventral",
+      "wear": "moderate",
+      "wear_note": "The wing patterns remain readable and most margins are intact, although the hindwing edges and tails show minor abrasion and loss.",
+      "ventral_forewing_visible": true,
+      "ventral_forewing_pattern": "eastern",
+      "ventral_forewing_note": "Photo 714692409 shows the underside forewing. Its pale submarginal lunules remain discrete and are separated by black along the veins, supporting Eastern.",
+      "secondary_morphology_clear": false,
+      "wing_shape": {
+        "signal": "not_assessable",
+        "note": "The folded and oblique poses do not show the original distal forewing margin clearly enough for an independent shape comparison."
+      },
+      "sex_or_dark_form": {
+        "signal": "neutral",
+        "note": "The individual is yellow, but the photographs do not provide a separate reliable sex-linked or dark-form character."
+      },
+      "image_limitations": [
+        "Only photo 714692409 provides a readable ventral forewing angle.",
+        "The daylily and overlapping wings obscure parts of the butterfly in the other photograph.",
+        "The current iNaturalist identification stops at the Eastern Tiger Swallowtail complex, with no independent current identifier or written rationale.",
+        "The result remains a photographic assessment without a specimen, size measurement, or genetic evidence."
+      ],
+      "manual_review_reasons": [
+        "The source identification stops at the broader Eastern Tiger Swallowtail complex; the site assessment depends on the photographed ventral character."
+      ],
+      "photos": {
+        "714692412": {
+          "view": "partial",
+          "ventral_forewing_visible": false,
+          "note": "Oblique overlapping-wing view; useful for documenting condition, but the key forewing band is not cleanly readable."
+        },
+        "714692409": {
+          "view": "ventral",
+          "ventral_forewing_visible": true,
+          "note": "Side-on ventral view showing discrete pale submarginal lunules separated by black along the veins."
+        }
+      },
+      "focus": {
+        "photo_id": 714692409,
+        "x": 68,
+        "y": 47,
+        "scale": 2.1
+      }
     }
   }
 }

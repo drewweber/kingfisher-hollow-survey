@@ -285,6 +285,39 @@ class TigerSwallowtailAssessmentTests(unittest.TestCase):
 
 
 class TigerSwallowtailBuildTests(unittest.TestCase):
+    def test_august_10_ventral_series_leans_eastern(self):
+        review = tiger._read_reviews()["observations"]["390127990"]
+
+        self.assertEqual("Leaning Eastern", tiger._morphology_assessment(review))
+        self.assertTrue(review["ventral_forewing_visible"])
+        self.assertEqual("eastern", review["ventral_forewing_pattern"])
+        self.assertFalse(review["secondary_morphology_clear"])
+        self.assertEqual("partial", review["photos"]["714692412"]["view"])
+        self.assertEqual("ventral", review["photos"]["714692409"]["view"])
+        self.assertTrue(
+            review["photos"]["714692409"]["ventral_forewing_visible"]
+        )
+
+    def test_august_9_worn_dorsal_series_stays_insufficient(self):
+        review = tiger._read_reviews()["observations"]["389822759"]
+
+        self.assertEqual(
+            "Insufficient photographic evidence",
+            tiger._morphology_assessment(review),
+        )
+        self.assertEqual("worn", review["wear"])
+        self.assertFalse(review["ventral_forewing_visible"])
+        self.assertFalse(review["secondary_morphology_clear"])
+        self.assertEqual(
+            {"714092897", "714092888"},
+            set(review["photos"]),
+        )
+        self.assertTrue(all(
+            photo["view"] == "dorsal"
+            and not photo["ventral_forewing_visible"]
+            for photo in review["photos"].values()
+        ))
+
     def test_corrected_side_view_photos_are_classified_as_ventral(self):
         reviews = tiger._read_reviews()
         corrected = (
