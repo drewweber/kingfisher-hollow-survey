@@ -13,7 +13,11 @@ from field_guidance import (  # noqa: E402
     guidance_profile,
     survey_period_profile,
 )
-from field_identification import PAIR_PROFILES, curated_peer_names  # noqa: E402
+from field_identification import (  # noqa: E402
+    NO_NAMED_COMPARISON_NOTES,
+    PAIR_PROFILES,
+    curated_peer_names,
+)
 
 
 class FieldGuidanceTests(unittest.TestCase):
@@ -35,6 +39,7 @@ class FieldGuidanceTests(unittest.TestCase):
             self.assertTrue(guidance["survey_period_note"])
             self.assertTrue(guidance["target_reason"])
             self.assertTrue(guidance["id_limitations"])
+            self.assertTrue(guidance["comparison_note"])
             self.assertTrue(guidance["id_traits"][0]["label"])
             self.assertEqual([], guidance["lookalikes"])
 
@@ -114,6 +119,44 @@ class FieldGuidanceTests(unittest.TestCase):
             "Eumorpha pandorus",
         )
         self.assertEqual([], guidance["lookalikes"])
+        self.assertIn("No named confusion species", guidance["comparison_note"])
+
+    def test_every_previously_blank_current_target_has_a_confusion_disposition(self):
+        previously_blank = {
+            "Catocala cara", "Thyris maculata", "Eumorpha pandorus", "Oreta rosea",
+            "Hypena bijugalis", "Catocala retecta", "Xanthorhoe labradorensis",
+            "Amorpha juglandis", "Eustixia pupula", "Clemensia umbrata",
+            "Eichlinia cucurbitae", "Euphydryas phaeton", "Thymelicus lineola",
+            "Limochores mystic", "Aglais milberti", "Lethe eurydice",
+            "Papilio canadensis", "Lycaena hypophlaeas", "Argynnis atlantis",
+            "Pieris virginiensis", "Perithemis tenera", "Ladona julia",
+            "Hetaerina americana", "Phanogomphus exilis", "Amphiagrion saucium",
+            "Tachopteryx thoreyi", "Leucorrhinia glacialis", "Lestes eurinus",
+        }
+        for scientific_name in previously_blank:
+            has_named_comparison = bool(curated_peer_names(scientific_name))
+            has_explicit_note = scientific_name in NO_NAMED_COMPARISON_NOTES
+            self.assertTrue(
+                has_named_comparison or has_explicit_note,
+                f"{scientific_name} still has no confusion disposition",
+            )
+
+    def test_nonregional_documented_peer_is_retained_as_a_comparison(self):
+        peers = {
+            "moths": field_guide.pd.DataFrame([{
+                "taxon_id": 1,
+                "taxon_name": "Ceratomia undulosa",
+                "common_name": "Waved Sphinx",
+            }]),
+        }
+        comparisons = field_guide._lookalikes(
+            "moths", "Eumorpha pandorus", "Sphingidae", peers
+        )
+        self.assertEqual(122356, comparisons[0]["taxon_id"])
+        self.assertEqual("Eumorpha achemon", comparisons[0]["scientific_name"])
+
+    def test_rotating_least_skipper_target_has_a_named_confusion(self):
+        self.assertIn("Thymelicus lineola", curated_peer_names("Ancyloxypha numitor"))
 
     def test_every_curated_pair_has_a_field_decision_and_valid_fallback(self):
         pair_keys = [frozenset(profile["taxa"]) for profile in PAIR_PROFILES]
@@ -226,6 +269,7 @@ class FieldGuideReleaseTests(unittest.TestCase):
             "active_months": [6, 7, 8],
             "survey_periods": ["night"],
             "survey_period_note": "Search after dusk.",
+            "comparison_note": "No close comparison is vetted.",
             "habitat_tags": ["forest edge"],
             "method_tags": ["UV light"],
             "finding_help": ["Look on warm nights."],
@@ -289,6 +333,9 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("Traits to check", app)
         self.assertIn("Visible differences", app)
         self.assertIn("Field decision", app)
+        self.assertIn("Potential confusions", app)
+        self.assertIn("comparisonNote", app)
+        self.assertIn("ID reference", app)
         self.assertIn("comparison-difference-list", app)
         self.assertNotIn("Check these traits against", app)
         self.assertNotIn("lookalike.traits", app)

@@ -39,6 +39,70 @@ MASS_AUDUBON_BUTTERFLIES = (
     "https://www.massaudubon.org/nature-wildlife/insects-arachnids/"
     "butterfly-atlas/find-a-butterfly"
 )
+TIGER_SWALLOWTAIL_PAPER = "https://doi.org/10.3897/zookeys.1228.142202"
+CLEMENSIA_REVISION = "https://doi.org/10.3897/zookeys.788.26048"
+ILLINOIS_SPHINX_GUIDE = (
+    "https://www.ideals.illinois.edu/items/120617/bitstreams/395785/data.pdf"
+)
+OHIO_BUTTERFLY_GUIDE = (
+    "https://dam.assets.ohio.gov/image/upload/ohiodnr.gov/documents/wildlife/"
+    "backyard-wildlife/Butterflies%20and%20Skippers%20of%20Ohio%20Field%20Guide%20pub204.pdf"
+)
+
+
+# A comparison normally comes from the 80 km regional pool. These three are
+# documented, range-plausible confusions that are absent from the current pool,
+# so retain the minimum iNaturalist metadata needed to illustrate them.
+CURATED_PEER_TAXA = {
+    "Catocala luctuosa": {
+        "taxon_id": 216294,
+        "common_name": "Hulst's Underwing",
+        "scientific_name": "Catocala luctuosa",
+    },
+    "Eumorpha achemon": {
+        "taxon_id": 122356,
+        "common_name": "Achemon Sphinx",
+        "scientific_name": "Eumorpha achemon",
+    },
+    "Pseudothyris sepulchralis": {
+        "taxon_id": 82788,
+        "common_name": "Mournful Thyris Moth",
+        "scientific_name": "Pseudothyris sepulchralis",
+    },
+}
+
+
+# Some current targets are distinctive or lack a close regional congener. They
+# still need a visible confusion disposition instead of a silently missing
+# comparison section. Each note names the broader thing that can mislead a
+# field observer and the evidence needed to avoid over-identification.
+NO_NAMED_COMPARISON_NOTES = {
+    "Eustixia pupula": (
+        "No close regional species is currently vetted for a named comparison. "
+        "Other small white crambids can look similar in a distant image, so confirm "
+        "the complete spotted forewing pattern and retain Crambidae when it is blurred."
+    ),
+    "Eichlinia cucurbitae": (
+        "The main field confusion is with wasps and other clearwing moths rather "
+        "than one close regional species. Photograph both scaled wings, the orange-"
+        "and-black abdomen, and the host or stem-borer sign before using a species name."
+    ),
+    "Perithemis tenera": (
+        "No close regional amberwing is currently documented. Females can be mistaken "
+        "for other small patterned skimmers, so confirm the very small size, short stout "
+        "abdomen, yellowish legs, wing patches, and red stigmas together."
+    ),
+    "Amphiagrion saucium": (
+        "No second red damsel is documented in the regional pool. Immature pond damsels "
+        "can appear orange, so confirm the small red-and-black body, short black legs, "
+        "and terminal structures rather than relying on color alone."
+    ),
+    "Tachopteryx thoreyi": (
+        "No close regional petaltail is documented. Confirm the widely separated eyes, "
+        "long parallel-sided stigmas, gray-and-black body, and characteristic trunk or "
+        "log perching; keep an incomplete flight view at family level."
+    ),
+}
 
 
 PAIR_PROFILES = (
@@ -1071,6 +1135,520 @@ PAIR_PROFILES = (
         "Arigomphus sp.",
         (WISCONSIN_ODONATA,),
     ),
+    # Expanded confusion coverage for targets present in the August field set.
+    _pair(
+        "Catocala cara",
+        "Catocala amatrix",
+        "conditional",
+        (
+            "Require a fresh square forewing view and an opened hindwing. The two "
+            "large pink-red underwings can occur together; a resting or worn image "
+            "should remain Catocala sp."
+        ),
+        (
+            _difference(
+                "Forewing ground pattern",
+                "Strongly two-toned, with a broad dark chocolate-brown median field contrasting with paler outer areas.",
+                "More evenly tan-gray and mottled, with diffuse black basal, apical, and anal dashes rather than one broad dark median field.",
+            ),
+            _difference(
+                "Hindwing support",
+                "Deep scarlet-pink with two clean black bands; use this with the forewing rather than as a stand-alone mark.",
+                "Orange-red with black median and marginal bands; the shared bright hindwing color is why forewing pattern is essential.",
+            ),
+        ),
+        "Catocala sp.",
+        (BUGGUIDE, "https://auth1.dpr.ncparks.gov/moths/view.php?MONA_number=8832"),
+    ),
+    _pair(
+        "Thyris maculata",
+        "Pseudothyris sepulchralis",
+        "field",
+        "A sharp dorsal macro showing the translucent windows and orange scaling normally separates these day-flying moths.",
+        (
+            _difference(
+                "Wing windows",
+                "One round translucent whitish window marks each forewing, with two close windows on each hindwing.",
+                "More numerous white or translucent spots cross the wings rather than the one-plus-two window pattern.",
+            ),
+            _difference(
+                "Orange scaling",
+                "Small but visible orange spots occur on the otherwise blackish wings.",
+                "The wings are black and white without the same orange spotting.",
+            ),
+        ),
+        sources=("https://bugguide.net/node/view/4988",),
+    ),
+    _pair(
+        "Eumorpha pandorus",
+        "Eumorpha achemon",
+        "field",
+        "A fresh dorsal view showing both forewings and one opened hindwing normally supports a species identification.",
+        (
+            _difference(
+                "Forewing color",
+                "Olive green with darker green angular patches, including a long dark basal patch along the inner margin.",
+                "Tan to pinkish brown with sharply defined warm-brown geometric patches and no overall green ground color.",
+            ),
+            _difference(
+                "Hindwing",
+                "Dark olive with rosy-brown or pink restricted near the inner margin.",
+                "Extensively bright pink from the base to a broken dark submarginal band.",
+            ),
+        ),
+        sources=(ILLINOIS_SPHINX_GUIDE,),
+    ),
+    _pair(
+        "Oreta rosea",
+        "Patalene olyzonaria",
+        "conditional",
+        (
+            "The usual pink-and-yellow Rose Hooktip is distinctive. Use this pair for "
+            "the all-brown Rose Hooktip form, and retain Geometridae/Drepanidae when "
+            "the wing tip or hindwing line is hidden."
+        ),
+        (
+            _difference(
+                "Hindwing postmedial line",
+                "Wavy or irregular across the hindwing.",
+                "Straight across the hindwing.",
+            ),
+            _difference(
+                "Forewing tip and discal spot",
+                "Hooked forewing tip; the brown form lacks the Juniper Geometer's black costal discal spot.",
+                "A black discal spot sits near the forewing costa, accompanying the straighter line pattern.",
+            ),
+        ),
+        "Drepanidae or Geometridae",
+        ("https://bugguide.net/node/view/3668", "https://bugguide.net/node/view/8338"),
+    ),
+    _pair(
+        "Hypena bijugalis",
+        "Hypena scabra",
+        "not_field",
+        (
+            "Dimorphic Hypena changes strongly with sex, and worn snout moths overlap "
+            "in routine sheet photographs. Report Hypena sp. unless a specialist "
+            "confirms a fresh, square adult showing the complete wing pattern."
+        ),
+        report_as="Hypena sp.",
+        sources=(BUGGUIDE,),
+    ),
+    _pair(
+        "Catocala retecta",
+        "Catocala luctuosa",
+        "not_field",
+        (
+            "Yellow-gray and Hulst's Underwings are essentially indistinguishable by "
+            "photograph or external appearance. Report the Catocala retecta-luctuosa "
+            "pair unless specimen or other specialist evidence resolves it."
+        ),
+        report_as="Catocala retecta-luctuosa pair",
+        sources=("https://bugguide.net/node/view/40032",),
+    ),
+    _pair(
+        "Xanthorhoe labradorensis",
+        "Xanthorhoe ferrugata",
+        "not_field",
+        (
+            "Carpet moth bands vary with wear and several Xanthorhoe overlap in ordinary "
+            "photographs. Report Xanthorhoe sp. unless a specialist confirms a sharp, "
+            "unworn dorsal view or specimen-level characters."
+        ),
+        report_as="Xanthorhoe sp.",
+        sources=(BUGGUIDE,),
+    ),
+    _pair(
+        "Amorpha juglandis",
+        "Ceratomia undulosa",
+        "field",
+        "A complete dorsal view normally separates these large gray sphinx moths.",
+        (
+            _difference(
+                "Wing edge and shape",
+                "All wing margins are scalloped to wavy, producing a compact, soft-edged outline.",
+                "Longer triangular forewings have a comparatively smooth outer edge and pointed apex.",
+            ),
+            _difference(
+                "Line pattern",
+                "Mottling may be faint or strong but lacks a stack of crisp black wavy transverse lines.",
+                "Several dark wavy lines cross the pale gray forewing and remain the dominant pattern.",
+            ),
+        ),
+        sources=("https://bugguide.net/node/view/4144", BUGGUIDE),
+    ),
+    _pair(
+        "Clemensia umbrata",
+        "Clemensia albata",
+        "conditional",
+        (
+            "Use the larger, darker phenotype only on a fresh moth with date and "
+            "location context. Worn adults in the Northeast can overlap and should "
+            "remain Clemensia sp. without specialist review."
+        ),
+        (
+            _difference(
+                "Forewing contrast",
+                "Usually more suffused with gray and black, often with a diffuse dark gray postmedial patch near the anal margin.",
+                "Usually paler and less contrasting; the dark anal-margin postmedial patch is absent or much more restricted.",
+            ),
+            _difference(
+                "Size and flight support",
+                "Averages larger where the species overlap and is mainly univoltine in July to early August.",
+                "Averages smaller and has northeastern flight peaks around mid-June and late August, though the flights overlap.",
+            ),
+        ),
+        "Clemensia sp.",
+        (CLEMENSIA_REVISION,),
+    ),
+    _pair(
+        "Euphydryas phaeton",
+        "Phyciodes tharos",
+        "field",
+        "Size and the complete dorsal pattern normally separate fresh adults.",
+        (
+            _difference(
+                "Size and ground color",
+                "A much larger, mostly black checkerspot with bold cream-white and orange-red spot rows.",
+                "A small orange crescent crossed by a fine black network, without the broad black field.",
+            ),
+            _difference(
+                "Marginal spots",
+                "Red-orange crescents and pale spots form conspicuous rows along all four wing margins.",
+                "Orange dominates the wings and the marginal marks are smaller black-and-orange crescents.",
+            ),
+        ),
+        sources=(BAMONA, MASS_AUDUBON_BUTTERFLIES),
+    ),
+    _pair(
+        "Ancyloxypha numitor",
+        "Thymelicus lineola",
+        "field",
+        "A sharp dorsal view normally separates fresh adults; keep a distant or worn orange skipper at Hesperiinae.",
+        (
+            _difference(
+                "Upper-wing pattern",
+                "The forewings are largely blackish, while the orange hindwings have conspicuously wide black borders.",
+                "The wings look orange overall, crossed by black veins and edged by comparatively narrow black borders.",
+            ),
+            _difference(
+                "Closed-wing underside",
+                "The underwing is a relatively uniform mustard yellow, on a smaller, narrow-winged skipper.",
+                "The hindwing is orange with gray-green suffusion instead of one uniform mustard-yellow field.",
+            ),
+        ),
+        sources=(
+            f"{MASS_AUDUBON_BUTTERFLIES}?id=175",
+            f"{MASS_AUDUBON_BUTTERFLIES}?id=84",
+        ),
+    ),
+    _pair(
+        "Thymelicus lineola",
+        "Polites themistocles",
+        "conditional",
+        "Require a head-on antenna view plus the upper forewing; a distant orange skipper should remain Hesperiinae.",
+        (
+            _difference(
+                "Antenna club",
+                "The forward-facing underside of the club tip is distinctly black.",
+                "The club lacks the same clean black underside and reads tawny to dark brown with the rest of the antenna.",
+            ),
+            _difference(
+                "Upper wing",
+                "Small and broadly orange with a short, fine male stigma and relatively even narrow dark border.",
+                "Mostly dark brown, with orange concentrated along the leading edge that gives the species its tawny-edged look.",
+            ),
+        ),
+        "grass skipper",
+        (MASS_AUDUBON_BUTTERFLIES,),
+    ),
+    _pair(
+        "Limochores mystic",
+        "Hesperia sassacus",
+        "conditional",
+        "Both wing surfaces are needed; worn or closed-wing grass skippers should remain Hesperiinae.",
+        (
+            _difference(
+                "Male forewing dash",
+                "The stigma joins or nearly joins another dark mark to make a long, broad dash toward the wing margin.",
+                "The upper forewing lacks that long contiguous dash and usually has two small pale apical spots.",
+            ),
+            _difference(
+                "Hindwing underside spots",
+                "The pale spot row follows the curve of the outer wing, with an additional pale basal spot.",
+                "The middle spots angle outward toward the wing margin instead of following one even curve.",
+            ),
+        ),
+        "grass skipper",
+        (MASS_AUDUBON_BUTTERFLIES,),
+    ),
+    _pair(
+        "Aglais milberti",
+        "Nymphalis antiopa",
+        "field",
+        "A clear upper-side view normally separates these dark anglewing butterflies.",
+        (
+            _difference(
+                "Outer band",
+                "A broad fiery orange band crosses the outer half of all four dark wings, with blue spots near the margin.",
+                "A continuous pale yellow border rims a maroon-black wing, with blue spots just inside it and no broad orange band.",
+            ),
+            _difference(
+                "Wing shape",
+                "Smaller, with more sharply angular forewing tips and a compact tortoiseshell outline.",
+                "Larger and broad-winged, with the pale border emphasizing a smoother outer outline.",
+            ),
+        ),
+        sources=(MASS_AUDUBON_BUTTERFLIES,),
+    ),
+    _pair(
+        "Lethe eurydice",
+        "Lethe appalachia",
+        "conditional",
+        "Require a sharp hindwing underside; habitat supports the pattern but cannot replace it.",
+        (
+            _difference(
+                "Ventral hindwing medial line",
+                "The brown line bends in a conspicuous zigzag.",
+                "The corresponding line forms a smoother, more even curve.",
+            ),
+            _difference(
+                "Typical habitat",
+                "Most often in open, sunny wet sedge meadows.",
+                "Most often in shaded swampy woods and wooded sedge wetlands.",
+            ),
+        ),
+        "Lethe eurydice-appalachia pair",
+        (OHIO_BUTTERFLY_GUIDE,),
+    ),
+    _pair(
+        "Papilio canadensis",
+        "Papilio glaucus",
+        "conditional",
+        "Use the two underside bands together. Their ranges and characters overlap, so an incomplete dorsal photograph should remain in the Papilio glaucus complex.",
+        (
+            _difference(
+                "Ventral forewing pale band",
+                "Usually the most continuous and even-edged band, with pale lunules not strongly divided by black veins.",
+                "Usually separate pale lunules divided by black along the veins, although some lunules coalesce.",
+            ),
+            _difference(
+                "Ventral hindwing anal band",
+                "The black strip at the hairy anal edge is usually the thickest of the tiger-swallowtail complex.",
+                "The same black strip is usually the thinnest, with a more scalloped pale boundary.",
+            ),
+        ),
+        "Papilio glaucus complex",
+        (TIGER_SWALLOWTAIL_PAPER,),
+    ),
+    _pair(
+        "Papilio canadensis",
+        "Papilio solstitius",
+        "conditional",
+        "No single stripe decides this pair. Require both ventral band characters and flight context; otherwise report the Papilio glaucus complex.",
+        (
+            _difference(
+                "Ventral forewing pale band",
+                "Usually continuous with a relatively even inner edge.",
+                "Pale lunules are broadly joined but usually form a more scalloped inner edge.",
+            ),
+            _difference(
+                "Ventral hindwing anal band",
+                "Usually the broadest black strip, often filling more than half of the cell.",
+                "Usually intermediate in width between Canadian and Eastern, but overlaps both.",
+            ),
+        ),
+        "Papilio glaucus complex",
+        (TIGER_SWALLOWTAIL_PAPER,),
+    ),
+    _pair(
+        "Lycaena hypophlaeas",
+        "Tharsalea hyllus",
+        "field",
+        "A complete underside plus apparent size normally separates these coppers.",
+        (
+            _difference(
+                "Size",
+                "Tiny, usually about one inch across.",
+                "Noticeably larger and more robust, roughly one and a quarter to one and three-quarter inches across.",
+            ),
+            _difference(
+                "Ventral hindwing orange band",
+                "A thin orange line runs near the hindwing margin.",
+                "A broad orange band fills much more of the hindwing margin.",
+            ),
+        ),
+        sources=("https://mdc.mo.gov/discover-nature/field-guide/bronze-copper",),
+    ),
+    _pair(
+        "Argynnis atlantis",
+        "Argynnis cybele",
+        "conditional",
+        "Use size, live eye color, and both wing surfaces together; a worn fritillary without those views should remain Argynnis sp.",
+        (
+            _difference(
+                "Size and ventral pale band",
+                "Usually the smaller species, with a narrow or absent pale submarginal band below the hindwing.",
+                "Usually the largest of the three eastern greater fritillaries, with a broad pale submarginal band below the hindwing.",
+            ),
+            _difference(
+                "Live eye and upper border",
+                "Eyes are blue-gray and the upper wing border is extensively black.",
+                "Eyes are amber-brown; the upper border is generally less solidly black, especially outside worn females.",
+            ),
+        ),
+        "Argynnis sp.",
+        (MASS_AUDUBON_BUTTERFLIES,),
+    ),
+    _pair(
+        "Argynnis atlantis",
+        "Argynnis aphrodite",
+        "conditional",
+        "Eye color must be observed on the living butterfly and paired with both wing surfaces; ambiguous adults should remain Argynnis sp.",
+        (
+            _difference(
+                "Live eye color",
+                "Blue-gray eyes.",
+                "Amber to brown eyes; preserved specimens lose this distinction.",
+            ),
+            _difference(
+                "Color and upper border",
+                "Darker purplish-brown at the base of the hindwing underside, with a heavy black border above.",
+                "Oranger at the base of the hindwing underside, with more orange scaling through the upper wing border.",
+            ),
+        ),
+        "Argynnis sp.",
+        ("https://accdc.com/mba/profiles/speyeria-aphrodite.html",),
+    ),
+    _pair(
+        "Pieris virginiensis",
+        "Pieris rapae",
+        "field",
+        "A sharp view of the forewing tip and underside normally separates fresh spring adults.",
+        (
+            _difference(
+                "Forewing upper side",
+                "Translucent white with little or no dark tip patch and no bold round black spot.",
+                "Opaque white with a dark gray-black forewing tip and one or two conspicuous round black spots.",
+            ),
+            _difference(
+                "Hindwing underside",
+                "Whitish without a yellow wash, often with hazy gray-brown scaling along the veins.",
+                "Usually yellowish to gray-yellow, without the same translucent woodland-white appearance.",
+            ),
+        ),
+        sources=("https://www.butterfliesandmoths.org/species/Pieris-virginiensis",),
+    ),
+    _pair(
+        "Pieris virginiensis",
+        "Pieris oleracea",
+        "conditional",
+        "Native spring whites can overlap. Require a fresh underside and habitat context; otherwise report Pieris sp.",
+        (
+            _difference(
+                "Hindwing underside",
+                "Translucent whitish with no yellow tint; gray-brown vein scaling may look hazy rather than green.",
+                "Spring adults usually have a yellowish underside with the veins outlined in gray-green; later adults can be much paler.",
+            ),
+            _difference(
+                "Habitat support",
+                "Strongly tied to intact spring woodland with toothworts.",
+                "Occurs in a wider range of cool moist openings and woodland edges; habitat alone is not diagnostic.",
+            ),
+        ),
+        "Pieris sp.",
+        (BAMONA,),
+    ),
+    _pair(
+        "Ladona julia",
+        "Plathemis lydia",
+        "field",
+        "A clear dorsal view normally separates mature adults and most immatures.",
+        (
+            _difference(
+                "Wings",
+                "All four wings are clear, without broad black bands.",
+                "Broad dark bands cross the wings; mature males develop white patches beyond them.",
+            ),
+            _difference(
+                "Pruinosity",
+                "Wide pale shoulder bars top the thorax, and white or gray covers only the basal half of the abdomen.",
+                "Mature males have a powdery white abdomen but lack the corporal's paired chalky shoulder bars.",
+            ),
+        ),
+        sources=(WISCONSIN_ODONATA,),
+    ),
+    _pair(
+        "Hetaerina americana",
+        "Calopteryx maculata",
+        "field",
+        "Wing pigmentation and body pattern normally separate these broad-winged damselflies.",
+        (
+            _difference(
+                "Male wings",
+                "Mostly clear with a large ruby-red patch confined to the wing bases.",
+                "Nearly the entire wing is opaque black, without a clear outer field beyond a red basal patch.",
+            ),
+            _difference(
+                "Female wings",
+                "Amber is concentrated at the base and leading edge, with tiny white stigmas near the tips.",
+                "Broad wings are evenly smoky brown; white stigmas contrast against the darker full-wing tint.",
+            ),
+        ),
+        sources=(WISCONSIN_ODONATA,),
+    ),
+    _pair(
+        "Phanogomphus exilis",
+        "Phanogomphus lividus",
+        "not_field",
+        (
+            "Clubtail body pattern varies with sex and maturity. Report Phanogomphus "
+            "sp. unless a diagnostic close-up shows male terminal appendages or the "
+            "female vulvar lamina in addition to the thoracic and leg pattern."
+        ),
+        report_as="Phanogomphus sp.",
+        sources=(WISCONSIN_ODONATA,),
+    ),
+    _pair(
+        "Leucorrhinia glacialis",
+        "Leucorrhinia proxima",
+        "conditional",
+        "Mature males are usually separable in dorsal and side views; females and immature adults may require genital or wing-venation detail.",
+        (
+            _difference(
+                "Mature male abdomen",
+                "Black with red markings but no white abdominal belt.",
+                "A conspicuous white-pruinose belt crosses the base of the otherwise dark abdomen.",
+            ),
+            _difference(
+                "Thorax and waist",
+                "Red rings or patches mark the dark thorax and waist.",
+                "Red or yellow can occur on the thorax, but pale pruinosity at the abdominal base creates the belted effect.",
+            ),
+        ),
+        "Leucorrhinia sp.",
+        (WISCONSIN_ODONATA,),
+    ),
+    _pair(
+        "Lestes eurinus",
+        "Lestes inaequalis",
+        "conditional",
+        "Fresh adults can be separated by build and thoracic pattern; worn or heavily pruinose spreadwings should remain Lestes sp. without terminal detail.",
+        (
+            _difference(
+                "Build and color",
+                "Stockier and less green, with a dark green to bluish thorax over pale yellow sides.",
+                "Longer and more slender, with a bright metallic-green thorax and lemon-yellow sides.",
+            ),
+            _difference(
+                "Thorax and wings",
+                "A dark diagonal lateral thoracic streak is usually visible, and the wings are commonly amber washed.",
+                "The dark lateral streak is absent; the wings lack the same strong amber wash.",
+            ),
+        ),
+        "Lestes sp.",
+        (WISCONSIN_ODONATA,),
+    ),
 )
 
 
@@ -1089,6 +1667,35 @@ def curated_peer_names(scientific_name):
         first, second = profile["taxa"]
         names.append(second if scientific_name == first else first)
     return names
+
+
+def curated_peer_taxon(scientific_name):
+    """Return fallback metadata for a vetted peer outside the regional pool."""
+    record = CURATED_PEER_TAXA.get(scientific_name)
+    return dict(record) if record else None
+
+
+def comparison_note(scientific_name, comparison_count):
+    """Explain the comparison coverage so the app never renders a silent blank."""
+    if comparison_count:
+        coverage = (
+            "One vetted potential confusion is shown."
+            if comparison_count == 1
+            else f"{comparison_count} vetted potential confusions are shown."
+        )
+        return (
+            f"{coverage} These are selected for "
+            "regional plausibility or a documented identification risk; they are not "
+            "an exhaustive taxonomic key."
+        )
+    return NO_NAMED_COMPARISON_NOTES.get(
+        scientific_name,
+        (
+            "No named confusion species is vetted for this target yet. Use the "
+            "identification traits and photo checklist above, compare the broader "
+            "family, and retain a genus or family identification when evidence is incomplete."
+        ),
+    )
 
 
 def comparison_profile(target_scientific, peer_scientific):
