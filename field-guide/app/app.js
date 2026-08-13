@@ -231,6 +231,7 @@
           differences: cleanComparisonDifferences(item.differences),
           decision: cleanString(item.decision),
           reportAs: cleanString(item.report_as),
+          sources: cleanStringList(item.sources).map(cleanOnlineUrl).filter(Boolean),
           image: normalizeImage(
             item,
             `Reference photograph of ${cleanString(item.name) || cleanString(item.scientific_name) || "a lookalike"}`
@@ -257,6 +258,7 @@
       findingHelp,
       idHelp,
       idTraits: cleanTraits(raw.id_traits),
+      comparisonNote: cleanString(raw.comparison_note),
       lookalikes,
       photoChecklist,
       idLimitations: cleanString(raw.id_limitations),
@@ -271,6 +273,7 @@
       target.familyCommon,
       target.targetReason,
       target.surveyPeriodNote,
+      target.comparisonNote,
       ...target.surveyPeriods.map((period) => PERIOD_LABELS[period] || period),
       target.localSignal?.label || "",
       ...(target.localSignal?.guilds || []).flatMap((guild) => [
@@ -284,7 +287,13 @@
       ...target.habitatTags,
       ...target.methodTags,
       ...target.findingHelp,
-      ...target.idHelp
+      ...target.idHelp,
+      ...target.lookalikes.flatMap((lookalike) => [
+        lookalike.name,
+        lookalike.scientificName,
+        lookalike.decision,
+        lookalike.reportAs
+      ])
     ].join(" "));
     return target;
   }
@@ -691,9 +700,16 @@
 
   function appendLookalikes(container, target) {
     const lookalikes = target.lookalikes;
-    if (!lookalikes.length) return;
+    if (!lookalikes.length && !target.comparisonNote) return;
     const section = makeElement("section", "detail-section");
-    section.append(makeElement("h3", "", "Comparison species"));
+    section.append(makeElement("h3", "", "Potential confusions"));
+    if (target.comparisonNote) {
+      section.append(makeElement("p", "comparison-note", target.comparisonNote));
+    }
+    if (!lookalikes.length) {
+      container.append(section);
+      return;
+    }
     const list = makeElement("ul", "lookalike-list");
     lookalikes.forEach((lookalike) => {
       const item = document.createElement("li");
@@ -851,6 +867,13 @@
       const licenseLink = createOnlineLink(`${lookalike.name} license`, image?.licenseUrl);
       if (sourceLink) links.append(sourceLink);
       if (licenseLink) links.append(licenseLink);
+      lookalike.sources.forEach((url, index) => {
+        const referenceLink = createOnlineLink(
+          `${lookalike.name} ID reference ${index + 1}`,
+          url
+        );
+        if (referenceLink) links.append(referenceLink);
+      });
     });
     if (links.childElementCount) section.append(links);
     container.append(section);

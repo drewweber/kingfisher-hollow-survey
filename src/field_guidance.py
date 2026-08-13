@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from field_identification import comparison_profile
+from field_identification import comparison_note, comparison_profile
 
 
 GROUP_PROFILES = {
@@ -506,6 +506,7 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
         "finding_help": [seasonal, *finding[:2]],
         "id_help": list(profile["id"][:3]),
         "id_traits": _trait_items(group, profile["id"][:3]),
+        "comparison_note": comparison_note(scientific_name, len(comparisons)),
         "lookalikes": comparisons,
         "photo_checklist": list(profile["photos"][:3]),
         "id_limitations": profile["limitation"],

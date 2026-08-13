@@ -1273,6 +1273,16 @@ a:hover {
   list-style: none;
 }
 
+.comparison-note {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.65rem;
+  border-left: 3px solid var(--line-strong);
+  background: var(--surface-muted);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .lookalike-name {
   display: flex;
   flex-wrap: wrap;
@@ -1666,6 +1676,12 @@ a:hover {
   border-left-color: #713023;
   background: #190705;
   color: #bb7868 !important;
+}
+
+:root[data-survey-period="night"] .comparison-note {
+  border-left-color: #713023;
+  background: #190705;
+  color: #bb7868;
 }
 
 :root[data-survey-period="night"] .tag-list li,

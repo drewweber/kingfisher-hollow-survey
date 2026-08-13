@@ -21,7 +21,7 @@ import inat_api
 from config import DATA_DIR, PUBLIC_DIR, REGION_RADIUS_KM, ROOT, USER_AGENT
 from db import DB_PATH, connect
 from field_guidance import build_guidance
-from field_identification import curated_peer_names
+from field_identification import curated_peer_names, curated_peer_taxon
 from moth_guilds import LOOKBACK_DAYS, load_host_index, local_flight_signal
 
 
@@ -31,8 +31,8 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-07-24.1"
-SCHEMA_VERSION = "kh-field-targets/1.4.0"
+GUIDANCE_REVISION = "2026-08-13.1"
+SCHEMA_VERSION = "kh-field-targets/1.5.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
@@ -228,25 +228,32 @@ def _regional_peers():
 
 def _lookalikes(group, taxon_name, family_name, peers, limit=2):
     frame = peers[group]
-    if frame.empty:
-        return []
     desired_names = curated_peer_names(taxon_name)
     if not desired_names:
         return []
     order = {name: index for index, name in enumerate(desired_names)}
     candidates = frame[frame["taxon_name"].isin(desired_names)].copy()
-    if candidates.empty:
-        return []
-    candidates["_comparison_order"] = candidates["taxon_name"].map(order)
-    candidates = candidates.sort_values(["_comparison_order", "taxon_id"])
-    return [
+    if not candidates.empty:
+        candidates["_comparison_order"] = candidates["taxon_name"].map(order)
+        candidates = candidates.sort_values(["_comparison_order", "taxon_id"])
+    records = [
         {
             "taxon_id": int(row["taxon_id"]),
             "common_name": _clean(row.get("common_name")),
             "scientific_name": _clean(row.get("taxon_name")),
         }
-        for _, row in candidates.head(limit).iterrows()
+        for _, row in candidates.iterrows()
     ]
+    available_names = {record["scientific_name"] for record in records}
+    for desired_name in desired_names:
+        if desired_name in available_names:
+            continue
+        fallback = curated_peer_taxon(desired_name)
+        if fallback:
+            records.append(fallback)
+            available_names.add(desired_name)
+    records.sort(key=lambda record: order.get(record["scientific_name"], len(order)))
+    return records[:limit]
 
 
 def collect_targets(effective_date=None):
@@ -540,8 +547,8 @@ def _image_data(photo, relative_path, destination, alt):
 def _validate_targets(targets, output_dir=None):
     required_text = (
         "common_name", "scientific_name", "season_label", "target_reason",
-        "id_limitations", "survey_period_note", "image", "image_attribution",
-        "image_license", "image_source_url",
+        "id_limitations", "survey_period_note", "comparison_note", "image",
+        "image_attribution", "image_license", "image_source_url",
     )
     required_lists = (
         "active_months", "survey_periods", "habitat_tags", "method_tags", "finding_help",
