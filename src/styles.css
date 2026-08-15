@@ -380,7 +380,7 @@
   .reveal.in { opacity: 1; transform: none; }
 
   .mode-btn {
-    padding: .3rem .8rem;
+    padding: .3rem .7rem;
     border-radius: 9999px;
     color: var(--nav-muted);
     font-size: .78rem;

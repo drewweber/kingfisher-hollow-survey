@@ -129,6 +129,9 @@ jobs:
       - name: Build report
         run: python report.py
 
+      - name: Verify generated survey pages
+        run: python tests/verify_survey_pages.py
+
       - name: Test public API
         run: node --test tests/*.test.mjs
 

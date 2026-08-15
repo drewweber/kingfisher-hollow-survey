@@ -94,8 +94,9 @@ The guide is a separate static application deployed beside the survey at
 - `field-guide/app/` owns the dependency-free phone interface.
 - `field-guide/service-worker.js` is a scoped template populated with the
   complete versioned asset manifest.
-- `report.py` writes `public/index.html` first, then builds the sibling guide.
-  It does not add markup, registration code, or links to the survey.
+- `report.py` writes the survey's static page set first, then builds the
+  sibling guide. It does not add markup, registration code, or links to the
+  survey.
 
 A separate origin would provide even stronger operational isolation, but it
 would require another Pages project, DNS record, token, and workflow. The
@@ -168,7 +169,7 @@ update.
 - No required offline flow makes a request to another origin.
 - The service worker's asset manifest contains every local target image and
   cannot control a URL outside `/field/`.
-- The field-guide build leaves the exact `public/index.html` bytes written
-  immediately before it untouched; the report build fails if the hash changes.
+- The field-guide build leaves every generated survey page byte-for-byte
+  untouched; the report build fails if any page hash changes.
 - The guide fits 320-430 px phone widths without overlap and supports keyboard
   and screen-reader navigation.

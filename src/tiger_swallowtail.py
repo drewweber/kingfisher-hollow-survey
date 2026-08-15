@@ -1269,7 +1269,7 @@ def _page_html(records, analyses, cache_dir):
     <nav aria-label="Case-study navigation" class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
       <a href="/" class="font-serif text-lg font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-300">Kingfisher Hollow Survey</a>
       <div class="flex flex-wrap gap-4 text-sm">
-        <a href="/#butterflies" class="text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-300">Butterflies</a>
+        <a href="/butterflies/" class="text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-300">Butterflies</a>
         <a href="{PROJECT_URL}" target="_blank" rel="noopener" class="text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-300">iNaturalist project</a>
       </div>
     </nav>
