@@ -22,7 +22,6 @@ class ReportNavigationTests(unittest.TestCase):
                 "#whats-new",
                 "#discovery",
                 "#unique",
-                "#life-list",
                 "#activity",
                 "#phenology",
                 "#observers",
@@ -30,18 +29,29 @@ class ReportNavigationTests(unittest.TestCase):
             ],
         )
 
+    def test_each_view_has_a_unique_static_route(self):
+        routes = [config["route"] for config in report.VIEW_CONFIG.values()]
+        self.assertEqual(len(routes), len(set(routes)))
+        self.assertEqual("/", report.VIEW_CONFIG["all"]["route"])
+        self.assertEqual("/life-list/", report.VIEW_CONFIG["life-list"]["route"])
+        self.assertEqual("/log/", report.VIEW_CONFIG["log"]["route"])
+        self.assertEqual("/dragonflies/", report.VIEW_CONFIG["odonates"]["route"])
+
     def test_moth_index_has_one_inventory_status_chapter(self):
         links = report.VIEW_CONFIG["moths"]["links"]
         self.assertIn(("#moth-completeness", "Inventory status"), links)
         self.assertNotIn("#moth-diversity", [href for href, _label in links])
 
     def test_navigation_has_accessible_menu_and_complete_index(self):
-        html = report.nav()
+        html = report.nav("moths")
         self.assertIn('aria-label="Survey navigation"', html)
         self.assertIn('aria-controls="survey-menu"', html)
         self.assertIn('aria-expanded="false"', html)
         self.assertIn('id="skip-link"', html)
-        for href, _label in report.VIEW_CONFIG["all"]["links"]:
+        self.assertIn('href="/moths/"', html)
+        self.assertIn('aria-current="page"', html)
+        self.assertNotIn('aria-pressed=', html)
+        for href, _label in report.VIEW_CONFIG["moths"]["links"]:
             self.assertIn(f'href="{href}"', html)
 
     def test_log_links_to_social_export_and_tiger_swallowtail_guide(self):
@@ -56,8 +66,25 @@ class ReportNavigationTests(unittest.TestCase):
 
     def test_stylesheet_url_changes_with_the_stylesheet_content(self):
         version = report._asset_version("src/styles.css")
-        html = report.head({"species": 1}, county_firsts=0)
+        html = report.head({"species": 1}, county_firsts=0, mode="log")
         self.assertIn(f'href="/assets/survey.css?v={version}"', html)
+        self.assertIn('href="https://survey.kingfisher-hollow.com/log/"', html)
+        self.assertIn('data-mode="log"', html)
+        self.assertNotIn("window.__plotlyQueue", html)
+
+    def test_root_head_preserves_legacy_hash_redirects_before_body_parsing(self):
+        html = report.head({"species": 1}, county_firsts=0, mode="all")
+        self.assertIn("const routes=", html)
+        self.assertIn('"log-journal":"/log/"', html)
+        self.assertIn('"moth-diversity":"/moths/"', html)
+        self.assertIn("location.replace(route+location.hash)", html)
+
+    def test_route_output_paths_match_clean_pages_routes(self):
+        self.assertEqual(report.PUBLIC_DIR / "index.html", report._view_output_path("all"))
+        self.assertEqual(
+            report.PUBLIC_DIR / "moths" / "index.html",
+            report._view_output_path("moths"),
+        )
 
     def test_dark_survey_menu_keeps_inactive_view_names_readable(self):
         styles = (Path(report.__file__).parent / "src/styles.css").read_text()
@@ -155,9 +182,9 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn('id="unique-title"', html)
         self.assertIn('href="#discovery"', html)
         self.assertIn("Growth", html)
-        self.assertIn('href="#life-list"', html)
-        self.assertIn("Life list", html)
-        self.assertIn("03 / 08", html)
+        self.assertIn('href="#activity"', html)
+        self.assertIn("Survey effort", html)
+        self.assertIn("03 / 07", html)
 
     def test_legacy_chapter_links_can_be_preserved_as_aliases(self):
         html = report.anchor_alias("uniqueness", "gallery", "moth-diversity")
@@ -165,11 +192,11 @@ class ReportNavigationTests(unittest.TestCase):
             self.assertIn(f'id="{id_}"', html)
         self.assertEqual(html.count('class="anchor-alias"'), 3)
 
-    def test_subsection_hashes_resolve_their_own_view(self):
-        self.assertIn("function modeForHash(hash)", report.SCRIPTS)
-        self.assertIn("closest('[id^=\"view-\"]')", report.SCRIPTS)
-        self.assertIn("const hashSection=hashTarget?.matches('section[id]')", report.SCRIPTS)
+    def test_subsection_hashes_update_the_single_page_field_index(self):
+        self.assertIn("Each static page has one survey view", report.SCRIPTS)
+        self.assertIn("const section=target?.matches('section[id]')", report.SCRIPTS)
         self.assertIn("window.addEventListener('hashchange',applyHash)", report.SCRIPTS)
+        self.assertNotIn("function setMode(", report.SCRIPTS)
 
 
 if __name__ == "__main__":

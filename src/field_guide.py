@@ -748,9 +748,9 @@ def build(effective_date=None, output_dir=None):
     sw = sw.replace("__ASSETS__", json.dumps(assets, indent=2))
     (output_dir / "service-worker.js").write_text(sw, encoding="utf-8")
 
-    # Cloudflare Pages reads this only from the publish root. These rules touch
-    # the field-guide path exclusively; the survey's caching behavior is left
-    # unchanged.
+    # Cloudflare Pages reads this only from the publish root.  The field-guide
+    # rules keep its update checks fresh; survey chart payloads use content
+    # fingerprints, so they can be cached safely for repeat visits.
     if output_dir.resolve().parent == PUBLIC_DIR.resolve():
         (PUBLIC_DIR / "_headers").write_text(
             "/field/service-worker.js\n"
@@ -761,6 +761,8 @@ def build(effective_date=None, output_dir=None):
             "/field/manifest.webmanifest\n"
             "  Cache-Control: no-cache\n"
             "/field/images/*\n"
+            "  Cache-Control: public, max-age=31536000, immutable\n"
+            "/assets/charts/*\n"
             "  Cache-Control: public, max-age=31536000, immutable\n",
             encoding="utf-8",
         )

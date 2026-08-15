@@ -2,7 +2,7 @@
 
 A self-updating pipeline that pulls observations from the
 [Kingfisher Hollow Biodiversity Survey](https://www.inaturalist.org/projects/kingfisher-hollow-biodiversity-survey)
-project and Tioga County, NY, then builds a single-file HTML report:
+project and Tioga County, NY, then builds focused static HTML survey pages:
 **what's new since last night**, species accumulation curves, observations
 per day, phenology, an observer leaderboard, a map, and a per-species
 *contribution uniqueness* view (how rare each species is in the county and in
@@ -30,7 +30,7 @@ npm ci
 ```sh
 .venv/bin/python sync.py --daily    # fast daily refresh for new survey records
 npm run build:css                   # compile the survey stylesheet
-.venv/bin/python report.py          # build public/index.html
+.venv/bin/python report.py          # build public/index.html plus focused survey routes
 open public/index.html
 ```
 The first sync downloads all ~25k county observations plus uniqueness stats for
@@ -227,7 +227,7 @@ src/config.py   IDs and paths         sync.py     fetch CLI
 src/inat_api.py API client            report.py   report builder
 src/db.py       SQLite schema         run.sh      nightly wrapper (local launchd)
 src/fetch.py    property/county sync  data/inat.db (gitignored; cached in CI)
-src/stats.py    uniqueness lookups    public/index.html (generated report)
+src/stats.py    uniqueness lookups    public/ (generated survey pages)
 src/analyze.py  pandas analyses       .github/workflows/update.yml (cron + deploy)
 src/viz.py      Plotly charts
 ```
