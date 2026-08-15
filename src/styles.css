@@ -376,8 +376,10 @@
   .ll-select { cursor: pointer; outline: none; }
   .chart-empty { padding: 2rem; color: #a8a29e; text-align: center; font-style: italic; }
 
-  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
-  .reveal.in { opacity: 1; transform: none; }
+  /* Content stays readable without JavaScript or IntersectionObserver. */
+  .reveal { opacity: 1; transform: none; }
+  html.scroll-reveal-ready .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+  html.scroll-reveal-ready .reveal.in { opacity: 1; transform: none; }
 
   .mode-btn {
     padding: .3rem .7rem;

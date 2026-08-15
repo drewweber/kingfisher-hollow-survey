@@ -2290,9 +2290,21 @@ SCRIPTS = """
     if(search)search.addEventListener('input',apply);apply();
   })();
 
-  // Scroll reveal
-  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
-  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  // Scroll reveal is progressive enhancement: the stylesheet leaves content
+  // visible until a working observer explicitly enables the animation.
+  const reveals=[...document.querySelectorAll('.reveal')];
+  const reduceMotion=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reveals.length&&'IntersectionObserver' in window&&!reduceMotion){
+    try{
+      const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
+      reveals.forEach(el=>{
+        const rect=el.getBoundingClientRect();
+        if(rect.bottom>0&&rect.top<window.innerHeight) el.classList.add('in');
+        else io.observe(el);
+      });
+      document.documentElement.classList.add('scroll-reveal-ready');
+    }catch(_error){}
+  }
 
   // Plotly and each chart payload load only as an individual card nears view.
   // Chart data lives in fingerprinted external scripts, avoiding initial HTML
@@ -2386,13 +2398,17 @@ SCRIPTS = """
         current?.scrollIntoView({block:'nearest',inline:'center',behavior:reduced?'auto':'smooth'});
       }
     }
-    const sectionObserver=new IntersectionObserver(entries=>{
-      const visible=entries.filter(entry=>entry.isIntersecting)
-        .sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
-      if(visible[0]) setActiveSection(visible[0].target.id,true);
-    },{rootMargin:'-18% 0px -68% 0px',threshold:0});
-    document.querySelectorAll('#survey-content > [id^="view-"] > section[id]')
-      .forEach(section=>sectionObserver.observe(section));
+    if('IntersectionObserver' in window){
+      try{
+        const sectionObserver=new IntersectionObserver(entries=>{
+          const visible=entries.filter(entry=>entry.isIntersecting)
+            .sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
+          if(visible[0]) setActiveSection(visible[0].target.id,true);
+        },{rootMargin:'-18% 0px -68% 0px',threshold:0});
+        document.querySelectorAll('#survey-content > [id^="view-"] > section[id]')
+          .forEach(section=>sectionObserver.observe(section));
+      }catch(_error){}
+    }
     function applyHash(){
       if(!location.hash) return;
       let target=null;
