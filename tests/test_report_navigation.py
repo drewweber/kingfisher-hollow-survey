@@ -221,6 +221,23 @@ class ReportNavigationTests(unittest.TestCase):
             report.SCRIPTS,
         )
 
+    def test_life_list_uses_the_dark_page_text_palette(self):
+        source = Path(report.__file__).read_text()
+        start = source.index("    life_list_section = section(")
+        end = source.index("    two_up = (", start)
+        life_list_section = source[start:end]
+        self.assertIn('text-hollow-300">Life List', life_list_section)
+        self.assertIn("moth_portrait_showcase(df, dark=True)", life_list_section)
+        self.assertIn("life_list_body(life, dark=True)", life_list_section)
+        self.assertIn("dark=True", life_list_section)
+        self.assertIn('heading = "text-white" if dark else "text-stone-900"', source)
+        self.assertIn('copy = "text-white/60" if dark else "text-stone-500"', source)
+
+        empty_life = mock.Mock()
+        empty_life.empty = True
+        empty = report.life_list_body(empty_life, dark=True)
+        self.assertIn("text-white/50", empty)
+
 
 if __name__ == "__main__":
     unittest.main()

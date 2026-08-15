@@ -841,9 +841,10 @@ def rarest_body(rare):
 
 
 # ── life list (searchable / filterable) ──────────────────────────────────────
-def life_list_body(life):
+def life_list_body(life, dark=False):
+    outer_text = "text-white/50" if dark else "text-stone-500"
     if life.empty:
-        return '<p class="text-center text-stone-500">No species yet.</p>'
+        return f'<p class="text-center {outer_text}">No species yet.</p>'
     # A life list is a chronology, not a taxonomic inventory: the number is
     # fixed for a species even when the visible table is narrowed by a filter.
     life = life.sort_values(
@@ -907,7 +908,7 @@ def life_list_body(life):
           <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Added</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
       </div>
-      <p id="ll-count" class="text-center text-stone-400 text-sm mt-4">{total:,} species shown</p>
+      <p id="ll-count" class="text-center {outer_text} text-sm mt-4">{total:,} species shown</p>
     </div>"""
 
 
@@ -943,7 +944,7 @@ MOTH_PORTRAIT_TAXA = (
 )
 
 
-def moth_portrait_showcase(df):
+def moth_portrait_showcase(df, dark=False):
     """A compact, curated exhibit of Drew's strongest moth photographs."""
     if df.empty or "photo_url" not in df.columns:
         return ""
@@ -980,13 +981,16 @@ def moth_portrait_showcase(df):
         </a>''')
     if not cards:
         return ""
-    return '''<div class="max-w-5xl mx-auto mb-14">
+    eyebrow = "text-hollow-300" if dark else "text-hollow-600"
+    heading = "text-white" if dark else "text-stone-900"
+    copy = "text-white/60" if dark else "text-stone-500"
+    return f'''<div class="max-w-5xl mx-auto mb-14">
       <div class="flex flex-col md:flex-row gap-3 md:items-end md:justify-between mb-5">
         <div>
-          <div class="eyebrow text-hollow-600">From the light sheet</div>
-          <h3 class="font-serif text-3xl text-stone-900 mt-1">Moth portraits</h3>
+          <div class="eyebrow {eyebrow}">From the light sheet</div>
+          <h3 class="font-serif text-3xl {heading} mt-1">Moth portraits</h3>
         </div>
-        <p class="text-stone-500 text-sm leading-relaxed md:text-right max-w-md">A selected set of Drew Weber's photographs from the property, led by the moths that make a field night feel memorable.</p>
+        <p class="{copy} text-sm leading-relaxed md:text-right max-w-md">A selected set of Drew Weber's photographs from the property, led by the moths that make a field night feel memorable.</p>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">''' + "".join(cards) + "</div></div>"
 
@@ -3404,9 +3408,10 @@ def build():
 
     life_list_section = section(
         "life-list", "The Full Roll",
-        'The <em class="text-hollow-600">Life List</em>',
-        moth_portrait_showcase(df) + life_list_body(life),
-        intro="The property life list, newest additions first. Each number marks when a species joined the Kingfisher Hollow record; search by name, then filter by taxon group and family.")
+        'The <em class="text-hollow-300">Life List</em>',
+        moth_portrait_showcase(df, dark=True) + life_list_body(life, dark=True),
+        intro="The property life list, newest additions first. Each number marks when a species joined the Kingfisher Hollow record; search by name, then filter by taxon group and family.",
+        dark=True)
     two_up = (
         '<div class="grid lg:grid-cols-2 gap-6">'
         + chart_card(viz.per_day(analyze.obs_per_day(overview_df)))
