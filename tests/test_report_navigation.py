@@ -198,6 +198,29 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn("window.addEventListener('hashchange',applyHash)", report.SCRIPTS)
         self.assertNotIn("function setMode(", report.SCRIPTS)
 
+    def test_reveals_remain_visible_without_intersection_observer(self):
+        styles = (Path(report.__file__).parent / "src/styles.css").read_text()
+        self.assertIn(".reveal { opacity: 1; transform: none; }", styles)
+        self.assertIn(
+            "html.scroll-reveal-ready .reveal { opacity: 0;",
+            styles,
+        )
+        self.assertIn(
+            "if(reveals.length&&'IntersectionObserver' in window&&!reduceMotion){\n"
+            "    try{",
+            report.SCRIPTS,
+        )
+        self.assertIn(
+            "document.documentElement.classList.add('scroll-reveal-ready');",
+            report.SCRIPTS,
+        )
+        self.assertIn(
+            "if('IntersectionObserver' in window){\n"
+            "      try{\n"
+            "        const sectionObserver=new IntersectionObserver",
+            report.SCRIPTS,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
