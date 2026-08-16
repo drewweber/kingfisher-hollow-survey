@@ -1,7 +1,9 @@
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +19,7 @@ from field_identification import (  # noqa: E402
     NO_NAMED_COMPARISON_NOTES,
     PAIR_PROFILES,
     curated_peer_names,
+    has_curated_comparison_disposition,
 )
 
 
@@ -129,7 +132,7 @@ class FieldGuidanceTests(unittest.TestCase):
             "Eichlinia cucurbitae", "Euphydryas phaeton", "Thymelicus lineola",
             "Limochores mystic", "Aglais milberti", "Lethe eurydice",
             "Papilio canadensis", "Lycaena hypophlaeas", "Argynnis atlantis",
-            "Pieris virginiensis", "Perithemis tenera", "Ladona julia",
+            "Pieris virginiensis", "Cupido comyntas", "Perithemis tenera", "Ladona julia",
             "Hetaerina americana", "Phanogomphus exilis", "Amphiagrion saucium",
             "Tachopteryx thoreyi", "Leucorrhinia glacialis", "Lestes eurinus",
         }
@@ -157,6 +160,41 @@ class FieldGuidanceTests(unittest.TestCase):
 
     def test_rotating_least_skipper_target_has_a_named_confusion(self):
         self.assertIn("Thymelicus lineola", curated_peer_names("Ancyloxypha numitor"))
+
+    def test_expanded_moth_targets_have_specific_confusion_dispositions(self):
+        added_targets = {
+            "Acleris macdunnoughi", "Acronicta afflicta", "Ascalapha odorata",
+            "Cameraria caryaefoliella", "Catocala ilia", "Choreutis pariana",
+            "Coptotriche aenea", "Coptotriche castaneaeella", "Ectoedemia platanella",
+            "Euxoa bostoniensis", "Glaucolepis saccharella", "Marimatha nigrofimbria",
+            "Meropleon diversicolor", "Papaipema pterisii", "Parectopa robiniella",
+            "Phyllonorycter maestingella", "Stigmella caryaefoliella",
+            "Stigmella rosaefoliella",
+        }
+        for scientific_name in added_targets:
+            self.assertTrue(has_curated_comparison_disposition(scientific_name))
+
+    def test_moth_target_window_includes_current_and_next_two_months(self):
+        self.assertEqual([8, 9, 10], field_guide._moth_target_months(date(2026, 8, 16)))
+        self.assertEqual([11, 12, 1], field_guide._moth_target_months(date(2026, 11, 30)))
+
+    def test_moth_candidate_frame_prefers_seasonal_and_filters_generic_gaps(self):
+        seasonal = field_guide.pd.DataFrame([
+            {"taxon_id": 1, "taxon_name": "Hemaris thysbe", "ref_count": 2},
+            {"taxon_id": 2, "taxon_name": "Unsupported example", "ref_count": 4},
+        ])
+        annual = field_guide.pd.DataFrame([
+            {"taxon_id": 1, "taxon_name": "Hemaris thysbe", "ref_count": 200},
+            {"taxon_id": 3, "taxon_name": "Eumorpha pandorus", "ref_count": 100},
+        ])
+        with patch.object(
+            field_guide.analyze,
+            "moth_county_gap",
+            side_effect=[{"missing": seasonal}, {"missing": annual}],
+        ):
+            selected = field_guide._moth_candidate_frame(field_guide.pd.DataFrame(), [8, 9, 10])
+        self.assertEqual(["Hemaris thysbe", "Eumorpha pandorus"], selected["taxon_name"].tolist())
+        self.assertEqual([1, 0], selected["_seasonal_priority"].tolist())
 
     def test_every_curated_pair_has_a_field_decision_and_valid_fallback(self):
         pair_keys = [frozenset(profile["taxa"]) for profile in PAIR_PROFILES]
@@ -241,6 +279,17 @@ class FieldGuidanceTests(unittest.TestCase):
 
 
 class FieldGuideReleaseTests(unittest.TestCase):
+    def test_inactive_taxon_uses_accepted_id_for_photo_search(self):
+        normalized = field_guide._normalize_taxon({
+            "id": 122381,
+            "is_active": False,
+            "current_synonymous_taxon_ids": [58555],
+            "ancestors": [],
+            "default_photo": None,
+        })
+        self.assertEqual(122381, normalized["taxon_id"])
+        self.assertEqual(58555, normalized["photo_search_taxon_id"])
+
     def _target(self, image_path="images/1.jpg", license_code="cc-by"):
         images = []
         for index in (1, 2):
@@ -357,6 +406,17 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("target.surveyPeriods.includes(state.period)", app)
         self.assertIn("When to search", app)
         self.assertIn("surveyPeriodNote", app)
+
+    def test_skip_link_is_hidden_until_focus_and_targets_a_focusable_heading(self):
+        markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")
+        styles = (ROOT / "field-guide" / "app" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn('class="skip-link" href="#results-heading"', markup)
+        self.assertIn('id="results-heading" tabindex="-1"', markup)
+        self.assertIn(".skip-link:not(:focus)", styles)
+        self.assertIn("clip-path: inset(50%)", styles)
+
+    def test_field_guide_targets_exactly_forty_moths(self):
+        self.assertEqual(40, field_guide.MOTH_TARGET_LIMIT)
 
     def test_night_mode_uses_a_persisted_low_light_theme(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
