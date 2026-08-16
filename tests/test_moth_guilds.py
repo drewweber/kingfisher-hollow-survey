@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from moth_guilds import (  # noqa: E402
     HOST_INDEX_PATH,
     LOOKBACK_DAYS,
+    host_label,
     load_host_index,
     local_flight_signal,
 )
@@ -47,8 +48,17 @@ class MothGuildSignalTests(unittest.TestCase):
         self.assertIsNotNone(signal)
         self.assertEqual("strong", signal["strength"])
         self.assertEqual("Oenothera", signal["guilds"][0]["host_genus"])
+        self.assertEqual("evening-primrose", signal["guilds"][0]["host_label"])
         self.assertEqual("Recent Indicator", signal["guilds"][0]["indicators"][0]["common_name"])
         self.assertIn("not proof", signal["caution"])
+
+    def test_current_field_guilds_have_plain_language_plant_names(self):
+        self.assertEqual("burnweed", host_label("Erechtites"))
+        self.assertEqual("honeysuckle", host_label("Lonicera"))
+        self.assertEqual("groundsel", host_label("Senecio"))
+
+    def test_unmapped_host_genus_remains_an_unembellished_scientific_name(self):
+        self.assertEqual("Unmappedus", host_label("Unmappedus"))
 
     def test_signal_expires_after_lookback_window(self):
         signal = local_flight_signal(

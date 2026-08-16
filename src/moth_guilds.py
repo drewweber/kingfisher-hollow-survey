@@ -24,8 +24,10 @@ HOST_LABELS = {
     "Clematis": "clematis",
     "Cornus": "dogwood",
     "Crataegus": "hawthorn",
+    "Erechtites": "burnweed",
     "Hamamelis": "witch-hazel",
     "Juglans": "walnut",
+    "Lonicera": "honeysuckle",
     "Malus": "apple",
     "Mentha": "mint",
     "Monarda": "bee balm",
@@ -39,6 +41,7 @@ HOST_LABELS = {
     "Rosa": "rose",
     "Rubus": "raspberry/blackberry",
     "Salix": "willow",
+    "Senecio": "groundsel",
     "Tilia": "basswood",
     "Ulmus": "elm",
     "Viburnum": "viburnum",
@@ -66,7 +69,7 @@ def load_host_index(path=HOST_INDEX_PATH):
 
 
 def host_label(genus):
-    return HOST_LABELS.get(genus, f"{genus} host")
+    return HOST_LABELS.get(genus, genus)
 
 
 def _breadth_weight(host_count):
