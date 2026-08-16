@@ -83,6 +83,11 @@
     return typeof value === "string" ? value.trim() : "";
   }
 
+  function sentenceCase(value) {
+    const text = cleanString(value);
+    return text ? `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}` : "";
+  }
+
   function cleanStringList(value) {
     if (!Array.isArray(value)) return [];
     return value.map(cleanString).filter(Boolean);
@@ -801,17 +806,23 @@
     const list = makeElement("ul", "guild-signal-list");
     signal.guilds.forEach((guild) => {
       const item = document.createElement("li");
-      const label = makeElement("strong", "", `${guild.hostLabel} guild`);
-      const genus = makeElement("em", "", guild.hostGenus);
+      const hostLabelIsCommon = guild.hostLabel.toLocaleLowerCase()
+        !== guild.hostGenus.toLocaleLowerCase();
+      const commonHostName = sentenceCase(
+        hostLabelIsCommon ? guild.hostLabel : guild.hostGenus
+      );
+      const label = makeElement("strong", "", `${commonHostName} host guild`);
       const indicatorText = guild.indicators.map((indicator) => (
         `${indicator.commonName} (${formatSignalDate(indicator.lastSeen)})`
       )).join("; ");
-      item.append(
-        label,
-        document.createTextNode(" / "),
-        genus,
-        document.createTextNode(`: ${indicatorText}.`)
-      );
+      item.append(label);
+      if (hostLabelIsCommon) {
+        item.append(
+          document.createTextNode(" "),
+          makeElement("em", "", `(${guild.hostGenus})`)
+        );
+      }
+      item.append(document.createTextNode(`: ${indicatorText}.`));
       list.append(item);
     });
     section.append(list);

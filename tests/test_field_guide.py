@@ -396,6 +396,9 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("normalizeLocalSignal", app)
         self.assertIn("Why it may be flying now", app)
         self.assertIn("appendLocalSignal", app)
+        self.assertIn("hostLabelIsCommon", app)
+        self.assertIn("`${commonHostName} host guild`", app)
+        self.assertIn("`(${guild.hostGenus})`", app)
         self.assertIn('id="local-signal-filter"', markup)
 
     def test_field_app_exposes_day_and_night_survey_modes(self):
