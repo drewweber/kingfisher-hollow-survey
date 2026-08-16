@@ -21,7 +21,11 @@ import inat_api
 from config import DATA_DIR, PUBLIC_DIR, REGION_RADIUS_KM, ROOT, USER_AGENT
 from db import DB_PATH, connect
 from field_guidance import build_guidance
-from field_identification import curated_peer_names, curated_peer_taxon
+from field_identification import (
+    curated_peer_names,
+    curated_peer_taxon,
+    has_curated_comparison_disposition,
+)
 from moth_guilds import LOOKBACK_DAYS, load_host_index, local_flight_signal
 
 
@@ -31,13 +35,14 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-08-13.1"
-SCHEMA_VERSION = "kh-field-targets/1.5.0"
+GUIDANCE_REVISION = "2026-08-16.1"
+SCHEMA_VERSION = "kh-field-targets/1.6.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
-MOTH_TARGET_LIMIT = 50
+MOTH_TARGET_LIMIT = 40
 MOTH_CANDIDATE_LIMIT = 200
+MOTH_LOOKAHEAD_MONTHS = 3
 
 ALLOWED_LICENSES = {
     "cc0", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa",
@@ -158,18 +163,50 @@ def _rank_moth_targets(frame, effective_date):
         lambda count: math.log1p(max(0, float(count)))
     )
     ranked["_target_score"] = ranked["_regional_score"] + ranked["_local_signal_score"]
+    if "_seasonal_priority" not in ranked:
+        ranked["_seasonal_priority"] = 1
     ranked = ranked.sort_values(
-        ["_target_score", "ref_count", "taxon_id"],
-        ascending=[False, False, True],
+        ["_seasonal_priority", "_target_score", "ref_count", "taxon_id"],
+        ascending=[False, False, False, True],
     )
     return ranked.head(MOTH_TARGET_LIMIT)
 
 
-def _target_frames(effective_date):
-    target_months = sorted({effective_date.month, (effective_date + timedelta(days=14)).month})
-    moths = analyze.moth_county_gap(
-        analyze.load_moths(), n=MOTH_CANDIDATE_LIMIT, target_months=target_months
+def _moth_target_months(effective_date):
+    return [
+        ((effective_date.month - 1 + offset) % 12) + 1
+        for offset in range(MOTH_LOOKAHEAD_MONTHS)
+    ]
+
+
+def _moth_candidate_frame(moths, target_months):
+    """Prefer near-term moths, then fill the 40-target set from vetted annual gaps."""
+    seasonal = analyze.moth_county_gap(
+        moths, n=MOTH_CANDIDATE_LIMIT, target_months=target_months
     )["missing"].copy()
+    annual = analyze.moth_county_gap(
+        moths, n=MOTH_CANDIDATE_LIMIT
+    )["missing"].copy()
+
+    def eligible(frame, seasonal_priority):
+        if frame.empty:
+            return frame
+        selected = frame[
+            frame["taxon_name"].map(has_curated_comparison_disposition)
+        ].copy()
+        selected["_seasonal_priority"] = seasonal_priority
+        return selected
+
+    seasonal = eligible(seasonal, 1)
+    annual = eligible(annual, 0)
+    if not seasonal.empty:
+        annual = annual[~annual["taxon_id"].isin(seasonal["taxon_id"])]
+    return pd.concat([seasonal, annual], ignore_index=True).head(MOTH_CANDIDATE_LIMIT)
+
+
+def _target_frames(effective_date):
+    target_months = _moth_target_months(effective_date)
+    moths = _moth_candidate_frame(analyze.load_moths(), target_months)
     return {
         "moths": _rank_moth_targets(moths, effective_date),
         "butterflies": analyze.butterfly_gap(
@@ -332,6 +369,10 @@ def collect_targets(effective_date=None):
 def _normalize_taxon(taxon):
     ranks = {a.get("rank"): a for a in (taxon.get("ancestors") or [])}
     photo = taxon.get("default_photo") or {}
+    accepted_ids = taxon.get("current_synonymous_taxon_ids") or []
+    photo_search_taxon_id = int(taxon["id"])
+    if taxon.get("is_active") is False and accepted_ids:
+        photo_search_taxon_id = int(accepted_ids[0])
     code = (photo.get("license_code") or "").casefold()
     photo_record = None
     if code in ALLOWED_LICENSES and photo.get("medium_url") and photo.get("attribution"):
@@ -349,6 +390,9 @@ def _normalize_taxon(taxon):
         "family_common": (ranks.get("family") or {}).get("preferred_common_name") or "",
         "order_name": (ranks.get("order") or {}).get("name") or "",
         "order_common": (ranks.get("order") or {}).get("preferred_common_name") or "",
+        # Keep the source taxon ID in the payload, but find current observations
+        # through iNaturalist's accepted replacement when this taxon is inactive.
+        "photo_search_taxon_id": photo_search_taxon_id,
         "photo": photo_record,
     }
 
@@ -404,6 +448,18 @@ def resolve_taxa(photo_requirements):
             record["photos"] = photos
             record["photo"] = photos[0]
 
+    # Older caches predate accepted-taxon photo lookup. Refresh only records
+    # that actually need more media, keeping routine builds cache-efficient.
+    legacy_ids = [
+        taxon_id for taxon_id, _required, _photos in photo_requests
+        if not taxa[str(taxon_id)].get("photo_search_taxon_id")
+    ]
+    for start in range(0, len(legacy_ids), 30):
+        batch = legacy_ids[start:start + 30]
+        for taxon in inat_api.fetch_taxa(batch):
+            normalized = _normalize_taxon(taxon)
+            taxa[str(normalized["taxon_id"])].update(normalized)
+
     # Photo metadata is independent per taxon. Keep the pool deliberately
     # small because this runs against iNaturalist, while avoiding one-second
     # pauses serializing a whole new field-guide release.
@@ -411,7 +467,7 @@ def resolve_taxa(photo_requirements):
         futures = {
             pool.submit(
                 inat_api.fetch_licensed_photos,
-                taxon_id,
+                taxa[str(taxon_id)].get("photo_search_taxon_id") or taxon_id,
                 required - len(photos),
                 tuple(sorted(ALLOWED_LICENSES)),
                 [photo.get("id") for photo in photos],

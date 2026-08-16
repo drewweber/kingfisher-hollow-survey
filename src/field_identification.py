@@ -77,6 +77,56 @@ CURATED_PEER_TAXA = {
 # comparison section. Each note names the broader thing that can mislead a
 # field observer and the evidence needed to avoid over-identification.
 NO_NAMED_COMPARISON_NOTES = {
+    "Acleris macdunnoughi": (
+        "No single leafroller is vetted as the field comparison. Acleris adults "
+        "are variable and worn specimens converge in appearance, so photograph the "
+        "complete forewing and retain Acleris sp. when the pattern is incomplete."
+    ),
+    "Acronicta afflicta": (
+        "The practical confusion is the wider group of gray dagger moths rather than "
+        "one named species. Require a sharp dorsal view, size context, and any visible "
+        "hindwing or larval evidence; keep an ambiguous adult at Acronicta."
+    ),
+    "Ascalapha odorata": (
+        "No close regional species is currently vetted for a named comparison. Worn "
+        "large erebids can lose contrast, so confirm the very large size and complete "
+        "angular forewing pattern before reporting this distinctive migrant."
+    ),
+    "Cameraria caryaefoliella": (
+        "Other Cameraria adults and hickory leaf mines are the main confusion. "
+        "Photograph both sides of the mine on an identified host leaf, its position "
+        "between veins, and the larva or reared adult; otherwise retain Cameraria."
+    ),
+    "Catocala ilia": (
+        "Several gray Catocala share orange-red, black-banded hindwings. Record a "
+        "square forewing view, opened hindwing, and size; retain Catocala sp. when "
+        "either wing surface is missing or worn."
+    ),
+    "Choreutis pariana": (
+        "Other small metallic choreutids can resemble a distant or worn adult. "
+        "Photograph the full wing pattern and resting posture, plus skeletonized leaves "
+        "and an identified host when present; keep uncertain images at Choreutidae."
+    ),
+    "Coptotriche aenea": (
+        "Other tiny Tischeriidae and blotch mines can be confused with this species. "
+        "Document both leaf surfaces, the mine shape and frass pattern on identified "
+        "blackberry, and a reared adult when possible; otherwise retain Coptotriche."
+    ),
+    "Coptotriche castaneaeella": (
+        "Other Coptotriche adults and oak-family blotch mines can look similar. "
+        "Document both leaf surfaces, the mine and frass pattern on an identified host, "
+        "and a reared adult when possible; otherwise retain Coptotriche."
+    ),
+    "Cupido comyntas": (
+        "Azure butterflies (Celastrina) and worn blues are the practical confusion. "
+        "Confirm the hairlike hindwing tails and adjacent orange-and-blue tornal spots "
+        "in a complete underside view; retain Lycaenidae when wear or angle hides them."
+    ),
+    "Ectoedemia platanella": (
+        "Other nepticulid adults are not safely separated from a routine field image. "
+        "Photograph both surfaces of the blotch mine on an identified sycamore leaf, "
+        "including the early mine track and larva; otherwise retain Nepticulidae."
+    ),
     "Eustixia pupula": (
         "No close regional species is currently vetted for a named comparison. "
         "Other small white crambids can look similar in a distant image, so confirm "
@@ -86,6 +136,51 @@ NO_NAMED_COMPARISON_NOTES = {
         "The main field confusion is with wasps and other clearwing moths rather "
         "than one close regional species. Photograph both scaled wings, the orange-"
         "and-black abdomen, and the host or stem-borer sign before using a species name."
+    ),
+    "Euxoa bostoniensis": (
+        "Other Euxoa and large dart moths are the relevant confusion, and many need "
+        "structural examination. Record a fresh square dorsal view and underside if "
+        "available; use Euxoa or a broader dart identification when worn or incomplete."
+    ),
+    "Glaucolepis saccharella": (
+        "Other minute nepticulids and maple leaf mines are the main confusion. "
+        "Photograph the entire mine on an identified maple leaf, both leaf surfaces, "
+        "the frass trail, and larva or reared adult; otherwise retain Nepticulidae."
+    ),
+    "Marimatha nigrofimbria": (
+        "Other small yellow noctuids can resemble this moth in a distant or overexposed "
+        "image. Confirm the full dark forewing border, central markings, and size in a "
+        "sharp dorsal frame; otherwise retain the identification at family level."
+    ),
+    "Meropleon diversicolor": (
+        "No single regional sedgeminer is vetted as the field comparison. Small wetland "
+        "noctuids can look similar when worn, so document the complete forewing pattern, "
+        "size, wetland setting, and sedge association; otherwise retain Noctuidae."
+    ),
+    "Papaipema pterisii": (
+        "Other Papaipema stem borers are the main confusion. Photograph a fresh dorsal "
+        "adult and document the bore, frass, stem, and confidently identified bracken "
+        "host; keep an adult-only uncertain record at Papaipema."
+    ),
+    "Parectopa robiniella": (
+        "Other locust leaf miners can produce superficially similar damage, while tiny "
+        "adults are easy to over-identify. Photograph both leaf surfaces, the complete "
+        "mine and larva on identified locust; otherwise retain Gracillariidae."
+    ),
+    "Phyllonorycter maestingella": (
+        "Other Phyllonorycter adults and beech leaf mines are the practical confusion. "
+        "Document both leaf surfaces, the tentiform mine and its position on an "
+        "identified beech leaf, and rear the adult when possible."
+    ),
+    "Stigmella caryaefoliella": (
+        "Other Stigmella adults are not safely separated by a routine field photograph. "
+        "Document the complete mine, frass trail, larva, and identified hickory host; "
+        "without that evidence retain Stigmella or Nepticulidae."
+    ),
+    "Stigmella rosaefoliella": (
+        "Other Stigmella adults and rose-feeding leaf miners are the main confusion. "
+        "Photograph the complete mine and frass trail on an identified rose leaf, plus "
+        "the larva or a reared adult; otherwise retain Nepticulidae."
     ),
     "Perithemis tenera": (
         "No close regional amberwing is currently documented. Females can be mistaken "
@@ -1673,6 +1768,11 @@ def curated_peer_taxon(scientific_name):
     """Return fallback metadata for a vetted peer outside the regional pool."""
     record = CURATED_PEER_TAXA.get(scientific_name)
     return dict(record) if record else None
+
+
+def has_curated_comparison_disposition(scientific_name):
+    """Return whether a rotating target has named peers or a specific no-peer note."""
+    return bool(curated_peer_names(scientific_name)) or scientific_name in NO_NAMED_COMPARISON_NOTES
 
 
 def comparison_note(scientific_name, comparison_count):
