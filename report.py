@@ -55,7 +55,7 @@ HERO_WEBP = "/assets/hero/dji_fly_20251020_173830_305_1760996794506_photo_optimi
 # Change this only after the section-writer makes a substantial editorial
 # refresh across the report. Routine data syncs, generated output, code work,
 # and small copy corrections must not move the public "Content updated" date.
-MAJOR_CONTENT_UPDATED_AT = "2026-08-06T22:05:08-04:00"
+MAJOR_CONTENT_UPDATED_AT = "2026-08-17T10:01:23-04:00"
 
 
 def _asset_version(path):
@@ -2549,12 +2549,13 @@ def moth_view(df, stats):
         moth_stats(msum, comp)
         + property_profile_body(plant_count, msum["species"])
         + takeaway(
-            "The strongest next step is to connect adult moth records to the plants and "
-            "microhabitats that can support them. Willow, ash, sumac, apple, poplar and aspen, "
-            "oak, and hickory give practical places to look for larvae, rolls, mines, and feeding "
-            "sign. Adult photographs alone don't prove breeding or host use on the property, so "
-            "repeat records and host-linked evidence matter more than another isolated name. That "
-            "work should also add small moths a night sheet under-samples.", dark=True),
+            "The strongest new host-search lead is Elder Shoot Borer, recorded August 13; published "
+            "host records include elder and alder, both present here. Several additional photo-based "
+            "micromoth identifications remain provisional, but if confirmed they would add willow, "
+            "sumac, hornbeam or hazel, and mint-family plants to the search. Adult records and reported "
+            "associations don't prove breeding or host use on the property. Inspect those plants for "
+            "mines, rolls, larvae, frass, or feeding sign, and photograph the evidence with the plant.",
+            dark=True),
         intro=f"{msum['species']:,} moth species are confirmed on 30 riparian acres, including "
               f"{moth_county_firsts:,} first iNaturalist records for Tioga County. That county-first "
               "total strengthens a thin public baseline; it does not make every species rare. The "
@@ -2890,16 +2891,17 @@ def amphibians_view(df, stats):
         stats_band
         + takeaway(
             f"The {asum['species']}-species amphibian list is strong for incidental records, and activity "
-            "continues well beyond the spring chorus. Pickerel frog, eastern newt, gray treefrog, and "
-            "spring peeper all appeared in late July, followed by green frog on August 6. Red-backed and "
-            "northern slimy salamanders document the upland forest; the spotted salamander record makes "
-            "spring migration and egg-mass checks worthwhile. The clearest gap is the stream assemblage: "
-            "two-lined, Allegheny mountain dusky, northern dusky, and spring salamanders are all well "
-            "represented nearby but remain unrecorded here.", dark=True)
+            "continues well beyond the spring chorus. A Spring Salamander was reported on August 16, but "
+            "the entry has no photograph, audio, or field notes, so it is a documentation lead rather than "
+            "a confirmed property voucher. It focuses the next search on cold seeps and clean creek runs; "
+            "a documented repeat would establish occurrence, not by itself breeding or water quality. "
+            "Two-lined, Allegheny mountain dusky, and northern dusky salamanders remain the clearest gaps "
+            "in the stream assemblage.", dark=True)
         + amphibian_found_body(amp_found),
         intro="Frogs and salamanders are method- and season-dependent. The current list spans pond, "
               "wet-margin, and forest-floor species, but targeted stream and breeding-season surveys "
-              "remain sparse. Cool, damp days favor creek and seep checks for stream salamanders, while "
+              "remain sparse. The unvouchered Spring Salamander report makes a careful return to the exact "
+              "cold-water microhabitat especially worthwhile. Cool, damp days favor creek and seep checks, while "
               "warm evenings keep frogs visible around the pond and wet margins. Early-spring rainy "
               "nights remain essential for migration, choruses, and egg-mass searches.",
         dark=True))
@@ -2975,11 +2977,11 @@ def butterflies_view(df, stats):
         + butterfly_found_body(found),
         intro="The butterfly list is still effort-limited. "
               f"{bsum['species']} species beside {moth_species:,} moths says more about day-versus-night "
-              "survey effort than habitat. Recent additions of Dun Skipper and Common Wood-Nymph, plus "
-              "repeated Appalachian Brown, Northern Broken-Dash, Pearl Crescent, Eastern Tiger "
-              "Swallowtail, and Monarch records, show that daytime work is still adding grass-edge, "
-              "wet-edge, and woodland-associated species. The best next gains should come from repeated "
-              "spring and midsummer transects with both wing surfaces photographed.",
+              "survey effort than habitat. Mourning Cloak and Red-spotted Admiral joined the list on "
+              "August 9, followed by Least Skipper on August 11. Together they reward two complementary "
+              "methods: fruit bait and shaded woodland-edge watches for admirals and anglewings, plus slow "
+              "sunny passes through wet, grassy openings for small skippers. Photograph both wing surfaces "
+              "and repeat the same route through late summer.",
         dark=True))
     out.append(section(
         "butterfly-gap", "Yet to Find",
@@ -3022,7 +3024,9 @@ def odonates_view(df, stats):
         "odonates", "On the Wing",
         'Dragonflies <em class="text-hollow-300">&amp; Damselflies</em>',
         stats_band + odonate_found_body(found),
-        intro=f"{osum['species']} species already divide the property into distinct waters. The July additions of "
+        intro=f"{osum['species']} species already divide the property into distinct waters. Common Green Darner "
+              "joined the list on August 8, adding a large, mobile late-summer visitor; because this species "
+              "includes long-distance migrants, one adult does not show local emergence. The July additions of "
               "Halloween Pennant and White-faced Meadowhawk strengthen the sunny pond-edge and marshy-margin signal. "
               "Ebony Jewelwing follows shaded moving water along Michigan Creek; spreadwings, bluets, forktails, and "
               "Aurora Damsel work the pond and wet margins; skimmers patrol open water and sunny edges; darners and "
@@ -3263,7 +3267,7 @@ AMPHIBIAN_METHODS = [
     {"method": "Cold seep search",
      "where": "Cold, clean spring runs and seeps on the mesic slope where groundwater emerges; flip flat rocks and probe gravel in the spring head.",
      "when": "April–June daytime when seep water is cold (under ~55°F); also active on warm rainy nights.",
-     "targets": "Spring Salamander — a water-quality indicator and a notable find — plus larval Eurycea."},
+     "targets": "A photo-vouchered Spring Salamander record, plus larval Eurycea. Photograph the animal, microhabitat, and shelter rock, then replace the rock exactly as found."},
     {"method": "Vernal-pool night walk",
      "where": "Floodplain depressions and woodland vernal pools off the creek; headlamp the pool edges and the forest-floor migration approach.",
      "when": "The first warm rainy nights of spring, March into early April, air above 45°F, 9 PM–midnight.",
@@ -3345,12 +3349,13 @@ def build():
                    note=f"Each step marks a species' first record at Kingfisher Hollow. New steps after {public_s['observations']:,} records show that the inventory is still actively growing.")
         + takeaway(
             f"The curve is still gaining species after {public_s['observations']:,} records. The latest rise "
-            "came from close inspection as much as broad coverage: Dun Skipper and Common Wood-Nymph "
-            "extended the daytime butterfly list, while night work added underwings, leafminers, "
-            "leaffolders, and other small moths. Aspen Serpentine Leafminer, Sycamore Leaffolder, Cherry "
-            "Fruitworm, and Zimmerman Pine Moth also show how the plant inventory can guide the search, "
-            "although adult records alone don't prove host use on the property. Moth lighting still drives "
-            "the steepest runs, but no single method owns the remaining frontier."),
+            "came from different methods and different levels of evidence. Daytime work added Mourning Cloak, "
+            "Red-spotted Admiral, and Least Skipper; pond-edge work added Common Green Darner; night lighting "
+            "added Elder Shoot Borer and more micromoths; and close plant work produced a photo-based "
+            "rock-polypody identification awaiting confirmation. A Spring Salamander report without supporting "
+            "media remains a lead to re-document, not a confirmed voucher. "
+            "The contrast matters: strong records expand the ecological story, while provisional records sharpen "
+            "the next field check. No single method owns the remaining frontier."),
         intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Distinctiveness arc: public county contribution → rarity test ─────────
