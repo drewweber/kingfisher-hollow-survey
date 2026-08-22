@@ -373,14 +373,17 @@ def _seasonal_agg(sub, min_obs, max_species):
         return pd.DataFrame()
     sub["doy"] = sub["observed_on"].dt.dayofyear
     sub["label"] = sub["common_name"].fillna(sub["taxon_name"])
-    agg = sub.groupby("label").agg(
+    grouped = sub.groupby("label")
+    agg = grouped.agg(
         n=("id", "count"),
         first_doy=("doy", "min"),
         last_doy=("doy", "max"),
         median_doy=("doy", "median"),
-        q1=("doy", lambda s: s.quantile(0.25)),
-        q3=("doy", lambda s: s.quantile(0.75)),
-    ).reset_index()
+    )
+    quartiles = (grouped["doy"].quantile([0.25, 0.75]).unstack()
+                 .rename(columns={0.25: "q1", 0.75: "q3"})
+                 .reindex(columns=["q1", "q3"]))
+    agg = agg.join(quartiles).reset_index()
     agg = agg[agg["n"] >= min_obs]
     # Order by median appearance so the chart reads as a seasonal cascade.
     return agg.sort_values("median_doy").head(max_species)

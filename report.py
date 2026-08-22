@@ -878,18 +878,17 @@ def life_list_body(life, dark=False):
         name = r["label"]
         sci = esc(r.get("taxon_name") or "")
         grp = esc(r.get("group") or "Other")
-        order = esc(r.get("order_name") or "")
         family = esc(r.get("family_name") or "")
-        link = taxon_link(r["taxon_id"], name, cls="font-medium text-stone-800 hover:text-hollow-600")
+        link = taxon_link(r["taxon_id"], name, cls="ll-species-link")
         rows.append(f"""
-      <tr class="ll-row border-b border-stone-100" data-group="{grp}" data-order="{order}" data-family="{family}" data-name="{esc(name).lower()} {sci.lower()}">
-        <td class="ll-number py-2.5 pr-3 text-stone-400 text-sm text-right whitespace-nowrap">{int(r['list_number']):,}</td>
-        <td class="py-2.5 pr-4">{link}
-            <span class="text-stone-400 italic text-sm block sm:inline sm:ml-2">{sci}</span></td>
-        <td class="py-2.5 pr-4 text-stone-500 text-sm whitespace-nowrap hidden md:table-cell">{grp}</td>
-        <td class="py-2.5 pr-4 text-stone-500 text-sm text-right hidden sm:table-cell">{int(r['observations'])}</td>
-        <td class="py-2.5 pr-3 text-stone-400 text-xs sm:text-sm whitespace-nowrap text-right">{fdate(r['first_seen'])}</td>
-        <td class="py-2.5 text-stone-400 text-sm whitespace-nowrap text-right hidden md:table-cell">{fdate(r['last_seen'])}</td>
+      <tr class="ll-row" data-family="{family}">
+        <td class="ll-number">{int(r['list_number']):,}</td>
+        <td class="ll-species-cell">{link}
+            <span class="ll-scientific-name">{sci}</span></td>
+        <td class="ll-group-cell">{grp}</td>
+        <td class="ll-records-cell">{int(r['observations'])}</td>
+        <td class="ll-added-cell">{fdate(r['first_seen'])}</td>
+        <td class="ll-last-seen-cell">{fdate(r['last_seen'])}</td>
       </tr>""")
     return f"""
     <div class="max-w-4xl mx-auto">
@@ -2221,65 +2220,42 @@ def footer(code_updated, content_updated, data_updated):
 </footer>"""
 
 
-SCRIPTS = """
-<script>
-  const navbar=document.getElementById('navbar');
-  function updateNav(){const p=window.scrollY>60;navbar.classList.toggle('nav-transparent',!p);
-    navbar.classList.toggle('nav-solid',p);}
-  window.addEventListener('scroll',updateNav,{passive:true});updateNav();
-
-  // Compact survey index for phone and tablet widths.
-  const surveyMenu=document.getElementById('survey-menu'),
-        surveyMenuButton=document.getElementById('survey-menu-button');
-  function setSurveyMenu(open,restoreFocus=false){
-    if(!surveyMenu||!surveyMenuButton) return;
-    surveyMenu.classList.toggle('hidden',!open);
-    surveyMenu.setAttribute('aria-hidden',open?'false':'true');
-    surveyMenuButton.setAttribute('aria-expanded',open?'true':'false');
-    surveyMenuButton.setAttribute('aria-label',open?'Close survey index':'Open survey index');
-    surveyMenuButton.querySelector('.menu-open-icon')?.classList.toggle('hidden',open);
-    surveyMenuButton.querySelector('.menu-close-icon')?.classList.toggle('hidden',!open);
-    document.body.classList.toggle('survey-menu-open',open);
-    if(!open&&restoreFocus) surveyMenuButton.focus();
-  }
-  surveyMenuButton?.addEventListener('click',()=>{
-    setSurveyMenu(surveyMenuButton.getAttribute('aria-expanded')!=='true');
-  });
-  document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&surveyMenuButton?.getAttribute('aria-expanded')==='true'){
-      setSurveyMenu(false,true);
-    }
-  });
-  const wideNav=window.matchMedia('(min-width: 1280px)');
-  wideNav.addEventListener?.('change',event=>{if(event.matches)setSurveyMenu(false,false);});
-  document.querySelectorAll('#survey-menu a').forEach(link=>link.addEventListener('click',()=>{
-    const internal=link.getAttribute('href')?.startsWith('#');
-    setSurveyMenu(false,internal);
-    if(internal) requestAnimationFrame(()=>surveyMenuButton?.focus());
-  }));
-
+LIFE_LIST_SCRIPT = """
   // Life-list filters: broad group first, then family within that group.
   (function(){
-    const rows=[...document.querySelectorAll('.ll-row')],search=document.getElementById('ll-search'),
-          count=document.getElementById('ll-count'),sel=document.getElementById('ll-select'),
-          taxonSel=document.getElementById('ll-taxon-select');let group='all',family='';
+    function searchName(element){
+      const cell=element.cells[1],candidate=cell?.lastElementChild;
+      const scientificNode=candidate?.classList.contains('ll-scientific-name')?candidate:null;
+      const common=[...(cell?.childNodes||[])]
+        .filter(node=>node!==scientificNode).map(node=>node.textContent||'').join('').replace(/\\s+$/,'');
+      return (common+' '+(scientificNode?.textContent||'')).toLowerCase();
+    }
+    const rows=[...document.querySelectorAll('.ll-row')].map(element=>({
+      element,
+      name:searchName(element),
+      group:(element.cells[2]?.textContent||'').trim(),
+      family:element.dataset.family||''
+    }));
+    const search=document.getElementById('ll-search'),count=document.getElementById('ll-count'),
+          sel=document.getElementById('ll-select'),taxonSel=document.getElementById('ll-taxon-select');
+    let group='all',family='';
     if(!search||!count||!taxonSel) return;
     function updateTaxa(){
       family='';taxonSel.value='';
       if(group==='all'){
         taxonSel.disabled=true;taxonSel.innerHTML='<option value="">Choose a taxon group first…</option>';return;
       }
-      const families=[...new Set(rows.filter(r=>r.dataset.group===group&&r.dataset.family).map(r=>r.dataset.family))].sort();
+      const families=[...new Set(rows.filter(row=>row.group===group&&row.family).map(row=>row.family))].sort();
       taxonSel.disabled=!families.length;
       taxonSel.innerHTML=families.length
         ? '<option value="">All '+group.toLowerCase()+' families</option>'+families.map(f=>'<option value="'+f.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+f.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</option>').join('')
         : '<option value="">No family filter available</option>';
     }
     function apply(){const q=(search.value||'').toLowerCase(),visible=[];
-      rows.forEach(r=>{const okG=group==='all'||r.dataset.group===group,
-        okF=!family||r.dataset.family===family,okQ=!q||r.dataset.name.includes(q);const show=okG&&okF&&okQ;
-        r.style.display=show?'':'none';if(show)visible.push(r);});
-      visible.forEach((r,index)=>{const number=r.querySelector('.ll-number');
+      rows.forEach(row=>{const okG=group==='all'||row.group===group,
+        okF=!family||row.family===family,okQ=!q||row.name.includes(q);const show=okG&&okF&&okQ;
+        row.element.style.display=show?'':'none';if(show)visible.push(row.element);});
+      visible.forEach((row,index)=>{const number=row.querySelector('.ll-number');
         if(number)number.textContent=(visible.length-index).toLocaleString();});
       count.textContent=visible.length+' species shown';}
     function activate(g,fromSelect){group=g;
@@ -2291,25 +2267,12 @@ SCRIPTS = """
       document.querySelectorAll('.ll-filter').forEach(x=>{x.classList.remove('ll-active');x.setAttribute('aria-pressed','false');});
       activate(sel.value,true);}});
     taxonSel.addEventListener('change',()=>{family=taxonSel.value;apply();});
-    if(search)search.addEventListener('input',apply);apply();
+    search.addEventListener('input',apply);apply();
   })();
+"""
 
-  // Scroll reveal is progressive enhancement: the stylesheet leaves content
-  // visible until a working observer explicitly enables the animation.
-  const reveals=[...document.querySelectorAll('.reveal')];
-  const reduceMotion=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(reveals.length&&'IntersectionObserver' in window&&!reduceMotion){
-    try{
-      const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
-      reveals.forEach(el=>{
-        const rect=el.getBoundingClientRect();
-        if(rect.bottom>0&&rect.top<window.innerHeight) el.classList.add('in');
-        else io.observe(el);
-      });
-      document.documentElement.classList.add('scroll-reveal-ready');
-    }catch(_error){}
-  }
 
+PLOTLY_SCRIPT = """
   // Plotly and each chart payload load only as an individual card nears view.
   // Chart data lives in fingerprinted external scripts, avoiding initial HTML
   // parsing and retention for charts a reader never reaches.
@@ -2380,6 +2343,104 @@ SCRIPTS = """
     }),{rootMargin:'700px 0px'});
     charts.forEach(chart=>chartObserver.observe(chart));
   })();
+"""
+
+
+LOG_UPDATE_SCRIPT = """
+  // Log view: trigger a private survey data refresh.
+  (function(){
+    const btn=document.getElementById('trigger-update'),status=document.getElementById('trigger-update-status');
+    if(!btn||!status) return;
+    function setStatus(msg,kind){
+      status.textContent=msg;
+      status.className='text-xs '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-stone-400');
+    }
+    btn.addEventListener('click',async()=>{
+      let key=localStorage.getItem('khUpdateKey')||'';
+      if(!key){
+        key=window.prompt('Update key');
+        if(!key) return;
+        localStorage.setItem('khUpdateKey',key);
+      }
+      btn.disabled=true;
+      btn.classList.add('opacity-60','cursor-wait');
+      setStatus('Starting update…','pending');
+      try{
+        const res=await fetch('/api/update',{method:'POST',headers:{'x-kh-update-key':key}});
+        const data=await res.json().catch(()=>({}));
+        if(res.status===401){
+          localStorage.removeItem('khUpdateKey');
+          throw new Error('That update key was not accepted. Try again.');
+        }
+        if(!res.ok) throw new Error(data.detail||data.error||'The update could not be started.');
+        setStatus('Update started. New survey data should appear here in a few minutes.','ok');
+      }catch(err){
+        setStatus(err.message||'The update could not be started.','error');
+      }finally{
+        btn.disabled=false;
+        btn.classList.remove('opacity-60','cursor-wait');
+      }
+    });
+  })();
+"""
+
+
+_SCRIPT_SHELL = """
+<script>
+  const navbar=document.getElementById('navbar');
+  function updateNav(){const p=window.scrollY>60;navbar.classList.toggle('nav-transparent',!p);
+    navbar.classList.toggle('nav-solid',p);}
+  window.addEventListener('scroll',updateNav,{passive:true});updateNav();
+
+  // Compact survey index for phone and tablet widths.
+  const surveyMenu=document.getElementById('survey-menu'),
+        surveyMenuButton=document.getElementById('survey-menu-button');
+  function setSurveyMenu(open,restoreFocus=false){
+    if(!surveyMenu||!surveyMenuButton) return;
+    surveyMenu.classList.toggle('hidden',!open);
+    surveyMenu.setAttribute('aria-hidden',open?'false':'true');
+    surveyMenuButton.setAttribute('aria-expanded',open?'true':'false');
+    surveyMenuButton.setAttribute('aria-label',open?'Close survey index':'Open survey index');
+    surveyMenuButton.querySelector('.menu-open-icon')?.classList.toggle('hidden',open);
+    surveyMenuButton.querySelector('.menu-close-icon')?.classList.toggle('hidden',!open);
+    document.body.classList.toggle('survey-menu-open',open);
+    if(!open&&restoreFocus) surveyMenuButton.focus();
+  }
+  surveyMenuButton?.addEventListener('click',()=>{
+    setSurveyMenu(surveyMenuButton.getAttribute('aria-expanded')!=='true');
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&surveyMenuButton?.getAttribute('aria-expanded')==='true'){
+      setSurveyMenu(false,true);
+    }
+  });
+  const wideNav=window.matchMedia('(min-width: 1280px)');
+  wideNav.addEventListener?.('change',event=>{if(event.matches)setSurveyMenu(false,false);});
+  document.querySelectorAll('#survey-menu a').forEach(link=>link.addEventListener('click',()=>{
+    const internal=link.getAttribute('href')?.startsWith('#');
+    setSurveyMenu(false,internal);
+    if(internal) requestAnimationFrame(()=>surveyMenuButton?.focus());
+  }));
+
+__LIFE_LIST_SCRIPT__
+
+  // Scroll reveal is progressive enhancement: the stylesheet leaves content
+  // visible until a working observer explicitly enables the animation.
+  const reveals=[...document.querySelectorAll('.reveal')];
+  const reduceMotion=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reveals.length&&'IntersectionObserver' in window&&!reduceMotion){
+    try{
+      const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:0.08});
+      reveals.forEach(el=>{
+        const rect=el.getBoundingClientRect();
+        if(rect.bottom>0&&rect.top<window.innerHeight) el.classList.add('in');
+        else io.observe(el);
+      });
+      document.documentElement.classList.add('scroll-reveal-ready');
+    }catch(_error){}
+  }
+
+__PLOTLY_SCRIPT__
 
   // Each static page has one survey view. Keep the active field-index marker
   // in sync with the section in view without retaining hidden pages in memory.
@@ -2425,42 +2486,22 @@ SCRIPTS = """
     applyHash();
   })();
 
-  // Log view: trigger a private survey data refresh.
-  (function(){
-    const btn=document.getElementById('trigger-update'),status=document.getElementById('trigger-update-status');
-    if(!btn||!status) return;
-    function setStatus(msg,kind){
-      status.textContent=msg;
-      status.className='text-xs '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-stone-400');
-    }
-    btn.addEventListener('click',async()=>{
-      let key=localStorage.getItem('khUpdateKey')||'';
-      if(!key){
-        key=window.prompt('Update key');
-        if(!key) return;
-        localStorage.setItem('khUpdateKey',key);
-      }
-      btn.disabled=true;
-      btn.classList.add('opacity-60','cursor-wait');
-      setStatus('Starting update…','pending');
-      try{
-        const res=await fetch('/api/update',{method:'POST',headers:{'x-kh-update-key':key}});
-        const data=await res.json().catch(()=>({}));
-        if(res.status===401){
-          localStorage.removeItem('khUpdateKey');
-          throw new Error('That update key was not accepted. Try again.');
-        }
-        if(!res.ok) throw new Error(data.detail||data.error||'The update could not be started.');
-        setStatus('Update started. New survey data should appear here in a few minutes.','ok');
-      }catch(err){
-        setStatus(err.message||'The update could not be started.','error');
-      }finally{
-        btn.disabled=false;
-        btn.classList.remove('opacity-60','cursor-wait');
-      }
-    });
-  })();
+__LOG_UPDATE_SCRIPT__
 </script></body></html>"""
+
+
+def scripts(mode):
+    """Return the shared shell plus only the active route's feature code."""
+    if mode not in VIEW_CONFIG:
+        raise ValueError(f"Unknown survey view: {mode!r}")
+    return (_SCRIPT_SHELL
+            .replace("__LIFE_LIST_SCRIPT__",
+                     LIFE_LIST_SCRIPT if mode == "life-list" else "")
+            .replace("__PLOTLY_SCRIPT__",
+                     PLOTLY_SCRIPT if VIEW_CONFIG[mode]["plotly"] else "")
+            .replace("__LOG_UPDATE_SCRIPT__",
+                     LOG_UPDATE_SCRIPT if mode == "log" else "")
+            .replace("__PLOTLY_CDN__", PLOTLY_CDN))
 
 
 def _view_fragment(view_markup, mode):
@@ -2505,7 +2546,7 @@ def _write_survey_pages(view_markup, public_summary, county_firsts, moth_species
             _view_fragment(view_markup, mode),
             '</main>',
             footer(code_updated, content_updated, data_updated),
-            SCRIPTS.replace("__PLOTLY_CDN__", PLOTLY_CDN),
+            scripts(mode),
         ))
         out.write_text(html, encoding="utf-8")
         digests[out] = hashlib.sha256(out.read_bytes()).hexdigest()

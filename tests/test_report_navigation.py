@@ -2,6 +2,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import pandas as pd
+
 import report
 
 
@@ -193,10 +195,73 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertEqual(html.count('class="anchor-alias"'), 3)
 
     def test_subsection_hashes_update_the_single_page_field_index(self):
-        self.assertIn("Each static page has one survey view", report.SCRIPTS)
-        self.assertIn("const section=target?.matches('section[id]')", report.SCRIPTS)
-        self.assertIn("window.addEventListener('hashchange',applyHash)", report.SCRIPTS)
-        self.assertNotIn("function setMode(", report.SCRIPTS)
+        script = report.scripts("plants")
+        self.assertIn("Each static page has one survey view", script)
+        self.assertIn("const section=target?.matches('section[id]')", script)
+        self.assertIn("window.addEventListener('hashchange',applyHash)", script)
+        self.assertNotIn("function setMode(", script)
+
+    def test_each_route_gets_only_its_feature_script(self):
+        life = report.scripts("life-list")
+        overview = report.scripts("all")
+        moths = report.scripts("moths")
+        log = report.scripts("log")
+        plants = report.scripts("plants")
+
+        self.assertIn("Life-list filters", life)
+        self.assertNotIn("Life-list filters", overview)
+        self.assertIn("data-plotly-chart", overview)
+        self.assertIn(report.PLOTLY_CDN, overview)
+        self.assertIn("data-plotly-chart", moths)
+        self.assertNotIn("data-plotly-chart", life)
+        self.assertIn("trigger a private survey data refresh", log)
+        self.assertNotIn("trigger a private survey data refresh", plants)
+        for script in (life, overview, moths, log, plants):
+            self.assertNotIn("__LIFE_LIST_SCRIPT__", script)
+            self.assertNotIn("__PLOTLY_SCRIPT__", script)
+            self.assertNotIn("__LOG_UPDATE_SCRIPT__", script)
+
+    def test_life_list_rows_reuse_visible_text_for_search_metadata(self):
+        life = pd.DataFrame([
+            {
+                "first_seen": "2026-08-01",
+                "first_observed_at": "2026-08-01T12:00:00-04:00",
+                "last_seen": "2026-08-02",
+                "taxon_id": 123,
+                "label": "Example Bird",
+                "taxon_name": "Avis example",
+                "group": "Birds",
+                "family_name": "Exampleidae",
+                "observations": 2,
+            },
+            {
+                "first_seen": "2026-07-01",
+                "first_observed_at": "2026-07-01T12:00:00-04:00",
+                "last_seen": "2026-07-01",
+                "taxon_id": float("nan"),
+                "label": "Synthetic Bird",
+                "taxon_name": "Avis ficta",
+                "group": "Birds",
+                "family_name": "Exampleidae",
+                "observations": 1,
+            },
+        ])
+
+        html = report.life_list_body(life)
+
+        self.assertEqual(2, html.count('class="ll-row"'))
+        self.assertNotIn("data-order=", html)
+        self.assertNotIn("data-name=", html)
+        self.assertNotIn('<tr class="ll-row" data-group=', html)
+        self.assertIn('data-family="Exampleidae"', html)
+        self.assertIn('class="ll-species-cell"', html)
+        self.assertIn('class="ll-group-cell">Birds</td>', html)
+        self.assertIn("name:searchName(element)",
+                      report.LIFE_LIST_SCRIPT)
+        self.assertIn("return (common+' '+(scientificNode?.textContent||'')).toLowerCase()",
+                      report.LIFE_LIST_SCRIPT)
+        self.assertIn("group:(element.cells[2]?.textContent||'').trim()",
+                      report.LIFE_LIST_SCRIPT)
 
     def test_reveals_remain_visible_without_intersection_observer(self):
         styles = (Path(report.__file__).parent / "src/styles.css").read_text()
@@ -208,17 +273,17 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn(
             "if(reveals.length&&'IntersectionObserver' in window&&!reduceMotion){\n"
             "    try{",
-            report.SCRIPTS,
+            report.scripts("plants"),
         )
         self.assertIn(
             "document.documentElement.classList.add('scroll-reveal-ready');",
-            report.SCRIPTS,
+            report.scripts("plants"),
         )
         self.assertIn(
             "if('IntersectionObserver' in window){\n"
             "      try{\n"
             "        const sectionObserver=new IntersectionObserver",
-            report.SCRIPTS,
+            report.scripts("plants"),
         )
 
     def test_life_list_uses_the_dark_page_text_palette(self):
