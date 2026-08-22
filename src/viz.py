@@ -521,8 +521,11 @@ def nightly_species_calendar(nightly, dark=True):
         [0.55, "#3d8f72"],
         [1.0, "#bbdfd0"],
     ]
+    annotations = []
 
     for row_num, year in enumerate(years, start=1):
+        axis_suffix = "" if row_num == 1 else str(row_num)
+        axis_refs = {"xref": f"x{axis_suffix}", "yref": f"y{axis_suffix}"}
         year_start = pd.Timestamp(year=int(year), month=1, day=1)
         year_end = pd.Timestamp(year=int(year), month=12, day=31)
         grid_start = year_start - pd.Timedelta(days=year_start.weekday())
@@ -612,7 +615,7 @@ def nightly_species_calendar(nightly, dark=True):
                 if species_count / scale_max >= 0.62
                 else "#f7fbf9"
             )
-            fig.add_annotation(
+            annotations.append(dict(
                 x=week,
                 y=date.weekday(),
                 text=f"<b>{species_count}</b>",
@@ -622,9 +625,8 @@ def nightly_species_calendar(nightly, dark=True):
                     size=8 if species_count >= 100 else 9,
                     color=text_color,
                 ),
-                row=row_num,
-                col=1,
-            )
+                **axis_refs,
+            ))
 
         month_starts = [
             pd.Timestamp(year=int(year), month=month, day=1)
@@ -662,17 +664,17 @@ def nightly_species_calendar(nightly, dark=True):
             row=row_num,
             col=1,
         )
-        fig.add_annotation(
+        annotations.append(dict(
             x=-2.0,
             y=3,
             text=f"<b>{year}</b>",
             showarrow=False,
             font=dict(family=FONT, size=11, color=c["ink"]),
-            row=row_num,
-            col=1,
-        )
+            **axis_refs,
+        ))
 
     fig.update_layout(
+        annotations=annotations,
         height=155 * len(years) + 70,
         showlegend=False,
         font=dict(family=FONT, size=12, color=c["ink"]),

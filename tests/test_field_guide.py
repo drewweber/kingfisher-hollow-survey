@@ -347,18 +347,69 @@ class FieldGuideReleaseTests(unittest.TestCase):
             self.assertTrue(icon.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
             self.assertGreater(icon.stat().st_size, 100)
 
+    def test_published_reference_images_are_deduplicated_by_content(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "images").mkdir()
+            first = root / "first-source.jpg"
+            duplicate = root / "duplicate-source.jpg"
+            distinct = root / "distinct-source.jpg"
+            first.write_bytes(b"same reference image")
+            duplicate.write_bytes(b"same reference image")
+            distinct.write_bytes(b"different reference image")
+
+            first_path, first_output = field_guide._publish_image(first, root)
+            duplicate_path, duplicate_output = field_guide._publish_image(duplicate, root)
+            distinct_path, distinct_output = field_guide._publish_image(distinct, root)
+
+            self.assertEqual(first_path, duplicate_path)
+            self.assertEqual(first_output, duplicate_output)
+            self.assertNotEqual(first_path, distinct_path)
+            self.assertTrue(first_output.is_file())
+            self.assertTrue(distinct_output.is_file())
+            self.assertEqual(2, len(list((root / "images").iterdir())))
+
+    def test_offline_manifest_hashes_exact_asset_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "index.html").write_bytes(b"app shell")
+            (root / "app.js").write_bytes(b"application code")
+
+            manifest = field_guide._offline_asset_manifest(
+                root, ["./", "./index.html", "./app.js"]
+            )
+
+            self.assertEqual(
+                ["./", "./index.html", "./app.js"],
+                [row["path"] for row in manifest],
+            )
+            self.assertEqual(manifest[0]["sha256"], manifest[1]["sha256"])
+            self.assertNotEqual(manifest[1]["sha256"], manifest[2]["sha256"])
+            self.assertTrue(all(len(row["sha256"]) == 64 for row in manifest))
+
+    def test_offline_cache_version_changes_with_final_asset_bytes(self):
+        first = [{"path": "./app.js", "sha256": "a" * 64}]
+        changed = [{"path": "./app.js", "sha256": "b" * 64}]
+
+        self.assertNotEqual(
+            field_guide._offline_cache_version(first),
+            field_guide._offline_cache_version(changed),
+        )
+
     def test_service_worker_is_path_scoped_by_request_guard(self):
         worker = (ROOT / "field-guide" / "service-worker.js").read_text(encoding="utf-8")
         self.assertIn("self.registration.scope", worker)
         self.assertIn("requestUrl.pathname.startsWith(scopeUrl.pathname)", worker)
         self.assertNotIn("/api/update", worker)
 
-    def test_new_release_does_not_copy_stale_assets_between_caches(self):
+    def test_new_release_reuses_only_exact_content_addressed_assets(self):
         worker = (ROOT / "field-guide" / "service-worker.js").read_text(encoding="utf-8")
         cache_one = worker.split("async function cacheOne", 1)[1].split(
             "async function prepareOffline", 1
         )[0]
-        self.assertNotIn("caches.match", cache_one)
+        self.assertIn('url.searchParams.set("v", asset.sha256)', worker)
+        self.assertIn("const reusable = await caches.match(key)", cache_one)
+        self.assertIn("await cache.put(key, reusable)", cache_one)
         self.assertIn('fetch(url, { cache: "no-cache" })', cache_one)
 
     def test_runtime_reads_only_the_current_versioned_cache(self):
@@ -367,6 +418,10 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("const cache = await caches.open(CACHE_NAME)", fetch_handler)
         self.assertIn("await cache.match(event.request", fetch_handler)
         self.assertNotIn("await caches.match(event.request", fetch_handler)
+        self.assertIn(
+            'cache.match(absolute("./index.html"), { ignoreSearch: true })',
+            fetch_handler,
+        )
 
     def test_online_launch_checks_for_a_new_release_without_http_cache(self):
         app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")

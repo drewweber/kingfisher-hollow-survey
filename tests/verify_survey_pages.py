@@ -41,7 +41,7 @@ class _TagCounter(HTMLParser):
 # growth stays well below them.
 _BUDGETS = {
     "all": (180_000, 1_600),
-    "life-list": (2_500_000, 25_000),
+    "life-list": (1_400_000, 25_000),
     "moths": (250_000, 3_000),
     "log": (900_000, 12_000),
 }
@@ -103,6 +103,18 @@ def main() -> int:
             _fail(errors, route, "page-specific canonical URL is missing")
         if f'data-mode="{mode}"' not in html:
             _fail(errors, route, "body mode does not match its route")
+
+        route_features = {
+            "Life-list filters": mode == "life-list",
+            "Plotly and each chart payload": bool(config["plotly"]),
+            "trigger a private survey data refresh": mode == "log",
+        }
+        for marker, expected in route_features.items():
+            if (marker in html) != expected:
+                _fail(errors, route, f"route-specific script marker mismatch: {marker}")
+        if mode == "life-list":
+            if re.search(r'<tr class="ll-row"[^>]*data-(?:name|order|group)=', html):
+                _fail(errors, route, "Life List repeats derivable row metadata")
 
         payloads = _PAYLOAD_RE.findall(html)
         chart_elements = _CHART_ELEMENT_RE.findall(html)

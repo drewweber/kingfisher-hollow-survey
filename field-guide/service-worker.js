@@ -1,22 +1,48 @@
 const VERSION = __VERSION__;
-const CACHE_NAME = `kh-field-${VERSION}`;
+const CACHE_VERSION = __CACHE_VERSION__;
+const CACHE_NAME = `kh-field-${CACHE_VERSION}`;
 const CACHE_PREFIX = "kh-field-";
 const ASSETS = __ASSETS__;
 
 const absolute = (path) => new URL(path, self.registration.scope).toString();
+const cacheKey = (asset) => {
+  const url = new URL(asset.path, self.registration.scope);
+  url.searchParams.set("v", asset.sha256);
+  return url.toString();
+};
 
-async function cacheOne(cache, path) {
-  const url = absolute(path);
+async function responseSha256(response) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    await response.clone().arrayBuffer(),
+  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function cacheOne(cache, asset) {
+  const key = cacheKey(asset);
+  if (await cache.match(key)) return;
+  const reusable = await caches.match(key);
+  if (reusable) {
+    await cache.put(key, reusable);
+    return;
+  }
+  const url = absolute(asset.path);
   const response = await fetch(url, { cache: "no-cache" });
-  if (!response.ok) throw new Error(`Could not cache ${path}: ${response.status}`);
-  await cache.put(url, response);
+  if (!response.ok) throw new Error(`Could not cache ${asset.path}: ${response.status}`);
+  if (await responseSha256(response) !== asset.sha256) {
+    throw new Error(`Asset changed while preparing offline access: ${asset.path}`);
+  }
+  await cache.put(key, response);
 }
 
 async function prepareOffline() {
   const cache = await caches.open(CACHE_NAME);
   let complete = 0;
-  for (const path of ASSETS) {
-    await cacheOne(cache, path);
+  for (const asset of ASSETS) {
+    await cacheOne(cache, asset);
     complete += 1;
     const clients = await self.clients.matchAll({ includeUncontrolled: true });
     for (const client of clients) {
@@ -29,8 +55,8 @@ async function prepareOffline() {
 async function verifyOffline() {
   const cache = await caches.open(CACHE_NAME);
   const missing = [];
-  for (const path of ASSETS) {
-    if (!(await cache.match(absolute(path)))) missing.push(path);
+  for (const asset of ASSETS) {
+    if (!(await cache.match(cacheKey(asset)))) missing.push(asset.path);
   }
   return { ready: missing.length === 0, missing };
 }
@@ -102,7 +128,7 @@ self.addEventListener("fetch", (event) => {
       return response;
     } catch (error) {
       if (event.request.mode === "navigate") {
-        const app = await caches.match(absolute("./index.html"));
+        const app = await cache.match(absolute("./index.html"), { ignoreSearch: true });
         if (app) return app;
       }
       throw error;

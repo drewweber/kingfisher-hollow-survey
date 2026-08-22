@@ -117,12 +117,61 @@ class MothNightlySpeciesTests(unittest.TestCase):
         self.assertIn("12</td>", html)
         self.assertIn("44</td>", html)
         self.assertIn("Blank dates have no moth report", html)
+        self.assertIn('"xref":"x2"', html)
+        self.assertIn('"yref":"y2"', html)
 
     def test_calendar_empty_state_explains_next_step(self):
         html = viz.nightly_species_calendar(pd.DataFrame())
 
         self.assertIn("No nightly moth reports yet", html)
         self.assertIn("Add observations", html)
+
+    def test_seasonal_aggregation_keeps_exact_quartiles(self):
+        observations = pd.DataFrame([
+            {
+                "id": index,
+                "taxon_id": 1,
+                "taxon_name": "Exempla motha",
+                "common_name": "Example Moth",
+                "observed_on": pd.Timestamp(date),
+            }
+            for index, date in enumerate(
+                ["2026-01-01", "2026-01-05", "2026-01-09", "2026-01-13"],
+                start=1,
+            )
+        ])
+
+        result = analyze._seasonal_agg(observations, min_obs=1, max_species=10)
+
+        self.assertEqual(
+            ["label", "n", "first_doy", "last_doy", "median_doy", "q1", "q3"],
+            list(result.columns),
+        )
+        row = result.iloc[0]
+        self.assertEqual("Example Moth", row["label"])
+        self.assertEqual(4, row["n"])
+        self.assertEqual(1, row["first_doy"])
+        self.assertEqual(13, row["last_doy"])
+        self.assertEqual(7, row["median_doy"])
+        self.assertEqual(4, row["q1"])
+        self.assertEqual(10, row["q3"])
+
+    def test_seasonal_aggregation_handles_rows_without_a_usable_label(self):
+        observations = pd.DataFrame([{
+            "id": 1,
+            "taxon_id": 1,
+            "taxon_name": None,
+            "common_name": None,
+            "observed_on": pd.Timestamp("2026-01-01"),
+        }])
+
+        result = analyze._seasonal_agg(observations, min_obs=1, max_species=10)
+
+        self.assertTrue(result.empty)
+        self.assertEqual(
+            ["label", "n", "first_doy", "last_doy", "median_doy", "q1", "q3"],
+            list(result.columns),
+        )
 
 
 if __name__ == "__main__":

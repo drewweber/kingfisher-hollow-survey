@@ -46,7 +46,7 @@ jobs:
           set -euo pipefail
           PROJECT_ID=249580
           LATEST=$(curl -s --max-time 30 \
-            "https://api.inaturalist.org/v1/observations?project_id=${PROJECT_ID}&order_by=id&order=desc&per_page=1" \
+            "https://api.inaturalist.org/v1/observations?project_id=${PROJECT_ID}&order_by=id&order=desc&per_page=1&only_id=true" \
             | jq '.results[0].id // 0')
           if [ -f data/inat.db ]; then
             HAVE=$(sqlite3 data/inat.db "SELECT COALESCE(MAX(id),0) FROM property_obs" 2>/dev/null || echo 0)
@@ -57,14 +57,17 @@ jobs:
           fi
           HAVE=${HAVE:-0}
           UPDATED=0
-          if [ -n "$SYNCED" ]; then
+          # A new ID already guarantees a dispatch, whose property sync also
+          # processes edits. Only make the second poll when it can affect the
+          # decision, and request no result rows because only the count is read.
+          if [ "${LATEST:-0}" -le "${HAVE:-0}" ] && [ -n "$SYNCED" ]; then
             UPDATED_SINCE="${SYNCED/ /T}Z"
             UPDATED=$(curl -s --max-time 30 --get \
               --data-urlencode "project_id=${PROJECT_ID}" \
               --data-urlencode "updated_since=${UPDATED_SINCE}" \
               --data-urlencode "order_by=updated_at" \
               --data-urlencode "order=desc" \
-              --data-urlencode "per_page=1" \
+              --data-urlencode "per_page=0" \
               "https://api.inaturalist.org/v1/observations" \
               | jq '.total_results // 0')
           fi

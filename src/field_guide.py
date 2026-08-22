@@ -600,6 +600,46 @@ def _image_data(photo, relative_path, destination, alt):
     }
 
 
+def _publish_image(source, output_dir):
+    """Copy one unique image binary into the generated offline package."""
+    source = Path(source)
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    relative_path = f"images/{digest[:24]}.jpg"
+    destination = Path(output_dir) / relative_path
+    if not destination.exists():
+        shutil.copy2(source, destination)
+    return relative_path, destination
+
+
+def _offline_asset_manifest(output_dir, paths):
+    """Describe exact release bytes for safe reuse across versioned caches."""
+    output_dir = Path(output_dir)
+    assets = []
+    missing = []
+    for path in paths:
+        relative = "index.html" if path == "./" else path.removeprefix("./")
+        source = output_dir / relative
+        if not source.is_file():
+            missing.append(path)
+            continue
+        assets.append({
+            "path": path,
+            "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        })
+    if missing:
+        raise ValueError(
+            "Offline asset manifest references missing files: "
+            + ", ".join(missing)
+        )
+    return assets
+
+
+def _offline_cache_version(assets):
+    """Fingerprint the final offline manifest independently of the data version."""
+    manifest = json.dumps(assets, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(manifest).hexdigest()[:16]
+
+
 def _validate_targets(targets, output_dir=None):
     required_text = (
         "common_name", "scientific_name", "season_label", "target_reason",
@@ -726,9 +766,9 @@ def build(effective_date=None, output_dir=None):
     for target in targets:
         images = []
         for index, photo in enumerate(taxa[target["id"]]["photos"][:TARGET_IMAGE_COUNT], start=1):
-            relative_path = f"images/target-{target['id']}-{index}.jpg"
-            destination = output_dir / relative_path
-            shutil.copy2(image_paths[_photo_key(photo)], destination)
+            relative_path, destination = _publish_image(
+                image_paths[_photo_key(photo)], output_dir
+            )
             images.append(_image_data(
                 photo,
                 relative_path,
@@ -742,10 +782,9 @@ def build(effective_date=None, output_dir=None):
         for lookalike in target.get("lookalikes") or []:
             taxon_id = int(lookalike["taxon_id"])
             photo = taxa[taxon_id]["photos"][0]
-            relative_path = f"images/lookalike-{taxon_id}.jpg"
-            destination = output_dir / relative_path
-            if not destination.exists():
-                shutil.copy2(image_paths[_photo_key(photo)], destination)
+            relative_path, destination = _publish_image(
+                image_paths[_photo_key(photo)], output_dir
+            )
             lookalike.update(_image_data(
                 photo,
                 relative_path,
@@ -780,7 +819,7 @@ def build(effective_date=None, output_dir=None):
     _write_png(output_dir / "icons" / "icon-512.png", 512)
     _write_png(output_dir / "icons" / "icon-maskable-512.png", 512, maskable=True)
 
-    assets = [
+    asset_paths = [
         "./", "./index.html", "./styles.css", "./app.js",
         "./manifest.webmanifest", "./targets.json",
         "./icons/icon-192.png", "./icons/apple-touch-icon.png", "./icons/icon-512.png",
@@ -792,15 +831,11 @@ def build(effective_date=None, output_dir=None):
             if image.get("image")
         }),
     ]
-    missing_assets = [
-        asset for asset in assets
-        if asset not in {"./"} and not (output_dir / asset.removeprefix("./")).is_file()
-    ]
-    if missing_assets:
-        raise ValueError("Offline asset manifest references missing files: "
-                         + ", ".join(missing_assets))
+    assets = _offline_asset_manifest(output_dir, asset_paths)
+    cache_version = _offline_cache_version(assets)
     sw = SW_TEMPLATE.read_text(encoding="utf-8")
     sw = sw.replace("__VERSION__", json.dumps(version))
+    sw = sw.replace("__CACHE_VERSION__", json.dumps(cache_version))
     sw = sw.replace("__ASSETS__", json.dumps(assets, indent=2))
     (output_dir / "service-worker.js").write_text(sw, encoding="utf-8")
 
@@ -829,7 +864,7 @@ def build(effective_date=None, output_dir=None):
             f"Offline field guide is {package_bytes / 1024 / 1024:.1f} MB; limit is 75 MB"
         )
     print(
-        f"Wrote {output_dir} ({len(targets)} targets, "
+        f"Wrote {output_dir} ({len(targets)} targets, {len(assets)} offline assets, "
         f"{package_bytes / 1024 / 1024:.1f} MB, version {version})"
     )
     return output_dir
