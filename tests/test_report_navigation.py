@@ -77,7 +77,7 @@ class ReportNavigationTests(unittest.TestCase):
 
         self.assertIn('aria-label="Species totals by survey group"', html)
         self.assertIn("+ first documented in 30 days", html)
-        self.assertIn("— unavailable", html)
+        self.assertNotIn("— unavailable", html)
         self.assertIn("tabular-nums", html)
         self.assertEqual(len(modes), html.count("<li>"))
         self.assertEqual(len(modes), html.count("min-h-11 min-w-20"))
