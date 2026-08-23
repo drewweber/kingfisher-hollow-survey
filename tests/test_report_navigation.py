@@ -68,17 +68,35 @@ class ReportNavigationTests(unittest.TestCase):
             mode: total
             for mode, total in zip(modes, [1234, 0, 33, 141, 22, 261, 17])
         }
+        recent = {
+            mode: total
+            for mode, total in zip(modes, [42, 0, 3, None, 0, 6, 1])
+        }
 
-        html = report.log_taxa_total_pills(totals)
+        html = report.log_taxa_total_pills(totals, recent)
 
         self.assertIn('aria-label="Species totals by survey group"', html)
+        self.assertIn("+ first documented in 30 days", html)
+        self.assertIn("— unavailable", html)
         self.assertIn("tabular-nums", html)
         self.assertEqual(len(modes), html.count("<li>"))
+        self.assertEqual(len(modes), html.count("min-h-11 min-w-20"))
+        self.assertEqual(len(modes), html.count("focus-visible:ring-2"))
+        self.assertNotIn("rounded-full", html)
         for mode in modes:
             config = report.VIEW_CONFIG[mode]
             self.assertIn(f'href="{config["route"]}"', html)
-            self.assertIn(f'<span>{config["label"]}</span>', html)
+            self.assertIn(f'>{config["label"]}</span>', html)
             self.assertIn(f'>{totals[mode]:,}</span>', html)
+        self.assertIn(">+42</span>", html)
+        self.assertIn("42 first documented in the last 30 days", html)
+        self.assertIn("none first documented in the last 30 days", html)
+        self.assertIn("30-day first-documented count unavailable", html)
+        self.assertIn(
+            'class="text-xs font-semibold text-stone-600" aria-hidden="true">—</span>',
+            html,
+        )
+        self.assertNotIn(">+0</span>", html)
         self.assertNotIn('href="/log/"', html)
         self.assertNotIn("Overview", html)
         self.assertNotIn("Life list", html)
@@ -86,6 +104,43 @@ class ReportNavigationTests(unittest.TestCase):
     def test_log_taxa_pills_require_a_total_for_every_group_page(self):
         with self.assertRaisesRegex(ValueError, "Missing Log taxon totals"):
             report.log_taxa_total_pills({})
+
+    def test_log_taxa_pills_require_recent_data_for_every_group_when_supplied(self):
+        totals = {
+            mode: 1
+            for mode, config in report.VIEW_CONFIG.items()
+            if config.get("taxa_group")
+        }
+        with self.assertRaisesRegex(ValueError, "Missing Log recent taxon counts"):
+            report.log_taxa_total_pills(totals, {})
+
+    def test_log_taxa_pills_explain_when_all_recent_counts_are_unavailable(self):
+        totals = {
+            mode: 1
+            for mode, config in report.VIEW_CONFIG.items()
+            if config.get("taxa_group")
+        }
+        recent = {mode: None for mode in totals}
+
+        html = report.log_taxa_total_pills(totals, recent)
+
+        self.assertIn("30-day data unavailable", html)
+        self.assertNotIn("+ first documented in 30 days", html)
+        self.assertEqual(len(totals), html.count('aria-hidden="true">—</span>'))
+
+    def test_log_taxa_pills_do_not_claim_recent_data_when_none_was_supplied(self):
+        totals = {
+            mode: 1
+            for mode, config in report.VIEW_CONFIG.items()
+            if config.get("taxa_group")
+        }
+
+        html = report.log_taxa_total_pills(totals)
+
+        self.assertIn("Species totals", html)
+        self.assertNotIn("first documented", html)
+        self.assertNotIn("unavailable", html)
+        self.assertNotIn(">—</span>", html)
 
     def test_log_update_control_leads_with_the_last_data_sync_time(self):
         html = report.log_update_control(
@@ -152,6 +207,26 @@ class ReportNavigationTests(unittest.TestCase):
                 datetime(2026, 8, 23, 20, 15, tzinfo=timezone.utc),
                 report.data_updated_at(),
             )
+
+    def test_data_updated_at_can_scope_the_window_to_property_syncs(self):
+        connection = mock.MagicMock()
+        connection.execute.return_value.fetchone.return_value = {
+            "t": "2026-08-23 20:15:00",
+        }
+        context = mock.MagicMock()
+        context.__enter__.return_value = connection
+
+        with mock.patch.object(report, "connect", return_value=context):
+            updated = report.data_updated_at("property")
+
+        self.assertEqual(
+            datetime(2026, 8, 23, 20, 15, tzinfo=timezone.utc),
+            updated,
+        )
+        connection.execute.assert_called_once_with(
+            "SELECT MAX(synced_at) AS t FROM sync_log WHERE source = ?",
+            ("property",),
+        )
 
     def test_data_updated_date_does_not_claim_a_sync_when_none_exists(self):
         connection = mock.MagicMock()
@@ -220,6 +295,157 @@ class ReportNavigationTests(unittest.TestCase):
             "plants": 5,
             "amphibians": 5,
         }, totals)
+
+    def test_recent_taxa_counts_use_first_seen_dates_in_a_30_day_window(self):
+        def roster(*ids):
+            return pd.DataFrame({"taxon_id": ids})
+
+        observations = pd.DataFrame({
+            "taxon_id": [1, 1, 2, 10, 11, 20, 30, 40, 50, 60, 999],
+            "observed_on": pd.to_datetime([
+                "2026-07-25",  # window boundary, counted once despite duplicate
+                "2026-08-20",
+                "2026-07-24",  # one day before the window
+                "2026-08-23",
+                "2026-08-24",  # future observation is excluded
+                "2026-07-01",
+                "2026-07-25",
+                "2026-08-10",
+                "2026-07-24",
+                "2026-08-01",
+                "2026-08-12",  # recent, but not on a page roster
+            ]),
+        })
+        loaders = {
+            "load_butterflies": roster(10, 11),
+            "load_odonates": roster(20),
+            "load_mammals": roster(30),
+            "load_plants": roster(40),
+            "load_amphibians": roster(50),
+            "load_reptiles": roster(60),
+        }
+        patches = {
+            name: mock.Mock(return_value=value)
+            for name, value in loaders.items()
+        }
+        with mock.patch.multiple(report.analyze, **patches):
+            recent = report.taxa_page_recent_species(
+                observations,
+                birds=pd.DataFrame(),
+                moths=roster(1, 2),
+                as_of=datetime(2026, 8, 23, 16, tzinfo=timezone.utc),
+            )
+
+        self.assertEqual({
+            "moths": 1,
+            "butterflies": 1,
+            "odonates": 0,
+            "birds": None,
+            "mammals": 1,
+            "plants": 1,
+            "amphibians": 1,
+        }, recent)
+
+    def test_recent_taxa_counts_are_unavailable_when_roster_coverage_is_missing(self):
+        empty = pd.DataFrame({"taxon_id": pd.Series(dtype="int64")})
+        loaders = {
+            "load_butterflies": empty,
+            "load_odonates": empty,
+            "load_mammals": pd.DataFrame({"taxon_id": [30]}),
+            "load_plants": empty,
+            "load_amphibians": empty,
+            "load_reptiles": empty,
+        }
+        patches = {
+            name: mock.Mock(return_value=value)
+            for name, value in loaders.items()
+        }
+        observations = pd.DataFrame({
+            "taxon_id": pd.Series(dtype="int64"),
+            "observed_on": pd.to_datetime([]),
+        })
+        with mock.patch.multiple(report.analyze, **patches):
+            recent = report.taxa_page_recent_species(
+                observations,
+                birds=pd.DataFrame(),
+                moths=empty,
+                as_of=datetime(2026, 8, 23, tzinfo=timezone.utc),
+            )
+
+        self.assertIsNone(recent["mammals"])
+        self.assertEqual(0, recent["moths"])
+        self.assertIsNone(recent["birds"])
+
+    def test_recent_taxa_counts_include_older_infraspecific_documentation(self):
+        empty = pd.DataFrame({
+            "taxon_id": pd.Series(dtype="int64"),
+            "taxon_name": pd.Series(dtype="object"),
+        })
+        loaders = {
+            "load_butterflies": pd.DataFrame({
+                "taxon_id": [60607],
+                "taxon_name": ["Limenitis arthemis"],
+            }),
+            "load_odonates": empty,
+            "load_mammals": empty,
+            "load_plants": pd.DataFrame({
+                "taxon_id": [46142],
+                "taxon_name": ["Quercus alba"],
+            }),
+            "load_amphibians": empty,
+            "load_reptiles": empty,
+        }
+        patches = {
+            name: mock.Mock(return_value=value)
+            for name, value in loaders.items()
+        }
+        observations = pd.DataFrame({
+            "taxon_id": [58585, 60607, 999999, 46142],
+            "taxon_name": [
+                "Limenitis arthemis astyanax",
+                "Limenitis arthemis",
+                "Quercus alba × Quercus rubra",
+                "Quercus alba",
+            ],
+            "rank": ["subspecies", "species", "hybrid", "species"],
+            "observed_on": pd.to_datetime([
+                "2026-06-13", "2026-08-09", "2026-06-01", "2026-08-10",
+            ]),
+        })
+        with mock.patch.multiple(report.analyze, **patches):
+            recent = report.taxa_page_recent_species(
+                observations,
+                birds=pd.DataFrame(),
+                moths=empty,
+                as_of=datetime(2026, 8, 23, 16, tzinfo=timezone.utc),
+            )
+
+        self.assertEqual(0, recent["butterflies"])
+        self.assertEqual(1, recent["plants"])
+
+    def test_recent_taxa_counts_are_unavailable_without_a_property_sync_time(self):
+        empty = pd.DataFrame({"taxon_id": pd.Series(dtype="int64")})
+        loaders = {
+            "load_butterflies": empty,
+            "load_odonates": empty,
+            "load_mammals": empty,
+            "load_plants": empty,
+            "load_amphibians": empty,
+            "load_reptiles": empty,
+        }
+        patches = {
+            name: mock.Mock(return_value=value)
+            for name, value in loaders.items()
+        }
+        with mock.patch.multiple(report.analyze, **patches):
+            recent = report.taxa_page_recent_species(
+                pd.DataFrame(columns=["taxon_id", "observed_on"]),
+                birds=pd.DataFrame(),
+                moths=empty,
+                as_of=None,
+            )
+
+        self.assertTrue(all(value is None for value in recent.values()))
 
     def test_moth_index_has_one_inventory_status_chapter(self):
         links = report.VIEW_CONFIG["moths"]["links"]
