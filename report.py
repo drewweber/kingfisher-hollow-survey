@@ -20,6 +20,7 @@ import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from sqlite3 import Error as SQLiteError
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
@@ -1908,10 +1909,56 @@ def _weather_line(w):
     return " · ".join(parts)
 
 
-def activity_log_body(log_entries, weather_cache):
+def log_update_control(updated_at):
+    """Render the latest sync time beside the Log's private refresh action."""
+    if updated_at is None:
+        timestamp_html = (
+            '<span class="whitespace-nowrap font-medium text-stone-500">'
+            'Time unavailable</span>'
+        )
+    else:
+        if updated_at.tzinfo is None:
+            updated_at = updated_at.replace(tzinfo=timezone.utc)
+        et = updated_at.astimezone(_EASTERN)
+        hour = et.hour % 12 or 12
+        ampm = "AM" if et.hour < 12 else "PM"
+        readable = f"{et.strftime('%b')} {et.day} · {hour}:{et.strftime('%M')} {ampm} ET"
+        iso = updated_at.astimezone(timezone.utc).isoformat(timespec="seconds")
+        iso = iso.replace("+00:00", "Z")
+        timestamp_html = (
+            f'<time datetime="{iso}" '
+            'class="whitespace-nowrap font-medium text-stone-600 tabular-nums">'
+            f'{readable}</time>'
+        )
+    return (
+        '<div class="self-center flex min-h-11 flex-wrap items-center justify-center gap-2 text-xs">'
+        '<span class="flex flex-col items-center leading-4 sm:items-end">'
+        '<span class="text-stone-400">Last updated</span>'
+        f'{timestamp_html}'
+        '</span>'
+        '<button id="trigger-update" type="button" '
+        'aria-label="Check for updates" aria-describedby="trigger-update-status" '
+        'class="inline-flex min-h-11 items-center gap-1 rounded-full px-2 font-semibold text-hollow-700 '
+        'hover:bg-hollow-50 hover:text-hollow-800 focus-visible:outline-none focus-visible:ring-2 '
+        'focus-visible:ring-hollow-300">'
+        '<span class="text-sm leading-none" aria-hidden="true">↻</span>'
+        'Check now'
+        '</button>'
+        '</div>'
+        '<span id="trigger-update-status" class="text-xs text-stone-400" '
+        'role="status" aria-live="polite"></span>'
+    )
+
+
+def activity_log_body(log_entries, weather_cache, updated_at):
     """Render the full field journal as a timeline of dated entries."""
     if not log_entries:
-        return '<p class="text-center text-stone-500">No entries yet.</p>'
+        return (
+            '<div class="mx-auto flex max-w-3xl flex-col items-center gap-3">'
+            f'{log_update_control(updated_at)}'
+            '<p class="text-center text-stone-500">No entries yet.</p>'
+            '</div>'
+        )
 
     month_names = ["", "January", "February", "March", "April", "May", "June",
                    "July", "August", "September", "October", "November", "December"]
@@ -1929,18 +1976,12 @@ def activity_log_body(log_entries, weather_cache):
             update_control = ""
             if not update_control_added:
                 update_control_added = True
-                update_control = (
-                    '<button id="trigger-update" type="button" '
-                    'class="self-center text-xs text-stone-400 transition hover:text-hollow-700 focus:outline-none focus:ring-2 '
-                    'focus:ring-hollow-300 rounded-sm">Check for updates...</button>'
-                    '<span id="trigger-update-status" class="text-xs text-stone-400" '
-                    'role="status" aria-live="polite"></span>'
-                )
+                update_control = log_update_control(updated_at)
             html_parts.append(
                 f'<div class="flex items-center gap-4 mt-12 mb-6 first:mt-0">'
                 f'<span class="font-serif text-3xl font-bold text-stone-900">{year}</span>'
-                f'<span class="flex-1 flex flex-col gap-1.5">{update_control}'
-                f'<span class="h-px bg-stone-200"></span></span></div>'
+                f'<div class="flex-1 flex flex-col gap-1.5">{update_control}'
+                f'<span class="h-px bg-stone-200"></span></div></div>'
             )
 
         has_morning = entry.get("has_morning", False)
@@ -2255,16 +2296,29 @@ def _content_updated():
     return "—"
 
 
-def data_updated_date():
-    """When the iNat data was last synced."""
+def data_updated_at():
+    """Return the latest iNat sync as an aware UTC datetime, if available."""
     try:
         with connect() as conn:
             row = conn.execute("SELECT MAX(synced_at) AS t FROM sync_log").fetchone()
-        if row and row["t"]:
-            return _fmt_dt(datetime.fromisoformat(row["t"].replace(" ", "T")).astimezone())
-    except Exception:
-        pass
-    return _fmt_dt(datetime.now(timezone.utc).astimezone())
+        raw = row["t"] if row else None
+        if not isinstance(raw, str) or not raw.strip():
+            return None
+        normalized = raw.strip().replace(" ", "T", 1)
+        if normalized.endswith("Z"):
+            normalized = f"{normalized[:-1]}+00:00"
+        synced_at = datetime.fromisoformat(normalized)
+        if synced_at.tzinfo is None:
+            synced_at = synced_at.replace(tzinfo=timezone.utc)
+        return synced_at.astimezone(timezone.utc)
+    except (IndexError, KeyError, OSError, SQLiteError, TypeError, ValueError):
+        return None
+
+
+def data_updated_date():
+    """Format the latest iNat sync for the report footer."""
+    updated_at = data_updated_at()
+    return _fmt_dt(updated_at) if updated_at else "—"
 
 
 def footer(code_updated, content_updated, data_updated):
@@ -3640,11 +3694,13 @@ def build():
     log_entries = _timed("activity-log", analyze.activity_log, df, stats)
     weather_cache = _timed("load-weather", weather.load_weather)
     id_changes = _timed("id-changes", _load_id_changes)
+    last_data_sync = _timed("data-updated", data_updated_at)
+    data_updated = _fmt_dt(last_data_sync) if last_data_sync else "—"
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
         log_taxa_total_pills(taxa_page_totals)
-        + activity_log_body(log_entries, weather_cache)
+        + activity_log_body(log_entries, weather_cache, last_data_sync)
         + id_changes_body(id_changes)
         + log_resource_links(),
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
@@ -3657,7 +3713,7 @@ def build():
         moth_head_count,
         _code_updated(),
         _content_updated(),
-        data_updated_date(),
+        data_updated,
     )
     _timed("public-api", public_api.build)
     _timed("social-export", social_export.build)

@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -85,6 +86,101 @@ class ReportNavigationTests(unittest.TestCase):
     def test_log_taxa_pills_require_a_total_for_every_group_page(self):
         with self.assertRaisesRegex(ValueError, "Missing Log taxon totals"):
             report.log_taxa_total_pills({})
+
+    def test_log_update_control_leads_with_the_last_data_sync_time(self):
+        html = report.log_update_control(
+            datetime(2026, 8, 23, 20, 17, tzinfo=timezone.utc)
+        )
+
+        self.assertIn('<button id="trigger-update" type="button"', html)
+        self.assertIn('aria-label="Check for updates"', html)
+        self.assertIn('aria-describedby="trigger-update-status"', html)
+        self.assertIn("Last updated", html)
+        self.assertLess(html.index("Last updated"), html.index('<button id="trigger-update"'))
+        self.assertIn(
+            '<time datetime="2026-08-23T20:17:00Z"',
+            html,
+        )
+        self.assertIn("Aug 23 · 4:17 PM ET</time>", html)
+        self.assertIn('aria-hidden="true">↻</span>', html)
+        self.assertIn("Check now</button>", html)
+        self.assertIn("min-h-11", html)
+        self.assertIn('id="trigger-update-status"', html)
+        self.assertNotIn(">Check for updates...</button>", html)
+
+    def test_log_update_control_discloses_a_missing_sync_time(self):
+        html = report.log_update_control(None)
+
+        self.assertIn("Last updated", html)
+        self.assertIn(">Time unavailable</span>", html)
+        self.assertNotIn("<time", html)
+        self.assertIn("Check now</button>", html)
+
+    def test_empty_log_keeps_the_refresh_action_available(self):
+        html = report.activity_log_body([], {}, None)
+
+        self.assertIn("No entries yet.", html)
+        self.assertIn("Time unavailable", html)
+        self.assertIn("Check now</button>", html)
+        self.assertEqual(1, html.count('id="trigger-update"'))
+
+    def test_data_updated_date_treats_sqlite_timestamp_as_utc(self):
+        connection = mock.MagicMock()
+        connection.execute.return_value.fetchone.return_value = {
+            "t": "2026-08-23 20:15:00",
+        }
+        context = mock.MagicMock()
+        context.__enter__.return_value = connection
+
+        with mock.patch.object(report, "connect", return_value=context):
+            self.assertEqual(
+                datetime(2026, 8, 23, 20, 15, tzinfo=timezone.utc),
+                report.data_updated_at(),
+            )
+            self.assertEqual("Aug 23 · 4:15pm", report.data_updated_date())
+
+    def test_data_updated_at_normalizes_an_offset_aware_timestamp(self):
+        connection = mock.MagicMock()
+        connection.execute.return_value.fetchone.return_value = {
+            "t": "2026-08-23T16:15:00-04:00",
+        }
+        context = mock.MagicMock()
+        context.__enter__.return_value = connection
+
+        with mock.patch.object(report, "connect", return_value=context):
+            self.assertEqual(
+                datetime(2026, 8, 23, 20, 15, tzinfo=timezone.utc),
+                report.data_updated_at(),
+            )
+
+    def test_data_updated_date_does_not_claim_a_sync_when_none_exists(self):
+        connection = mock.MagicMock()
+        connection.execute.return_value.fetchone.return_value = {"t": None}
+        context = mock.MagicMock()
+        context.__enter__.return_value = connection
+
+        with mock.patch.object(report, "connect", return_value=context):
+            self.assertEqual("—", report.data_updated_date())
+
+    def test_data_updated_at_rejects_malformed_or_non_text_values(self):
+        for raw in ("not-a-time", 12345):
+            with self.subTest(raw=raw):
+                connection = mock.MagicMock()
+                connection.execute.return_value.fetchone.return_value = {"t": raw}
+                context = mock.MagicMock()
+                context.__enter__.return_value = connection
+
+                with mock.patch.object(report, "connect", return_value=context):
+                    self.assertIsNone(report.data_updated_at())
+
+    def test_data_updated_at_handles_a_sqlite_error(self):
+        connection = mock.MagicMock()
+        connection.execute.side_effect = report.SQLiteError("missing table")
+        context = mock.MagicMock()
+        context.__enter__.return_value = connection
+
+        with mock.patch.object(report, "connect", return_value=context):
+            self.assertIsNone(report.data_updated_at())
 
     def test_taxa_page_totals_match_each_page_summary_contract(self):
         def roster(*ids):
