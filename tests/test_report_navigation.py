@@ -91,11 +91,9 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn(">+42</span>", html)
         self.assertIn("42 first documented in the last 30 days", html)
         self.assertIn("none first documented in the last 30 days", html)
-        self.assertIn("30-day first-documented count unavailable", html)
-        self.assertIn(
-            'class="text-xs font-semibold text-stone-600" aria-hidden="true">—</span>',
-            html,
-        )
+        self.assertNotIn("30-day first-documented count unavailable", html)
+        self.assertNotIn(">—</span>", html)
+        self.assertIn(">141 species</span>", html)
         self.assertNotIn(">+0</span>", html)
         self.assertNotIn('href="/log/"', html)
         self.assertNotIn("Overview", html)
@@ -126,7 +124,8 @@ class ReportNavigationTests(unittest.TestCase):
 
         self.assertIn("30-day data unavailable", html)
         self.assertNotIn("+ first documented in 30 days", html)
-        self.assertEqual(len(totals), html.count('aria-hidden="true">—</span>'))
+        self.assertNotIn("30-day first-documented count unavailable", html)
+        self.assertNotIn(">—</span>", html)
 
     def test_log_taxa_pills_do_not_claim_recent_data_when_none_was_supplied(self):
         totals = {

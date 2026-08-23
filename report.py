@@ -1874,15 +1874,9 @@ def log_taxa_total_pills(totals, recent=None):
         recent_count = None if recent_value is None else int(recent_value)
         if recent_count is not None and (recent_count < 0 or recent_count > total):
             raise ValueError(f"Invalid Log recent taxon count: {mode}")
-        if recent is None:
+        if recent is None or recent_count is None:
             recent_visible = ""
             recent_accessible = ""
-        elif recent_count is None:
-            recent_visible = (
-                '<span class="text-xs font-semibold text-stone-600" '
-                'aria-hidden="true">—</span>'
-            )
-            recent_accessible = ", 30-day first-documented count unavailable"
         elif recent_count:
             recent_visible = (
                 '<span class="text-xs font-bold text-hollow-600 tabular-nums">'
