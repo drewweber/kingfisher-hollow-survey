@@ -76,7 +76,8 @@ class ReportNavigationTests(unittest.TestCase):
         html = report.log_taxa_total_pills(totals, recent)
 
         self.assertIn('aria-label="Species totals by survey group"', html)
-        self.assertIn("+ first documented in 30 days", html)
+        self.assertIn("added in last 30 days", html)
+        self.assertNotIn("+ first documented in 30 days", html)
         self.assertNotIn("— unavailable", html)
         self.assertIn("tabular-nums", html)
         self.assertEqual(len(modes), html.count("<li>"))
@@ -123,7 +124,7 @@ class ReportNavigationTests(unittest.TestCase):
         html = report.log_taxa_total_pills(totals, recent)
 
         self.assertIn("30-day data unavailable", html)
-        self.assertNotIn("+ first documented in 30 days", html)
+        self.assertNotIn("added in last 30 days", html)
         self.assertNotIn("30-day first-documented count unavailable", html)
         self.assertNotIn(">—</span>", html)
 

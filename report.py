@@ -1908,7 +1908,7 @@ def log_taxa_total_pills(totals, recent=None):
     if recent is not None:
         available = any(value is not None for value in recent.values())
         if available:
-            caption += ' <span aria-hidden="true">·</span> + first documented in 30 days'
+            caption += ' <span aria-hidden="true">·</span> added in last 30 days'
         else:
             caption += ' <span aria-hidden="true">·</span> 30-day data unavailable'
     return (
