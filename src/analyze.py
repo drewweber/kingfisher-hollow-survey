@@ -21,6 +21,7 @@ from config import (
     USER_AGENT,
 )
 from db import connect
+from target_policy import VETTED_REGIONAL_TARGET_NAMES
 
 
 EBIRD_CACHE_DIR = DATA_DIR / "cache" / "ebird"
@@ -408,14 +409,22 @@ def photo_highlights(df, n=18):
 
 
 # --- mammals & plants shared gap helper -------------------------------------
-def _region_gap(taxa, region_table, n=30, target_months=None):
+def _region_gap(taxa, region_table, n=30, target_months=None,
+                allowed_taxon_names=None):
     """Generic regional gap: species in region_table not yet in taxa, with optional
-    seasonal filter via county_obs phenology. Mirrors moth_county_gap logic."""
+    seasonal filter via county_obs phenology. When ``allowed_taxon_names`` is
+    supplied, eligibility is applied before totals, ranking, and truncation.
+    Mirrors moth_county_gap logic."""
     region = _load_table(region_table)
     have = set(taxa["taxon_id"].dropna().astype(int)) if not taxa.empty else set()
 
+    if allowed_taxon_names is not None and not region.empty:
+        region = region[
+            region["taxon_name"].fillna("").isin(allowed_taxon_names)
+        ].copy()
+
     if region.empty:
-        return {"region_total": 0, "region_radius_km": REGION_RADIUS_KM, "have": len(have),
+        return {"region_total": 0, "region_radius_km": REGION_RADIUS_KM, "have": 0,
                 "pct": 0, "missing_count": 0, "missing": region,
                 "target_months": target_months or []}
 
@@ -490,10 +499,15 @@ def mammal_found(df, mammals):
 
 
 def mammal_gap(mammals, n=30, target_months=None):
-    gap = _region_gap(mammals, "region_mammal_taxa", n=n + 5, target_months=target_months)
-    gap["missing"] = gap["missing"][
-        ~gap["missing"]["taxon_id"].isin(_EXCLUDE_FROM_MAMMALS)
-    ].head(n)
+    gap = _region_gap(
+        mammals,
+        "region_mammal_taxa",
+        n=n,
+        target_months=target_months,
+        allowed_taxon_names=VETTED_REGIONAL_TARGET_NAMES["mammals"],
+    )
+    gap["wild_only"] = True
+    gap["vetted_local_fauna"] = True
     return gap
 
 
@@ -573,31 +587,21 @@ def amphibian_found(df, amphibians):
     return found.sort_values(["order_name", "family_name", "taxon_name"])
 
 
-# Captive / out-of-range exotics that appear in the iNat regional pool (zoo,
-# classroom, and pet records) but are not realistic field targets. Mirrors the
-# _EXCLUDE_FROM_MAMMALS approach.
-_EXCLUDE_FROM_AMPHIBIANS = {
-    21121,  # Green-and-black Poison Dart Frog
-    21217,  # Golden Poison Dart Frog
-    23702,  # Red-eyed Tree Frog
-    25457,  # African Clawed Frog
-    26777,  # Axolotl
-    66278,  # Strawberry Poison Dart Frog
-}
-
-
 def amphibian_gap(amphibians, n=30):
     """Regional amphibians not yet recorded here, ranked by regional frequency.
 
     Deliberately non-seasonal: amphibians are strongly spring-peaked, so a
     single-month slice surfaces almost nothing in summer. We rank by overall
-    regional frequency and drop obvious captive/non-native pool records.
+    regional frequency within the vetted local-fauna pool.
     """
-    gap = _region_gap(amphibians, "region_amphibian_taxa",
-                      n=n + len(_EXCLUDE_FROM_AMPHIBIANS))
-    gap["missing"] = gap["missing"][
-        ~gap["missing"]["taxon_id"].isin(_EXCLUDE_FROM_AMPHIBIANS)
-    ].head(n)
+    gap = _region_gap(
+        amphibians,
+        "region_amphibian_taxa",
+        n=n,
+        allowed_taxon_names=VETTED_REGIONAL_TARGET_NAMES["amphibians"],
+    )
+    gap["wild_only"] = True
+    gap["vetted_local_fauna"] = True
     return gap
 
 
@@ -1109,22 +1113,21 @@ def reptile_found(df, reptiles):
     return found.sort_values(["order_name", "family_name", "taxon_name"])
 
 
-_EXCLUDE_FROM_REPTILES = {
-    39952,  # Red-eared Slider (common captive release)
-}
-
-
 def reptile_gap(reptiles, n=30):
     """Regional reptiles not yet recorded here, ranked by regional frequency.
 
     Non-seasonal: reptile activity windows vary widely by order, so overall
-    regional frequency is a better guide than a single-month slice.
+    regional frequency within the vetted local-fauna pool is a better guide
+    than a single-month slice.
     """
-    gap = _region_gap(reptiles, "region_reptile_taxa",
-                      n=n + len(_EXCLUDE_FROM_REPTILES))
-    gap["missing"] = gap["missing"][
-        ~gap["missing"]["taxon_id"].isin(_EXCLUDE_FROM_REPTILES)
-    ].head(n)
+    gap = _region_gap(
+        reptiles,
+        "region_reptile_taxa",
+        n=n,
+        allowed_taxon_names=VETTED_REGIONAL_TARGET_NAMES["reptiles"],
+    )
+    gap["wild_only"] = True
+    gap["vetted_local_fauna"] = True
     return gap
 
 

@@ -205,6 +205,16 @@ plant list and regional plant pool are based on records not marked
 cultivated/planted. The gap list also enriches plants with New York
 establishment status and excludes taxa listed as introduced in New York.
 
+### Mammal and herp gap-list filtering
+
+Mammal, amphibian, and reptile roster syncs request iNaturalist records not
+marked captive. Regional syncs also reject taxa marked introduced, then the gap
+selectors apply a positive, locally reviewed fauna list before calculating
+totals or ranking candidates. This prevents domestic animals, zoo records,
+escaped pets, transported hitchhikers, and other out-of-range observations from
+becoming survey targets. A newly recorded taxon must pass an explicit range and
+habitat review before it is added to `src/target_policy.py`.
+
 ### Bird page source
 
 Birds are tracked from eBird rather than iNaturalist. The Birds view reads the

@@ -445,7 +445,8 @@ def sync_mammals():
     """Mammal roster for the project."""
     n = _sync_roster("mammal_taxa", "obs_count",
                      project_id=PROPERTY_PROJECT_ID,
-                     taxon_id=MAMMALIA_TAXON_ID)
+                     taxon_id=MAMMALIA_TAXON_ID,
+                     captive="false")
     print(f"[mammals] {n} mammal species")
     return n, 0
 
@@ -458,7 +459,8 @@ def sync_region_mammals():
         return 0, 0
     n = _sync_roster("region_mammal_taxa", "region_count",
                      lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
-                     taxon_id=MAMMALIA_TAXON_ID)
+                     taxon_id=MAMMALIA_TAXON_ID,
+                     captive="false", introduced="false")
     print(f"[region-mammals] {n} mammal species within {REGION_RADIUS_KM} km")
     return n, 0
 
@@ -591,7 +593,8 @@ def sync_amphibians():
     """Amphibian roster for the project."""
     n = _sync_roster("amphibian_taxa", "obs_count",
                      project_id=PROPERTY_PROJECT_ID,
-                     taxon_id=AMPHIBIA_TAXON_ID)
+                     taxon_id=AMPHIBIA_TAXON_ID,
+                     captive="false")
     print(f"[amphibians] {n} amphibian species")
     return n, 0
 
@@ -604,7 +607,8 @@ def sync_region_amphibians():
         return 0, 0
     n = _sync_roster("region_amphibian_taxa", "region_count",
                      lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
-                     taxon_id=AMPHIBIA_TAXON_ID)
+                     taxon_id=AMPHIBIA_TAXON_ID,
+                     captive="false", introduced="false")
     print(f"[region-amphibians] {n} amphibian species within {REGION_RADIUS_KM} km")
     return n, 0
 
@@ -613,7 +617,8 @@ def sync_reptiles():
     """Reptile roster for the project."""
     n = _sync_roster("reptile_taxa", "obs_count",
                      project_id=PROPERTY_PROJECT_ID,
-                     taxon_id=REPTILIA_TAXON_ID)
+                     taxon_id=REPTILIA_TAXON_ID,
+                     captive="false")
     print(f"[reptiles] {n} reptile species")
     return n, 0
 
@@ -626,7 +631,8 @@ def sync_region_reptiles():
         return 0, 0
     n = _sync_roster("region_reptile_taxa", "region_count",
                      lat=round(lat, 5), lng=round(lng, 5), radius=REGION_RADIUS_KM,
-                     taxon_id=REPTILIA_TAXON_ID)
+                     taxon_id=REPTILIA_TAXON_ID,
+                     captive="false", introduced="false")
     print(f"[region-reptiles] {n} reptile species within {REGION_RADIUS_KM} km")
     return n, 0
 
