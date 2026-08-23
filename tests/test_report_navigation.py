@@ -39,6 +39,92 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertEqual("/log/", report.VIEW_CONFIG["log"]["route"])
         self.assertEqual("/dragonflies/", report.VIEW_CONFIG["odonates"]["route"])
 
+    def test_taxa_page_flags_cover_the_dedicated_group_pages(self):
+        self.assertEqual(
+            [
+                "moths",
+                "butterflies",
+                "odonates",
+                "birds",
+                "mammals",
+                "plants",
+                "amphibians",
+            ],
+            [
+                mode
+                for mode, config in report.VIEW_CONFIG.items()
+                if config.get("taxa_group")
+            ],
+        )
+
+    def test_log_taxa_pills_link_every_group_page_with_its_total(self):
+        modes = [
+            mode
+            for mode, config in report.VIEW_CONFIG.items()
+            if config.get("taxa_group")
+        ]
+        totals = {
+            mode: total
+            for mode, total in zip(modes, [1234, 0, 33, 141, 22, 261, 17])
+        }
+
+        html = report.log_taxa_total_pills(totals)
+
+        self.assertIn('aria-label="Species totals by survey group"', html)
+        self.assertIn("tabular-nums", html)
+        self.assertEqual(len(modes), html.count("<li>"))
+        for mode in modes:
+            config = report.VIEW_CONFIG[mode]
+            self.assertIn(f'href="{config["route"]}"', html)
+            self.assertIn(f'<span>{config["label"]}</span>', html)
+            self.assertIn(f'>{totals[mode]:,}</span>', html)
+        self.assertNotIn('href="/log/"', html)
+        self.assertNotIn("Overview", html)
+        self.assertNotIn("Life list", html)
+
+    def test_log_taxa_pills_require_a_total_for_every_group_page(self):
+        with self.assertRaisesRegex(ValueError, "Missing Log taxon totals"):
+            report.log_taxa_total_pills({})
+
+    def test_taxa_page_totals_match_each_page_summary_contract(self):
+        def roster(*ids):
+            return pd.DataFrame({"taxon_id": ids})
+
+        birds = pd.DataFrame({
+            "date": pd.to_datetime(["2026-08-01", "2026-08-02"]),
+            "sub_id": ["S1", "S2"],
+            "exotic": ["", ""],
+        })
+        empty_observations = pd.DataFrame(columns=["taxon_id", "observed_on"])
+        loaders = {
+            "load_butterflies": roster(10, 11),
+            "load_odonates": roster(20, 21, 22),
+            "load_mammals": roster(30, 31, 32, 33),
+            "load_plants": roster(40, 41, 42, 43, 44),
+            "load_amphibians": roster(50, 51),
+            "load_reptiles": roster(60, 61, 62),
+        }
+        patches = {
+            name: mock.Mock(return_value=value)
+            for name, value in loaders.items()
+        }
+        with mock.patch.multiple(report.analyze, **patches):
+            totals = report.taxa_page_species_totals(
+                empty_observations,
+                birds=birds,
+                moths=roster(1, 2, 2),
+            )
+
+        self.assertEqual({
+            "moths": 2,
+            "butterflies": 2,
+            "odonates": 3,
+            "birds": 2,
+            "mammals": 4,
+            "plants": 5,
+            "amphibians": 5,
+        }, totals)
+
     def test_moth_index_has_one_inventory_status_chapter(self):
         links = report.VIEW_CONFIG["moths"]["links"]
         self.assertIn(("#moth-completeness", "Inventory status"), links)
