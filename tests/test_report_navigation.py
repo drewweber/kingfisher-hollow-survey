@@ -58,7 +58,7 @@ class ReportNavigationTests(unittest.TestCase):
             ],
         )
 
-    def test_log_taxa_pills_link_every_group_page_with_its_total(self):
+    def test_log_taxa_stats_panel_links_every_group_page_with_its_total(self):
         modes = [
             mode
             for mode, config in report.VIEW_CONFIG.items()
@@ -73,16 +73,20 @@ class ReportNavigationTests(unittest.TestCase):
             for mode, total in zip(modes, [42, 0, 3, None, 0, 6, 1])
         }
 
-        html = report.log_taxa_total_pills(totals, recent)
+        html = report.log_taxa_stats_panel(totals, recent)
 
         self.assertIn('aria-label="Species totals by survey group"', html)
         self.assertIn("added in last 30 days", html)
         self.assertNotIn("+ first documented in 30 days", html)
         self.assertNotIn("— unavailable", html)
         self.assertIn("tabular-nums", html)
-        self.assertEqual(len(modes), html.count("<li>"))
-        self.assertEqual(len(modes), html.count("min-h-11 min-w-20"))
+        self.assertEqual(len(modes), html.count("<li"))
+        self.assertEqual(1, html.count("border border-stone-200"))
+        self.assertEqual(len(modes), html.count("basis-1/4 sm:basis-0 sm:flex-1"))
+        self.assertEqual(len(modes), html.count("min-h-11"))
         self.assertEqual(len(modes), html.count("focus-visible:ring-2"))
+        self.assertIn("rounded-2xl", html)
+        self.assertNotIn("min-w-20", html)
         self.assertNotIn("rounded-full", html)
         for mode in modes:
             config = report.VIEW_CONFIG[mode]
@@ -100,20 +104,20 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertNotIn("Overview", html)
         self.assertNotIn("Life list", html)
 
-    def test_log_taxa_pills_require_a_total_for_every_group_page(self):
+    def test_log_taxa_stats_panel_requires_a_total_for_every_group_page(self):
         with self.assertRaisesRegex(ValueError, "Missing Log taxon totals"):
-            report.log_taxa_total_pills({})
+            report.log_taxa_stats_panel({})
 
-    def test_log_taxa_pills_require_recent_data_for_every_group_when_supplied(self):
+    def test_log_taxa_stats_panel_requires_recent_data_for_every_group_when_supplied(self):
         totals = {
             mode: 1
             for mode, config in report.VIEW_CONFIG.items()
             if config.get("taxa_group")
         }
         with self.assertRaisesRegex(ValueError, "Missing Log recent taxon counts"):
-            report.log_taxa_total_pills(totals, {})
+            report.log_taxa_stats_panel(totals, {})
 
-    def test_log_taxa_pills_explain_when_all_recent_counts_are_unavailable(self):
+    def test_log_taxa_stats_panel_explains_when_all_recent_counts_are_unavailable(self):
         totals = {
             mode: 1
             for mode, config in report.VIEW_CONFIG.items()
@@ -121,21 +125,21 @@ class ReportNavigationTests(unittest.TestCase):
         }
         recent = {mode: None for mode in totals}
 
-        html = report.log_taxa_total_pills(totals, recent)
+        html = report.log_taxa_stats_panel(totals, recent)
 
         self.assertIn("30-day data unavailable", html)
         self.assertNotIn("added in last 30 days", html)
         self.assertNotIn("30-day first-documented count unavailable", html)
         self.assertNotIn(">—</span>", html)
 
-    def test_log_taxa_pills_do_not_claim_recent_data_when_none_was_supplied(self):
+    def test_log_taxa_stats_panel_does_not_claim_recent_data_when_none_was_supplied(self):
         totals = {
             mode: 1
             for mode, config in report.VIEW_CONFIG.items()
             if config.get("taxa_group")
         }
 
-        html = report.log_taxa_total_pills(totals)
+        html = report.log_taxa_stats_panel(totals)
 
         self.assertIn("Species totals", html)
         self.assertNotIn("first documented", html)

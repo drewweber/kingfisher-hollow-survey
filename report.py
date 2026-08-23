@@ -1846,8 +1846,8 @@ def taxa_page_recent_species(df, birds=None, moths=None, as_of=None):
     }
 
 
-def log_taxa_total_pills(totals, recent=None):
-    """Link the Log to each taxon page with totals and recent discoveries."""
+def log_taxa_stats_panel(totals, recent=None):
+    """Render one linked panel of taxon totals and recent discoveries."""
     taxa_pages = [
         (mode, config)
         for mode, config in VIEW_CONFIG.items()
@@ -1889,14 +1889,14 @@ def log_taxa_total_pills(totals, recent=None):
             recent_visible = ""
             recent_accessible = ", none first documented in the last 30 days"
         items.append(
-            '<li>'
+            '<li class="basis-1/4 sm:basis-0 sm:flex-1">'
             f'<a href="{config["route"]}" '
-            'class="flex min-h-11 min-w-20 flex-col items-center justify-center rounded-xl '
-            'border border-stone-200 bg-white px-1 py-1 text-center '
-            'hover:border-hollow-300 hover:bg-hollow-50 hover:text-hollow-800 '
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500 '
-            'focus-visible:ring-offset-2">'
-            '<span class="text-xs font-medium leading-4 text-stone-600">'
+            'class="group flex min-h-11 flex-col items-center justify-center rounded-lg '
+            'px-0.5 py-1 text-center hover:bg-hollow-50 sm:px-1 '
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset '
+            'focus-visible:ring-hollow-500">'
+            '<span class="text-xs font-medium leading-4 text-stone-600 '
+            'group-hover:text-hollow-700">'
             f'{esc(config["label"])}</span>'
             '<span aria-hidden="true" class="flex items-baseline gap-1 leading-4">'
             '<span class="text-sm font-bold text-hollow-800 tabular-nums">'
@@ -1912,10 +1912,12 @@ def log_taxa_total_pills(totals, recent=None):
         else:
             caption += ' <span aria-hidden="true">·</span> 30-day data unavailable'
     return (
-        '<nav class="mx-auto mb-8 max-w-3xl" aria-label="Species totals by survey group">'
-        '<p class="mb-2 text-center text-xs text-stone-500">'
+        '<nav class="mx-auto mb-8 max-w-3xl rounded-2xl border border-stone-200 '
+        'bg-white p-1 shadow-sm" aria-label="Species totals by survey group">'
+        '<p class="border-b border-stone-100 px-2 pb-1.5 pt-0.5 text-center text-xs '
+        'text-stone-500">'
         + caption
-        + '</p><ul class="flex flex-wrap justify-center gap-1.5" role="list">'
+        + '</p><ul class="flex flex-wrap justify-center pt-0.5" role="list">'
         + "".join(items)
         + '</ul></nav>'
     )
@@ -3879,7 +3881,7 @@ def build():
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
-        log_taxa_total_pills(taxa_page_totals, taxa_page_recent)
+        log_taxa_stats_panel(taxa_page_totals, taxa_page_recent)
         + activity_log_body(log_entries, weather_cache, last_data_sync)
         + id_changes_body(id_changes)
         + log_resource_links(),
