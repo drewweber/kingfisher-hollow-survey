@@ -241,6 +241,7 @@ VIEW_CONFIG = {
     "moths": {
         "label": "Moths",
         "route": "/moths/",
+        "taxa_group": True,
         "description": "Kingfisher Hollow moth records, recent evidence, seasonal targets, inventory status, and field methods.",
         "plotly": True,
         "links": [
@@ -257,6 +258,7 @@ VIEW_CONFIG = {
     "butterflies": {
         "label": "Butterflies",
         "route": "/butterflies/",
+        "taxa_group": True,
         "description": "Kingfisher Hollow butterfly records, current field targets, and survey methods.",
         "plotly": False,
         "links": [
@@ -269,6 +271,7 @@ VIEW_CONFIG = {
     "odonates": {
         "label": "Dragonflies",
         "route": "/dragonflies/",
+        "taxa_group": True,
         "description": "Dragonfly and damselfly records from Kingfisher Hollow, with seasonal targets and survey guidance.",
         "plotly": False,
         "links": [
@@ -280,6 +283,7 @@ VIEW_CONFIG = {
     "birds": {
         "label": "Birds",
         "route": "/birds/",
+        "taxa_group": True,
         "description": "Kingfisher Hollow bird records, recent sightings, seasonal targets, and field guidance.",
         "plotly": False,
         "links": [
@@ -292,6 +296,7 @@ VIEW_CONFIG = {
     "mammals": {
         "label": "Mammals",
         "route": "/mammals/",
+        "taxa_group": True,
         "description": "Kingfisher Hollow mammal records, survey targets, and field methods for under-detected species.",
         "plotly": False,
         "links": [
@@ -303,6 +308,7 @@ VIEW_CONFIG = {
     "plants": {
         "label": "Plants",
         "route": "/plants/",
+        "taxa_group": True,
         "description": "The Kingfisher Hollow plant survey, regional targets, and field methods for documenting flora.",
         "plotly": False,
         "links": [
@@ -314,6 +320,7 @@ VIEW_CONFIG = {
     "amphibians": {
         "label": "Herps",
         "route": "/herps/",
+        "taxa_group": True,
         "description": "Kingfisher Hollow amphibian and reptile records, survey targets, and field guidance.",
         "plotly": False,
         "links": [
@@ -1683,6 +1690,73 @@ def moth_diversity_body(div):
 
 
 # ── field journal / activity log ────────────────────────────────────────────
+def taxa_page_species_totals(df, birds=None, moths=None):
+    """Species totals shown by the dedicated taxon-group survey pages."""
+    birds = analyze.load_birds() if birds is None else birds
+    moths = analyze.load_moths() if moths is None else moths
+    butterflies = analyze.load_butterflies()
+    odonates = analyze.load_odonates()
+    mammals = analyze.load_mammals()
+    plants = analyze.load_plants()
+    amphibians = analyze.load_amphibians()
+    reptiles = analyze.load_reptiles()
+
+    def species(summary, roster):
+        return int(summary(df, roster)["species"]) if not roster.empty else 0
+
+    return {
+        "moths": species(analyze.moth_summary, moths),
+        "butterflies": species(analyze.butterfly_summary, butterflies),
+        "odonates": species(analyze.odonate_summary, odonates),
+        "birds": int(analyze.bird_summary(birds)["species"]),
+        "mammals": species(analyze.mammal_summary, mammals),
+        "plants": species(analyze.plant_summary, plants),
+        "amphibians": (
+            species(analyze.amphibian_summary, amphibians)
+            + species(analyze.reptile_summary, reptiles)
+        ),
+    }
+
+
+def log_taxa_total_pills(totals):
+    """Link the Log to each configured taxon page with its species total."""
+    taxa_pages = [
+        (mode, config)
+        for mode, config in VIEW_CONFIG.items()
+        if config.get("taxa_group")
+    ]
+    missing = [mode for mode, _config in taxa_pages if mode not in totals]
+    if missing:
+        raise ValueError(f"Missing Log taxon totals for: {', '.join(missing)}")
+
+    items = []
+    for mode, config in taxa_pages:
+        total = int(totals[mode])
+        if total < 0:
+            raise ValueError(f"Log taxon total cannot be negative: {mode}")
+        items.append(
+            '<li>'
+            f'<a href="{config["route"]}" '
+            'class="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-200 '
+            'bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm '
+            'hover:border-hollow-300 hover:bg-hollow-50 hover:text-hollow-800 '
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500 '
+            'focus-visible:ring-offset-2">'
+            f'<span>{esc(config["label"])}</span>'
+            '<span class="inline-flex min-w-7 items-center justify-center rounded-full '
+            'bg-hollow-100 px-2 py-0.5 text-xs font-bold text-hollow-700 tabular-nums">'
+            f'{total:,}</span>'
+            '<span class="sr-only"> species</span>'
+            '</a></li>'
+        )
+    return (
+        '<nav class="mx-auto mb-12 max-w-5xl" aria-label="Species totals by survey group">'
+        '<ul class="flex flex-wrap justify-center gap-2.5" role="list">'
+        + "".join(items)
+        + '</ul></nav>'
+    )
+
+
 def id_changes_body(changes):
     """Render recent improving/maverick identifications on the property observations."""
     if not changes:
@@ -3356,6 +3430,13 @@ def build():
 
     moths_for_header = _timed("load-moths-header", analyze.load_moths)
     moth_head_count = _timed("moth-summary-header", analyze.moth_summary, df, moths_for_header)["species"]
+    taxa_page_totals = _timed(
+        "taxa-page-totals",
+        taxa_page_species_totals,
+        df,
+        birds_for_totals,
+        moths_for_header,
+    )
     # Build each view once, then wrap it in a page-specific document below.
     # Keeping the view stream separate prevents unrelated DOM and Plotly payloads
     # from being emitted into every route.
@@ -3562,7 +3643,8 @@ def build():
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
-        activity_log_body(log_entries, weather_cache)
+        log_taxa_total_pills(taxa_page_totals)
+        + activity_log_body(log_entries, weather_cache)
         + id_changes_body(id_changes)
         + log_resource_links(),
         intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
