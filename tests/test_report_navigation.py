@@ -248,10 +248,12 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn(f'href="{report.tiger_swallowtail.CASE_ROUTE}"', html)
         self.assertIn("Tiger Swallowtail ID Guide", html)
 
-    def test_stylesheet_url_changes_with_the_stylesheet_content(self):
-        version = report._asset_version("src/styles.css")
-        html = report.head({"species": 1}, county_firsts=0, mode="log")
-        self.assertIn(f'href="/assets/survey.css?v={version}"', html)
+    def test_stylesheet_url_uses_the_generated_stylesheet_hash(self):
+        with mock.patch.object(report, "_asset_version", return_value="generated123") as version:
+            html = report.head({"species": 1}, county_firsts=0, mode="log")
+
+        version.assert_called_once_with("public/assets/survey.css")
+        self.assertIn('href="/assets/survey.css?v=generated123"', html)
         self.assertIn('href="https://survey.kingfisher-hollow.com/log/"', html)
         self.assertIn('data-mode="log"', html)
         self.assertNotIn("window.__plotlyQueue", html)

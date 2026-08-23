@@ -2162,7 +2162,7 @@ def head(s, county_firsts, moth_species=None, mode="all", legacy_routes=None):
 <meta name="twitter:image" content="{HERO_PHOTO}">
 <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/survey.css?v={_asset_version("src/styles.css")}">
+<link rel="stylesheet" href="/assets/survey.css?v={_asset_version("public/assets/survey.css")}">
 {legacy_redirect}
 {plotly_queue}
 </head>
