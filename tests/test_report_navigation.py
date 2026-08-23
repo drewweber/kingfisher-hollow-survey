@@ -97,6 +97,18 @@ class ReportNavigationTests(unittest.TestCase):
             styles[rule_start:rule_end],
         )
 
+    def test_gap_copy_discloses_exotic_target_filtering(self):
+        gap = {
+            "have": 1,
+            "region_total": 2,
+            "missing_count": 1,
+            "missing": pd.DataFrame(),
+        }
+
+        self.assertIn("exotic pets are excluded", report.mammal_gap_body(gap))
+        self.assertIn("exotic-pet taxa are excluded", report.amphibian_gap_body(gap))
+        self.assertIn("exotic-pet taxa are excluded", report.reptile_gap_body(gap))
+
     def test_moth_forecast_distinguishes_detection_from_presence(self):
         forecast = {
             "nights": [

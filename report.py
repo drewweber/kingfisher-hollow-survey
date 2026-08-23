@@ -1226,7 +1226,8 @@ def mammal_gap_body(gap):
             f'<strong class="text-hollow-300">{gap["region_total"]}</strong> mammal species documented within '
             f'~{miles} miles have been recorded here. '
             f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
-            f'have county or regional records for this time of year — all realistic targets.</p>')
+            f'have county or regional records for this time of year and pass a vetted local-fauna '
+            f'screen. Domestic animals, zoo-only taxa, and exotic pets are excluded.</p>')
     return lead + _gap_photo_grid(gap["missing"], placeholder="🦌")
 
 
@@ -1248,7 +1249,8 @@ def amphibian_gap_body(gap):
             f'<strong class="text-hollow-300">{gap["region_total"]}</strong> amphibian species recorded within '
             f'~{miles} miles have turned up here. '
             f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
-            f'are documented in the surrounding region but not yet here — ranked by how common they are nearby.</p>')
+            f'are vetted local-fauna candidates documented in the surrounding region but not yet here — '
+            f'ranked by how common they are nearby. Captive-only, transported, and exotic-pet taxa are excluded.</p>')
     return lead + _gap_photo_grid(gap["missing"], placeholder="🐸")
 
 
@@ -1645,7 +1647,8 @@ def reptile_gap_body(gap):
             f'<strong class="text-hollow-300">{gap["region_total"]}</strong> reptile species recorded within '
             f'~{miles} miles have turned up here. '
             f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
-            f'are documented in the surrounding region but not yet here — ranked by how common they are nearby.</p>')
+            f'are vetted local-fauna candidates documented in the surrounding region but not yet here — '
+            f'ranked by how common they are nearby. Captive-only, transported, and exotic-pet taxa are excluded.</p>')
     return lead + _gap_photo_grid(gap["missing"], placeholder="🐍")
 
 
