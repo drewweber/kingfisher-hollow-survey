@@ -18,7 +18,7 @@ import json
 import re
 import shutil
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from sqlite3 import Error as SQLiteError
 from zoneinfo import ZoneInfo
@@ -1719,8 +1719,135 @@ def taxa_page_species_totals(df, birds=None, moths=None):
     }
 
 
-def log_taxa_total_pills(totals):
-    """Link the Log to each configured taxon page with its species total."""
+def taxa_page_recent_species(df, birds=None, moths=None, as_of=None):
+    """Species first documented in the 30 calendar days ending ``as_of``.
+
+    Each count is restricted to the same curated roster used by its dedicated
+    page. iNaturalist-backed groups use the earliest matching property
+    observation. Birds remain unavailable because their checked-in eBird export
+    has no independent freshness timestamp.
+    """
+    birds = analyze.load_birds() if birds is None else birds
+    moths = analyze.load_moths() if moths is None else moths
+    butterflies = analyze.load_butterflies()
+    odonates = analyze.load_odonates()
+    mammals = analyze.load_mammals()
+    plants = analyze.load_plants()
+    amphibians = analyze.load_amphibians()
+    reptiles = analyze.load_reptiles()
+
+    if isinstance(as_of, datetime):
+        if as_of.tzinfo is not None:
+            as_of_date = as_of.astimezone(ZoneInfo("America/New_York")).date()
+        else:
+            as_of_date = as_of.date()
+    elif isinstance(as_of, date):
+        as_of_date = as_of
+    else:
+        return {
+            "moths": None,
+            "butterflies": None,
+            "odonates": None,
+            "birds": None,
+            "mammals": None,
+            "plants": None,
+            "amphibians": None,
+        }
+    window_start = as_of_date - timedelta(days=29)
+
+    def in_window(value):
+        observed_date = value.date() if hasattr(value, "date") else value
+        return window_start <= observed_date <= as_of_date
+
+    def first_seen(roster):
+        if roster.empty or df.empty:
+            return 0 if roster.empty else None
+        roster_rows = roster.dropna(subset=["taxon_id"]).drop_duplicates(
+            subset=["taxon_id"]
+        )
+        ids = set(roster_rows["taxon_id"])
+        sub = df.dropna(subset=["taxon_id", "observed_on"]).copy()
+        if sub.empty:
+            return None
+
+        # The page rosters are species-ranked, while property observations can
+        # retain a finer taxon such as a subspecies. Map those finer scientific
+        # names back to the longest matching roster name so an older subspecies
+        # record is not hidden by a newer parent-species identification.
+        sub["_page_taxon_id"] = sub["taxon_id"].where(
+            sub["taxon_id"].isin(ids)
+        ).astype("object")
+        if "taxon_name" in roster_rows and "taxon_name" in sub:
+            name_to_id = {
+                str(row["taxon_name"]).strip(): row["taxon_id"]
+                for _, row in roster_rows.dropna(subset=["taxon_name"]).iterrows()
+                if str(row["taxon_name"]).strip()
+            }
+            names_by_genus = {}
+            for species_name, taxon_id in name_to_id.items():
+                genus = species_name.split(" ", 1)[0]
+                names_by_genus.setdefault(genus, []).append(
+                    (species_name, taxon_id)
+                )
+            for candidates in names_by_genus.values():
+                candidates.sort(key=lambda item: len(item[0]), reverse=True)
+
+            def roster_taxon_id(observed_name):
+                genus = observed_name.split(" ", 1)[0]
+                for species_name, taxon_id in names_by_genus.get(genus, []):
+                    if (
+                        observed_name == species_name
+                        or observed_name.startswith(f"{species_name} ")
+                    ):
+                        return taxon_id
+                return None
+
+            unmatched = sub["_page_taxon_id"].isna()
+            if "rank" in sub:
+                unmatched &= sub["rank"].isin({
+                    "subspecies", "variety", "form", "subvariety", "subform",
+                })
+            else:
+                unmatched &= False
+            observed_names = (
+                sub.loc[unmatched, "taxon_name"]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+            )
+            name_matches = {
+                observed_name: roster_taxon_id(observed_name)
+                for observed_name in observed_names.unique()
+            }
+            sub.loc[unmatched, "_page_taxon_id"] = observed_names.map(
+                name_matches
+            )
+        sub = sub.dropna(subset=["_page_taxon_id"])
+        first_dates = sub.groupby("_page_taxon_id")["observed_on"].min()
+        if ids - set(first_dates.index):
+            return None
+        return int(sum(in_window(value) for value in first_dates))
+
+    amphibian_recent = first_seen(amphibians)
+    reptile_recent = first_seen(reptiles)
+    herp_recent = (
+        None
+        if amphibian_recent is None or reptile_recent is None
+        else amphibian_recent + reptile_recent
+    )
+    return {
+        "moths": first_seen(moths),
+        "butterflies": first_seen(butterflies),
+        "odonates": first_seen(odonates),
+        "birds": None,
+        "mammals": first_seen(mammals),
+        "plants": first_seen(plants),
+        "amphibians": herp_recent,
+    }
+
+
+def log_taxa_stats_panel(totals, recent=None):
+    """Render one linked panel of taxon totals and recent discoveries."""
     taxa_pages = [
         (mode, config)
         for mode, config in VIEW_CONFIG.items()
@@ -1729,30 +1856,68 @@ def log_taxa_total_pills(totals):
     missing = [mode for mode, _config in taxa_pages if mode not in totals]
     if missing:
         raise ValueError(f"Missing Log taxon totals for: {', '.join(missing)}")
+    if recent is not None:
+        missing_recent = [
+            mode for mode, _config in taxa_pages if mode not in recent
+        ]
+        if missing_recent:
+            raise ValueError(
+                f"Missing Log recent taxon counts for: {', '.join(missing_recent)}"
+            )
 
     items = []
     for mode, config in taxa_pages:
         total = int(totals[mode])
         if total < 0:
             raise ValueError(f"Log taxon total cannot be negative: {mode}")
+        recent_value = recent[mode] if recent is not None else None
+        recent_count = None if recent_value is None else int(recent_value)
+        if recent_count is not None and (recent_count < 0 or recent_count > total):
+            raise ValueError(f"Invalid Log recent taxon count: {mode}")
+        if recent is None or recent_count is None:
+            recent_visible = ""
+            recent_accessible = ""
+        elif recent_count:
+            recent_visible = (
+                '<span class="text-xs font-bold text-hollow-600 tabular-nums">'
+                f'+{recent_count:,}</span>'
+            )
+            recent_accessible = (
+                f", {recent_count:,} first documented in the last 30 days"
+            )
+        else:
+            recent_visible = ""
+            recent_accessible = ", none first documented in the last 30 days"
         items.append(
-            '<li>'
+            '<li class="basis-1/4 sm:basis-0 sm:flex-1">'
             f'<a href="{config["route"]}" '
-            'class="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-200 '
-            'bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm '
-            'hover:border-hollow-300 hover:bg-hollow-50 hover:text-hollow-800 '
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hollow-500 '
-            'focus-visible:ring-offset-2">'
-            f'<span>{esc(config["label"])}</span>'
-            '<span class="inline-flex min-w-7 items-center justify-center rounded-full '
-            'bg-hollow-100 px-2 py-0.5 text-xs font-bold text-hollow-700 tabular-nums">'
-            f'{total:,}</span>'
-            '<span class="sr-only"> species</span>'
+            'class="group flex min-h-11 flex-col items-center justify-center rounded-lg '
+            'px-0.5 py-1 text-center hover:bg-hollow-50 sm:px-1 '
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset '
+            'focus-visible:ring-hollow-500">'
+            '<span class="text-xs font-medium leading-4 text-stone-600 '
+            'group-hover:text-hollow-700">'
+            f'{esc(config["label"])}</span>'
+            '<span aria-hidden="true" class="flex items-baseline gap-1 leading-4">'
+            '<span class="text-sm font-bold text-hollow-800 tabular-nums">'
+            f'{total:,}</span>{recent_visible}</span>'
+            f'<span class="sr-only">{total:,} species{recent_accessible}</span>'
             '</a></li>'
         )
+    caption = "Species totals"
+    if recent is not None:
+        available = any(value is not None for value in recent.values())
+        if available:
+            caption += ' <span aria-hidden="true">·</span> added in last 30 days'
+        else:
+            caption += ' <span aria-hidden="true">·</span> 30-day data unavailable'
     return (
-        '<nav class="mx-auto mb-12 max-w-5xl" aria-label="Species totals by survey group">'
-        '<ul class="flex flex-wrap justify-center gap-2.5" role="list">'
+        '<nav class="mx-auto mb-8 max-w-3xl rounded-2xl border border-stone-200 '
+        'bg-white p-1 shadow-sm" aria-label="Species totals by survey group">'
+        '<p class="border-b border-stone-100 px-2 pb-1.5 pt-0.5 text-center text-xs '
+        'text-stone-500">'
+        + caption
+        + '</p><ul class="flex flex-wrap justify-center pt-0.5" role="list">'
         + "".join(items)
         + '</ul></nav>'
     )
@@ -2296,11 +2461,19 @@ def _content_updated():
     return "—"
 
 
-def data_updated_at():
-    """Return the latest iNat sync as an aware UTC datetime, if available."""
+def data_updated_at(source=None):
+    """Return the latest matching iNat sync as an aware UTC datetime."""
     try:
         with connect() as conn:
-            row = conn.execute("SELECT MAX(synced_at) AS t FROM sync_log").fetchone()
+            if source is None:
+                row = conn.execute(
+                    "SELECT MAX(synced_at) AS t FROM sync_log"
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT MAX(synced_at) AS t FROM sync_log WHERE source = ?",
+                    (source,),
+                ).fetchone()
         raw = row["t"] if row else None
         if not isinstance(raw, str) or not raw.strip():
             return None
@@ -3475,6 +3648,8 @@ def build():
         stats = stats[stats["taxon_id"].isin(set(df["taxon_id"].dropna()))]
 
     birds_for_totals = _timed("load-birds", analyze.load_birds)
+    last_data_sync = _timed("data-updated", data_updated_at)
+    property_data_sync = _timed("property-data-updated", data_updated_at, "property")
     overview_df = _timed("overview-observations", analyze.overview_observations, df, birds_for_totals)
     s = _timed("summary-property", analyze.summary, df)
     public_s = _timed("summary-overview", analyze.summary, overview_df)
@@ -3490,6 +3665,14 @@ def build():
         df,
         birds_for_totals,
         moths_for_header,
+    )
+    taxa_page_recent = _timed(
+        "taxa-page-recent",
+        taxa_page_recent_species,
+        df,
+        birds_for_totals,
+        moths_for_header,
+        property_data_sync,
     )
     # Build each view once, then wrap it in a page-specific document below.
     # Keeping the view stream separate prevents unrelated DOM and Plotly payloads
@@ -3694,12 +3877,11 @@ def build():
     log_entries = _timed("activity-log", analyze.activity_log, df, stats)
     weather_cache = _timed("load-weather", weather.load_weather)
     id_changes = _timed("id-changes", _load_id_changes)
-    last_data_sync = _timed("data-updated", data_updated_at)
     data_updated = _fmt_dt(last_data_sync) if last_data_sync else "—"
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
-        log_taxa_total_pills(taxa_page_totals)
+        log_taxa_stats_panel(taxa_page_totals, taxa_page_recent)
         + activity_log_body(log_entries, weather_cache, last_data_sync)
         + id_changes_body(id_changes)
         + log_resource_links(),
