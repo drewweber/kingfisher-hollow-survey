@@ -56,7 +56,7 @@ HERO_WEBP = "/assets/hero/dji_fly_20251020_173830_305_1760996794506_photo_optimi
 # Change this only after the section-writer makes a substantial editorial
 # refresh across the report. Routine data syncs, generated output, code work,
 # and small copy corrections must not move the public "Content updated" date.
-MAJOR_CONTENT_UPDATED_AT = "2026-08-17T10:01:23-04:00"
+MAJOR_CONTENT_UPDATED_AT = "2026-08-26T05:28:48-04:00"
 
 
 def _asset_version(path):
@@ -2894,12 +2894,13 @@ def moth_view(df, stats):
         moth_stats(msum, comp)
         + property_profile_body(plant_count, msum["species"])
         + takeaway(
-            "The strongest new host-search lead is Elder Shoot Borer, recorded August 13; published "
-            "host records include elder and alder, both present here. Several additional photo-based "
-            "micromoth identifications remain provisional, but if confirmed they would add willow, "
-            "sumac, hornbeam or hazel, and mint-family plants to the search. Adult records and reported "
-            "associations don't prove breeding or host use on the property. Inspect those plants for "
-            "mines, rolls, larvae, frass, or feeding sign, and photograph the evidence with the plant.",
+            "The late-August additions sharpen the host-search map. A provisional Polymorphic Pondweed "
+            "Moth identification and a research-grade Spotted Peppergrass Moth record make pondweeds and "
+            "peppergrass useful inspection targets; provisional Oak Skeletonizer, Beech Midget, oak-feeding <em>Stigmella</em>, "
+            "and Thistle Stem Borer identifications point toward oak leaves, beech leaves, and thistle stems. "
+            "These adult records are survey leads, not proof of larvae, breeding, or host use here. Search "
+            "for mines, skeletonizing, rolls, borings, frass, or feeding sign, and photograph the evidence "
+            "with the identified plant.",
             dark=True),
         intro=f"{msum['species']:,} moth species are confirmed on 30 riparian acres, including "
               f"{moth_county_firsts:,} first iNaturalist records for Tioga County. That county-first "
@@ -3179,13 +3180,14 @@ def plants_view(df, stats):
         'The <em class="text-hollow-300">Plants</em>',
         stats_band
         + takeaway(
-            "The uneven list is as useful as the total. Flowering plants dominate the confirmed flora, "
-            "while sedges, willows, aquatics, late composites, ferns and allies, and bryophytes still "
-            "need identification-ready passes. August targets include great blue lobelia, cardinal flower, "
-            "swamp milkweed, broadleaf arrowhead, woolgrass, flat-topped goldenrod, woodland sunflower, "
-            "and mountain mints; these are search priorities, not presumed residents. <em>Salix</em> "
-            "still stands at one species and <em>Carex</em> at two. Those are survey gaps, not ecological "
-            "absences.", dark=True)
+            "A provisional American Water-pennywort identification adds a moisture-loving groundcover to "
+            "the wet-margin search on August 22; a confirmed repeat would establish occurrence, not abundance "
+            "or biological rarity. The latest "
+            "moth records also make known white and northern red oaks, American beech, and broad-leaved "
+            "pondweed especially useful places to look for host-linked sign. Sedges, willows, aquatics, "
+            "late composites, ferns and allies, and bryophytes still need identification-ready passes. "
+            "<em>Salix</em> remains at one species and <em>Carex</em> at two. Those are survey gaps, not "
+            "ecological absences.", dark=True)
         + plant_found_body(found),
         intro=f"{psum['species']:,} wild or established plant species on 30 acres. The confirmed flora "
               "spans oak-hickory upland, northern-hardwood and hemlock slope, creek and pond margins, "
@@ -3323,7 +3325,10 @@ def butterflies_view(df, stats):
         intro="The butterfly list is still effort-limited. "
               f"{bsum['species']} species beside {moth_species:,} moths says more about day-versus-night "
               "survey effort than habitat. Mourning Cloak and Red-spotted Admiral joined the list on "
-              "August 9, followed by Least Skipper on August 11. Together they reward two complementary "
+              "August 9, followed by Least Skipper on August 11 and Black Swallowtail on August 13. "
+              "The swallowtail record makes flowering parsley-family plants worth checking for eggs and "
+              "larvae, but an adult alone doesn't establish host use here. Together the additions reward "
+              "two complementary "
               "methods: fruit bait and shaded woodland-edge watches for admirals and anglewings, plus slow "
               "sunny passes through wet, grassy openings for small skippers. Photograph both wing surfaces "
               "and repeat the same route through late summer.",
@@ -3369,14 +3374,14 @@ def odonates_view(df, stats):
         "odonates", "On the Wing",
         'Dragonflies <em class="text-hollow-300">&amp; Damselflies</em>',
         stats_band + odonate_found_body(found),
-        intro=f"{osum['species']} species already divide the property into distinct waters. Common Green Darner "
-              "joined the list on August 8, adding a large, mobile late-summer visitor; because this species "
-              "includes long-distance migrants, one adult does not show local emergence. The July additions of "
-              "Halloween Pennant and White-faced Meadowhawk strengthen the sunny pond-edge and marshy-margin signal. "
-              "Ebony Jewelwing follows shaded moving water along Michigan Creek; spreadwings, bluets, forktails, and "
-              "Aurora Damsel work the pond and wet margins; skimmers patrol open water and sunny edges; darners and "
-              "meadowhawks carry the season into fall. Repeated daytime circuits should add species quickly, while "
-              "exuviae, tenerals, mating pairs, and oviposition will show which waters are actually producing them.",
+        intro=f"{osum['species']} species already divide the property into distinct waters. Three August 21-23 "
+              "records sharpen the next checks: provisional Fawn Darner and Familiar Bluet identifications would "
+              "fit shaded moving water and quieter pond margins, while research-grade Black Saddlebags may still be "
+              "a migrant or brief visitor. Adult occurrence does not show local emergence. Ebony Jewelwing follows the creek; "
+              "spreadwings, bluets, forktails, and Aurora Damsel work quieter water; skimmers patrol sunny edges; "
+              "darners and meadowhawks carry the season into fall. Repeated daytime circuits should add species "
+              "quickly, while exuviae, tenerals, mating pairs, and oviposition will show which waters are actually "
+              "producing them.",
         dark=True))
     out.append(section(
         "odonate-gap", "Yet to Find",
@@ -3711,13 +3716,13 @@ def build():
                    note=f"Each step marks a species' first record at Kingfisher Hollow. New steps after {public_s['observations']:,} records show that the inventory is still actively growing.")
         + takeaway(
             f"The curve is still gaining species after {public_s['observations']:,} records. The latest rise "
-            "came from different methods and different levels of evidence. Daytime work added Mourning Cloak, "
-            "Red-spotted Admiral, and Least Skipper; pond-edge work added Common Green Darner; night lighting "
-            "added Elder Shoot Borer and more micromoths; and close plant work produced a photo-based "
-            "rock-polypody identification awaiting confirmation. A Spring Salamander report without supporting "
-            "media remains a lead to re-document, not a confirmed voucher. "
-            "The contrast matters: strong records expand the ecological story, while provisional records sharpen "
-            "the next field check. No single method owns the remaining frontier."),
+            "again came from changing methods. Close fungal work on August 22-23 produced a sharp run of "
+            "additions; creek and pond circuits added research-grade Black Saddlebags and provisional Fawn "
+            "Darner and Familiar Bluet leads; night "
+            "lighting added host-search leads from pondweed, oak, beech, peppergrass, and thistle moths. Several "
+            "of the smallest moth identifications remain provisional, and mobile dragonflies do not prove local "
+            "emergence. Strong records expand the ecological story; provisional records sharpen the next field "
+            "check. No single method owns the remaining frontier."),
         intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
 
     # ── Distinctiveness arc: public county contribution → rarity test ─────────
