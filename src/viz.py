@@ -296,9 +296,7 @@ def obs_map(df, dark=False):
     fig = go.Figure()
     for g in groups:
         sub = pts[pts["iconic_taxon"].fillna("Other") == g]
-        # scattermapbox/mapbox (Plotly.js 2.x) — the page pins plotly 2.35.2,
-        # which doesn't understand the newer scattermap/map (MapLibre) trace.
-        fig.add_scattermapbox(
+        fig.add_scattermap(
             lat=sub["latitude"], lon=sub["longitude"], mode="markers",
             marker=dict(size=7, color=palette[g]), name=g,
             text=sub["common_name"].fillna(sub["taxon_name"]),
@@ -306,10 +304,10 @@ def obs_map(df, dark=False):
         )
     legend_bg = "rgba(13,34,28,0.85)" if dark else "rgba(255,255,255,0.85)"
     fig.update_layout(
-        mapbox=dict(style="carto-darkmatter" if dark else "carto-positron",
-                    center=dict(lat=pts["latitude"].mean(),
-                                lon=pts["longitude"].mean()),
-                    zoom=15),
+        map=dict(style="carto-darkmatter" if dark else "carto-positron",
+                 center=dict(lat=pts["latitude"].mean(),
+                             lon=pts["longitude"].mean()),
+                 zoom=15),
         height=560, margin=dict(l=0, r=0, t=0, b=0),
         showlegend=True,
         font=dict(family=FONT, color=DARK_INK if dark else INK),
