@@ -1,159 +1,164 @@
 Row #,Taxon Order,Category,Common Name,Scientific Name,Count,Location,S/P,Date,LocID,SubID,Exotic,Countable
-2,6855,species,Pied-billed Grebe,Podilymbus podiceps,1,"Michigan Hollow, silo house",US-NY,31 May 2026,L41961519,S350107733,,1
-3,16951,species,Alder Flycatcher,Empidonax alnorum,1,"Michigan Hollow, silo house",US-NY,27 May 2026,L41961519,S347885803,,1
-4,19245,species,Eastern Warbling Vireo,Vireo gilvus,1,"Michigan Hollow, silo house",US-NY,26 May 2026,L41961519,S347455758,,1
-5,3243,species,Black-billed Cuckoo,Coccyzus erythropthalmus,1,"Michigan Hollow, silo house",US-NY,25 May 2026,L41961519,S346484191,,1
-6,6126,species,Spotted Sandpiper,Actitis macularius,1,"Michigan Hollow, silo house",US-NY,19 May 2026,L41961519,S342604030,,1
-7,6154,species,Greater Yellowlegs,Tringa melanoleuca,1,"Michigan Hollow, silo house",US-NY,29 Apr 2026,L41961519,S329325020,,1
-8,27123,species,Blue-gray Gnatcatcher,Polioptila caerulea,1,"Michigan Hollow, silo house",US-NY,27 Apr 2026,L41961519,S328856443,,1
-9,7729,species,Great Egret,Ardea alba,1,"Michigan Hollow, silo house",US-NY,24 Apr 2026,L41961519,S326445822,,1
-10,33848,species,Rusty Blackbird,Euphagus carolinus,2,"Michigan Hollow, silo house",US-NY,18 Apr 2026,L41961519,S323464879,,1
-12,33568,species,Eastern Meadowlark,Sturnella magna,1,"Michigan Hollow, silo house",US-NY,04 Apr 2026,L41961519,S317057038,,1
-13,7811,species,Black Vulture,Coragyps atratus,1,"Michigan Hollow, silo house",US-NY,04 Apr 2026,L41961519,S317057038,,1
-14,6462,species,Bonaparte's Gull,Chroicocephalus philadelphia,7,"Michigan Hollow, silo house",US-NY,04 Apr 2026,L41961519,S317057038,,1
-15,742,species,Bufflehead,Bucephala albeola,2,"Michigan Hollow, silo house",US-NY,21 Mar 2026,L41961519,S311541164,,1
-16,673,species,Ring-necked Duck,Aythya collaris,16,"Michigan Hollow, silo house",US-NY,21 Mar 2026,L41961519,S311541164,,1
-17,762,species,Common Merganser,Mergus merganser,1,"Michigan Hollow, silo house",US-NY,09 Mar 2026,L41961519,S307799797,,1
-18,8064,species,Golden Eagle,Aquila chrysaetos,2,"Michigan Hollow, silo house",US-NY,08 Mar 2026,L41961519,S307362561,,1
-19,331,species,Cackling Goose,Branta hutchinsii,1,"Michigan Hollow, silo house",US-NY,08 Mar 2026,L41961519,S307362561,,1
-20,6539,species,American Herring Gull,Larus smithsonianus,1,"Michigan Hollow, silo house",US-NY,27 Feb 2026,L41961519,S305130034,,1
-21,32085,species,Evening Grosbeak,Hesperiphona vespertina,22,"Michigan Hollow, silo house",US-NY,19 Feb 2026,L41961519,S302175958,,1
-22,33095,species,American Tree Sparrow,Spizelloides arborea,2,"Michigan Hollow, silo house",US-NY,26 Jan 2026,L41961519,S296410633,,1
-23,32498,species,Red Crossbill,Loxia curvirostra,1,"Michigan Hollow, silo house",US-NY,13 Dec 2025,L41961519,S288385085,,1
-24,267,species,Snow Goose,Anser caerulescens,,"Michigan Hollow, silo house",US-NY,04 Dec 2025,L41961519,S287365923,,1
-25,8487,species,Red-shouldered Hawk,Buteo lineatus,1,"Michigan Hollow, silo house",US-NY,25 Nov 2025,L41961519,S286110112,,1
-26,32674,species,Snow Bunting,Plectrophenax nivalis,1,"Michigan Hollow, silo house",US-NY,15 Nov 2025,L41961519,S284564159,,1
-27,32483,species,Redpoll,Acanthis flammea,1,"Michigan Hollow, silo house",US-NY,05 Nov 2025,L41961519,S282976950,,1
-28,9304,species,Northern Saw-whet Owl,Aegolius acadicus,1,"Michigan Hollow, silo house",US-NY,04 Nov 2025,L41961519,S282934845,,1
-29,33099,species,Fox Sparrow,Passerella iliaca,1,"Michigan Hollow, silo house",US-NY,02 Nov 2025,L41961519,S282530288,,1
-30,6933,species,Common Loon,Gavia immer,15,"Michigan Hollow, silo house",US-NY,01 Nov 2025,L41961519,S282310623,,1
-31,6521,species,Ring-billed Gull,Larus delawarensis,1,"Michigan Hollow, silo house",US-NY,20 Oct 2025,L41961519,S280494414,,1
-32,32595,species,Pine Siskin,Spinus pinus,1,"Michigan Hollow, silo house",US-NY,19 Oct 2025,L41961519,S280355206,,1
-33,8324,species,Northern Harrier,Circus hudsonius,1,"Michigan Hollow, silo house",US-NY,12 Oct 2025,L41961519,S278989012,,1
-34,33315,species,Swamp Sparrow,Melospiza georgiana,1,"Michigan Hollow, silo house",US-NY,05 Oct 2025,L41961519,S277406300,,1
-35,27295,species,Winter Wren,Troglodytes hiemalis,1,"Michigan Hollow, silo house",US-NY,03 Oct 2025,L41961519,S277076109,,1
-36,7600,species,Black-crowned Night Heron,Nycticorax nycticorax,1,"Michigan Hollow, silo house",US-NY,29 Sep 2025,L41961519,S276242900,,1
-37,6064,species,American Woodcock,Scolopax minor,,"Michigan Hollow, silo house",US-NY,29 Sep 2025,L41961519,S276242900,,1
-38,33310,species,Lincoln's Sparrow,Melospiza lincolnii,1,"Michigan Hollow, silo house",US-NY,22 Sep 2025,L41961519,S274923933,,1
-39,26844,species,Ruby-crowned Kinglet,Corthylio calendula,1,"Michigan Hollow, silo house",US-NY,21 Sep 2025,L41961519,S274650661,,1
-40,12062,species,Merlin,Falco columbarius,1,"Michigan Hollow, silo house",US-NY,21 Sep 2025,L41961519,S274650661,,1
-41,28318,species,Gray-cheeked Thrush,Catharus minimus,,"Michigan Hollow, silo house",US-NY,20 Sep 2025,L41961519,S274382145,,1
-42,33201,species,White-throated Sparrow,Zonotrichia albicollis,1,"Michigan Hollow, silo house",US-NY,19 Sep 2025,L41961519,S274382436,,1
-43,34138,species,Blackpoll Warbler,Setophaga striata,1,"Michigan Hollow, silo house",US-NY,13 Sep 2025,L41961519,S273171943,,1
-45,19244,species,Philadelphia Vireo,Vireo philadelphicus,1,"Michigan Hollow, silo house",US-NY,08 Sep 2025,L41961519,S272235808,,1
-46,34083,species,Bay-breasted Warbler,Setophaga castanea,2,"Michigan Hollow, silo house",US-NY,01 Sep 2025,L41961519,S270939110,,1
-47,34063,species,Northern Parula,Setophaga americana,2,"Michigan Hollow, silo house",US-NY,01 Sep 2025,L41961519,S270939110,,1
-48,34061,species,Cerulean Warbler,Setophaga cerulea,1,"Michigan Hollow, silo house",US-NY,01 Sep 2025,L41961519,S270939110,,1
-49,34346,species,Wilson's Warbler,Cardellina pusilla,1,"Michigan Hollow, silo house",US-NY,01 Sep 2025,L41961519,S270877794,,1
-50,34141,species,Black-throated Blue Warbler,Setophaga caerulescens,1,"Michigan Hollow, silo house",US-NY,31 Aug 2025,L41961519,S270683612,,1
-51,34006,species,Mourning Warbler,Geothlypis philadelphia,1,"Michigan Hollow, silo house",US-NY,28 Aug 2025,L41961519,S270084849,,1
-52,34344,species,Canada Warbler,Cardellina canadensis,1,"Michigan Hollow, silo house",US-NY,25 Aug 2025,L41961519,S269490271,,1
-53,3492,species,Common Nighthawk,Chordeiles minor,1,"Michigan Hollow, silo house",US-NY,24 Aug 2025,L41961519,S269359953,,1
-54,34159,species,Yellow-rumped Warbler,Setophaga coronata,1,"Michigan Hollow, silo house",US-NY,22 Aug 2025,L41961519,S268734368,,1
-55,33981,species,Nashville Warbler,Leiothlypis ruficapilla,1,"Michigan Hollow, silo house",US-NY,18 Aug 2025,L41961519,S268047434,,1
-56,3896,species,Chimney Swift,Chaetura pelagica,1,"Michigan Hollow, silo house",US-NY,17 Aug 2025,L41961519,S267918641,,1
-58,34060,species,Cape May Warbler,Setophaga tigrina,2,"Michigan Hollow, silo house",US-NY,16 Aug 2025,L41961519,S267576600,,1
-59,33972,species,Tennessee Warbler,Leiothlypis peregrina,1,"Michigan Hollow, silo house",US-NY,16 Aug 2025,L41961519,S267576600,,1
-60,34057,species,Hooded Warbler,Setophaga citrina,1,"Michigan Hollow, silo house",US-NY,15 Aug 2025,L41961519,S267577234,,1
-61,12114,species,Peregrine Falcon,Falco peregrinus,1,"Michigan Hollow, silo house",US-NY,14 Aug 2025,L41961519,S267275207,,1
-62,8866,species,Eastern Screech-Owl,Megascops asio,1,"Michigan Hollow, silo house",US-NY,12 Aug 2025,L41961519,S266897661,,1
-63,1274,species,Wild Turkey,Meleagris gallopavo,3,"Michigan Hollow, silo house",US-NY,12 Aug 2025,L41961519,S266760284,,1
-64,28324,species,Swainson's Thrush,Catharus ustulatus,,"Michigan Hollow, silo house",US-NY,10 Aug 2025,L41961519,S266266689,,1
-65,8910,species,Great Horned Owl,Bubo virginianus,2,"Michigan Hollow, silo house",US-NY,10 Aug 2025,L41961519,S266266689,,1
-66,16963,species,Least Flycatcher,Empidonax minimus,1,"Michigan Hollow, silo house",US-NY,08 Aug 2025,L41961519,S265942281,,1
-67,7704,species,Green Heron,Butorides virescens,2,"Michigan Hollow, silo house",US-NY,08 Aug 2025,L41961519,S265942281,,1
-68,8367,species,Bald Eagle,Haliaeetus leucocephalus,1,"Michigan Hollow, silo house",US-NY,02 Aug 2025,L41961519,S264463429,,1
-69,7424,species,Double-crested Cormorant,Nannopterum auritum,1,"Michigan Hollow, silo house",US-NY,02 Aug 2025,L41961519,S264463429,,1
-70,33564,species,Bobolink,Dolichonyx oryzivorus,1,"Michigan Hollow, silo house",US-NY,01 Aug 2025,L41961519,S264184498,,1
-71,6129,species,Solitary Sandpiper,Tringa solitaria,1,"Michigan Hollow, silo house",US-NY,01 Aug 2025,L41961519,S264184498,,1
-72,27026,species,Brown Creeper,Certhia americana,1,"Michigan Hollow, silo house",US-NY,23 Jul 2025,L41961519,S262237091,,1
-74,1853,species,Rock Pigeon,Columba livia,5,"Michigan Hollow, silo house",US-NY,20 Jul 2025,L41961519,S261618327,N,1
-75,33962,species,Black-and-white Warbler,Mniotilta varia,1,"Michigan Hollow, silo house",US-NY,20 Jul 2025,L41961519,S261368794,,1
-76,33957,species,Blue-winged Warbler,Vermivora cyanoptera,1,"Michigan Hollow, silo house",US-NY,20 Jul 2025,L41961519,S261368794,,1
-77,7832,species,Osprey,Pandion haliaetus,1,"Michigan Hollow, silo house",US-NY,20 Jul 2025,L41961519,S261368794,,1
-78,9219,species,Barred Owl,Strix varia,1,"Michigan Hollow, silo house",US-NY,19 Jul 2025,L41961519,S260983155,,1
-79,8479,species,Broad-winged Hawk,Buteo platypterus,1,"Michigan Hollow, silo house",US-NY,18 Jul 2025,L41961519,S260837532,,1
-80,8256,species,Sharp-shinned Hawk,Accipiter striatus,1,"Michigan Hollow, silo house",US-NY,13 Jul 2025,L41961519,S259642668,,1
-81,24106,species,Northern Rough-winged Swallow,Stelgidopteryx serripennis,4,"Michigan Hollow, silo house",US-NY,12 Jul 2025,L41961519,S259472512,,1
-82,34557,species,Rose-breasted Grosbeak,Pheucticus ludovicianus,1,"Michigan Hollow, silo house",US-NY,07 Jul 2025,L41961519,S257828634,,1
-83,31534,species,House Sparrow,Passer domesticus,1,"Michigan Hollow, silo house",US-NY,07 Jul 2025,L41961519,S257787659,N,1
-84,17472,species,Eastern Kingbird,Tyrannus tyrannus,1,"Michigan Hollow, silo house",US-NY,07 Jul 2025,L41961519,S257787659,,1
-85,21624,species,Common Raven,Corvus corax,1,"Michigan Hollow, silo house",US-NY,06 Jul 2025,L41961519,S257436112,,1
-86,545,species,Mallard,Anas platyrhynchos,1,"Michigan Hollow, silo house",US-NY,04 Jul 2025,L41961519,S256780842,,1
-87,34079,species,Magnolia Warbler,Setophaga magnolia,1,"Michigan Hollow, silo house",US-NY,02 Jul 2025,L41961519,S256360411,,1
-88,11427,species,Hairy Woodpecker,Leuconotopicus villosus,2,"Michigan Hollow, silo house",US-NY,02 Jul 2025,L41961519,S256360411,,1
-89,24051,species,Bank Swallow,Riparia riparia,1,"Michigan Hollow, silo house",US-NY,02 Jul 2025,L41961519,S256277707,,1
-90,24064,species,Tree Swallow,Tachycineta bicolor,1,"Michigan Hollow, silo house",US-NY,02 Jul 2025,L41961519,S256269755,,1
-91,8506,species,Red-tailed Hawk,Buteo jamaicensis,2,"Michigan Hollow, silo house",US-NY,02 Jul 2025,L41961519,S256269755,,1
-92,34133,species,Chestnut-sided Warbler,Setophaga pensylvanica,1,"Michigan Hollow, silo house",US-NY,29 Jun 2025,L41961519,S255446151,,1
-93,33952,species,Louisiana Waterthrush,Parkesia motacilla,1,"Michigan Hollow, silo house",US-NY,26 Jun 2025,L41961519,S254408470,,1
-95,10306,species,Belted Kingfisher,Megaceryle alcyon,1,"Michigan Hollow, silo house",US-NY,26 Jun 2025,L41961519,S254408470,,1
-96,8278,species,Cooper's Hawk,Astur cooperii,1,"Michigan Hollow, silo house",US-NY,26 Jun 2025,L41961519,S254408470,,1
-97,28037,species,Brown Thrasher,Toxostoma rufum,1,"Michigan Hollow, silo house",US-NY,26 Jun 2025,L41961519,S255051726,,1
-98,17334,species,Great Crested Flycatcher,Myiarchus crinitus,1,"Michigan Hollow, silo house",US-NY,25 Jun 2025,L41961519,S254222027,,1
-99,12028,species,American Kestrel,Falco sparverius,1,"Michigan Hollow, silo house",US-NY,25 Jun 2025,L41961519,S254222027,,1
-100,34058,species,American Redstart,Setophaga ruticilla,1,"Michigan Hollow, silo house",US-NY,25 Jun 2025,L41961519,S253939591,,1
-101,33002,species,Field Sparrow,Spizella pusilla,1,"Michigan Hollow, silo house",US-NY,25 Jun 2025,L41961519,S253939591,,1
-102,28347,species,Wood Thrush,Hylocichla mustelina,1,"Michigan Hollow, silo house",US-NY,25 Jun 2025,L41961519,S253939591,,1
-103,22160,species,Tufted Titmouse,Baeolophus bicolor,1,"Michigan Hollow, silo house",US-NY,25 Jun 2025,L41961519,S253939591,,1
-104,754,species,Hooded Merganser,Lophodytes cucullatus,1,"Michigan Hollow, silo house",US-NY,25 Jun 2025,L41961519,S253939591,,1
-105,28313,species,Veery,Catharus fuscescens,2,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253861946,,1
-106,19220,species,Yellow-throated Vireo,Vireo flavifrons,1,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S255051994,,1
-107,7753,species,Great Blue Heron,Ardea herodias,1,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253839095,,1
-108,34218,species,Black-throated Green Warbler,Setophaga virens,1,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253663035,,1
-109,28333,species,Hermit Thrush,Catharus guttatus,3,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253663035,,1
-110,26937,species,Red-breasted Nuthatch,Sitta canadensis,2,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253663035,,1
-111,19226,species,Blue-headed Vireo,Vireo solitarius,1,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253663035,,1
-112,16924,species,Eastern Wood-Pewee,Contopus virens,2,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253663035,,1
-113,11126,species,Yellow-bellied Sapsucker,Sphyrapicus varius,1,"Michigan Hollow, silo house",US-NY,24 Jun 2025,L41961519,S253663035,,1
-114,33415,species,Eastern Towhee,Pipilo erythrophthalmus,2,"Michigan Hollow, silo house",US-NY,23 Jun 2025,L41961519,S253567193,,1
-115,5827,species,Killdeer,Charadrius vociferus,1,"Michigan Hollow, silo house",US-NY,23 Jun 2025,L41961519,S253567193,,1
-116,34084,species,Blackburnian Warbler,Setophaga fusca,1,"Michigan Hollow, silo house",US-NY,23 Jun 2025,L41961519,S253511327,,1
-117,34436,species,Scarlet Tanager,Piranga olivacea,1,"Michigan Hollow, silo house",US-NY,23 Jun 2025,L41961519,S253518043,,1
-118,32324,species,Purple Finch,Haemorhous purpureus,1,"Michigan Hollow, silo house",US-NY,23 Jun 2025,L41961519,S253518043,,1
-119,28126,species,Eastern Bluebird,Sialia sialis,1,"Michigan Hollow, silo house",US-NY,23 Jun 2025,L41961519,S253518043,,1
-120,7815,species,Turkey Vulture,Cathartes aura,1,"Michigan Hollow, silo house",US-NY,23 Jun 2025,L41961519,S253518043,,1
-121,34607,species,Indigo Bunting,Passerina cyanea,2,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-122,34185,species,Prairie Warbler,Setophaga discolor,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-123,34153,species,Pine Warbler,Setophaga pinus,2,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-124,34087,species,Northern Yellow Warbler,Setophaga aestiva,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-125,34028,species,Common Yellowthroat,Geothlypis trichas,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-126,33946,species,Ovenbird,Seiurus aurocapilla,2,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-127,33770,species,Baltimore Oriole,Icterus galbula,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-128,32990,species,Chipping Sparrow,Spizella passerina,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-129,32617,species,American Goldfinch,Spinus tristis,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-130,29888,species,Cedar Waxwing,Bombycilla cedrorum,2,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-131,28000,species,Gray Catbird,Dumetella carolinensis,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-132,27813,species,European Starling,Sturnus vulgaris,4,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,N,1
-133,27191,species,Northern House Wren,Troglodytes aedon,2,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-134,24187,species,Barn Swallow,Hirundo rustica,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-135,21294,species,Blue Jay,Cyanocitta cristata,1,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-136,19267,species,Red-eyed Vireo,Vireo olivaceus,8,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-137,4802,species,Ruby-throated Hummingbird,Archilochus colubris,2,"Michigan Hollow, silo house",US-NY,22 Jun 2025,L41961519,S253248090,,1
-138,34515,species,Northern Cardinal,Cardinalis cardinalis,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-139,33853,species,Common Grackle,Quiscalus quiscula,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-140,33833,species,Brown-headed Cowbird,Molothrus ater,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-141,33779,species,Red-winged Blackbird,Agelaius phoeniceus,3,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-142,33277,species,Song Sparrow,Melospiza melodia,3,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-143,33124,species,Dark-eyed Junco,Junco hyemalis,4,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-144,32310,species,House Finch,Haemorhous mexicanus,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,N,1
-145,28633,species,American Robin,Turdus migratorius,4,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-146,27348,species,Carolina Wren,Thryothorus ludovicianus,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-147,26889,species,White-breasted Nuthatch,Sitta carolinensis,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-148,26848,species,Golden-crowned Kinglet,Regulus satrapa,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-149,22065,species,Black-capped Chickadee,Poecile atricapillus,3,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-150,21557,species,American Crow,Corvus brachyrhynchos,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-151,17007,species,Eastern Phoebe,Sayornis phoebe,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-152,11900,species,Northern Flicker,Colaptes auratus,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-153,11762,species,Pileated Woodpecker,Dryocopus pileatus,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-154,11400,species,Downy Woodpecker,Dryobates pubescens,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-155,11199,species,Red-bellied Woodpecker,Melanerpes carolinus,1,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-156,2412,species,Mourning Dove,Zenaida macroura,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-157,455,species,Wood Duck,Aix sponsa,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-158,342,species,Canada Goose,Branta canadensis,2,"Michigan Hollow, silo house",US-NY,30 Mar 2025,L41961519,S222248679,,1
-1,35853,spuh,bird sp.,Aves sp.,1,"Michigan Hollow, silo house",US-NY,08 Jun 2026,L41961519,S354792356,,0
-11,773,slash,Common/Red-breasted Merganser,Mergus merganser/serrator,1,"Michigan Hollow, silo house",US-NY,12 Apr 2026,L41961519,S320640024,,0
-44,28346,spuh,Catharus sp.,Catharus sp.,1,"Michigan Hollow, silo house",US-NY,08 Sep 2025,L41961519,S272235808,,0
-57,34397,spuh,new world warbler sp.,Parulidae sp.,1,"Michigan Hollow, silo house",US-NY,16 Aug 2025,L41961519,S267576600,,0
-73,33944,spuh,blackbird sp.,Icteridae sp.,4,"Michigan Hollow, silo house",US-NY,20 Jul 2025,L41961519,S261618327,,0
-94,24305,spuh,swallow sp.,Hirundinidae sp.,8,"Michigan Hollow, silo house",US-NY,26 Jun 2025,L41961519,S254408470,,0
+1,16949,species,Yellow-bellied Flycatcher,Empidonax flaviventris,1,Kingfisher Hollow,US-NY,26 Aug 2026,L41961519,S387218908,,1
+2,6145,species,Lesser Yellowlegs,Tringa flavipes,2,Kingfisher Hollow,US-NY,23 Aug 2026,L41961519,S386942999,,1
+4,33953,species,Northern Waterthrush,Parkesia noveboracensis,1,Kingfisher Hollow,US-NY,19 Aug 2026,L41961519,S384859114,,1
+7,6855,species,Pied-billed Grebe,Podilymbus podiceps,1,Kingfisher Hollow,US-NY,31 May 2026,L41961519,S350107733,,1
+8,16951,species,Alder Flycatcher,Empidonax alnorum,1,Kingfisher Hollow,US-NY,27 May 2026,L41961519,S347885803,,1
+9,19245,species,Eastern Warbling Vireo,Vireo gilvus,1,Kingfisher Hollow,US-NY,26 May 2026,L41961519,S347455758,,1
+10,3243,species,Black-billed Cuckoo,Coccyzus erythropthalmus,1,Kingfisher Hollow,US-NY,25 May 2026,L41961519,S346484191,,1
+11,6126,species,Spotted Sandpiper,Actitis macularius,1,Kingfisher Hollow,US-NY,19 May 2026,L41961519,S342604030,,1
+12,6154,species,Greater Yellowlegs,Tringa melanoleuca,1,Kingfisher Hollow,US-NY,29 Apr 2026,L41961519,S329325020,,1
+13,27123,species,Blue-gray Gnatcatcher,Polioptila caerulea,1,Kingfisher Hollow,US-NY,27 Apr 2026,L41961519,S328856443,,1
+14,7729,species,Great Egret,Ardea alba,1,Kingfisher Hollow,US-NY,24 Apr 2026,L41961519,S326445822,,1
+15,33848,species,Rusty Blackbird,Euphagus carolinus,2,Kingfisher Hollow,US-NY,18 Apr 2026,L41961519,S323464879,,1
+17,33568,species,Eastern Meadowlark,Sturnella magna,1,Kingfisher Hollow,US-NY,04 Apr 2026,L41961519,S317057038,,1
+18,7811,species,Black Vulture,Coragyps atratus,1,Kingfisher Hollow,US-NY,04 Apr 2026,L41961519,S317057038,,1
+19,6462,species,Bonaparte's Gull,Chroicocephalus philadelphia,7,Kingfisher Hollow,US-NY,04 Apr 2026,L41961519,S317057038,,1
+20,742,species,Bufflehead,Bucephala albeola,2,Kingfisher Hollow,US-NY,21 Mar 2026,L41961519,S311541164,,1
+21,673,species,Ring-necked Duck,Aythya collaris,16,Kingfisher Hollow,US-NY,21 Mar 2026,L41961519,S311541164,,1
+22,762,species,Common Merganser,Mergus merganser,1,Kingfisher Hollow,US-NY,09 Mar 2026,L41961519,S307799797,,1
+23,8064,species,Golden Eagle,Aquila chrysaetos,2,Kingfisher Hollow,US-NY,08 Mar 2026,L41961519,S307362561,,1
+24,331,species,Cackling Goose,Branta hutchinsii,1,Kingfisher Hollow,US-NY,08 Mar 2026,L41961519,S307362561,,1
+25,6539,species,American Herring Gull,Larus smithsonianus,1,Kingfisher Hollow,US-NY,27 Feb 2026,L41961519,S305130034,,1
+26,32085,species,Evening Grosbeak,Hesperiphona vespertina,22,Kingfisher Hollow,US-NY,19 Feb 2026,L41961519,S302175958,,1
+27,33095,species,American Tree Sparrow,Spizelloides arborea,2,Kingfisher Hollow,US-NY,26 Jan 2026,L41961519,S296410633,,1
+28,32498,species,Red Crossbill,Loxia curvirostra,1,Kingfisher Hollow,US-NY,13 Dec 2025,L41961519,S288385085,,1
+29,267,species,Snow Goose,Anser caerulescens,,Kingfisher Hollow,US-NY,04 Dec 2025,L41961519,S287365923,,1
+30,8487,species,Red-shouldered Hawk,Buteo lineatus,1,Kingfisher Hollow,US-NY,25 Nov 2025,L41961519,S286110112,,1
+31,32674,species,Snow Bunting,Plectrophenax nivalis,1,Kingfisher Hollow,US-NY,15 Nov 2025,L41961519,S284564159,,1
+32,32483,species,Redpoll,Acanthis flammea,1,Kingfisher Hollow,US-NY,05 Nov 2025,L41961519,S282976950,,1
+33,9304,species,Northern Saw-whet Owl,Aegolius acadicus,1,Kingfisher Hollow,US-NY,04 Nov 2025,L41961519,S282934845,,1
+34,33099,species,Fox Sparrow,Passerella iliaca,1,Kingfisher Hollow,US-NY,02 Nov 2025,L41961519,S282530288,,1
+35,6933,species,Common Loon,Gavia immer,15,Kingfisher Hollow,US-NY,01 Nov 2025,L41961519,S282310623,,1
+36,6521,species,Ring-billed Gull,Larus delawarensis,1,Kingfisher Hollow,US-NY,20 Oct 2025,L41961519,S280494414,,1
+37,32595,species,Pine Siskin,Spinus pinus,1,Kingfisher Hollow,US-NY,19 Oct 2025,L41961519,S280355206,,1
+38,8324,species,Northern Harrier,Circus hudsonius,1,Kingfisher Hollow,US-NY,12 Oct 2025,L41961519,S278989012,,1
+39,33315,species,Swamp Sparrow,Melospiza georgiana,1,Kingfisher Hollow,US-NY,05 Oct 2025,L41961519,S277406300,,1
+40,27295,species,Winter Wren,Troglodytes hiemalis,1,Kingfisher Hollow,US-NY,03 Oct 2025,L41961519,S277076109,,1
+41,7600,species,Black-crowned Night Heron,Nycticorax nycticorax,1,Kingfisher Hollow,US-NY,29 Sep 2025,L41961519,S276242900,,1
+42,6064,species,American Woodcock,Scolopax minor,,Kingfisher Hollow,US-NY,29 Sep 2025,L41961519,S276242900,,1
+43,33310,species,Lincoln's Sparrow,Melospiza lincolnii,1,Kingfisher Hollow,US-NY,22 Sep 2025,L41961519,S274923933,,1
+44,26844,species,Ruby-crowned Kinglet,Corthylio calendula,1,Kingfisher Hollow,US-NY,21 Sep 2025,L41961519,S274650661,,1
+45,12062,species,Merlin,Falco columbarius,1,Kingfisher Hollow,US-NY,21 Sep 2025,L41961519,S274650661,,1
+46,28318,species,Gray-cheeked Thrush,Catharus minimus,,Kingfisher Hollow,US-NY,20 Sep 2025,L41961519,S274382145,,1
+47,33201,species,White-throated Sparrow,Zonotrichia albicollis,1,Kingfisher Hollow,US-NY,19 Sep 2025,L41961519,S274382436,,1
+48,34138,species,Blackpoll Warbler,Setophaga striata,1,Kingfisher Hollow,US-NY,13 Sep 2025,L41961519,S273171943,,1
+50,19244,species,Philadelphia Vireo,Vireo philadelphicus,1,Kingfisher Hollow,US-NY,08 Sep 2025,L41961519,S272235808,,1
+51,34083,species,Bay-breasted Warbler,Setophaga castanea,2,Kingfisher Hollow,US-NY,01 Sep 2025,L41961519,S270939110,,1
+52,34063,species,Northern Parula,Setophaga americana,2,Kingfisher Hollow,US-NY,01 Sep 2025,L41961519,S270939110,,1
+53,34061,species,Cerulean Warbler,Setophaga cerulea,1,Kingfisher Hollow,US-NY,01 Sep 2025,L41961519,S270939110,,1
+54,34346,species,Wilson's Warbler,Cardellina pusilla,1,Kingfisher Hollow,US-NY,01 Sep 2025,L41961519,S270877794,,1
+55,34141,species,Black-throated Blue Warbler,Setophaga caerulescens,1,Kingfisher Hollow,US-NY,31 Aug 2025,L41961519,S270683612,,1
+56,34006,species,Mourning Warbler,Geothlypis philadelphia,1,Kingfisher Hollow,US-NY,28 Aug 2025,L41961519,S270084849,,1
+57,34344,species,Canada Warbler,Cardellina canadensis,1,Kingfisher Hollow,US-NY,25 Aug 2025,L41961519,S269490271,,1
+58,3492,species,Common Nighthawk,Chordeiles minor,1,Kingfisher Hollow,US-NY,24 Aug 2025,L41961519,S269359953,,1
+59,34159,species,Yellow-rumped Warbler,Setophaga coronata,1,Kingfisher Hollow,US-NY,22 Aug 2025,L41961519,S268734368,,1
+60,33981,species,Nashville Warbler,Leiothlypis ruficapilla,1,Kingfisher Hollow,US-NY,18 Aug 2025,L41961519,S268047434,,1
+61,3896,species,Chimney Swift,Chaetura pelagica,1,Kingfisher Hollow,US-NY,17 Aug 2025,L41961519,S267918641,,1
+63,34060,species,Cape May Warbler,Setophaga tigrina,2,Kingfisher Hollow,US-NY,16 Aug 2025,L41961519,S267576600,,1
+64,33972,species,Tennessee Warbler,Leiothlypis peregrina,1,Kingfisher Hollow,US-NY,16 Aug 2025,L41961519,S267576600,,1
+65,34057,species,Hooded Warbler,Setophaga citrina,1,Kingfisher Hollow,US-NY,15 Aug 2025,L41961519,S267577234,,1
+66,12114,species,Peregrine Falcon,Falco peregrinus,1,Kingfisher Hollow,US-NY,14 Aug 2025,L41961519,S267275207,,1
+67,8866,species,Eastern Screech-Owl,Megascops asio,1,Kingfisher Hollow,US-NY,12 Aug 2025,L41961519,S266897661,,1
+68,1274,species,Wild Turkey,Meleagris gallopavo,3,Kingfisher Hollow,US-NY,12 Aug 2025,L41961519,S266760284,,1
+69,28324,species,Swainson's Thrush,Catharus ustulatus,,Kingfisher Hollow,US-NY,10 Aug 2025,L41961519,S266266689,,1
+70,8910,species,Great Horned Owl,Bubo virginianus,2,Kingfisher Hollow,US-NY,10 Aug 2025,L41961519,S266266689,,1
+71,16963,species,Least Flycatcher,Empidonax minimus,1,Kingfisher Hollow,US-NY,08 Aug 2025,L41961519,S265942281,,1
+72,7704,species,Green Heron,Butorides virescens,2,Kingfisher Hollow,US-NY,08 Aug 2025,L41961519,S265942281,,1
+73,8367,species,Bald Eagle,Haliaeetus leucocephalus,1,Kingfisher Hollow,US-NY,02 Aug 2025,L41961519,S264463429,,1
+74,7424,species,Double-crested Cormorant,Nannopterum auritum,1,Kingfisher Hollow,US-NY,02 Aug 2025,L41961519,S264463429,,1
+75,33564,species,Bobolink,Dolichonyx oryzivorus,1,Kingfisher Hollow,US-NY,01 Aug 2025,L41961519,S264184498,,1
+76,6129,species,Solitary Sandpiper,Tringa solitaria,1,Kingfisher Hollow,US-NY,01 Aug 2025,L41961519,S264184498,,1
+77,27026,species,Brown Creeper,Certhia americana,1,Kingfisher Hollow,US-NY,23 Jul 2025,L41961519,S262237091,,1
+79,1853,species,Rock Pigeon,Columba livia,5,Kingfisher Hollow,US-NY,20 Jul 2025,L41961519,S261618327,N,1
+80,33962,species,Black-and-white Warbler,Mniotilta varia,1,Kingfisher Hollow,US-NY,20 Jul 2025,L41961519,S261368794,,1
+81,33957,species,Blue-winged Warbler,Vermivora cyanoptera,1,Kingfisher Hollow,US-NY,20 Jul 2025,L41961519,S261368794,,1
+82,7832,species,Osprey,Pandion haliaetus,1,Kingfisher Hollow,US-NY,20 Jul 2025,L41961519,S261368794,,1
+83,9219,species,Barred Owl,Strix varia,1,Kingfisher Hollow,US-NY,19 Jul 2025,L41961519,S260983155,,1
+84,8479,species,Broad-winged Hawk,Buteo platypterus,1,Kingfisher Hollow,US-NY,18 Jul 2025,L41961519,S260837532,,1
+85,8256,species,Sharp-shinned Hawk,Accipiter striatus,1,Kingfisher Hollow,US-NY,13 Jul 2025,L41961519,S259642668,,1
+86,24106,species,Northern Rough-winged Swallow,Stelgidopteryx serripennis,4,Kingfisher Hollow,US-NY,12 Jul 2025,L41961519,S259472512,,1
+87,34557,species,Rose-breasted Grosbeak,Pheucticus ludovicianus,1,Kingfisher Hollow,US-NY,07 Jul 2025,L41961519,S257828634,,1
+88,31534,species,House Sparrow,Passer domesticus,1,Kingfisher Hollow,US-NY,07 Jul 2025,L41961519,S257787659,N,1
+89,17472,species,Eastern Kingbird,Tyrannus tyrannus,1,Kingfisher Hollow,US-NY,07 Jul 2025,L41961519,S257787659,,1
+90,21624,species,Common Raven,Corvus corax,1,Kingfisher Hollow,US-NY,06 Jul 2025,L41961519,S257436112,,1
+91,545,species,Mallard,Anas platyrhynchos,1,Kingfisher Hollow,US-NY,04 Jul 2025,L41961519,S256780842,,1
+92,34079,species,Magnolia Warbler,Setophaga magnolia,1,Kingfisher Hollow,US-NY,02 Jul 2025,L41961519,S256360411,,1
+93,11427,species,Hairy Woodpecker,Leuconotopicus villosus,2,Kingfisher Hollow,US-NY,02 Jul 2025,L41961519,S256360411,,1
+94,24051,species,Bank Swallow,Riparia riparia,1,Kingfisher Hollow,US-NY,02 Jul 2025,L41961519,S256277707,,1
+95,24064,species,Tree Swallow,Tachycineta bicolor,1,Kingfisher Hollow,US-NY,02 Jul 2025,L41961519,S256269755,,1
+96,8506,species,Red-tailed Hawk,Buteo jamaicensis,2,Kingfisher Hollow,US-NY,02 Jul 2025,L41961519,S256269755,,1
+97,34133,species,Chestnut-sided Warbler,Setophaga pensylvanica,1,Kingfisher Hollow,US-NY,29 Jun 2025,L41961519,S255446151,,1
+98,33952,species,Louisiana Waterthrush,Parkesia motacilla,1,Kingfisher Hollow,US-NY,26 Jun 2025,L41961519,S254408470,,1
+100,10306,species,Belted Kingfisher,Megaceryle alcyon,1,Kingfisher Hollow,US-NY,26 Jun 2025,L41961519,S254408470,,1
+101,8278,species,Cooper's Hawk,Astur cooperii,1,Kingfisher Hollow,US-NY,26 Jun 2025,L41961519,S254408470,,1
+102,28037,species,Brown Thrasher,Toxostoma rufum,1,Kingfisher Hollow,US-NY,26 Jun 2025,L41961519,S255051726,,1
+103,17334,species,Great Crested Flycatcher,Myiarchus crinitus,1,Kingfisher Hollow,US-NY,25 Jun 2025,L41961519,S254222027,,1
+104,12028,species,American Kestrel,Falco sparverius,1,Kingfisher Hollow,US-NY,25 Jun 2025,L41961519,S254222027,,1
+105,34058,species,American Redstart,Setophaga ruticilla,1,Kingfisher Hollow,US-NY,25 Jun 2025,L41961519,S253939591,,1
+106,33002,species,Field Sparrow,Spizella pusilla,1,Kingfisher Hollow,US-NY,25 Jun 2025,L41961519,S253939591,,1
+107,28347,species,Wood Thrush,Hylocichla mustelina,1,Kingfisher Hollow,US-NY,25 Jun 2025,L41961519,S253939591,,1
+108,22160,species,Tufted Titmouse,Baeolophus bicolor,1,Kingfisher Hollow,US-NY,25 Jun 2025,L41961519,S253939591,,1
+109,754,species,Hooded Merganser,Lophodytes cucullatus,1,Kingfisher Hollow,US-NY,25 Jun 2025,L41961519,S253939591,,1
+110,28313,species,Veery,Catharus fuscescens,2,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253861946,,1
+111,19220,species,Yellow-throated Vireo,Vireo flavifrons,1,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S255051994,,1
+112,7753,species,Great Blue Heron,Ardea herodias,1,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253839095,,1
+113,34218,species,Black-throated Green Warbler,Setophaga virens,1,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253663035,,1
+114,28333,species,Hermit Thrush,Catharus guttatus,3,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253663035,,1
+115,26937,species,Red-breasted Nuthatch,Sitta canadensis,2,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253663035,,1
+116,19226,species,Blue-headed Vireo,Vireo solitarius,1,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253663035,,1
+117,16924,species,Eastern Wood-Pewee,Contopus virens,2,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253663035,,1
+118,11126,species,Yellow-bellied Sapsucker,Sphyrapicus varius,1,Kingfisher Hollow,US-NY,24 Jun 2025,L41961519,S253663035,,1
+119,33415,species,Eastern Towhee,Pipilo erythrophthalmus,2,Kingfisher Hollow,US-NY,23 Jun 2025,L41961519,S253567193,,1
+120,5827,species,Killdeer,Charadrius vociferus,1,Kingfisher Hollow,US-NY,23 Jun 2025,L41961519,S253567193,,1
+121,34084,species,Blackburnian Warbler,Setophaga fusca,1,Kingfisher Hollow,US-NY,23 Jun 2025,L41961519,S253511327,,1
+122,34436,species,Scarlet Tanager,Piranga olivacea,1,Kingfisher Hollow,US-NY,23 Jun 2025,L41961519,S253518043,,1
+123,32324,species,Purple Finch,Haemorhous purpureus,1,Kingfisher Hollow,US-NY,23 Jun 2025,L41961519,S253518043,,1
+124,28126,species,Eastern Bluebird,Sialia sialis,1,Kingfisher Hollow,US-NY,23 Jun 2025,L41961519,S253518043,,1
+125,7815,species,Turkey Vulture,Cathartes aura,1,Kingfisher Hollow,US-NY,23 Jun 2025,L41961519,S253518043,,1
+126,34607,species,Indigo Bunting,Passerina cyanea,2,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+127,34185,species,Prairie Warbler,Setophaga discolor,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+128,34153,species,Pine Warbler,Setophaga pinus,2,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+129,34087,species,Northern Yellow Warbler,Setophaga aestiva,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+130,34028,species,Common Yellowthroat,Geothlypis trichas,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+131,33946,species,Ovenbird,Seiurus aurocapilla,2,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+132,33770,species,Baltimore Oriole,Icterus galbula,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+133,32990,species,Chipping Sparrow,Spizella passerina,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+134,32617,species,American Goldfinch,Spinus tristis,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+135,29888,species,Cedar Waxwing,Bombycilla cedrorum,2,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+136,28000,species,Gray Catbird,Dumetella carolinensis,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+137,27813,species,European Starling,Sturnus vulgaris,4,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,N,1
+138,27191,species,Northern House Wren,Troglodytes aedon,2,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+139,24187,species,Barn Swallow,Hirundo rustica,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+140,21294,species,Blue Jay,Cyanocitta cristata,1,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+141,19267,species,Red-eyed Vireo,Vireo olivaceus,8,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+142,4802,species,Ruby-throated Hummingbird,Archilochus colubris,2,Kingfisher Hollow,US-NY,22 Jun 2025,L41961519,S253248090,,1
+143,34515,species,Northern Cardinal,Cardinalis cardinalis,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+144,33853,species,Common Grackle,Quiscalus quiscula,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+145,33833,species,Brown-headed Cowbird,Molothrus ater,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+146,33779,species,Red-winged Blackbird,Agelaius phoeniceus,3,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+147,33277,species,Song Sparrow,Melospiza melodia,3,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+148,33124,species,Dark-eyed Junco,Junco hyemalis,4,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+149,32310,species,House Finch,Haemorhous mexicanus,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,N,1
+150,28633,species,American Robin,Turdus migratorius,4,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+151,27348,species,Carolina Wren,Thryothorus ludovicianus,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+152,26889,species,White-breasted Nuthatch,Sitta carolinensis,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+153,26848,species,Golden-crowned Kinglet,Regulus satrapa,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+154,22065,species,Black-capped Chickadee,Poecile atricapillus,3,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+155,21557,species,American Crow,Corvus brachyrhynchos,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+156,17007,species,Eastern Phoebe,Sayornis phoebe,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+157,11900,species,Northern Flicker,Colaptes auratus,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+158,11762,species,Pileated Woodpecker,Dryocopus pileatus,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+159,11400,species,Downy Woodpecker,Dryobates pubescens,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+160,11199,species,Red-bellied Woodpecker,Melanerpes carolinus,1,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+161,2412,species,Mourning Dove,Zenaida macroura,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+162,455,species,Wood Duck,Aix sponsa,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+163,342,species,Canada Goose,Branta canadensis,2,Kingfisher Hollow,US-NY,30 Mar 2025,L41961519,S222248679,,1
+3,6155,slash,Lesser/Greater Yellowlegs,Tringa flavipes/melanoleuca,1,Kingfisher Hollow,US-NY,20 Aug 2026,L41961519,S385137342,,0
+5,16958,slash,Alder/Willow Flycatcher (Traill's Flycatcher),Empidonax alnorum/traillii,1,Kingfisher Hollow,US-NY,05 Jul 2026,L41961519,S368160186,,0
+6,35853,spuh,bird sp.,Aves sp.,1,Kingfisher Hollow,US-NY,08 Jun 2026,L41961519,S354792356,,0
+16,773,slash,Common/Red-breasted Merganser,Mergus merganser/serrator,1,Kingfisher Hollow,US-NY,12 Apr 2026,L41961519,S320640024,,0
+49,28346,spuh,Catharus sp.,Catharus sp.,1,Kingfisher Hollow,US-NY,08 Sep 2025,L41961519,S272235808,,0
+62,34397,spuh,new world warbler sp.,Parulidae sp.,1,Kingfisher Hollow,US-NY,16 Aug 2025,L41961519,S267576600,,0
+78,33944,spuh,blackbird sp.,Icteridae sp.,4,Kingfisher Hollow,US-NY,20 Jul 2025,L41961519,S261618327,,0
+99,24305,spuh,swallow sp.,Hirundinidae sp.,8,Kingfisher Hollow,US-NY,26 Jun 2025,L41961519,S254408470,,0
