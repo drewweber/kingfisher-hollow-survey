@@ -1317,7 +1317,7 @@ def bird_source_body(summary):
         '<div>'
         '<div class="text-hollow-300 text-xs font-semibold tracking-[0.18em] uppercase mb-2">eBird source</div>'
         f'<p class="text-white/70 leading-relaxed">This page follows the eBird location life list for '
-        f'<strong class="text-hollow-300">Michigan Hollow, silo house</strong>. The current location list has '
+        f'<strong class="text-hollow-300">Kingfisher Hollow</strong>. The current location list has '
         f'<strong class="text-hollow-300">{species}</strong> countable bird species, with listed dates from '
         f'{esc(earliest)} to {esc(latest)}.</p>'
         '</div>'
@@ -3423,12 +3423,14 @@ def birds_view():
             "Sandpipers, Great Egret, Pied-billed Grebe, and several ducks show the wetland or flyover "
             "opportunity; Wood Thrush, Louisiana Waterthrush, Ovenbird, Scarlet Tanager, Blackburnian "
             "Warbler, and Black-throated Green Warbler mark the forest signal; Cape May, Bay-breasted, "
-            "Blackpoll, and Wilson's Warblers show migration in the hollow. The latest addition is dated "
-            f"{fdate(bsum['latest'], '%b %-d')}. Occurrence doesn't prove breeding: repeated territories, "
+            "Blackpoll, and Wilson's Warblers show migration in the hollow. Late-August Yellow-bellied "
+            "Flycatcher and Northern Waterthrush make quiet, insect-rich creek and wet-edge cover worth "
+            "repeated dawn checks, while Lesser Yellowlegs is a brief pond-margin or creek-bar opportunity. "
+            f"The latest addition is dated {fdate(bsum['latest'], '%b %-d')}. Occurrence doesn't prove breeding: repeated territories, "
             "food carrying, fledglings, and habitat-specific checklists are the next layer of evidence.",
             dark=True)
         + bird_life_list_body(birds),
-        intro=f"{bsum['species']} species are recorded at the Michigan Hollow, silo house eBird location. "
+        intro=f"{bsum['species']} species are recorded at the Kingfisher Hollow eBird location. "
               "The list includes birds associated with creek, pond, forest, and shrub-edge habitat, "
               "along with migrants and open-sky flyovers; a location record alone does not establish "
               "breeding or sustained use of a particular habitat patch.",
