@@ -35,8 +35,8 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-09-11.2"
-SCHEMA_VERSION = "kh-field-targets/1.8.0"
+GUIDANCE_REVISION = "2026-09-11.3"
+SCHEMA_VERSION = "kh-field-targets/1.9.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
@@ -76,6 +76,18 @@ GROUP_TABLES = {
     "butterflies": "region_butterfly_taxa",
     "odonates": "region_odonate_taxa",
 }
+ODONATE_FIELD_GROUPS = {
+    "Aeshnidae": "dragonflies",
+    "Calopterygidae": "damselflies",
+    "Coenagrionidae": "damselflies",
+    "Cordulegastridae": "dragonflies",
+    "Corduliidae": "dragonflies",
+    "Gomphidae": "dragonflies",
+    "Lestidae": "damselflies",
+    "Libellulidae": "dragonflies",
+    "Macromiidae": "dragonflies",
+    "Petaluridae": "dragonflies",
+}
 
 
 def _clean(value, fallback=""):
@@ -99,6 +111,21 @@ def _json_read(path, fallback):
 def _json_write(path, payload):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+
+def _field_group(group, family_name, common_name="", scientific_name=""):
+    if group == "moths" and is_leaf_miner_target(
+        family_name, common_name, scientific_name
+    ):
+        return "leaf-miners"
+    if group == "odonates":
+        try:
+            return ODONATE_FIELD_GROUPS[family_name]
+        except KeyError as error:
+            raise ValueError(
+                f"Odonate family {family_name or '(missing)'} has no field group"
+            ) from error
+    return group
 
 
 def _database_sha256():
@@ -314,7 +341,13 @@ def collect_targets(effective_date=None):
         }
 
     records = []
-    counts = {"moths": 0, "leaf-miners": 0, "butterflies": 0, "odonates": 0}
+    counts = {
+        "moths": 0,
+        "leaf-miners": 0,
+        "butterflies": 0,
+        "dragonflies": 0,
+        "damselflies": 0,
+    }
     field_group_ranks = {group: 0 for group in counts}
     rank = 0
     for group, frame in frames.items():
@@ -326,12 +359,8 @@ def collect_targets(effective_date=None):
             common_name = (_clean(row.get("common_name")) or scientific_name
                            or "Unidentified target")
             family_name = meta.get("family_name") or ""
-            field_group = (
-                "leaf-miners"
-                if group == "moths" and is_leaf_miner_target(
-                    family_name, common_name, scientific_name
-                )
-                else group
+            field_group = _field_group(
+                group, family_name, common_name, scientific_name
             )
             counts[field_group] += 1
             field_group_ranks[field_group] += 1
@@ -669,7 +698,7 @@ def _validate_targets(targets, output_dir=None):
             errors.append(f"duplicate taxon {target['id']}")
         seen.add(target["id"])
         if target.get("field_group") not in {
-            "moths", "leaf-miners", "butterflies", "odonates"
+            "moths", "leaf-miners", "butterflies", "dragonflies", "damselflies"
         }:
             errors.append(f"taxon {target['id']} has an invalid field group")
         if target.get("field_group") == "leaf-miners":

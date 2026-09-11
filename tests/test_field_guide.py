@@ -306,6 +306,27 @@ class FieldGuidanceTests(unittest.TestCase):
         )
         self.assertIn("oaks are important hosts", guidance["host_search_note"])
 
+    def test_odonates_are_split_into_dragonflies_and_damselflies_by_family(self):
+        expected = {
+            "Aeshnidae": "dragonflies",
+            "Calopterygidae": "damselflies",
+            "Coenagrionidae": "damselflies",
+            "Cordulegastridae": "dragonflies",
+            "Corduliidae": "dragonflies",
+            "Gomphidae": "dragonflies",
+            "Lestidae": "damselflies",
+            "Libellulidae": "dragonflies",
+            "Macromiidae": "dragonflies",
+            "Petaluridae": "dragonflies",
+        }
+        self.assertEqual(expected, field_guide.ODONATE_FIELD_GROUPS)
+        for family, field_group in expected.items():
+            self.assertEqual(field_group, field_guide._field_group("odonates", family))
+
+    def test_unmapped_odonate_family_fails_the_build(self):
+        with self.assertRaisesRegex(ValueError, "has no field group"):
+            field_guide._field_group("odonates", "Exampleidae")
+
     def test_every_curated_leaf_miner_has_common_name_first_host_guidance(self):
         expected_targets = {
             "Cameraria caryaefoliella", "Phyllocnistis insignis",
@@ -395,6 +416,12 @@ class FieldGuideReleaseTests(unittest.TestCase):
         target = self._target()
         target["field_group"] = "leaf-miners"
         with self.assertRaisesRegex(ValueError, "no vetted leaf-miner host plants"):
+            field_guide._validate_targets([target])
+
+    def test_release_validator_accepts_split_odonate_field_groups(self):
+        for field_group in ("dragonflies", "damselflies"):
+            target = self._target()
+            target["field_group"] = field_group
             field_guide._validate_targets([target])
 
     def test_generated_icons_are_valid_png_files(self):
@@ -532,6 +559,18 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("createHostPlantCallout", app)
         self.assertIn("Host leaves to inspect", app)
         self.assertIn("target.hostPlants", app)
+
+    def test_field_app_separates_dragonflies_and_damselflies(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")
+        styles = (ROOT / "field-guide" / "app" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn('name="group" value="dragonflies"', markup)
+        self.assertIn('name="group" value="damselflies"', markup)
+        self.assertNotIn('name="group" value="odonates"', markup)
+        self.assertIn('dragonflies: "Dragonflies"', app)
+        self.assertIn('damselflies: "Damselflies"', app)
+        self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr))", styles)
+        self.assertIn("grid-template-columns: repeat(6, minmax(0, 1fr))", styles)
 
     def test_skip_link_is_hidden_until_focus_and_targets_a_focusable_heading(self):
         markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")

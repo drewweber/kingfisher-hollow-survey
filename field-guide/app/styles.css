@@ -13,7 +13,8 @@
   --moth: #625571;
   --leaf-miner: #3e6a43;
   --butterfly: #9a591f;
-  --odonate: #2d6872;
+  --dragonfly: #2d6872;
+  --damselfly: #4f657f;
   --danger: #993c3c;
   --focus: #f0bd2f;
   --z-skip: 30;
@@ -319,7 +320,7 @@ a:hover {
 
 .group-filter {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-width: 0;
   margin: 0;
   padding: 0.2rem;
@@ -344,7 +345,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.35rem;
+  min-height: 2.75rem;
   min-width: 0;
   padding: 0.3rem 0.2rem;
   border-radius: 4px;
@@ -638,8 +639,13 @@ a:hover {
   --group-color: var(--butterfly);
 }
 
+.target-card.group-dragonflies,
 .target-card.group-odonates {
-  --group-color: var(--odonate);
+  --group-color: var(--dragonfly);
+}
+
+.target-card.group-damselflies {
+  --group-color: var(--damselfly);
 }
 
 .target-card:hover {
@@ -1541,8 +1547,10 @@ a:hover {
   --line-strong: #633025;
   --timing: #b95139;
   --moth: #8d3b2f;
+  --leaf-miner: #8d3b2f;
   --butterfly: #8d3b2f;
-  --odonate: #8d3b2f;
+  --dragonfly: #8d3b2f;
+  --damselfly: #8d3b2f;
   --danger: #d86d56;
   --focus: #ef8c67;
 }
@@ -1890,6 +1898,10 @@ a:hover {
 }
 
 @media (min-width: 62rem) {
+  .group-filter {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
   .target-grid,
   .skeleton-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

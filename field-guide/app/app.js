@@ -5,7 +5,9 @@
     moths: "Moths",
     "leaf-miners": "Leaf miners",
     butterflies: "Butterflies",
-    odonates: "Dragons"
+    dragonflies: "Dragonflies",
+    damselflies: "Damselflies",
+    odonates: "Odonates"
   };
   const TAXON_GROUPS = new Set(["moths", "butterflies", "odonates"]);
   const PERIOD_LABELS = {

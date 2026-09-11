@@ -84,8 +84,10 @@ The guide is a separate static application deployed beside the survey at
   protocols and the survey-period rules. Butterflies and most odonates are
   daylight targets; darners include dusk; moths are nocturnal unless known
   day-flying behavior or a named daylight detection method supports another
-  period. Leaf-mining moths remain taxonomically part of the moth target set,
-  but the app presents them as a separate `Leaf miners` field group. Their
+  period. Odonata remain one taxonomic source group, while the app presents
+  them as separate `Dragonflies` and `Damselflies` field groups based on family.
+  Leaf-mining moths remain taxonomically part of the moth target set, but the
+  app presents them as a separate `Leaf miners` field group. Their
   primary route is daylight host-leaf and mine-architecture evidence rather
   than an adult at the moth sheet. Every leaf-miner target must also carry a
   vetted, common-name-first host-plant list and a species-specific search note;
