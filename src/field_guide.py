@@ -341,13 +341,7 @@ def collect_targets(effective_date=None):
         }
 
     records = []
-    counts = {
-        "moths": 0,
-        "leaf-miners": 0,
-        "butterflies": 0,
-        "dragonflies": 0,
-        "damselflies": 0,
-    }
+    counts = {"moths": 0, "leaf-miners": 0, "butterflies": 0, "odonates": 0}
     field_group_ranks = {group: 0 for group in counts}
     rank = 0
     for group, frame in frames.items():
@@ -359,8 +353,12 @@ def collect_targets(effective_date=None):
             common_name = (_clean(row.get("common_name")) or scientific_name
                            or "Unidentified target")
             family_name = meta.get("family_name") or ""
-            field_group = _field_group(
-                group, family_name, common_name, scientific_name
+            field_group = (
+                "leaf-miners"
+                if group == "moths" and is_leaf_miner_target(
+                    family_name, common_name, scientific_name
+                )
+                else group
             )
             counts[field_group] += 1
             field_group_ranks[field_group] += 1
@@ -627,6 +625,27 @@ def _merge_taxon_metadata(targets, taxa):
         ))
 
 
+def _assign_field_groups(targets):
+    counts = {
+        "moths": 0,
+        "leaf-miners": 0,
+        "butterflies": 0,
+        "dragonflies": 0,
+        "damselflies": 0,
+    }
+    ranks = {group: 0 for group in counts}
+    for target in targets:
+        field_group = _field_group(
+            target["group"], target.get("family_name") or "",
+            target.get("common_name") or "", target.get("scientific_name") or "",
+        )
+        target["field_group"] = field_group
+        counts[field_group] += 1
+        ranks[field_group] += 1
+        target["group_rank"] = ranks[field_group]
+    return counts
+
+
 def _image_data(photo, relative_path, destination, alt):
     code = photo["license_code"].casefold()
     return {
@@ -793,7 +812,7 @@ def build(effective_date=None, output_dir=None):
     if not APP_SOURCE.is_dir() or not SW_TEMPLATE.is_file():
         raise FileNotFoundError("Field guide app sources are incomplete")
 
-    targets, counts, moth_months = collect_targets(effective_date)
+    targets, _pre_enrichment_counts, moth_months = collect_targets(effective_date)
     photo_requirements = {target["id"]: TARGET_IMAGE_COUNT for target in targets}
     for target in targets:
         for lookalike in target.get("lookalikes") or []:
@@ -802,6 +821,7 @@ def build(effective_date=None, output_dir=None):
                 photo_requirements.setdefault(int(taxon_id), LOOKALIKE_IMAGE_COUNT)
     taxa = resolve_taxa(photo_requirements)
     _merge_taxon_metadata(targets, taxa)
+    counts = _assign_field_groups(targets)
 
     if output_dir.exists():
         shutil.rmtree(output_dir)

@@ -327,6 +327,31 @@ class FieldGuidanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "has no field group"):
             field_guide._field_group("odonates", "Exampleidae")
 
+    def test_split_happens_after_odonate_family_enrichment(self):
+        targets = [
+            {
+                "group": "odonates",
+                "field_group": "odonates",
+                "family_name": "Libellulidae",
+                "common_name": "Example dragonfly",
+                "scientific_name": "Example dragonfly",
+            },
+            {
+                "group": "odonates",
+                "field_group": "odonates",
+                "family_name": "Coenagrionidae",
+                "common_name": "Example damselfly",
+                "scientific_name": "Example damselfly",
+            },
+        ]
+        counts = field_guide._assign_field_groups(targets)
+        self.assertEqual(["dragonflies", "damselflies"], [
+            target["field_group"] for target in targets
+        ])
+        self.assertEqual(1, counts["dragonflies"])
+        self.assertEqual(1, counts["damselflies"])
+        self.assertNotIn("odonates", counts)
+
     def test_every_curated_leaf_miner_has_common_name_first_host_guidance(self):
         expected_targets = {
             "Cameraria caryaefoliella", "Phyllocnistis insignis",
