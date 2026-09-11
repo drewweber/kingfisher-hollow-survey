@@ -105,6 +105,16 @@
     }).filter(Boolean);
   }
 
+  function cleanHostPlants(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const commonName = cleanString(item.common_name);
+      const scientificName = cleanString(item.scientific_name);
+      return commonName && scientificName ? { commonName, scientificName } : null;
+    }).filter(Boolean);
+  }
+
   function cleanComparisonDifferences(value) {
     if (!Array.isArray(value)) return [];
     return value.map((item) => {
@@ -218,6 +228,7 @@
     if (!surveyPeriods.length) surveyPeriods.push(group === "moths" ? "night" : "day");
     const findingHelp = cleanStringList(raw.finding_help);
     const idHelp = cleanStringList(raw.id_help);
+    const hostPlants = cleanHostPlants(raw.host_plants);
     const photoChecklist = cleanStringList(raw.photo_checklist);
     const images = (Array.isArray(raw.images) ? raw.images : [])
       .map((image, index) => normalizeImage(
@@ -263,6 +274,8 @@
       surveyPeriodNote: cleanString(raw.survey_period_note),
       habitatTags,
       methodTags,
+      hostPlants,
+      hostSearchNote: cleanString(raw.host_search_note),
       targetReason: cleanString(raw.target_reason),
       findingHelp,
       idHelp,
@@ -295,6 +308,8 @@
       ]),
       ...target.habitatTags,
       ...target.methodTags,
+      ...target.hostPlants.flatMap((plant) => [plant.commonName, plant.scientificName]),
+      target.hostSearchNote,
       ...target.findingHelp,
       ...target.idHelp,
       ...target.lookalikes.flatMap((lookalike) => [
@@ -562,6 +577,33 @@
     return list;
   }
 
+  function createHostPlantCallout(target, detailed = false) {
+    if (!target.hostPlants.length) return null;
+    const callout = makeElement(
+      "aside",
+      `host-leaf-callout${detailed ? " host-leaf-detail" : " host-leaf-card"}`
+    );
+    callout.setAttribute("aria-label", "Host leaves to inspect");
+    callout.append(makeElement("p", "host-leaf-eyebrow", "Host leaves to inspect"));
+
+    const list = makeElement("ul", "host-plant-list");
+    const visiblePlants = detailed ? target.hostPlants : target.hostPlants.slice(0, 2);
+    visiblePlants.forEach((plant) => {
+      const item = document.createElement("li");
+      item.append(
+        makeElement("strong", "", sentenceCase(plant.commonName)),
+        document.createTextNode(" "),
+        makeElement("em", "", `(${plant.scientificName})`)
+      );
+      list.append(item);
+    });
+    callout.append(list);
+    if (detailed && target.hostSearchNote) {
+      callout.append(makeElement("p", "host-search-note", target.hostSearchNote));
+    }
+    return callout;
+  }
+
   function createTargetCard(target, index) {
     const item = document.createElement("li");
     const card = makeElement("article", `target-card group-${target.fieldGroup}`);
@@ -593,7 +635,10 @@
     const regional = regionalLabel(target.regionalCount);
     if (regional) season.append(makeElement("span", "regional-count", regional));
 
-    body.append(heading, season, createMonthRail(target));
+    body.append(heading);
+    const hostCallout = createHostPlantCallout(target);
+    if (hostCallout) body.append(hostCallout);
+    body.append(season, createMonthRail(target));
     const reason = target.targetReason || target.findingHelp[0];
     if (reason) body.append(makeElement("p", "target-reason", reason));
     const tags = createTagList(target);
@@ -905,6 +950,8 @@
     if (target.scientificName) summary.append(makeElement("p", "detail-scientific", target.scientificName));
     const familyParts = [target.familyCommon, target.familyName].filter(Boolean);
     if (familyParts.length) summary.append(makeElement("p", "family-line", familyParts.join(" / ")));
+    const hostCallout = createHostPlantCallout(target, true);
+    if (hostCallout) summary.append(hostCallout);
 
     const seasonRow = makeElement("div", "detail-season-row");
     seasonRow.append(makeElement("strong", "", target.seasonLabel));

@@ -777,6 +777,61 @@ a:hover {
   white-space: nowrap;
 }
 
+.host-leaf-callout {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.58rem 0.65rem;
+  border: 1px solid #93b497;
+  border-left: 4px solid var(--leaf-miner);
+  border-radius: 5px;
+  background: #edf5eb;
+  color: #18391f;
+}
+
+.host-leaf-eyebrow {
+  color: #315c37;
+  font-size: 0.65rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.host-plant-list {
+  display: grid;
+  gap: 0.18rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.host-plant-list li {
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.host-plant-list strong {
+  font-weight: 820;
+}
+
+.host-plant-list em {
+  color: #3d6142;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.75rem;
+}
+
+.host-leaf-detail {
+  gap: 0.45rem;
+  padding: 0.8rem;
+}
+
+.host-leaf-detail .host-plant-list li {
+  font-size: 0.88rem;
+}
+
+.host-search-note {
+  color: #34543a;
+  font-size: 0.78rem;
+}
+
 .card-chevron {
   position: absolute;
   right: 0.8rem;
@@ -1606,6 +1661,19 @@ a:hover {
 :root[data-survey-period="night"] .family-line,
 :root[data-survey-period="night"] .detail-month,
 :root[data-survey-period="night"] .credit-lines {
+  color: var(--ink-soft);
+}
+
+:root[data-survey-period="night"] .host-leaf-callout {
+  border-color: #713727;
+  border-left-color: #9e4b3a;
+  background: #210b08;
+  color: var(--ink);
+}
+
+:root[data-survey-period="night"] .host-leaf-eyebrow,
+:root[data-survey-period="night"] .host-plant-list em,
+:root[data-survey-period="night"] .host-search-note {
   color: var(--ink-soft);
 }
 

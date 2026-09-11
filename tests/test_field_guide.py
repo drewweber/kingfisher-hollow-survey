@@ -11,9 +11,11 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import field_guide  # noqa: E402
 from field_guidance import (  # noqa: E402
+    LEAF_MINER_HOSTS,
     build_guidance,
     guidance_profile,
     is_leaf_miner_target,
+    leaf_miner_host_profile,
     survey_period_profile,
 )
 from field_identification import (  # noqa: E402
@@ -298,6 +300,31 @@ class FieldGuidanceTests(unittest.TestCase):
         self.assertNotIn("UV light", guidance["method_tags"])
         self.assertIn("host foliage", guidance["survey_period_note"].casefold())
         self.assertIn("mine architecture", guidance["id_limitations"].casefold())
+        self.assertEqual(
+            ["oaks", "American chestnut"],
+            [plant["common_name"] for plant in guidance["host_plants"]],
+        )
+        self.assertIn("oaks are important hosts", guidance["host_search_note"])
+
+    def test_every_curated_leaf_miner_has_common_name_first_host_guidance(self):
+        expected_targets = {
+            "Cameraria caryaefoliella", "Phyllocnistis insignis",
+            "Parectopa robiniella", "Cameraria hamameliella",
+            "Stigmella caryaefoliella", "Coptotriche aenea",
+            "Glaucolepis saccharella", "Stigmella rosaefoliella",
+            "Coptotriche castaneaeella", "Ectoedemia platanella",
+            "Phyllocnistis vitifoliella", "Cameraria guttifinitella",
+            "Stigmella intermedia", "Stigmella quercipulchella",
+            "Phyllonorycter maestingella",
+        }
+        self.assertEqual(expected_targets, set(LEAF_MINER_HOSTS))
+        for scientific_name in expected_targets:
+            profile = leaf_miner_host_profile(scientific_name)
+            self.assertTrue(profile["plants"], scientific_name)
+            self.assertTrue(profile["note"], scientific_name)
+            for plant in profile["plants"]:
+                self.assertTrue(plant["common_name"], scientific_name)
+                self.assertTrue(plant["scientific_name"], scientific_name)
 
 
 class FieldGuideReleaseTests(unittest.TestCase):
@@ -363,6 +390,12 @@ class FieldGuideReleaseTests(unittest.TestCase):
     def test_release_validator_rejects_unlicensed_media(self):
         with self.assertRaisesRegex(ValueError, "unapproved image license"):
             field_guide._validate_targets([self._target(license_code="")])
+
+    def test_release_validator_rejects_leaf_miner_without_host_guidance(self):
+        target = self._target()
+        target["field_group"] = "leaf-miners"
+        with self.assertRaisesRegex(ValueError, "no vetted leaf-miner host plants"):
+            field_guide._validate_targets([target])
 
     def test_generated_icons_are_valid_png_files(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -496,6 +529,9 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn('"leaf-miners": "Leaf miners"', app)
         self.assertIn("target.fieldGroup !== state.group", app)
         self.assertIn("groupLabel(target.fieldGroup)", app)
+        self.assertIn("createHostPlantCallout", app)
+        self.assertIn("Host leaves to inspect", app)
+        self.assertIn("target.hostPlants", app)
 
     def test_skip_link_is_hidden_until_focus_and_targets_a_focusable_heading(self):
         markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")

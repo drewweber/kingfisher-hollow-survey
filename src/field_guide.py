@@ -35,8 +35,8 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-09-11.1"
-SCHEMA_VERSION = "kh-field-targets/1.7.0"
+GUIDANCE_REVISION = "2026-09-11.2"
+SCHEMA_VERSION = "kh-field-targets/1.8.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
@@ -672,6 +672,18 @@ def _validate_targets(targets, output_dir=None):
             "moths", "leaf-miners", "butterflies", "odonates"
         }:
             errors.append(f"taxon {target['id']} has an invalid field group")
+        if target.get("field_group") == "leaf-miners":
+            if not target.get("host_plants"):
+                errors.append(f"taxon {target['id']} has no vetted leaf-miner host plants")
+            if not target.get("host_search_note"):
+                errors.append(f"taxon {target['id']} has no leaf-miner host search note")
+            for plant in target.get("host_plants") or []:
+                if (
+                    not isinstance(plant, dict)
+                    or not plant.get("common_name")
+                    or not plant.get("scientific_name")
+                ):
+                    errors.append(f"taxon {target['id']} has an invalid leaf-miner host plant")
         for key in required_text:
             if not target.get(key):
                 errors.append(f"taxon {target['id']} has no {key}")

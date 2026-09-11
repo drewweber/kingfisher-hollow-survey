@@ -87,7 +87,9 @@ The guide is a separate static application deployed beside the survey at
   period. Leaf-mining moths remain taxonomically part of the moth target set,
   but the app presents them as a separate `Leaf miners` field group. Their
   primary route is daylight host-leaf and mine-architecture evidence rather
-  than an adult at the moth sheet.
+  than an adult at the moth sheet. Every leaf-miner target must also carry a
+  vetted, common-name-first host-plant list and a species-specific search note;
+  release validation fails rather than publishing a generic host instruction.
 - `src/moth_guilds.py` combines a 14-day property activity window with a
   checked-in reduction of the Natural History Museum HOSTS dataset. Exact
   shared host genera can change moth order; very broad feeders and unknown

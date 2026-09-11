@@ -46,6 +46,118 @@ LEAF_MINER_PROFILE = {
 }
 
 
+# Common names lead because this is field-search guidance; the scientific plant
+# name remains visible so a host can be documented precisely. These compact
+# profiles synthesize the vetted host records already used for the comparison
+# notes with MPG, Moths of North Carolina, Gracillariidae.net, and published
+# Nepticulidae/Gracillariidae treatments. They are deliberately search-focused,
+# not exhaustive host catalogues.
+LEAF_MINER_HOSTS = {
+    "Cameraria caryaefoliella": {
+        "plants": (
+            {"common_name": "hickories", "scientific_name": "Carya spp."},
+            {"common_name": "walnut and butternut", "scientific_name": "Juglans spp."},
+        ),
+        "note": "Start with hickory leaves; walnut and butternut are additional documented hosts.",
+    },
+    "Phyllocnistis insignis": {
+        "plants": (
+            {"common_name": "burnweed", "scientific_name": "Erechtites hieraciifolius"},
+            {"common_name": "golden ragwort", "scientific_name": "Packera aurea"},
+            {"common_name": "white rattlesnake-root", "scientific_name": "Prenanthes alba"},
+            {"common_name": "Indian-plantains", "scientific_name": "Arnoglossum spp."},
+        ),
+        "note": "Check burnweed and golden ragwort first in sunny or disturbed patches, then the other listed composites.",
+    },
+    "Parectopa robiniella": {
+        "plants": (
+            {"common_name": "black locust", "scientific_name": "Robinia pseudoacacia"},
+        ),
+        "note": "Black locust is the primary search plant; inspect individual leaflets on both surfaces.",
+    },
+    "Cameraria hamameliella": {
+        "plants": (
+            {"common_name": "American witch-hazel", "scientific_name": "Hamamelis virginiana"},
+        ),
+        "note": "Search witch-hazel leaves in shaded hardwood understory and along moist forest edges.",
+    },
+    "Stigmella caryaefoliella": {
+        "plants": (
+            {"common_name": "hickories", "scientific_name": "Carya spp."},
+        ),
+        "note": "Identify the hickory when possible and photograph the complete mine and frass trail.",
+    },
+    "Coptotriche aenea": {
+        "plants": (
+            {"common_name": "blackberries and black raspberry", "scientific_name": "Rubus spp."},
+        ),
+        "note": "Search bramble leaves from sunny edges through open woodland, including low-running blackberry stems.",
+    },
+    "Glaucolepis saccharella": {
+        "plants": (
+            {"common_name": "sugar maple", "scientific_name": "Acer saccharum"},
+            {"common_name": "red maple", "scientific_name": "Acer rubrum"},
+        ),
+        "note": "Sugar maple is the strongest starting point; red maple is also documented.",
+    },
+    "Stigmella rosaefoliella": {
+        "plants": (
+            {"common_name": "wild and cultivated roses", "scientific_name": "Rosa spp."},
+        ),
+        "note": "Inspect rose leaflets for occupied mines and record the rose species when it can be identified.",
+    },
+    "Coptotriche castaneaeella": {
+        "plants": (
+            {"common_name": "oaks", "scientific_name": "Quercus spp."},
+            {"common_name": "American chestnut", "scientific_name": "Castanea dentata"},
+        ),
+        "note": "Despite the moth's common name, oaks are important hosts and are the practical first search at Kingfisher Hollow.",
+    },
+    "Ectoedemia platanella": {
+        "plants": (
+            {"common_name": "American sycamore", "scientific_name": "Platanus occidentalis"},
+        ),
+        "note": "Search sycamore leaves for a short early track that broadens into a conspicuous blotch.",
+    },
+    "Phyllocnistis vitifoliella": {
+        "plants": (
+            {"common_name": "wild grapes", "scientific_name": "Vitis spp."},
+        ),
+        "note": "Inspect both surfaces of wild grape leaves and photograph the mine through to its pupation site.",
+    },
+    "Cameraria guttifinitella": {
+        "plants": (
+            {"common_name": "poison ivy", "scientific_name": "Toxicodendron radicans"},
+            {"common_name": "poison oak and poison sumac", "scientific_name": "Toxicodendron spp."},
+        ),
+        "note": "Avoid skin contact with Toxicodendron; photograph the mine and host in place rather than handling the leaf.",
+    },
+    "Stigmella intermedia": {
+        "plants": (
+            {"common_name": "sumacs", "scientific_name": "Rhus spp."},
+        ),
+        "note": "Start with staghorn, smooth, winged, and fragrant sumac where those plants occur.",
+    },
+    "Stigmella quercipulchella": {
+        "plants": (
+            {"common_name": "oaks", "scientific_name": "Quercus spp."},
+        ),
+        "note": "Red-group oaks are documented hosts; identify the oak and retain the entire mined leaf in the photo series.",
+    },
+    "Phyllonorycter maestingella": {
+        "plants": (
+            {"common_name": "beeches", "scientific_name": "Fagus spp."},
+        ),
+        "note": "Look on the underside of beech leaves for a long tentiform blotch between veins.",
+    },
+}
+
+
+def leaf_miner_host_profile(scientific_name=""):
+    """Return a copy-safe, vetted field-search host profile when available."""
+    return deepcopy(LEAF_MINER_HOSTS.get(scientific_name) or {})
+
+
 def is_leaf_miner_target(family_name="", common_name="", scientific_name=""):
     """Return whether host-leaf evidence is the primary practical survey route."""
     if family_name in LEAF_MINER_FAMILIES:
@@ -511,6 +623,7 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
     leaf_miner = group == "moths" and is_leaf_miner_target(
         family_name, common_name, scientific_name
     )
+    host_profile = leaf_miner_host_profile(scientific_name) if leaf_miner else {}
     profile = guidance_profile(group, family_name, common_name, scientific_name)
     period_profile = survey_period_profile(
         group, family_name, common_name, scientific_name, profile["method_tags"]
@@ -562,6 +675,8 @@ def build_guidance(group, family_name, common_name, season_label, regional_count
     return {
         "habitat_tags": profile["habitat_tags"],
         "method_tags": method_tags,
+        "host_plants": list(host_profile.get("plants") or ()),
+        "host_search_note": host_profile.get("note") or "",
         **period_profile,
         "target_reason": reason,
         "finding_help": [seasonal, *finding[:2]],
