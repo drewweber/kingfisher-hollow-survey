@@ -20,7 +20,7 @@ import analyze
 import inat_api
 from config import DATA_DIR, PUBLIC_DIR, REGION_RADIUS_KM, ROOT, USER_AGENT
 from db import DB_PATH, connect
-from field_guidance import build_guidance
+from field_guidance import build_guidance, is_leaf_miner_target
 from field_identification import (
     curated_peer_names,
     curated_peer_taxon,
@@ -35,8 +35,8 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-08-16.2"
-SCHEMA_VERSION = "kh-field-targets/1.6.0"
+GUIDANCE_REVISION = "2026-09-11.1"
+SCHEMA_VERSION = "kh-field-targets/1.7.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
@@ -314,9 +314,11 @@ def collect_targets(effective_date=None):
         }
 
     records = []
+    counts = {"moths": 0, "leaf-miners": 0, "butterflies": 0, "odonates": 0}
+    field_group_ranks = {group: 0 for group in counts}
     rank = 0
     for group, frame in frames.items():
-        for group_rank, (_, row) in enumerate(frame.iterrows(), start=1):
+        for _, row in frame.iterrows():
             rank += 1
             taxon_id = int(row["taxon_id"])
             meta = metadata.get(taxon_id, {})
@@ -324,6 +326,15 @@ def collect_targets(effective_date=None):
             common_name = (_clean(row.get("common_name")) or scientific_name
                            or "Unidentified target")
             family_name = meta.get("family_name") or ""
+            field_group = (
+                "leaf-miners"
+                if group == "moths" and is_leaf_miner_target(
+                    family_name, common_name, scientific_name
+                )
+                else group
+            )
+            counts[field_group] += 1
+            field_group_ranks[field_group] += 1
             month_counts = months_by_taxon.get(taxon_id, {})
             fallback = moth_months if group == "moths" else DEFAULT_MONTHS[group]
             season_label = _season_label(month_counts, fallback)
@@ -343,8 +354,9 @@ def collect_targets(effective_date=None):
                 "id": taxon_id,
                 "taxon_id": taxon_id,
                 "group": group,
+                "field_group": field_group,
                 "rank": rank,
-                "group_rank": group_rank,
+                "group_rank": field_group_ranks[field_group],
                 "common_name": common_name,
                 "scientific_name": scientific_name,
                 "order_name": meta.get("order_name") or "",
@@ -363,7 +375,7 @@ def collect_targets(effective_date=None):
             })
     if len(ids) != len(set(ids)):
         raise ValueError("A taxon appears in more than one field target set")
-    return records, {group: len(frame) for group, frame in frames.items()}, moth_months
+    return records, counts, moth_months
 
 
 def _normalize_taxon(taxon):
@@ -656,6 +668,10 @@ def _validate_targets(targets, output_dir=None):
         if target["id"] in seen:
             errors.append(f"duplicate taxon {target['id']}")
         seen.add(target["id"])
+        if target.get("field_group") not in {
+            "moths", "leaf-miners", "butterflies", "odonates"
+        }:
+            errors.append(f"taxon {target['id']} has an invalid field group")
         for key in required_text:
             if not target.get(key):
                 errors.append(f"taxon {target['id']} has no {key}")

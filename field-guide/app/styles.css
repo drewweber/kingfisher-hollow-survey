@@ -11,6 +11,7 @@
   --line-strong: #9fb3a8;
   --timing: #d1a62c;
   --moth: #625571;
+  --leaf-miner: #3e6a43;
   --butterfly: #9a591f;
   --odonate: #2d6872;
   --danger: #993c3c;
@@ -318,7 +319,7 @@ a:hover {
 
 .group-filter {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   min-width: 0;
   margin: 0;
   padding: 0.2rem;
@@ -627,6 +628,10 @@ a:hover {
 
 .target-card.group-moths {
   --group-color: var(--moth);
+}
+
+.target-card.group-leaf-miners {
+  --group-color: var(--leaf-miner);
 }
 
 .target-card.group-butterflies {

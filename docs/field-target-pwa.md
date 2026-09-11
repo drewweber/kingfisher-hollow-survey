@@ -84,7 +84,10 @@ The guide is a separate static application deployed beside the survey at
   protocols and the survey-period rules. Butterflies and most odonates are
   daylight targets; darners include dusk; moths are nocturnal unless known
   day-flying behavior or a named daylight detection method supports another
-  period.
+  period. Leaf-mining moths remain taxonomically part of the moth target set,
+  but the app presents them as a separate `Leaf miners` field group. Their
+  primary route is daylight host-leaf and mine-architecture evidence rather
+  than an adult at the moth sheet.
 - `src/moth_guilds.py` combines a 14-day property activity window with a
   checked-in reduction of the Natural History Museum HOSTS dataset. Exact
   shared host genera can change moth order; very broad feeders and unknown
@@ -119,10 +122,12 @@ file and make no HOSTS network requests.
 
 1. The survey workflow syncs the current iNaturalist property roster into
    SQLite.
-2. `report.py` rebuilds the three gap selectors and writes a new
+2. `report.py` rebuilds the three taxonomic gap selectors and writes a new
    `/field/targets.json`. A species already present in the matching property
    table is excluded before target ranking. Moth candidates are first limited
    to the regional seasonal pool, then reranked using recent shared-host guilds.
+   The selected moths are split into `Moths` and `Leaf miners` field groups
+   without changing their underlying taxonomic membership.
 3. The field-guide builder hashes the data, app sources, and complete asset
    manifest into a new release version. Cloudflare Pages deploys that release
    with the survey.

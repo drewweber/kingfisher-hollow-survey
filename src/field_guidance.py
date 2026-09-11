@@ -14,6 +14,46 @@ from copy import deepcopy
 from field_identification import comparison_note, comparison_profile
 
 
+LEAF_MINER_FAMILIES = frozenset({
+    "Bedelliidae",
+    "Bucculatricidae",
+    "Eriocraniidae",
+    "Gracillariidae",
+    "Heliozelidae",
+    "Lyonetiidae",
+    "Nepticulidae",
+    "Tischeriidae",
+})
+
+LEAF_MINER_PROFILE = {
+    "habitat_tags": ["host foliage", "leaf mines"],
+    "method_tags": ["leaf-mine search", "macro photography"],
+    "finding": (
+        "Search likely host leaves in daylight for fresh mines, frass patterns, folds or blotches; photograph the whole leaf before collecting any detail views.",
+        "Record the host plant and both leaf surfaces, and revisit occupied mines when rearing or later-stage evidence is needed for a defensible identification.",
+    ),
+    "id": (
+        "Use host identity, mine position and mine architecture together; record the mine start, frass trail, leaf veins and exit or pupation structure.",
+        "If an adult is present, add magnified dorsal and side views of the head tuft, forewing markings, scale tufts and resting posture.",
+        "Keep the record at genus or family when the mine, host or adult characters do not exclude the documented confusion species.",
+    ),
+    "photos": (
+        "Whole host leaf with the mine's position, shape and relationship to major veins visible.",
+        "Macro of the mine showing its start, frass pattern, margins, folds, exits or pupation structures.",
+        "Host-identification frame with leaves, stem and diagnostic plant features; include the adult or larva only when safely visible.",
+    ),
+    "limitation": "A tiny adult or mine alone often does not support a species identification. Host identity plus mine architecture, rearing, genitalia or DNA may be required.",
+}
+
+
+def is_leaf_miner_target(family_name="", common_name="", scientific_name=""):
+    """Return whether host-leaf evidence is the primary practical survey route."""
+    if family_name in LEAF_MINER_FAMILIES:
+        return True
+    label = (common_name or "").casefold().replace("-", " ")
+    return "leafminer" in label.replace(" ", "") or "leaf blotch miner" in label
+
+
 GROUP_PROFILES = {
     "moths": {
         "habitat_tags": ["forest edge", "riparian corridor"],
@@ -361,6 +401,16 @@ def survey_period_profile(group, family_name="", common_name="",
             )
         return {"survey_periods": periods, "survey_period_note": note}
 
+    if is_leaf_miner_target(family_name, common_name, scientific_name):
+        return {
+            "survey_periods": ["day"],
+            "survey_period_note": (
+                "Leaf-mine target. Search host foliage in daylight for fresh occupied "
+                "mines and photograph the mine and host; a light-sheet adult is "
+                "supplemental, not the primary detection route."
+            ),
+        }
+
     genus = (scientific_name or "").split(" ", 1)[0]
     common = (common_name or "").casefold()
     day_flying = (
@@ -404,9 +454,14 @@ def _merge_unique(base, additions):
     return list(dict.fromkeys([*base, *additions]))
 
 
-def guidance_profile(group, family_name="", common_name=""):
+def guidance_profile(group, family_name="", common_name="", scientific_name=""):
     """Return merged group, family and name guidance for one target."""
-    profile = deepcopy(GROUP_PROFILES[group])
+    if group == "moths" and is_leaf_miner_target(
+        family_name, common_name, scientific_name
+    ):
+        profile = deepcopy(LEAF_MINER_PROFILE)
+    else:
+        profile = deepcopy(GROUP_PROFILES[group])
     family = FAMILY_PROFILES.get(family_name) or {}
     for key, value in family.items():
         if key in {"habitat_tags", "method_tags"}:
@@ -453,13 +508,19 @@ def _trait_items(group, guidance):
 def build_guidance(group, family_name, common_name, season_label, regional_count,
                    lookalikes, scientific_name=""):
     """Build all required offline guidance fields for a target."""
-    profile = guidance_profile(group, family_name, common_name)
+    leaf_miner = group == "moths" and is_leaf_miner_target(
+        family_name, common_name, scientific_name
+    )
+    profile = guidance_profile(group, family_name, common_name, scientific_name)
     period_profile = survey_period_profile(
         group, family_name, common_name, scientific_name, profile["method_tags"]
     )
     method_tags = profile["method_tags"]
     finding = profile["finding"]
-    if group == "moths" and period_profile["survey_periods"] == ["day"]:
+    if leaf_miner:
+        method_tags = list(LEAF_MINER_PROFILE["method_tags"])
+        finding = LEAF_MINER_PROFILE["finding"]
+    elif group == "moths" and period_profile["survey_periods"] == ["day"]:
         method_tags = _merge_unique(
             ["day watch", "nectar watch"],
             [

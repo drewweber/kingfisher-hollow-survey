@@ -13,6 +13,7 @@ import field_guide  # noqa: E402
 from field_guidance import (  # noqa: E402
     build_guidance,
     guidance_profile,
+    is_leaf_miner_target,
     survey_period_profile,
 )
 from field_identification import (  # noqa: E402
@@ -277,6 +278,27 @@ class FieldGuidanceTests(unittest.TestCase):
         self.assertNotIn("UV light", clearwing_guidance["method_tags"])
         self.assertNotIn("dusk", " ".join(clearwing_guidance["finding_help"]).casefold())
 
+    def test_leaf_miners_use_host_leaf_evidence_not_the_moth_sheet(self):
+        for family in ("Gracillariidae", "Nepticulidae", "Tischeriidae"):
+            self.assertTrue(is_leaf_miner_target(family))
+        self.assertFalse(
+            is_leaf_miner_target(
+                "Noctuidae", "Multicolored Sedgeminer Moth", "Meropleon diversicolor"
+            )
+        )
+
+        guidance = build_guidance(
+            "moths", "Tischeriidae", "Chestnut Blotchminer Moth", "Jun-Sep",
+            12, [], "Coptotriche castaneaeella",
+        )
+        self.assertEqual(["day"], guidance["survey_periods"])
+        self.assertEqual(
+            ["leaf-mine search", "macro photography"], guidance["method_tags"]
+        )
+        self.assertNotIn("UV light", guidance["method_tags"])
+        self.assertIn("host foliage", guidance["survey_period_note"].casefold())
+        self.assertIn("mine architecture", guidance["id_limitations"].casefold())
+
 
 class FieldGuideReleaseTests(unittest.TestCase):
     def test_inactive_taxon_uses_accepted_id_for_photo_search(self):
@@ -304,6 +326,8 @@ class FieldGuideReleaseTests(unittest.TestCase):
             })
         return {
             "id": 1,
+            "group": "moths",
+            "field_group": "moths",
             "common_name": "Example Moth",
             "scientific_name": "Exempla motha",
             "season_label": "Jun-Aug",
@@ -464,6 +488,14 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn("target.surveyPeriods.includes(state.period)", app)
         self.assertIn("When to search", app)
         self.assertIn("surveyPeriodNote", app)
+
+    def test_field_app_separates_leaf_miners_from_moth_targets(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('name="group" value="leaf-miners"', markup)
+        self.assertIn('"leaf-miners": "Leaf miners"', app)
+        self.assertIn("target.fieldGroup !== state.group", app)
+        self.assertIn("groupLabel(target.fieldGroup)", app)
 
     def test_skip_link_is_hidden_until_focus_and_targets_a_focusable_heading(self):
         markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")

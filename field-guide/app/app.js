@@ -3,9 +3,11 @@
 
   const GROUP_LABELS = {
     moths: "Moths",
+    "leaf-miners": "Leaf miners",
     butterflies: "Butterflies",
     odonates: "Dragons"
   };
+  const TAXON_GROUPS = new Set(["moths", "butterflies", "odonates"]);
   const PERIOD_LABELS = {
     day: "Daylight",
     night: "Dusk + night"
@@ -199,7 +201,8 @@
 
     const id = raw.id === undefined || raw.id === null ? "" : String(raw.id).trim();
     const group = cleanString(raw.group).toLocaleLowerCase();
-    if (!id || !GROUP_LABELS[group]) return null;
+    const fieldGroup = cleanString(raw.field_group).toLocaleLowerCase() || group;
+    if (!id || !TAXON_GROUPS.has(group) || !GROUP_LABELS[fieldGroup]) return null;
 
     const commonName = cleanString(raw.common_name) || "Unnamed target";
     const scientificName = cleanString(raw.scientific_name);
@@ -247,6 +250,7 @@
     const target = {
       id,
       group,
+      fieldGroup,
       commonName,
       scientificName,
       familyName: cleanString(raw.family_name),
@@ -459,7 +463,7 @@
   function filteredTargets() {
     const query = normalizeSearch(state.query.trim());
     return state.targets.filter((target) => {
-      if (state.group !== "all" && target.group !== state.group) return false;
+      if (state.group !== "all" && target.fieldGroup !== state.group) return false;
       if (state.period !== "all" && !target.surveyPeriods.includes(state.period)) return false;
       if (state.habitat && !target.habitatTags.includes(state.habitat)) return false;
       if (state.method && !target.methodTags.includes(state.method)) return false;
@@ -496,14 +500,14 @@
     photos.forEach((image, index) => {
       const frame = createImageFrame(
         image,
-        `${groupLabel(target.group)} reference image not available`,
+        `${groupLabel(target.fieldGroup)} reference image not available`,
         "reference-media",
         eager && index === 0
       );
       gallery.append(frame);
     });
     if (!photos.length) {
-      gallery.append(createImageFrame(null, `${groupLabel(target.group)} image not available`, "reference-media"));
+      gallery.append(createImageFrame(null, `${groupLabel(target.fieldGroup)} image not available`, "reference-media"));
     }
     return gallery;
   }
@@ -560,14 +564,14 @@
 
   function createTargetCard(target, index) {
     const item = document.createElement("li");
-    const card = makeElement("article", `target-card group-${target.group}`);
+    const card = makeElement("article", `target-card group-${target.fieldGroup}`);
     const button = makeElement("button", "card-open");
     button.type = "button";
     button.dataset.targetId = target.id;
     button.setAttribute("aria-label", `Open ${target.commonName} details`);
 
     const media = createReferenceGallery(target, "card-media-grid");
-    media.append(makeElement("span", "group-badge", groupLabel(target.group)));
+    media.append(makeElement("span", "group-badge", groupLabel(target.fieldGroup)));
     if (target.localSignal) {
       media.append(makeElement(
         "span",
@@ -891,7 +895,7 @@
   }
 
   function renderDetail(target) {
-    elements.dialogGroup.textContent = `${groupLabel(target.group)} field target`;
+    elements.dialogGroup.textContent = `${groupLabel(target.fieldGroup)} field target`;
     elements.dialogTitle.textContent = target.commonName;
 
     const hero = makeElement("div", "detail-hero");
