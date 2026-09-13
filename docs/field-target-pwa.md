@@ -86,6 +86,9 @@ The guide is a separate static application deployed beside the survey at
   day-flying behavior or a named daylight detection method supports another
   period. Odonata remain one taxonomic source group, while the app presents
   them as separate `Dragonflies` and `Damselflies` field groups based on family.
+  Every dragonfly target carries one adult male and one adult female reference
+  photograph backed by explicit iNaturalist Sex and Adult annotations; release
+  validation rejects a generic, unlabeled, or not-yet-reviewed two-photo pair.
   Leaf-mining moths remain taxonomically part of the moth target set, but the
   app presents them as a separate `Leaf miners` field group. Their
   primary route is daylight host-leaf and mine-architecture evidence rather

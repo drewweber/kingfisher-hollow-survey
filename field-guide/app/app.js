@@ -154,13 +154,15 @@
     if (!raw || typeof raw !== "object") return null;
     const image = cleanImageUrl(raw.image);
     if (!image) return null;
+    const sex = cleanString(raw.sex).toLocaleLowerCase();
     return {
       image,
       alt: cleanString(raw.image_alt) || fallbackAlt,
       attribution: cleanString(raw.image_attribution),
       license: cleanString(raw.image_license),
       licenseUrl: cleanOnlineUrl(raw.image_license_url),
-      sourceUrl: cleanOnlineUrl(raw.image_source_url)
+      sourceUrl: cleanOnlineUrl(raw.image_source_url),
+      sex: sex === "male" || sex === "female" ? sex : ""
     };
   }
 
@@ -505,6 +507,9 @@
         fallback.hidden = false;
       }, { once: true });
       frame.append(image, fallback);
+      if (imageData.sex) {
+        frame.append(makeElement("span", "image-sex-label", formatTag(imageData.sex)));
+      }
     } else {
       frame.append(fallback);
     }

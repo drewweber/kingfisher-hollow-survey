@@ -447,7 +447,66 @@ class FieldGuideReleaseTests(unittest.TestCase):
         for field_group in ("dragonflies", "damselflies"):
             target = self._target()
             target["field_group"] = field_group
+            if field_group == "dragonflies":
+                for image, sex in zip(
+                    target["images"], field_guide.DRAGONFLY_REFERENCE_SEXES
+                ):
+                    image.update({
+                        "sex": sex,
+                        "life_stage": "adult",
+                        "sex_evidence": "iNaturalist Sex annotation",
+                        "image_source_photo_id": 101 if sex == "male" else 202,
+                    })
+                with patch.object(
+                    field_guide,
+                    "_dragonfly_photo_choices",
+                    return_value={target["id"]: {"male": 101, "female": 202}},
+                ):
+                    field_guide._validate_targets([target])
+            else:
+                field_guide._validate_targets([target])
+
+    def test_release_validator_requires_adult_male_and_female_dragonfly_photos(self):
+        target = self._target()
+        target["field_group"] = "dragonflies"
+        for image, sex in zip(
+            target["images"], field_guide.DRAGONFLY_REFERENCE_SEXES
+        ):
+            image.update({
+                "sex": sex,
+                "life_stage": "adult",
+                "sex_evidence": "iNaturalist Sex annotation",
+                "image_source_photo_id": 101 if sex == "male" else 202,
+            })
+        with patch.object(
+            field_guide,
+            "_dragonfly_photo_choices",
+            return_value={target["id"]: {"male": 101, "female": 202}},
+        ):
             field_guide._validate_targets([target])
+
+        target["images"][1].pop("sex")
+        with patch.object(
+            field_guide,
+            "_dragonfly_photo_choices",
+            return_value={target["id"]: {"male": 101, "female": 202}},
+        ):
+            with self.assertRaisesRegex(ValueError, "does not have male and female images"):
+                field_guide._validate_targets([target])
+
+    def test_dragonfly_photo_resolution_stops_on_an_unreviewed_target(self):
+        target = {
+            "id": 55,
+            "common_name": "Example Dragonfly",
+            "field_group": "dragonflies",
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            with (
+                patch.object(field_guide, "PHOTO_CACHE", Path(temporary) / "taxa.json"),
+                patch.object(field_guide, "_dragonfly_photo_choices", return_value={}),
+                self.assertRaisesRegex(ValueError, "unreviewed male, female"),
+            ):
+                field_guide._resolve_dragonfly_sex_photos([target], {55: {}})
 
     def test_generated_icons_are_valid_png_files(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -596,6 +655,13 @@ class FieldGuideReleaseTests(unittest.TestCase):
         self.assertIn('damselflies: "Damselflies"', app)
         self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr))", styles)
         self.assertIn("grid-template-columns: repeat(6, minmax(0, 1fr))", styles)
+
+    def test_field_app_labels_dragonfly_reference_photo_sexes(self):
+        app = (ROOT / "field-guide" / "app" / "app.js").read_text(encoding="utf-8")
+        styles = (ROOT / "field-guide" / "app" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn('sex === "male" || sex === "female"', app)
+        self.assertIn('makeElement("span", "image-sex-label"', app)
+        self.assertIn(".image-sex-label", styles)
 
     def test_skip_link_is_hidden_until_focus_and_targets_a_focusable_heading(self):
         markup = (ROOT / "field-guide" / "app" / "index.html").read_text(encoding="utf-8")

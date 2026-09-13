@@ -9,6 +9,10 @@ import requests
 from config import PER_PAGE, REQUEST_PAUSE, USER_AGENT
 
 BASE = "https://api.inaturalist.org/v1"
+SEX_ANNOTATION_ID = 9
+SEX_VALUE_IDS = {"female": 10, "male": 11}
+LIFE_STAGE_ANNOTATION_ID = 1
+ADULT_VALUE_ID = 2
 
 _thread_local = threading.local()
 
@@ -162,6 +166,109 @@ def fetch_licensed_photos(taxon_id, limit=2, license_codes=None, exclude_ids=Non
             if len(photos) >= limit:
                 return photos
     return photos
+
+
+def _has_annotation(observation, attribute_id, value_id):
+    return any(
+        annotation.get("controlled_attribute_id") == attribute_id
+        and annotation.get("controlled_value_id") == value_id
+        for annotation in observation.get("annotations") or []
+    )
+
+
+def _reference_photo_quality(photo):
+    dimensions = photo.get("original_dimensions") or {}
+    try:
+        width = int(dimensions.get("width") or 0)
+        height = int(dimensions.get("height") or 0)
+    except (TypeError, ValueError):
+        return False
+    shorter, longer = sorted((width, height))
+    return shorter >= 600 and longer / shorter <= 2.5
+
+
+def fetch_licensed_sex_photos(
+    taxon_id,
+    sexes=("male", "female"),
+    license_codes=None,
+    preferred_photo_ids=None,
+):
+    """Return one adult, sex-annotated reference photo for each requested sex.
+
+    Results remain in the requested order. Research-grade identification,
+    explicit iNaturalist Sex and Adult annotations, redistribution rights, and
+    basic resolution/aspect-ratio checks are all required. A reviewed photo ID
+    can be preferred without bypassing any of those checks.
+    """
+    requested = tuple(dict.fromkeys(str(sex).casefold() for sex in sexes))
+    invalid = [sex for sex in requested if sex not in SEX_VALUE_IDS]
+    if invalid:
+        raise ValueError("Unsupported sex labels: " + ", ".join(invalid))
+    licenses = license_codes or (
+        "cc0", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa",
+        "cc-by-nd", "cc-by-nc-nd",
+    )
+    preferred = {
+        str(sex).casefold(): str(photo_id)
+        for sex, photo_id in (preferred_photo_ids or {}).items()
+        if photo_id is not None
+    }
+    data = _get(
+        "observations",
+        taxon_id=taxon_id,
+        photos="true",
+        quality_grade="research",
+        photo_license=",".join(licenses),
+        term_id=SEX_ANNOTATION_ID,
+        term_value_id=",".join(str(SEX_VALUE_IDS[sex]) for sex in requested),
+        order_by="votes",
+        order="desc",
+        per_page=200,
+    )
+    allowed = set(licenses)
+    candidates = {sex: [] for sex in requested}
+    for observation in data.get("results", []):
+        if not _has_annotation(
+            observation, LIFE_STAGE_ANNOTATION_ID, ADULT_VALUE_ID
+        ):
+            continue
+        for sex in requested:
+            if not _has_annotation(
+                observation, SEX_ANNOTATION_ID, SEX_VALUE_IDS[sex]
+            ):
+                continue
+            for photo in observation.get("photos") or []:
+                code = (photo.get("license_code") or "").casefold()
+                url = photo.get("url") or ""
+                if code not in allowed or not url or not _reference_photo_quality(photo):
+                    continue
+                candidates[sex].append({
+                    "id": photo.get("id"),
+                    "medium_url": url.replace("square.", "medium."),
+                    "attribution": photo.get("attribution") or "iNaturalist contributor",
+                    "license_code": code,
+                    "source_url": (
+                        f"https://www.inaturalist.org/observations/{observation.get('id')}"
+                    ),
+                    "sex": sex,
+                    "life_stage": "adult",
+                    "sex_evidence": "iNaturalist Sex annotation",
+                })
+
+    selected = []
+    for sex in requested:
+        pool = candidates[sex]
+        preferred_id = preferred.get(sex)
+        if preferred_id:
+            choice = next(
+                (photo for photo in pool if str(photo.get("id")) == preferred_id),
+                None,
+            )
+        else:
+            choice = pool[0] if pool else None
+        if choice:
+            selected.append(choice)
+    return selected
 
 
 def fetch_licensed_photo(taxon_id, license_codes=None):

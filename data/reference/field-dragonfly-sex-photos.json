@@ -1,0 +1,72 @@
+{
+  "schema": "kh-field-dragonfly-sex-photos/1.0.0",
+  "reviewed_at": "2026-09-13",
+  "review_note": "Each choice is a clear adult reference photograph with explicit iNaturalist Sex and Adult annotations.",
+  "taxa": {
+    "104551": {
+      "common_name": "Dot-tailed Whiteface",
+      "male": 2080020,
+      "female": 281885169
+    },
+    "59776": {
+      "common_name": "Eastern Amberwing",
+      "male": 185467391,
+      "female": 224562970
+    },
+    "57458": {
+      "common_name": "Chalk-fronted Corporal",
+      "male": 668693494,
+      "female": 699236629
+    },
+    "104548": {
+      "common_name": "Frosted Whiteface",
+      "male": 527882944,
+      "female": 49229116
+    },
+    "63160": {
+      "common_name": "Calico Pennant",
+      "male": 2301163,
+      "female": 2421674
+    },
+    "100215": {
+      "common_name": "Prince Baskettail",
+      "male": 544506397,
+      "female": 112046692
+    },
+    "520958": {
+      "common_name": "Lancet Clubtail",
+      "male": 27459032,
+      "female": 512337546
+    },
+    "104553": {
+      "common_name": "Belted Whiteface",
+      "male": 53161330,
+      "female": 132453986
+    },
+    "94625": {
+      "common_name": "Unicorn Clubtail",
+      "male": 293774345,
+      "female": 392592853
+    },
+    "113722": {
+      "common_name": "Gray Petaltail",
+      "male": 20957377,
+      "female": 683094517
+    },
+    "104549": {
+      "common_name": "Crimson-ringed Whiteface",
+      "male": 56160319,
+      "female": 138166327
+    },
+    "1578645": {
+      "common_name": "Delta-spotted Spiketail",
+      "male": 70420454,
+      "female": 20004581
+    },
+    "94620": {
+      "common_name": "Lilypad Clubtail",
+      "male": 676202727,
+      "female": 203247638
+    }
+  }
+}

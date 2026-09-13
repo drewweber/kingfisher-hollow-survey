@@ -713,6 +713,23 @@ a:hover {
   text-align: center;
 }
 
+.image-sex-label {
+  position: absolute;
+  z-index: 2;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 4px;
+  background: rgb(17 38 30 / 88%);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1.2;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
 .group-badge {
   position: absolute;
   top: 0.55rem;
@@ -1686,6 +1703,7 @@ a:hover {
 }
 
 :root[data-survey-period="night"] .group-badge,
+:root[data-survey-period="night"] .image-sex-label,
 :root[data-survey-period="night"] .flight-signal-badge,
 :root[data-survey-period="night"] .flight-signal-badge.signal-strong {
   border-color: #783526;

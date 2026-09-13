@@ -35,10 +35,12 @@ OUTPUT_DIR = PUBLIC_DIR / "field"
 CACHE_DIR = DATA_DIR / "cache" / "field-guide"
 IMAGE_CACHE_DIR = CACHE_DIR / "images"
 PHOTO_CACHE = CACHE_DIR / "taxa.json"
-GUIDANCE_REVISION = "2026-09-11.3"
-SCHEMA_VERSION = "kh-field-targets/1.9.0"
+DRAGONFLY_SEX_PHOTO_CHOICES = DATA_DIR / "reference" / "field-dragonfly-sex-photos.json"
+GUIDANCE_REVISION = "2026-09-13.1"
+SCHEMA_VERSION = "kh-field-targets/1.10.0"
 TARGET_IMAGE_COUNT = 2
 LOOKALIKE_IMAGE_COUNT = 1
+DRAGONFLY_REFERENCE_SEXES = ("male", "female")
 MAX_PACKAGE_BYTES = 75 * 1024 * 1024
 MOTH_TARGET_LIMIT = 40
 MOTH_CANDIDATE_LIMIT = 200
@@ -646,9 +648,114 @@ def _assign_field_groups(targets):
     return counts
 
 
+def _dragonfly_photo_choices():
+    payload = _json_read(DRAGONFLY_SEX_PHOTO_CHOICES, {})
+    taxa = payload.get("taxa") if isinstance(payload, dict) else None
+    if not isinstance(taxa, dict):
+        return {}
+    choices = {}
+    for taxon_id, record in taxa.items():
+        if not isinstance(record, dict):
+            continue
+        try:
+            normalized_id = int(taxon_id)
+        except (TypeError, ValueError):
+            continue
+        choices[normalized_id] = {
+            sex: int(record[sex])
+            for sex in DRAGONFLY_REFERENCE_SEXES
+            if str(record.get(sex, "")).isdigit()
+        }
+    return choices
+
+
+def _valid_dragonfly_sex_photo(photo, sex, preferred_id=None):
+    if not isinstance(photo, dict):
+        return False
+    if preferred_id is not None and str(photo.get("id")) != str(preferred_id):
+        return False
+    return (
+        photo.get("sex") == sex
+        and photo.get("life_stage") == "adult"
+        and photo.get("sex_evidence") == "iNaturalist Sex annotation"
+        and photo.get("license_code") in ALLOWED_LICENSES
+        and bool(photo.get("medium_url"))
+        and bool(photo.get("attribution"))
+        and bool(photo.get("source_url"))
+    )
+
+
+def _resolve_dragonfly_sex_photos(targets, taxa):
+    choices = _dragonfly_photo_choices()
+    cache = _json_read(PHOTO_CACHE, {"taxa": {}})
+    cached_taxa = cache.setdefault("taxa", {})
+    unresolved = []
+    for target in targets:
+        if target.get("field_group") != "dragonflies":
+            continue
+        taxon_id = int(target["id"])
+        record = taxa[taxon_id]
+        cached_record = cached_taxa.setdefault(str(taxon_id), record)
+        stored = cached_record.get("dragonfly_sex_photos")
+        stored = stored if isinstance(stored, dict) else {}
+        preferred = choices.get(taxon_id, {})
+        unreviewed = [
+            sex for sex in DRAGONFLY_REFERENCE_SEXES if sex not in preferred
+        ]
+        if unreviewed:
+            unresolved.append(
+                f"{target['common_name']} (unreviewed {', '.join(unreviewed)})"
+            )
+            continue
+        selected = {
+            sex: stored.get(sex)
+            for sex in DRAGONFLY_REFERENCE_SEXES
+            if _valid_dragonfly_sex_photo(
+                stored.get(sex), sex, preferred.get(sex)
+            )
+        }
+        missing = [sex for sex in DRAGONFLY_REFERENCE_SEXES if sex not in selected]
+        if missing:
+            fetched = inat_api.fetch_licensed_sex_photos(
+                cached_record.get("photo_search_taxon_id") or taxon_id,
+                sexes=missing,
+                license_codes=tuple(sorted(ALLOWED_LICENSES)),
+                preferred_photo_ids=preferred,
+            )
+            selected.update({photo["sex"]: photo for photo in fetched})
+        still_missing = [
+            sex for sex in DRAGONFLY_REFERENCE_SEXES
+            if not _valid_dragonfly_sex_photo(
+                selected.get(sex), sex, preferred.get(sex)
+            )
+        ]
+        if still_missing:
+            unresolved.append(
+                f"{target['common_name']} ({', '.join(still_missing)})"
+            )
+            continue
+        ordered = {sex: selected[sex] for sex in DRAGONFLY_REFERENCE_SEXES}
+        cached_record["dragonfly_sex_photos"] = ordered
+        record["dragonfly_sex_photos"] = ordered
+    cache["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _json_write(PHOTO_CACHE, cache)
+    if unresolved:
+        raise ValueError(
+            "Missing vetted adult dragonfly sex photos: " + "; ".join(unresolved)
+        )
+
+
+def _target_reference_photos(target, taxa):
+    record = taxa[target["id"]]
+    if target.get("field_group") == "dragonflies":
+        photos = record.get("dragonfly_sex_photos") or {}
+        return [photos[sex] for sex in DRAGONFLY_REFERENCE_SEXES if sex in photos]
+    return record["photos"][:TARGET_IMAGE_COUNT]
+
+
 def _image_data(photo, relative_path, destination, alt):
     code = photo["license_code"].casefold()
-    return {
+    data = {
         "image": relative_path,
         "image_alt": alt,
         "image_attribution": photo["attribution"],
@@ -658,6 +765,12 @@ def _image_data(photo, relative_path, destination, alt):
         "image_source_url": photo["source_url"],
         "image_sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
     }
+    if photo.get("id") is not None:
+        data["image_source_photo_id"] = int(photo["id"])
+    for key in ("sex", "life_stage", "sex_evidence"):
+        if photo.get(key):
+            data[key] = photo[key]
+    return data
 
 
 def _publish_image(source, output_dir):
@@ -751,6 +864,21 @@ def _validate_targets(targets, output_dir=None):
         images = target.get("images") or []
         if len(images) != TARGET_IMAGE_COUNT:
             errors.append(f"taxon {target['id']} does not have {TARGET_IMAGE_COUNT} reference images")
+        if target.get("field_group") == "dragonflies":
+            preferred = _dragonfly_photo_choices().get(int(target["id"]), {})
+            sexes = [image.get("sex") for image in images]
+            if sexes != list(DRAGONFLY_REFERENCE_SEXES):
+                errors.append(f"taxon {target['id']} does not have male and female images")
+            for image, sex in zip(images, DRAGONFLY_REFERENCE_SEXES):
+                if (
+                    image.get("life_stage") != "adult"
+                    or image.get("sex_evidence") != "iNaturalist Sex annotation"
+                ):
+                    errors.append(f"taxon {target['id']} has unvetted sex-photo evidence")
+                if image.get("image_source_photo_id") != preferred.get(sex):
+                    errors.append(
+                        f"taxon {target['id']} does not use its reviewed {sex} photo"
+                    )
         for image in images:
             if image.get("image_license_code") not in ALLOWED_LICENSES:
                 errors.append(f"taxon {target['id']} has an unapproved reference image license")
@@ -822,6 +950,7 @@ def build(effective_date=None, output_dir=None):
     taxa = resolve_taxa(photo_requirements)
     _merge_taxon_metadata(targets, taxa)
     counts = _assign_field_groups(targets)
+    _resolve_dragonfly_sex_photos(targets, taxa)
 
     if output_dir.exists():
         shutil.rmtree(output_dir)
@@ -830,8 +959,12 @@ def build(effective_date=None, output_dir=None):
     images_dir.mkdir(parents=True, exist_ok=True)
 
     required_photos = {}
-    for taxon_id, count in photo_requirements.items():
-        for photo in taxa[taxon_id]["photos"][:count]:
+    for target in targets:
+        for photo in _target_reference_photos(target, taxa):
+            required_photos.setdefault(_photo_key(photo), photo)
+        for lookalike in target.get("lookalikes") or []:
+            taxon_id = int(lookalike["taxon_id"])
+            photo = taxa[taxon_id]["photos"][0]
             required_photos.setdefault(_photo_key(photo), photo)
     image_paths = {}
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -842,15 +975,17 @@ def build(effective_date=None, output_dir=None):
 
     for target in targets:
         images = []
-        for index, photo in enumerate(taxa[target["id"]]["photos"][:TARGET_IMAGE_COUNT], start=1):
+        for index, photo in enumerate(_target_reference_photos(target, taxa), start=1):
             relative_path, destination = _publish_image(
                 image_paths[_photo_key(photo)], output_dir
             )
+            sex_label = f"{photo['sex'].title()} " if photo.get("sex") else ""
             images.append(_image_data(
                 photo,
                 relative_path,
                 destination,
-                f"Reference photograph {index} of {target['common_name']} ({target['scientific_name']})",
+                f"{sex_label}reference photograph {index} of "
+                f"{target['common_name']} ({target['scientific_name']})",
             ))
         target["images"] = images
         # Preserve the original first-image fields for older installed releases.
