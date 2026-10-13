@@ -1,6 +1,6 @@
 {
   "schema": "kh-field-dragonfly-sex-photos/1.0.0",
-  "reviewed_at": "2026-09-13",
+  "reviewed_at": "2026-10-13",
   "review_note": "Each choice is a clear adult reference photograph with explicit iNaturalist Sex and Adult annotations.",
   "taxa": {
     "104551": {
@@ -10,8 +10,8 @@
     },
     "59776": {
       "common_name": "Eastern Amberwing",
-      "male": 185467391,
-      "female": 224562970
+      "male": 54586695,
+      "female": 46341885
     },
     "57458": {
       "common_name": "Chalk-fronted Corporal",

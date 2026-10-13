@@ -3123,9 +3123,11 @@ def mammals_view(df, stats):
             "including four mustelids (fisher, mink, long-tailed weasel, and ermine), both foxes, "
             "raccoon, black bear, coyote, and bobcat. The records fit Michigan Creek as a travel and "
             "foraging corridor: mink follows the water, while fisher, foxes, coyotes, bobcats, bears, "
-            "and raccoons move through the forested valley. Eastern cottontail remains the newest "
-            "addition, first recorded June 15. Eastern woodland jumping mouse adds an uncommon "
-            "moist-forest record and remains sparsely documented across Tioga County.", dark=True)
+            "and raccoons move through the forested valley. A North American Porcupine recorded October 1 "
+            "turns a stated camera target into a confirmed property record; autumn and winter cameras at "
+            "cavity trees, stone walls, and slope-base trails should reveal more of its use. Eastern woodland "
+            "jumping mouse adds an uncommon moist-forest record and remains sparsely documented across Tioga "
+            "County.", dark=True)
         + mammal_found_body(found),
         intro="The mammal list is detection-limited. Trail cameras and incidental sign show the mid-sized corridor users well, while bats, shrews, voles, mice, moles, and semi-aquatic mammals need targeted methods. Warm-season nights suit bat acoustics over Michigan Creek; wet forest edges, culverts, and log crossings are better places to look for overlooked small mammals and sign of otter, skunk, or porcupine.",
         dark=True))
