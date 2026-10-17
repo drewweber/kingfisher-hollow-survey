@@ -1375,6 +1375,38 @@ def bird_life_list_body(birds):
     )
 
 
+def bird_target_links_body(as_of=None):
+    """Live eBird targets for the current month and the full calendar year."""
+    today = as_of or datetime.now(ZoneInfo("America/New_York")).date()
+    month = today.strftime("%B")
+    base = (
+        "https://ebird.org/targets?region=Tioga+County%2C+New+York%2C+US"
+        "&r1=US-NY-107&r2=L41961519&user2=USER41808"
+    )
+    cards = []
+    for title, start, end, note in [
+        (f"{month} targets", today.month, today.month,
+         "Birds reported in Tioga County during this month that are missing from your Kingfisher Hollow list."),
+        ("Year-round targets", 1, 12,
+         "Birds reported in Tioga County across all months that are missing from your Kingfisher Hollow list."),
+    ]:
+        links = []
+        for list_type, label in [("year", f"Current year list ({today.year})"), ("life", "Life list")]:
+            url = f"{base}&bmo={start}&emo={end}&t2={list_type}"
+            links.append(
+                f'<a href="{esc(url)}" target="_blank" rel="noopener" '
+                f'class="text-hollow-300 hover:text-white text-sm">'
+                f'{esc(label)} ↗</a>'
+            )
+        cards.append(
+            '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-5">'
+            f'<h3 class="font-serif text-2xl text-white">{esc(title)}</h3>'
+            f'<p class="text-white/50 text-sm leading-relaxed mt-2">{esc(note)}</p>'
+            '<div class="flex flex-wrap gap-x-6 gap-y-3 mt-4">' + "".join(links) + '</div></div>'
+        )
+    return '<div class="grid md:grid-cols-2 gap-3 mb-10">' + "".join(cards) + '</div>'
+
+
 def bird_gap_body(gap):
     links = [
         ("Kingfisher Hollow location", EBIRD_BARCHART_URL,
@@ -3446,7 +3478,7 @@ def birds_view():
     out.append(section(
         "bird-gap", "Seasonal Priorities",
         'Bird <em class="text-hollow-300">Target Review</em>',
-        bird_gap_body(gap),
+        bird_target_links_body() + bird_gap_body(gap),
         intro="Seasonal possibilities from Tioga and Tompkins County, sorted by how they are most likely to occur here: migrants using the property, nocturnal wetland flyovers, daytime flyovers or brief visitors, and lower-probability species whose usual habitat is absent.",
         dark=True))
     out.append(section(
