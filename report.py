@@ -1960,7 +1960,6 @@ def id_changes_body(changes):
     if not changes:
         return '<p class="text-stone-400 text-sm text-center py-4">No recent identification changes.</p>'
 
-    taxon_url = "https://www.inaturalist.org/taxa/"
     rows = []
     for c in changes:
         date_str = c["obs_date"]
@@ -1969,15 +1968,15 @@ def id_changes_body(changes):
         prev_name = c["prev_taxon_common"] or c["prev_taxon_name"] or "—"
         new_name = c["new_taxon_common"] or c["new_taxon_name"] or "—"
 
-        prev_html = (
-            f'<a href="{taxon_url}{c["prev_taxon_id"]}" target="_blank" rel="noopener" '
-            f'class="text-stone-600 italic">{esc(prev_name)}</a>'
-            if c["prev_taxon_id"] else f'<span class="text-stone-500 italic">{esc(prev_name)}</span>'
-        )
-        new_html = (
-            f'<a href="{taxon_url}{c["new_taxon_id"]}" target="_blank" rel="noopener" '
-            f'class="font-medium text-stone-800 italic">{esc(new_name)}</a>'
-            if c["new_taxon_id"] else f'<span class="font-medium text-stone-800 italic">{esc(new_name)}</span>'
+        change_link = (
+            f'<a href="{esc(c["obs_url"])}" target="_blank" rel="noopener" '
+            'class="block rounded hover:underline focus-visible:outline-none '
+            'focus-visible:ring-2 focus-visible:ring-hollow-500" '
+            'title="View observation on iNaturalist">'
+            f'<span class="text-stone-600 italic">{esc(prev_name)}</span> → '
+            f'<span class="font-medium text-stone-800 italic">{esc(new_name)}</span> '
+            '<span class="text-stone-400 text-xs ml-1" aria-hidden="true">↗</span>'
+            '</a>'
         )
 
         if c["category"] == "improving":
@@ -1991,11 +1990,6 @@ def id_changes_body(changes):
             f'class="text-stone-500 hover:text-stone-700">{esc(c["identifier_login"])}</a>'
         )
 
-        obs_link = (
-            f'<a href="{c["obs_url"]}" target="_blank" rel="noopener" '
-            f'class="text-stone-400 hover:text-hollow-600 text-xs ml-1" title="View observation">↗</a>'
-        )
-
         rows.append(
             f'<div class="flex items-start gap-3 py-2.5 border-b border-stone-100 last:border-0">'
             f'  <div class="w-20 shrink-0 text-xs text-stone-400 pt-0.5">'
@@ -2003,7 +1997,7 @@ def id_changes_body(changes):
             f'    <div class="text-stone-300">obs {esc(date_str)}</div>'
             f'  </div>'
             f'  <div class="flex-1 min-w-0 text-sm">'
-            f'    {prev_html} → {new_html} {obs_link}'
+            f'    {change_link}'
             f'  </div>'
             f'  <div class="flex items-center gap-2 shrink-0">'
             f'    {badge}'
