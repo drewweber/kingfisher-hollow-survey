@@ -2932,7 +2932,9 @@ def moth_view(df, stats):
             "and Thistle Stem Borer identifications point toward oak leaves, beech leaves, and thistle stems. "
             "These adult records are survey leads, not proof of larvae, breeding, or host use here. Search "
             "for mines, skeletonizing, rolls, borings, frass, or feeding sign, and photograph the evidence "
-            "with the identified plant.",
+            "with the identified plant. October light-sheet records add a seasonal lead: a research-grade "
+            "American Copper Underwing, alongside provisional Bicolored Sallow, Grote's Pinion, and Unsated "
+            "Sallow records, makes mild October nights at the sheltered creek sheet worth repeating.",
             dark=True),
         intro=f"{msum['species']:,} moth species are confirmed on 30 riparian acres, including "
               f"{moth_county_firsts:,} first iNaturalist records for Tioga County. That county-first "
