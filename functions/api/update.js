@@ -3,6 +3,12 @@ const REPO_NAME = "kingfisher-hollow-survey";
 const WORKFLOW_FILE = "update.yml";
 const REF = "main";
 
+function bindingState(value) {
+  if (value === undefined || value === null) return "missing";
+  if (typeof value !== "string") return "invalid_type";
+  return value === "" ? "empty" : "present";
+}
+
 function json(body, init = {}) {
   return new Response(JSON.stringify(body), {
     ...init,
@@ -26,6 +32,15 @@ export async function onRequestPost({ request, env }) {
   const githubToken = env.GITHUB_DISPATCH_TOKEN;
 
   if (!expectedKey || !githubToken) {
+    // Diagnose runtime binding propagation without logging secret values,
+    // lengths, request headers, or any user-provided data.
+    console.error(JSON.stringify({
+      event: "survey_update_configuration_missing",
+      bindings: {
+        UPDATE_TRIGGER_KEY: bindingState(expectedKey),
+        GITHUB_DISPATCH_TOKEN: bindingState(githubToken),
+      },
+    }));
     return json({
       ok: false,
       error: "Update trigger is not configured.",

@@ -46,6 +46,14 @@ async function waitForDeployment() {
 
 await waitForDeployment();
 
+test("update function has runtime bindings and rejects unauthenticated refreshes", async () => {
+  // No key is supplied, so this must never dispatch a GitHub workflow.
+  // A 503 instead of 401 exposes missing runtime bindings despite a green build.
+  const { body, response } = await fetchJson("/api/update", 401, { method: "POST" });
+  assert.deepEqual(body, { ok: false, error: "Unauthorized." });
+  assert.equal(response.headers.get("cache-control"), "no-store");
+});
+
 test("family statistics return filtered counts and local-date bounds", async () => {
   const { body, response, elapsed } = await fetchJson("/api/stats?family=Saturniidae");
   assert.ok(elapsed < MAX_RESPONSE_MS, `stats took ${Math.round(elapsed)} ms`);

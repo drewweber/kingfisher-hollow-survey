@@ -151,10 +151,11 @@ jobs:
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/kingfisher-survey" \
             | jq -er '
-                .result.deployment_configs.production.env_vars // {} as $bindings
-                | if ($bindings.UPDATE_TRIGGER_KEY.type == "secret_text"
+                (.result.deployment_configs.production.env_vars // {}) as $bindings
+                | if (.success == true
+                    and $bindings.UPDATE_TRIGGER_KEY.type == "secret_text"
                     and $bindings.GITHUB_DISPATCH_TOKEN.type == "secret_text")
-                  then "Pages update bindings are configured."
+                  then "Pages update binding metadata is configured; runtime verification is still required."
                   else error("Cloudflare Pages production is missing an encrypted UPDATE_TRIGGER_KEY or GITHUB_DISPATCH_TOKEN.")
                   end
               '
