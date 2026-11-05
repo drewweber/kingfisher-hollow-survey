@@ -12,4 +12,8 @@ test("Pages deployment explicitly targets the production branch", () => {
     workflow,
     /wrangler pages deploy public --project-name=kingfisher-survey --branch=main --commit-dirty=true/,
   );
+
+  assert.match(workflow, /Verify Pages update bindings/);
+  assert.match(workflow, /UPDATE_TRIGGER_KEY/);
+  assert.match(workflow, /GITHUB_DISPATCH_TOKEN/);
 });
