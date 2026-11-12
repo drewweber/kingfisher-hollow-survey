@@ -31,6 +31,8 @@ import field_guide  # noqa: E402
 import inat_api  # noqa: E402
 import new_county_species  # noqa: E402
 import natural_history  # noqa: E402
+import moth_page  # noqa: E402
+import moth_story  # noqa: E402
 import seasonal  # noqa: E402
 import seasonal_pages  # noqa: E402
 import seasonal_community  # noqa: E402
@@ -257,13 +259,11 @@ VIEW_CONFIG = {
         "plotly": True,
         "links": [
             ("#moths", "Overview"),
-            ("#moth-gallery", "Recent"),
-            ("#moth-gap", "Targets"),
-            ("#moth-families", "Gap by family"),
-            ("#moth-standouts", "Standouts"),
-            ("#moth-completeness", "Inventory status"),
-            ("#moth-calendar", "Seasonal calendar"),
-            ("#moth-methods", "Survey methods"),
+            ("#moth-calendar", "The moth year"),
+            ("#moth-families", "Families"),
+            ("#moth-completeness", "Still discovering"),
+            ("#moth-standouts", "Rare and notable"),
+            ("#moth-methods", "What to try next"),
         ],
     },
     "butterflies": {
@@ -3018,211 +3018,43 @@ def _write_survey_pages(view_markup, public_summary, county_firsts, moth_species
 
 
 def moth_view(df, stats):
-    """The dark, moth-only report: stats, completeness, flight seasons, the
-    county gap list, diversity, and a showcase. Returns concatenated sections."""
+    """Build the complete moth visitor journey from one pooled story dataset."""
     moths = analyze.load_moths()
     if moths.empty:
-        return section("moths", "After Dark", "The Moths",
-                       '<p class="text-center text-white/60">Moth roster not synced '
-                       'yet.</p>', dark=True)
-    msum = analyze.moth_summary(df, moths)
-    plants = analyze.load_plants()
-    plant_count = int(plants["taxon_id"].nunique()) if not plants.empty else 0
+        story = moth_story.build_story(df, moths)
+        moth_page.write_exploration(story, PUBLIC_DIR)
+        return moth_page.render_moth_page(
+            story=story, summary={"species": 0}, comp={}, families=[], highlights=[],
+            observations=[], forecast={}, ranked_forecast=[], validation={}, gap_html="",
+            methods_html=survey_methods_body(MOTH_METHODS), nightly_html="No dated records yet.", section=section)
+    story = moth_story.build_story(df, moths)
+    moth_page.write_exploration(story, PUBLIC_DIR)
     comp = analyze.moth_completeness(df, moths)
-    import datetime as _dt
-    _today = _dt.date.today()
-    _window_end = _today + _dt.timedelta(days=14)
-    target_months = sorted({_today.month, _window_end.month})
-    gap = analyze.moth_county_gap(moths, n=50, target_months=target_months)
-    family_breakdown = analyze.moth_family_breakdown(moths)
-    tortricid_rows = family_breakdown[
-        family_breakdown["label"].str.contains("Tortricid", case=False, na=False)
-    ]
-    tortricid_count = int(tortricid_rows.iloc[0]["recorded"]) if not tortricid_rows.empty else 0
-    div = analyze.moth_diversity(df, moths)
-    eff = analyze.moth_effort(df, moths)
-    moth_sub = analyze.moth_obs(df, moths)
-    moth_ids = set(moths["taxon_id"].dropna().astype(int))
-    moth_county_firsts = int(
-        ((stats["is_county_first"] == 1) & (stats["taxon_id"].isin(moth_ids))).sum()
-    ) if not stats.empty else 0
-
-    out = []
-    out.append(section(
-        "moths", "After Dark", 'The <em class="text-hollow-300">Moths</em>',
-        moth_stats(msum, comp)
-        + property_profile_body(plant_count, msum["species"])
-        + takeaway(
-            "Follow the year with more than one method: spring and autumn visits, summer nights at the lights, "
-            "and daytime searches for feeding signs on identified plants. A nearby adult suggests a place to look; "
-            "it does not establish local larval host use. Keep the plant and insect evidence together.",
-            dark=True),
-        intro=f"{msum['species']:,} moth taxa are recorded across the seasons. The creek, pond margins, woodland, "
-              "and upland edge offer different places to return to. The inventory includes working identifications; "
-              "seasonal charts describe submitted records across life stages.",
-        dark=True))
-    out.append(section(
-        "moth-gallery", "In Pictures",
-        'Recent <em class="text-hollow-300">Moths</em>',
-        gallery_body(analyze.photo_highlights(moth_sub)),
-        intro="Recent moth photographs from the property.",
-        dark=True))
-
-    _import_calendar = __import__('calendar')
-    _month_names = [_import_calendar.month_name[m] for m in target_months]
-    _months_label = " and ".join(_month_names)
-    out.append(section(
-        "moth-gap", "Yet to Find",
-        'The <em class="text-hollow-300">Gap List</em>',
-        moth_gap_body(gap)
-        + takeaway(
-            f"Ranked using county records in {_months_label}, the calendar months overlapping the next two weeks. "
-            "These are whole-month reporting signals, not precise flight forecasts. Check the species, habitat, "
-            "life stage, and current conditions before planning a search. A regional record does not show that "
-            "a species occurs on the property.", dark=True),
-        intro=f"Moth species in the roughly 50-mile regional pool without property records, ranked using {_months_label} Tioga County record counts. Uneven reporting affects these rankings; use them as search leads.",
-        dark=True))
-    out.append(section(
-        "moth-families", "By Family",
-        'Where the <em class="text-hollow-300">Gaps</em> Are',
-        chart_card(viz.family_breakdown(family_breakdown),
-                   note="Solid bar: species recorded here. Faint bar: species known within ~50 miles. Numbers at bar ends show the recorded-to-regional ratio. Sorted by recorded species count.",
-                   dark=True)
-        + takeaway(
-            "Large, conspicuous families are the best represented because their adults are easier "
-            "to photograph and identify at lights. The remaining gap is concentrated in small or "
-            "difficult families and in species reached through host searches, bait, canopy work, "
-            "and colder-season surveys. "
-            f"Tortricidae now has {tortricid_count} species documented here; further useful gains "
-            "will depend on sharp photographs, host association, and expert review.", dark=True),
-        intro="The moth fauna isn't evenly sampled. Large, photo-workable families are well represented, while other groups need host-plant work, bait, canopy sampling, colder-season surveys, or expert micro review.",
-        dark=True))
-    out.append(section(
-        "moth-standouts", "Standouts",
-        'Rare &amp; <em class="text-hollow-300">Notable</em>',
-        moth_showcase(analyze.moth_highlights(moths, stats, df=df)),
-        intro="Moths from Kingfisher Hollow with few iNaturalist records in New York. Some are truly notable; others are under-documented micros or hard IDs that need context from MPG, BAMONA, BugGuide, GBIF, and collections before anyone calls them rare.",
-        dark=True))
-
-    # Headline diagnostic: species detected on only one or two nights.
-    once_band = (
-        '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
-        + _dark_divider().join([
-            _dark_stat(f"{comp['q1']}", "On one night only"),
-            _dark_stat(f"{comp['q2']}", "On just two nights"),
-            _dark_stat(f"{comp['nights']}", "Dates with moth records"),
-        ]) + '</div>')
-    inventory_status_body = (
-        '<div class="mb-8 text-center">'
-          '<p class="text-hollow-300 text-xs font-semibold uppercase tracking-[0.18em]">'
-            'Status 1 · Coverage</p>'
-          '<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
-            'How much remains?</h3>'
-        '</div>'
-        + once_band
-        + chart_card(
-            viz.completeness_curve(eff, comp),
-            note=f"Chao2 uses species recorded on one inferred night (Q1) or two (Q2), across {comp['nights']} dates with moth records. Timestamps before noon belong to the previous night. Shaded band: model 95% CI; survey effort and identification uncertainty are additional limitations.",
-            dark=True)
-        + takeaway(
-            f"Of {comp['observed']} recorded taxa, {comp['q1']} occur on exactly one inferred night. "
-            f"The model estimates about {comp['estimated']} taxa for this mix of recorded detections, "
-            f"with {comp['pct_complete']}% observed. Changing methods, seasons, identification confidence, "
-            "or effort can change the estimate. It is not a fixed property total or a guide to which taxa remain.", dark=True)
-        + anchor_alias("moth-diversity")
-        + '<div class="mt-16 border-t border-white/10 pt-14">'
-          '<div class="mx-auto mb-9 max-w-3xl text-center">'
-            '<p class="text-hollow-300 text-xs font-semibold uppercase tracking-[0.18em]">'
-              'Status 2 · Community structure</p>'
-            '<h3 class="mt-2 font-serif text-3xl font-bold text-white md:text-4xl">'
-              'How evenly is life distributed?</h3>'
-            '<p class="mt-3 text-sm leading-6 text-white/55">'
-              'Completeness estimates how much remains unseen. Evenness tests whether the documented '
-              'community is broad or dominated by only a few common species.</p>'
-          '</div>'
-        + moth_diversity_body(div)
-        + chart_card(
-            viz.rank_abundance(div.get("rank_abundance", [])),
-            note="Taxa ranked by submitted records, log scale. Record frequency is not a count of individual moths. Terracotta: taxa recorded only once or twice.",
-            dark=True)
-        + takeaway(
-            f"Across {msum['species']:,} documented moth species, the gentle slope shows that no single "
-            "species dominates this record-frequency sample. That can reflect a broad habitat "
-            f"mosaic and {plant_count:,} recorded wild or established plants, but the curve also "
-            "reflects survey method and the long tail of one- and two-record species; it is not by "
-            "itself a habitat-quality test. Repeat records and stronger evidence for that tail will "
-            "be more informative than attaching a single ecological verdict to the curve.", dark=True)
-        + '</div>'
-    )
-    out.append(section(
-        "moth-completeness", "Inventory Status",
-        'Inventory <em class="text-hollow-300">Status</em>',
-        inventory_status_body,
-        intro=f"{comp['observed']:,} recorded taxa and a sampling estimate near {comp['estimated']:,}. These describe the documented sample under its mix of dates and methods.",
-        dark=True))
-
-    # Combined calendar section: Month by Month + On the Wing + Phenology
-    msum_monthly = analyze.monthly_survey_summary(df, moths)
-    july_summary = next((row for row in msum_monthly if row["month_num"] == 7), None)
-    nightly_species = analyze.moth_nightly_species(df, moths)
-    moth_forecast = weather.load_forecast(days=10)
-    moth_weather_validation = analyze.moth_weather_analysis(df, moths)
-    season_months = [r for r in msum_monthly if r['survey_season'] and r['nights_surveyed'] > 0]
-    best_roi = max(season_months, key=lambda r: r['new_species_count'] / r['nights_surveyed']) if season_months else None
-    best_roi_text = (
-        f"{best_roi['month_name']} has the most first records per recorded session date in this snapshot "
-        f"({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} dates). "
-        "This describes past reporting, with changing methods and effort; it does not predict the return from another visit."
-    ) if best_roi else ''
-    seasonal = analyze.moth_seasonal(df, moths)
-    season_shape_text = (
-        f"The {len(seasonal)} displayed taxa have at least three dated records. The thick bar contains the middle "
-        "half of their observation dates; the faint line reaches the earliest and latest. Records can include "
-        "different life stages and years. Use this as a search calendar, with survey gaps and identification "
-        "revisions in mind, rather than an adult flight-period reference."
-    )
-    out.append(section(
-        "moth-calendar", "The Calendar",
-        'Through the <em class="text-hollow-300">Seasons</em>',
-        moth_forecast_body(moth_forecast, moth_weather_validation)
-        + chart_card(viz.nightly_species_calendar(nightly_species),
-                   note='Each filled square is one evening survey session; the printed number is the distinct moth species reported that night. '
-                        'Color reinforces the total. Blank dates mean no moth report, not zero species.',
-                   dark=True)
-        + takeaway(
-            "Whole-night distinct species is the right response for this survey: each species is documented, "
-            "not every arriving moth, and the route can move among stations with travel gaps. More than 30 "
-            "nighttime observations across more than 60 minutes marks a full-effort night; neither value is "
-            "then used as a richness predictor. Effort still varies, so the result describes the historical "
-            "survey protocol rather than weather acting alone.", dark=True)
-        + chart_card(viz.monthly_survey_bar(msum_monthly),
-                   note='Green: taxa recorded in that session month. Terracotta: first records. '
-                        'Faded months fall outside May–September. Hover for dates with moth records; these are not complete effort logs.',
-                   dark=True)
-        + takeaway(best_roi_text, dark=True)
-        + chart_card(viz.seasonal_cascade(seasonal, dark=True),
-                     note="Dated records across life stages. Line: observed date range. Bar: middle 50%. Dot: median date. Up to 42 taxa with at least three records, sorted by median observation date.",
-                     dark=True)
-        + takeaway(season_shape_text, dark=True)
-        + chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
-                     note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
-                     dark=True)
-        + takeaway(
-            "Read a row to compare the months represented in a taxon’s records. Read a column to see which "
-            "taxa have been documented in that month. Blank cells can reflect seasonal timing, life stage, "
-            "method, or missing visits; they do not prove absence.", dark=True),
-        intro="A practical queue for choosing which nights deserve a complete multi-station survey, followed by the whole-night evidence behind it.",
-        dark=True))
-    out.append(section(
-        "moth-methods", "Find More",
-        'How to Find <em class="text-hollow-300">More</em>',
-        survey_methods_body(MOTH_METHODS),
-        intro=f"{msum['species']:,} species came mostly from night lighting, which selects for large, photo-positive "
-              "moths. These are the methods that reach the rest: bait-feeders, day and dusk fliers, canopy "
-              "species, cold-season moths, and the host-linked micros worth documenting without turning the "
-              "survey into a collection project.",
-        dark=True))
-    return "".join(out)
+    families = analyze.moth_family_breakdown(moths, n=None)
+    today = datetime.now(ZoneInfo("America/New_York")).date()
+    months = sorted({today.month, (today + timedelta(days=14)).month})
+    gap = analyze.moth_county_gap(moths, n=None, target_months=months)
+    all_gap = analyze.moth_county_gap(moths, n=None)
+    scopes = families['reference_scope'].dropna().tolist()
+    target_html, gap_html = moth_page.search_targets(gap, all_gap, PUBLIC_DIR, scopes[0] if scopes else 'region')
+    forecast = weather.load_forecast(days=10)
+    validation = analyze.moth_weather_analysis(df, moths)
+    nightly = analyze.moth_nightly_species(df, moths)
+    nightly_html = (
+        '<p>Explore the busiest moth nights and see how the year built up, one evening at a time. '
+        'Dates use an inferred overnight convention: records before noon belong to the preceding evening. Blank dates mean no report.</p>'
+        + chart_card(viz.nightly_species_calendar(nightly), dark=True)
+        + '<ul class="moth-native-list">'
+        + ''.join(f'<li><strong>{row.night:%Y-%m-%d}</strong>: {row.species_count} moth taxa · {row.observation_count} records · '
+                  f'<a href="https://www.inaturalist.org/observations?project_id={PROPERTY_PROJECT_ID}&amp;taxon_id=47157&amp;d1={row.night:%Y-%m-%d}&amp;d2={row.night + timedelta(days=1):%Y-%m-%d}" target="_blank" rel="noopener">Browse these two calendar dates ↗</a></li>'
+                  for row in nightly.itertuples()) + '</ul>')
+    return moth_page.render_moth_page(
+        story=story, summary=analyze.moth_summary(df, moths), comp=comp,
+        families=families, highlights=analyze.moth_highlights(moths, stats, df=df),
+        observations=analyze.moth_obs(df, moths).to_dict("records"),
+        forecast=forecast, ranked_forecast=analyze.rank_moth_forecast(forecast.get("nights", []), analysis=validation),
+        validation=validation, gap_html=gap_html, target_html=target_html,
+        methods_html=survey_methods_body(MOTH_METHODS), nightly_html=nightly_html, section=section)
 
 
 def mammals_view(df, stats):

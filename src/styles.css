@@ -506,3 +506,92 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* Moth story: the year is the visual spine; native values carry every chart. */
+.moth-story { color: #e5ece8; }
+.moth-story section { padding: 5rem 1.5rem; }
+.moth-story section > div { max-width: 64rem; }
+.moth-story h3 { font: 600 1.45rem/1.3 'Playfair Display', serif; color: #fff; margin: .5rem 0 1rem; }
+.moth-story h4 { font-weight: 600; }
+.moth-story p { line-height: 1.75; }
+.moth-story a { text-underline-offset: .2em; }
+.moth-story a:hover { text-decoration: underline; }
+.moth-story a:focus-visible,.moth-story button:focus-visible,.moth-story summary:focus-visible,.moth-story input:focus-visible { outline: 3px solid #8ec8b1; outline-offset: 5px; }
+.moth-headline { display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem 4rem; margin: 2rem 0; text-align: center; }
+.moth-headline div { display: flex; flex-direction: column-reverse; }
+.moth-headline dt { color: #c3d1cb; font-size: .875rem; margin-top: .5rem; }
+.moth-headline dd { font: 600 3rem/1.2 'Playfair Display',serif; color: #fff; }
+.moth-story .moth-small { font-size: .8rem; color: #bfcec7; line-height: 1.6; }
+.moth-story .moth-takeaway { font-size: 1.2rem; max-width: 48rem; margin: 1rem 0; }
+.moth-kicker { text-transform: uppercase; letter-spacing: .12em; font-size: .7rem; color: #a8d5be; }
+.moth-year { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 2rem; margin: 2rem 0 1rem; }
+.moth-quarter { border: 1px solid #3b5147; border-radius: .75rem; overflow: hidden; }
+.moth-quarter > img { width: 100%; aspect-ratio: 16/7; object-fit: cover; }
+.moth-quarter > div { padding: 1.5rem; }
+.moth-quarter > div > p:not(.moth-kicker) { min-height: 5.3rem; font-size: .9rem; }
+.moth-bar-row { margin: 1.4rem 0; }
+.moth-bar-label { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: .95rem; }
+.moth-bar-label strong { color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.moth-bar-track { height: .6rem; background: #30463c; margin: .6rem 0 .35rem; }
+.moth-bar-track span { display: block; height: 100%; background: #8ec8b1; }
+.moth-panel { border-top: 1px solid #486052; margin-top: 3rem; padding-top: 2rem; }
+.moth-compare-row { margin: 1.5rem 0; }
+.moth-stack { display: flex; height: 1.25rem; margin: .6rem 0; }
+.moth-stack span:first-child { background: #8ec8b1; }
+.moth-stack span:last-child { background: #d8b783; }
+.moth-compare-row p { font-size: .875rem; }
+.moth-key { display: inline-block; width: .6rem; height: .6rem; margin-right: .3rem; }
+.moth-key.shared { background: #8ec8b1; }
+.moth-key.only { background: #d8b783; margin-left: 1rem; }
+.moth-detail { border-top: 1px solid #40584c; margin-top: 1.5rem; }
+.moth-detail > summary { padding: 1.2rem 0; cursor: pointer; color: #d9e9e1; font-weight: 600; }
+.moth-detail > div { padding: .5rem 0 1.5rem; }
+.moth-native-list { display: grid; gap: .75rem; padding-left: 1.2rem; list-style: disc; }
+.moth-estimate strong { display: block; color: #a8d5be; font: 600 3.5rem/1.2 'Playfair Display',serif; }
+.moth-curve { display: block; width: 100%; height: auto; margin-top: 1.5rem; }
+.moth-estimate-line { stroke: #d8b783; stroke-dasharray: 6 5; }
+.moth-curve-labels { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: .8rem; }
+.moth-photo-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2rem; margin: 2rem 0; }
+.moth-photo { min-width: 0; }
+.moth-photo img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: .5rem; }
+.moth-photo h3 { font-size: 1.2rem; margin: 1rem 0 .25rem; }
+.moth-photo figcaption > p { font-size: .875rem; margin-top: .75rem; }
+.moth-action-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 2rem; }
+.moth-action-grid article { border-left: 2px solid #739d88; padding: 0 0 0 1.25rem; }
+.moth-action-grid a { display: inline-block; padding: 1rem 0; text-decoration: underline; }
+.moth-forecast-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin-top: 1.5rem; }
+.moth-forecast-list li { border: 1px solid #40584c; padding: 1rem; font-size: .875rem; }
+#moth-explorer label { display: block; margin: 1rem 0 .5rem; }
+#moth-search { display: block; width: 100%; max-width: 30rem; background: #fff; color: #172e24; padding: .75rem; border: 2px solid #8ec8b1; border-radius: .25rem; }
+#moth-search-status { margin: .75rem 0; }
+#moth-search-results button { display: block; padding: .75rem; text-align: left; width: 100%; border-bottom: 1px solid #40584c; }
+.moth-timing-months { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .5rem; margin: 1rem 0; }
+.moth-timing-months > div { border: 1px solid #40584c; padding: .6rem; font-size: .8rem; }
+.moth-timing-months dd { color: #a8d5be; font-weight: 600; }
+.moth-native-link { text-decoration: underline; }
+.moth-native-page { background: #102c21; color: #e5ece8; font: 1rem/1.7 Inter,sans-serif; }
+.moth-native-page main { max-width: 60rem; margin: auto; padding: 2rem 1.25rem; }
+.moth-native-page h1 { font: 600 2rem/1.3 'Playfair Display',serif; margin: 2rem 0; }
+.moth-native-page h2 { font-size: 1.2rem; font-weight: 600; }
+.moth-native-page article { border-top: 1px solid #40584c; padding: 1.5rem 0; }
+.moth-native-page a { text-decoration: underline; }
+@media (max-width: 640px) {
+ .moth-story section { padding: 3.5rem 1rem; }
+ .moth-story section h2 { font-size: 2.1rem; }
+ .moth-story section > div > .text-center { margin-bottom: 2rem; }
+ .moth-year,.moth-action-grid,.moth-forecast-list { grid-template-columns: minmax(0,1fr); }
+ .moth-quarter > div { padding: 1.1rem; }
+ .moth-quarter > div > p:not(.moth-kicker) { min-height: 0; }
+ .moth-photo-grid { grid-template-columns: minmax(0,1fr); }
+ .moth-photo img { max-height: 20rem; }
+ .moth-headline { gap: 1.5rem; }
+ .moth-headline dd { font-size: 2.5rem; }
+ .moth-timing-months { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (min-width: 641px) {
+ .moth-months-1 { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr; }
+ .moth-months-1 > img { height: 100%; aspect-ratio: auto; }
+}
+@media (min-width: 641px) { .moth-photo-pair { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+/* Preserve the evidence-bearing outlines: Luna tails and the plume moth's T. */
+.moth-photo img { object-fit: contain; background: #182d24; }

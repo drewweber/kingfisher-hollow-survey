@@ -458,7 +458,7 @@ class ReportNavigationTests(unittest.TestCase):
 
     def test_moth_index_has_one_inventory_status_chapter(self):
         links = report.VIEW_CONFIG["moths"]["links"]
-        self.assertIn(("#moth-completeness", "Inventory status"), links)
+        self.assertIn(("#moth-completeness", "Still discovering"), links)
         self.assertNotIn("#moth-diversity", [href for href, _label in links])
 
     def test_navigation_has_accessible_menu_and_complete_index(self):
