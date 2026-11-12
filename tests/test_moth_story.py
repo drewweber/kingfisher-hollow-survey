@@ -74,9 +74,9 @@ class MothStoryTests(unittest.TestCase):
         self.assertIsNone(timing[3]["common_name"])
         self.assertEqual(timing[5]["monthly_records"], [0] * 12)
 
-    def test_frequency_history_moves_categories_by_calendar_date(self):
+    def test_frequency_history_counts_distinct_nights_not_duplicate_photos(self):
         moths = pd.DataFrame({'taxon_id':[1,2,3,4], 'taxon_name':['A','B','C','D']})
-        # Deliberately out of order; C jumps straight to three on its first day.
+        # Deliberately out of order; C has three photos but only one inferred night.
         df = pd.DataFrame([
             (1,'2026-06-03',True),(3,'2026-06-02',True),
             (1,'2026-06-01',True),(2,'2026-06-01',True),
@@ -87,8 +87,8 @@ class MothStoryTests(unittest.TestCase):
         story = build_story(df,moths)
         self.assertEqual(story['frequency_history'],[
             {'date':'2026-06-01','once':2,'twice':0,'three_plus':0,'total':2},
-            {'date':'2026-06-02','once':1,'twice':1,'three_plus':1,'total':3},
-            {'date':'2026-06-03','once':0,'twice':1,'three_plus':2,'total':3},
+            {'date':'2026-06-02','once':2,'twice':1,'three_plus':0,'total':3},
+            {'date':'2026-06-03','once':1,'twice':1,'three_plus':1,'total':3},
         ])
         for row, discovery in zip(story['frequency_history'],story['discovery']):
             self.assertEqual(sum(row[key] for key in ('once','twice','three_plus')),row['total'])
@@ -97,7 +97,43 @@ class MothStoryTests(unittest.TestCase):
         # Both rare-frequency categories can decline rather than accumulating forever.
         extra = pd.DataFrame([(2,'2026-06-04',True)],columns=df.columns)
         last = build_story(pd.concat([df,extra]),moths)['frequency_history'][-1]
-        self.assertEqual((last['once'],last['twice'],last['three_plus']),(0,0,3))
+        self.assertEqual((last['once'],last['twice'],last['three_plus']),(1,0,2))
+
+    def test_incidence_boundaries_missing_times_and_estimator_parity_at_every_prefix(self):
+        moths = pd.DataFrame({'taxon_id':[1,2,3,4], 'taxon_name':['A','B','C','D']})
+        data = [
+            (1,'2026-06-01','2026-06-01T22:00:00-04:00',True,'2026-06-01'),
+            (1,'2026-06-02','2026-06-02T00:00:00-04:00',True,'2026-06-01'),
+            (1,'2026-06-02','2026-06-02T11:59:00-04:00',True,'2026-06-01'),
+            (1,'2026-06-02','2026-06-02T12:00:00-04:00',True,'2026-06-02'),
+            (1,'2026-06-03',None,True,'2026-06-03'),
+            (2,'2026-06-02',None,True,'2026-06-02'),
+            (2,'2026-06-02','invalid',True,'2026-06-02'),
+            (2,'2026-06-03',None,True,'2026-06-03'),
+            (3,'2026-06-02','2026-06-02T00:00:00-04:00',True,'2026-06-01'),
+            (3,'2026-06-04','2026-06-04T12:00:00-04:00',True,'2026-06-04'),
+            (4,'2026-06-01',None,False,'2026-06-01'),
+            (None,'2026-06-01',None,True,'2026-06-01'),
+            (4,'invalid',None,True,'2026-06-01'),
+            (4,None,None,True,'2026-06-01'),
+            (99,'2026-06-01',None,True,'2026-06-01'),
+        ]
+        df = pd.DataFrame(data, columns=['taxon_id','observed_on','observed_at','repeat_history_known','expected_night']).iloc[::-1]
+        story = build_story(df,moths)
+        self.assertEqual(story['frequency_history'], [
+            {'date':'2026-06-01','once':2,'twice':0,'three_plus':0,'total':2},
+            {'date':'2026-06-02','once':2,'twice':1,'three_plus':0,'total':3},
+            {'date':'2026-06-03','once':1,'twice':1,'three_plus':1,'total':3},
+            {'date':'2026-06-04','once':0,'twice':2,'three_plus':1,'total':3},
+        ])
+        for row in story['frequency_history']:
+            prefix = df[df['expected_night'] <= row['date']]
+            estimate = analyze.moth_completeness(prefix,moths)
+            self.assertEqual((row['once'],row['twice'],row['total']), (estimate['q1'],estimate['q2'],estimate['observed']))
+            self.assertEqual(sum(row[key] for key in ('once','twice','three_plus')),row['total'])
+        self.assertEqual(len(analyze.moth_incidence(df,moths)),7)
+        empty = analyze.moth_completeness(pd.DataFrame(),moths)
+        self.assertEqual((empty['q1'],empty['q2'],empty['observed'],empty['nights']),(0,0,0,0))
 
 
 class MothFamilyTests(unittest.TestCase):

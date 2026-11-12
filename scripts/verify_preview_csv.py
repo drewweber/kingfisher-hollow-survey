@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 
-COLUMNS = ['date', 'once', 'twice', 'three_plus', 'total']
+COLUMNS = ['night', 'one_night', 'two_nights', 'three_plus_nights', 'total_taxa']
 
 
 def verify(public):

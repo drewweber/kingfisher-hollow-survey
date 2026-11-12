@@ -5,7 +5,7 @@ from collections import Counter
 
 import pandas as pd
 
-from analyze import _observation_rows, moth_obs
+from analyze import _observation_rows, moth_obs, moth_incidence
 
 
 def build_story(df, moths):
@@ -51,26 +51,24 @@ def build_story(df, moths):
 
     discovery = []
     discovered = set()
+    for day, rows in records.groupby("date", sort=True):
+        discovered.update(rows["taxon_id"])
+        discovery.append({"date": day.date().isoformat(), "cumulative_taxa": len(discovered)})
+
+    incidence = moth_incidence(df, moths)
     running_counts = Counter()
     frequency_history = []
-    for date, rows in records.groupby("date", sort=True):
-        discovered.update(rows["taxon_id"])
+    for night, rows in incidence.groupby("night", sort=True):
         running_counts.update(rows["taxon_id"])
         frequency_history.append({
-            "date": date.date().isoformat(),
+            "date": night.isoformat(),
             "once": sum(count == 1 for count in running_counts.values()),
             "twice": sum(count == 2 for count in running_counts.values()),
             "three_plus": sum(count >= 3 for count in running_counts.values()),
             "total": len(running_counts),
         })
-        discovery.append({"date": date.date().isoformat(), "cumulative_taxa": len(discovered)})
-
-    totals = records.groupby("taxon_id").size()
-    frequency = {
-        "once": int(totals.eq(1).sum()),
-        "twice": int(totals.eq(2).sum()),
-        "three_plus": int(totals.ge(3).sum()),
-    }
+    frequency = {key: frequency_history[-1][key] if frequency_history else 0
+                 for key in ("once", "twice", "three_plus")}
     monthly_counts = records.groupby(["taxon_id", "month"]).size().to_dict()
     stages = {}
     if "life_stage" in records:

@@ -15,8 +15,8 @@ class PreviewCSVTests(unittest.TestCase):
     def test_allows_generated_aggregate_and_empty_header_only(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.put(root, 'date,once,twice,three_plus,total\n2026-11-11,211,111,567,889\n')
-            self.put(root, 'date,once,twice,three_plus,total\n')
+            self.put(root, 'night,one_night,two_nights,three_plus_nights,total_taxa\n2026-11-11,211,111,567,889\n')
+            self.put(root, 'night,one_night,two_nights,three_plus_nights,total_taxa\n')
             self.assertEqual(verify(root), 2)
 
     def test_rejects_other_csv_names_and_locations(self):
@@ -30,8 +30,9 @@ class PreviewCSVTests(unittest.TestCase):
                     verify(root)
 
     def test_rejects_hash_mismatch_and_nonaggregate_content(self):
-        header = 'date,once,twice,three_plus,total\n'
-        for text in ['date,user,location\n2026-11-11,name,place\n',
+        header = 'night,one_night,two_nights,three_plus_nights,total_taxa\n'
+        for text in ['date,once,twice,three_plus,total\n2026-11-11,211,111,567,889\n',
+                     'date,user,location\n2026-11-11,name,place\n',
                      header + '2026-11-11,1,2,3,7\n',
                      header + '2026-11-11,-1,2,3,4\n',
                      header + '2026-11-11,1,2,3,6,extra\n',

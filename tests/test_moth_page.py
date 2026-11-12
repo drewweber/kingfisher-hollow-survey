@@ -66,9 +66,9 @@ class MothPageTests(unittest.TestCase):
         self.assertIn('first dated moth records',moth_page.frequency_history_chart(self.story))
         self.story['frequency_history'] = [{'date':'2026-06-01','once':1,'twice':0,'three_plus':2,'total':3}]
         html = moth_page.frequency_history_chart(self.story)
-        self.assertIn('Recorded once',html)
-        self.assertIn('Recorded twice',html)
-        self.assertIn('Recorded 3+ times',html)
+        self.assertIn('Recorded on one night',html)
+        self.assertIn('Recorded on two nights',html)
+        self.assertIn('Recorded on 3+ nights',html)
         self.assertIn('2026-06-01',html)
         self.assertIn('stroke-dasharray=',html)
         self.assertNotIn('nan',html)
@@ -94,10 +94,18 @@ class MothPageTests(unittest.TestCase):
     def test_frequency_csv_is_complete_and_content_addressed(self):
         self.story['frequency_history'] = [{'date':'2026-06-01','once':1,'twice':0,'three_plus':2,'total':3}]
         url, text = moth_page.frequency_history_csv(self.story)
-        self.assertEqual(text,'date,once,twice,three_plus,total\n2026-06-01,1,0,2,3\n')
+        self.assertEqual(text,'night,one_night,two_nights,three_plus_nights,total_taxa\n2026-06-01,1,0,2,3\n')
         with tempfile.TemporaryDirectory() as tmp:
+            assets = Path(tmp) / 'assets'
+            assets.mkdir()
+            stale = assets / 'moth-frequency-0123456789abcdef.csv'
+            stale.write_text('old record-unit export')
+            unrelated = assets / 'private.csv'
+            unrelated.write_text('must remain for guard rejection')
             moth_page.write_exploration(self.story,tmp)
             self.assertEqual((Path(tmp)/url.lstrip('/')).read_text(),text)
+            self.assertFalse(stale.exists())
+            self.assertTrue(unrelated.exists())
         self.story['frequency_history'][0]['once'] = 2
         self.assertNotEqual(url,moth_page.frequency_history_csv(self.story)[0])
 

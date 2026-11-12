@@ -1275,6 +1275,24 @@ def _species_counts(sub):
     return sub.dropna(subset=["taxon_id"]).groupby("taxon_id").size()
 
 
+def moth_incidence(df, moths):
+    """One eligible detection per taxon and inferred night, shared by Chao2 and its chart."""
+    if df.empty or moths.empty:
+        return pd.DataFrame(columns=["taxon_id", "night"])
+    sub = moth_obs(_observation_rows(df), moths).dropna(subset=["taxon_id"]).copy()
+    sub["observed_on"] = pd.to_datetime(
+        sub["observed_on"].astype("string").str.slice(stop=10),
+        format="%Y-%m-%d", errors="coerce",
+    )
+    sub = sub.dropna(subset=["observed_on"])
+    if "observed_at" not in sub:
+        sub["observed_at"] = pd.Series(pd.NA, index=sub.index, dtype="string")
+    else:
+        sub["observed_at"] = sub["observed_at"].astype("string")
+    sub["night"] = _session_dates(sub)
+    return sub[["taxon_id", "night"]].drop_duplicates().sort_values(["night", "taxon_id"]).reset_index(drop=True)
+
+
 def moth_completeness(df, moths):
     """Incidence-based Chao2 richness estimate for the moth inventory.
 
@@ -1285,8 +1303,7 @@ def moth_completeness(df, moths):
     nights; m = number of survey nights.
     """
     import math
-    sub = moth_obs(df, moths).dropna(subset=["taxon_id", "observed_on"]).copy()
-    sub["night"] = _session_dates(sub)
+    sub = moth_incidence(df, moths)
     nights_per_species = sub.groupby("taxon_id")["night"].nunique()
     s_obs = int(len(nights_per_species))
     q1 = int((nights_per_species == 1).sum())

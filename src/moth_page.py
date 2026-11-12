@@ -7,6 +7,7 @@ import hashlib
 import math
 import csv
 import io
+import re
 from pathlib import Path
 
 
@@ -112,17 +113,18 @@ def inventory_estimate(comp):
 
 
 FREQUENCY_SERIES = [
-    ('once', 'Recorded once', '#d8b783', '3 5'),
-    ('twice', 'Recorded twice', '#a8c8ee', '10 5'),
-    ('three_plus', 'Recorded 3+ times', '#8ec8b1', ''),
+    ('once', 'Recorded on one night', '#d8b783', '3 5'),
+    ('twice', 'Recorded on two nights', '#a8c8ee', '10 5'),
+    ('three_plus', 'Recorded on 3+ nights', '#8ec8b1', ''),
 ]
 
 
 def frequency_history_csv(story):
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=['date', 'once', 'twice', 'three_plus', 'total'], lineterminator='\n')
+    writer = csv.DictWriter(output, fieldnames=['night', 'one_night', 'two_nights', 'three_plus_nights', 'total_taxa'], lineterminator='\n')
     writer.writeheader()
-    writer.writerows(story['frequency_history'])
+    writer.writerows(dict(zip(writer.fieldnames, [row[key] for key in ('date', 'once', 'twice', 'three_plus', 'total')]))
+                    for row in story['frequency_history'])
     text = output.getvalue()
     return '/assets/moth-frequency-' + hashlib.sha256(text.encode()).hexdigest()[:16] + '.csv', text
 
@@ -170,14 +172,14 @@ def frequency_history_chart(story):
     labels = []
     for key, label, color, dash in FREQUENCY_SERIES:
         labels.append(f'<div><dt><svg viewBox="0 0 36 12" aria-hidden="true"><line x1="0" x2="36" y1="6" y2="6" stroke="{color}" stroke-width="3" stroke-dasharray="{dash}"/></svg>{label}</dt><dd>{latest[key]:,}</dd></div>')
-    description = (f'From {rows[0]["date"]} to {latest["date"]}, the chart tracks how many moth taxa had exactly one, exactly two, or at least three submitted records by each reporting date. '
-                   'A new record can move a moth into the next category, so the once and twice lines can fall as well as rise.')
-    return ('<h3>Which finds become familiar?</h3><p>Each return visit adds to the story. A second record moves a moth out of “Recorded once”; a third moves it into “Recorded 3+ times”.</p>'
-            f'<figure aria-label="Moth record-frequency history"><figcaption class="moth-small">{description}</figcaption>'
+    description = (f'From {rows[0]["date"]} to {latest["date"]}, these lines track moth taxa recorded on exactly one, exactly two, or three or more distinct nights. '
+                   'The one-night and two-night groups are Q1 and Q2—the counts used in the completeness estimate above.')
+    return ('<h3>Which finds return on another night?</h3>'
+            f'<figure aria-label="Moth detection history by distinct night"><figcaption>{description}</figcaption>'
             + _frequency_svg(rows, narrow=True) + _frequency_svg(rows)
             + f'<p class="moth-small">Latest counts · {latest["date"]}</p><dl class="moth-frequency-labels">' + ''.join(labels) + '</dl></figure>'
-            '<p class="moth-small">Calendar date → · All recorded years · Records are observations, not individual moths. Changes take effect on their recorded date.</p>'
-            f'<p><a class="moth-native-link" href="{frequency_history_csv(story)[0]}" download>Download exact history (CSV)</a></p>')
+            '<p class="moth-small">Inferred night date → · Repeat photos on the same night count once. A later night moves a moth to the next group, so the one- and two-night lines can fall. Records before noon belong to the preceding night; records without a time use their recorded date.</p>'
+            f'<p><a class="moth-native-link" href="{frequency_history_csv(story)[0]}" download>Download exact night history (CSV)</a></p>')
 
 
 def photo_card(row, caption, notable=False):
@@ -277,6 +279,10 @@ def write_exploration(story, public_dir):
     """Keep the complete 889-taxon native fallback out of the main-page DOM."""
     public_dir = Path(public_dir)
     (public_dir / 'assets').mkdir(parents=True, exist_ok=True)
+    # Only remove this generator's owned exports; unrelated CSVs stay visible to the guard.
+    for old in (public_dir / 'assets').glob('moth-frequency-*.csv'):
+        if re.fullmatch(r'moth-frequency-[0-9a-f]{16}\.csv', old.name):
+            old.unlink()
     frequency_url, frequency_csv = frequency_history_csv(story)
     (public_dir / frequency_url.lstrip('/')).write_text(frequency_csv, encoding='utf-8')
     payload_url, payload = timing_payload(story)
@@ -344,7 +350,7 @@ def render_moth_page(*, story, summary, comp, families, highlights, observations
             break
     family_body = family_chart(families) + purposeful_photos(observations) + detail('Recent moth observations', '<div class="moth-photo-grid">' + ''.join(recent) + '</div>', 'moth-gallery')
     output.append(section('moth-families', 'Shapes, shelter and ways of living', 'Many ways to be a moth', family_body, intro='Moth diversity is a diversity of lifestyles. Caterpillars roll leaves, make mines and feed in the foliage; adults bring a remarkable range of shapes and camouflage to the lights. The families below offer different ways into that world.', dark=True))
-    output.append(section('moth-completeness', 'A growing inventory', 'Still discovering', inventory_estimate(comp) + '<div id="moth-diversity" class="moth-panel">' + frequency_history_chart(story) + '</div>', intro='Discovery continues after a moth first joins the list. Return visits reveal which finds recur, while new arrivals keep the cast changing. Watch those encounters become a more familiar picture of life here.', dark=True))
+    output.append(section('moth-completeness', 'A growing inventory', 'Still discovering', inventory_estimate(comp) + '<div id="moth-diversity" class="moth-panel">' + frequency_history_chart(story) + '</div>', intro='Discovery continues after a moth first joins the list. Visits on different nights reveal which finds recur, while new arrivals keep the cast changing. Watch those encounters become a more familiar picture of life here.', dark=True))
     output.append(section('moth-standouts', 'Encounters worth repeating', 'Rare and notable', notable_cards(highlights, observations), intro='Some finds deserve a second look: an ingenious defense, a convincing disguise, or a visitor well beyond the summer peak. These local encounters make the variety of moth life tangible.', dark=True))
     actions = '<div class="moth-action-grid">' + ''.join(f'<article><p class="moth-kicker">{season}</p><h3>{title}</h3><p>{copy}</p><a href="#moth-protocols">How to try it ↓</a></article>' for season, title, copy in ACTIONS) + '</div>'
     next_body = actions + target_html + forecast_panel(forecast, ranked_forecast, validation) + '<div id="moth-gap">' + detail('Current regional search leads', gap_html) + '</div>' + detail('How to try it: equipment and methods', methods_html, 'moth-protocols')
