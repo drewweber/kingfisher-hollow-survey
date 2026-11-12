@@ -1,0 +1,42 @@
+[
+  {
+    "file": "spring.webp",
+    "capture_date": "2026-05-25",
+    "provenance": "Existing property image; date from original filename and site caption",
+    "sha256": "8ce7106d8efb2d3697cb80d475ebf57a32ccd2cb4e8c24056d59476462d15b97",
+    "photographer_credit": null,
+    "use": "Landscape context; not a seasonal observation record"
+  },
+  {
+    "file": "summer.webp",
+    "capture_date": "2025-06-24",
+    "provenance": "Existing property image; date from original filename and site caption",
+    "sha256": "a8cbe1e0e42c568799fb58e8010b25aabc84438932ea6f444b173ca6889e3e81",
+    "photographer_credit": null,
+    "use": "Landscape context; not a seasonal observation record"
+  },
+  {
+    "file": "autumn.jpg",
+    "capture_date": null,
+    "provenance": "Owner-supplied Photo 5; capture date not recorded",
+    "sha256": "cd3920689b7e4c68d7c8d5cea0f5de23bc4a8bb3e7717a83d2e322af2ca94c97",
+    "photographer_credit": null,
+    "use": "Landscape context; not a seasonal observation record"
+  },
+  {
+    "file": "winter.jpg",
+    "capture_date": null,
+    "provenance": "Owner-supplied Photo 4; capture date not recorded",
+    "sha256": "b38a597f8ceda52d58d09b5c68604ce8b94e30aed48b73c21913eed63a18d3ea",
+    "photographer_credit": null,
+    "use": "Landscape context; not a seasonal observation record"
+  },
+  {
+    "file": "pond.jpg",
+    "capture_date": null,
+    "provenance": "Owner-supplied Photo 3; capture date and season not recorded",
+    "sha256": "e2e1fc6386ac1224157d23700f7ffd4ad5d08b31d9a09b8a8baab5ee45473ed1",
+    "photographer_credit": null,
+    "use": "Landscape context; not a seasonal observation record"
+  }
+]

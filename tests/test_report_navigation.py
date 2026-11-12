@@ -487,7 +487,8 @@ class ReportNavigationTests(unittest.TestCase):
         with mock.patch.object(report, "_asset_version", return_value="generated123") as version:
             html = report.head({"species": 1}, county_firsts=0, mode="log")
 
-        version.assert_called_once_with("public/assets/survey.css")
+        version.assert_any_call("public/assets/survey.css")
+        version.assert_any_call("assets/seasonal-return.js")
         self.assertIn('href="/assets/survey.css?v=generated123"', html)
         self.assertIn('href="https://survey.kingfisher-hollow.com/log/"', html)
         self.assertIn('data-mode="log"', html)

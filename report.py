@@ -15,6 +15,7 @@ import subprocess
 import sys
 import hashlib
 import json
+import os
 import re
 import shutil
 import time
@@ -30,6 +31,8 @@ import field_guide  # noqa: E402
 import inat_api  # noqa: E402
 import new_county_species  # noqa: E402
 import natural_history  # noqa: E402
+import seasonal  # noqa: E402
+import seasonal_pages  # noqa: E402
 import public_api  # noqa: E402
 import social_export  # noqa: E402
 import tiger_swallowtail  # noqa: E402
@@ -48,7 +51,7 @@ from config import (  # noqa: E402
 from db import connect, init_db  # noqa: E402
 
 PLOTLY_CDN = "https://cdn.plot.ly/plotly-2.35.2.min.js"
-SITE = "https://www.kingfisher-hollow.com"
+SITE = os.environ.get("KH_HOME_URL", "https://www.kingfisher-hollow.com")
 PROJECT_URL = "https://www.inaturalist.org/projects/kingfisher-hollow-biodiversity-survey"
 TAXON_URL = "https://www.inaturalist.org/taxa/"   # + taxon_id → species page
 OBS_URL   = "https://www.inaturalist.org/observations/"  # + obs_id → observation
@@ -1054,44 +1057,32 @@ def _evidence_photo(row, dark=False):
 
 
 def seasonal_body(observations, odonate_ids, on=None):
+    """Invite visitors into complete chapters rather than unrelated inventories."""
     season = natural_history.seasonal_context(on or datetime.now(ZoneInfo("America/New_York")).date())
-    months = []
+    cards = []
     for item in natural_history.SEASONS:
-        active = item['key'] == season['key']
-        style = 'border-hollow-500 bg-hollow-50' if active else 'border-stone-200'
-        current = ' · Current season' if active else ''
-        months.append(
-            f'<a href="{item["route"]}" class="block rounded-xl border p-5 {style}">'
+        key = item['key']
+        extension = 'webp' if key in {'spring', 'summer'} else 'jpg'
+        current = ' · Current calendar season' if key == season['key'] else ''
+        cards.append(
+            f'<a href="{item["route"]}" class="block overflow-hidden rounded-xl border border-stone-200 bg-white no-underline">'
+            f'<img src="/assets/seasons/{key}.{extension}" width="1280" height="720" loading="lazy" decoding="async" '
+            f'alt="{item["label"]} landscape at Kingfisher Hollow" class="w-full aspect-video object-cover">'
+            '<div class="p-5">'
             f'<span class="block text-xs text-stone-600">{item["months"]}{current}</span>'
-            f'<h3 class="font-serif text-xl font-bold mt-1">{item["label"]}</h3>'
-            f'<p class="text-sm leading-relaxed text-stone-600 mt-2">{item["cue"]}</p></a>'
+            f'<h3 class="font-serif text-2xl font-bold mt-2 text-stone-900">{item["label"]}</h3>'
+            f'<p class="text-sm leading-relaxed text-stone-600 mt-2">{item["cue"]}</p>'
+            f'<span class="block mt-4 text-hollow-700 text-sm font-semibold">Explore {key} →</span></div></a>'
         )
-    stories = []
-    for lens in natural_history.story_records(observations, odonate_ids):
-        stories.append(
-            '<article class="min-w-0">'
-            + _evidence_photo(lens['record'])
-            + f'<h3 class="font-serif text-2xl font-bold mt-5">{esc(lens["title"])}</h3>'
-            + f'<p class="text-stone-600 text-sm leading-relaxed mt-3">{esc(lens["body"])}</p>'
-            + f'<a class="block mt-4 text-hollow-700 underline underline-offset-4" href="{lens["route"]}">{lens["link"]} →</a>'
-            + f'<a class="block mt-3 text-xs text-stone-600 underline" href="{lens["source"]}" target="_blank" rel="noopener">{lens["source_label"]} ↗</a>'
-            + '</article>'
-        )
-    evidence = ('<div class="mt-12 pt-10 border-t border-stone-200">'
-                '<h3 class="font-serif text-2xl font-bold mb-3">Look closer through the year</h3>'
-                '<p class="text-stone-600 text-sm mb-7">Dated observations open these field questions. '
-                'They may come from a different season than the guide above.</p>'
-                '<div class="grid md:grid-cols-3 gap-8">' + ''.join(stories) + '</div></div>') if stories else ''
     return (
         '<div class="max-w-5xl mx-auto">'
-        f'<p class="text-hollow-700 font-semibold text-xs uppercase tracking-widest">Seasonal guide · {season["month"]} {season["year"]}</p>'
-        f'<h3 class="font-serif text-3xl md:text-4xl font-bold mt-3">{season["title"]}</h3>'
-        f'<p class="text-stone-600 text-lg leading-relaxed mt-4 max-w-3xl">{season["body"]}</p>'
-        '<p class="text-sm text-stone-600 mt-4">A guide to where to look; the dated records below show what has actually been documented.</p>'
-        '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">' + ''.join(months) + '</div>'
-        '<div class="flex flex-wrap gap-x-7 gap-y-3 mt-6 text-hollow-700 underline underline-offset-4">'
-        '<a href="/field/">Open the field guide →</a><a href="/log/">Read the field journal →</a></div>'
-        + evidence + '</div>'
+        '<p class="text-hollow-700 font-semibold text-xs uppercase tracking-widest">One place, through the seasons</p>'
+        '<p class="text-stone-600 text-lg leading-relaxed mt-4 max-w-3xl">'
+        'Follow the landscape from opening leaves to winter branches. Each chapter brings together '
+        'the available years of observations, the field questions they open, and the records behind the story.</p>'
+        '<div class="grid sm:grid-cols-2 gap-6 mt-8">' + ''.join(cards) + '</div>'
+        '<p class="mt-7"><a class="text-hollow-700 underline underline-offset-4" href="/seasons/">Explore all four seasons →</a></p>'
+        '</div>'
     )
 
 
@@ -2232,6 +2223,8 @@ def _weather_line(w):
 
 
 def log_update_control(updated_at):
+    if os.environ.get("KH_REVIEW_PREVIEW") == "1":
+        return '<p class="text-sm text-stone-500">Review preview · observation refresh is available on the live survey.</p>'
     """Render the latest sync time beside the Log's private refresh action."""
     if updated_at is None:
         timestamp_html = (
@@ -2484,6 +2477,7 @@ def head(s, county_firsts, moth_species=None, mode="all", legacy_routes=None):
 <link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/survey.css?v={_asset_version("public/assets/survey.css")}">
+<script defer src="/assets/seasonal-return.js?v={_asset_version("assets/seasonal-return.js")}"></script>
 {legacy_redirect}
 {plotly_queue}
 </head>
@@ -2495,7 +2489,7 @@ def nav(active_mode="all"):
     config = VIEW_CONFIG[active_mode]
 
     def mode_links(context):
-        return "".join(
+        return f'<a class="mode-btn no-underline" href="/seasons/" data-context="{context}">Seasons</a>' + "".join(
             f'<a class="mode-btn no-underline{" mode-active" if mode == active_mode else ""}" '
             f'href="{view_config["route"]}" data-context="{context}"'
             f'{" aria-current=\"page\"" if mode == active_mode else ""}>{view_config["label"]}</a>'
@@ -2536,6 +2530,7 @@ def nav(active_mode="all"):
       <span class="brand-divider hidden sm:block" aria-hidden="true"></span>
       <span class="brand-context hidden sm:block">Survey</span></a>
     <div class="hidden 2xl:flex items-center gap-4 min-w-0">
+      <a id="seasonal-return" data-seasonal-return href="/seasons/" hidden class="main-site-link text-xs font-medium">Back to the seasons</a>
       <div class="mode-toggle flex items-center rounded-2xl p-0.5 gap-0.5 bg-white/10 border border-white/15" role="group" aria-label="Explore survey views">
         {mode_links("wide")}
       </div>
@@ -2560,6 +2555,7 @@ def nav(active_mode="all"):
   <div id="survey-menu" class="survey-menu hidden 2xl:hidden" aria-hidden="true">
     <div class="max-w-4xl mx-auto px-6 py-6">
       <p class="survey-menu-label">Explore the survey</p>
+      <p><a data-seasonal-return href="/seasons/" hidden class="text-hollow-200 text-sm underline">Back to the seasons</a></p>
       <div class="mode-toggle survey-view-grid mt-3" role="group" aria-label="Explore survey views">
         {mode_links("menu")}
       </div>
@@ -3794,7 +3790,7 @@ def build():
     odonate_ids = set(analyze.load_odonates()["taxon_id"].dropna().astype(int))
     parts.append(section("season", "Through the year", 'A Season to <em class="text-hollow-600">Look Closer</em>',
                          seasonal_body(raw_df.to_dict("records"), odonate_ids, datetime.now(ZoneInfo("America/New_York")).date()),
-                         intro="Follow the changing year from creek and pond to the woods. Seasonal prompts suggest where to look; dated photographs show what has been recorded."))
+                         intro="Explore each season across the recorded years, from landscape and field questions to the evidence behind them."))
     latest_body = (
         whats_new_body(analyze.whats_new(df, stats))
         + anchor_alias("gallery")
@@ -3994,6 +3990,8 @@ def build():
         fdate(property_data_sync) if property_data_sync else "Unavailable",
         fdate(analyze.bird_summary(birds_for_totals).get("latest")),
     )
+    chapters = seasonal.build_chapters(raw_df.to_dict("records"), today=datetime.now(ZoneInfo("America/New_York")).date())
+    _timed("seasonal-chapters", seasonal_pages.write_seasonal_pages, chapters, PUBLIC_DIR, home_url=SITE)
     _timed("public-api", public_api.build)
     _timed("social-export", social_export.build)
     _timed("new-county-species", new_county_species.build)

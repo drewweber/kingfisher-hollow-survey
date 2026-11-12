@@ -154,16 +154,16 @@ def story_records(observations, odonate_ids):
 SEASONS = (
     dict(key='spring', label='Spring', months='March–May', title='Follow the thaw',
          body='Return to the creek, pond margins, and forest floor as the season opens. Listen for frog calls and returning birds; photograph plants while flowers and fresh leaves make them identifiable.',
-         cue='Frog calls · spring flowers · returning birds', route='/herps/'),
+         cue='Water · opening canopy · woodland life', route='/seasons/spring/'),
     dict(key='summer', label='Summer', months='June–August', title='Long days, short nights',
          body='Sunny margins and the hours after dusk reveal different lives. Follow dragonflies around the water, look for insects on plants, and compare repeated nights at the moth sheet.',
-         cue='Dragonflies · flowering plants · moth nights', route='/dragonflies/'),
+         cue='Pond margins · plant life · moth nights', route='/seasons/summer/'),
     dict(key='autumn', label='Autumn', months='September–November', title='Look closer as the leaves fall',
          body='The end of the green season still rewards a slow look. Search for fungi after rain, watch migrating birds, and check the lights on mild evenings. Weather decides which of these seasonal possibilities becomes visible.',
-         cue='Fruiting fungi · migration · late moths', route='/fungi/'),
+         cue='Changing canopy · fungi · late encounters', route='/seasons/autumn/'),
     dict(key='winter', label='Winter', months='December–February', title='Read the quiet months',
          body='Snow, when it comes, makes tracks easier to follow. Open water, evergreen cover, bark, and standing stems offer other places to look. Keep notes on repeat visits, including quiet ones.',
-         cue='Tracks · open water · evergreen cover', route='/mammals/'),
+         cue='Bare branches · winter visitors · quiet evidence', route='/seasons/winter/'),
 )
 
 

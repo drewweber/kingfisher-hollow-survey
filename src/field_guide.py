@@ -933,6 +933,16 @@ def _validate_targets(targets, output_dir=None):
         raise ValueError("Invalid field guide release:\n- " + "\n- ".join(errors))
 
 
+def _copy_seasonal_return(output_dir):
+    """Include contextual navigation in the field guide's verified offline bundle."""
+    script = (ROOT / "assets" / "seasonal-return.js").read_bytes()
+    filename = f"seasonal-return.{hashlib.sha256(script).hexdigest()[:12]}.js"
+    (output_dir / filename).write_bytes(script)
+    page = output_dir / "index.html"
+    page.write_text(page.read_text().replace("__SEASONAL_RETURN_SCRIPT__", f"./{filename}"))
+    return filename, script
+
+
 def build(effective_date=None, output_dir=None):
     """Generate `/field/` without modifying the survey's root document."""
     effective_date = effective_date or date.today()
@@ -955,6 +965,7 @@ def build(effective_date=None, output_dir=None):
     if output_dir.exists():
         shutil.rmtree(output_dir)
     shutil.copytree(APP_SOURCE, output_dir)
+    seasonal_return_file, seasonal_return_bytes = _copy_seasonal_return(output_dir)
     images_dir = output_dir / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1022,6 +1033,7 @@ def build(effective_date=None, output_dir=None):
         if source.is_file():
             version_seed += source.relative_to(APP_SOURCE).as_posix().encode() + source.read_bytes()
     version_seed += SW_TEMPLATE.read_bytes()
+    version_seed += seasonal_return_bytes
     version = hashlib.sha256(version_seed).hexdigest()[:16]
     payload = {"version": version, **base_payload}
     _json_write(output_dir / "targets.json", payload)
@@ -1033,6 +1045,7 @@ def build(effective_date=None, output_dir=None):
 
     asset_paths = [
         "./", "./index.html", "./styles.css", "./app.js",
+        f"./{seasonal_return_file}",
         "./manifest.webmanifest", "./targets.json",
         "./icons/icon-192.png", "./icons/apple-touch-icon.png", "./icons/icon-512.png",
         "./icons/icon-maskable-512.png",

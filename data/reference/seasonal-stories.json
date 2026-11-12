@@ -1,0 +1,915 @@
+{
+  "spring": {
+    "title": "Spring at Kingfisher Hollow",
+    "intro": "Spring opens near the ground. Rain brings the woods and water into contact, then the forest floor greens beneath the opening canopy.",
+    "next_observation": "Choose a patch of woodland you can photograph from the same spot every week. Include the canopy and forest floor in the frame, and record whether any plants are in bud, in flower, or leafing out.",
+    "passages": [
+      {
+        "id": "after-the-rain",
+        "phase": "Early spring",
+        "title": "After the rain",
+        "body": "In early spring, water collects where the ground is low. In New York's woodland-pool surveys, spotted salamanders move on rainy nights as the ground thaws. Their eggs bring the change into view at the water's edge.",
+        "look_for": "From a dry bank, look for amphibian egg masses and photograph them in place. Record whether you saw eggs, a moving animal, or heard a call.",
+        "row_ids": [
+          "spotted-salamander",
+          "clemens-agonopterix"
+        ],
+        "phase_month": 3,
+        "illustration": {
+          "id": 346449861,
+          "date": "2026-03-31",
+          "photo_id": "631527312"
+        },
+        "claims": [
+          {
+            "text": "At Kingfisher Hollow, the photograph from March 31, 2026, shows eggs identified as Spotted Salamander.",
+            "requires": [
+              {
+                "id": 346449861,
+                "date": "2026-03-31",
+                "event_type": "Eggs",
+                "quality": "research"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "under-the-open-canopy",
+        "phase": "Mid-spring",
+        "title": "Under the open canopy",
+        "body": "As buds open, light still reaches the ground between the branches. Small leaves and flowers emerge through the old leaf litter. They give the forest floor a layer of color before summer shade.",
+        "look_for": "Photograph the leaf pattern and include a flower or bud when you can see one on the same plant.",
+        "row_ids": [
+          "yellow-trout-lily",
+          "northern-starflower"
+        ],
+        "phase_month": 4,
+        "illustration": {
+          "id": 349674147,
+          "date": "2026-04-13",
+          "photo_id": "637909260"
+        },
+        "claims": [
+          {
+            "text": "The April 13, 2026, trout lily photograph catches mottled leaves among dry leaves. A May 21 photograph shows northern starflower in bloom.",
+            "requires": [
+              {
+                "id": 349674147,
+                "date": "2026-04-13",
+                "photo_id": "637909260"
+              },
+              {
+                "id": 364126392,
+                "date": "2026-05-21",
+                "event_type": "Flowering",
+                "quality": "research"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "listen-at-the-water",
+        "phase": "Late spring",
+        "title": "Life at the water's edge",
+        "body": "As the canopy fills, the water's edge stays open to the sky. The scale of the story shifts from small shoots on the woodland floor to frogs and insects around the water and its vegetation.",
+        "look_for": "Save a short recording if you hear a frog. Note the time, and keep the recording linked to the same date as any photographs.",
+        "row_ids": [
+          "gray-treefrog",
+          "common-baskettail"
+        ],
+        "phase_month": 5,
+        "illustration": {
+          "id": 366537712,
+          "date": "2026-05-29",
+          "photo_id": "669301351"
+        },
+        "claims": [
+          {
+            "text": "The late-May 2026 records include two Gray Treefrog encounters and a dragonfly provisionally identified as Common Baskettail.",
+            "requires": [
+              {
+                "id": 365586353,
+                "date": "2026-05-26",
+                "quality": "research"
+              },
+              {
+                "id": 366537712,
+                "date": "2026-05-29",
+                "quality": "research"
+              },
+              {
+                "id": 366424482,
+                "date": "2026-05-29",
+                "quality": "needs_id"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "id": "spotted-salamander",
+        "taxon_id": 26790,
+        "taxon_name": "Ambystoma maculatum",
+        "name": "Spotted Salamander",
+        "group": "Amphibians",
+        "interpretation": "Look for the jelly surrounding an egg mass. Photograph the whole mass and its immediate setting without moving it.",
+        "events": {
+          "346449861": {
+            "date": "2026-03-31",
+            "type": "Eggs",
+            "photo_id": "631527312"
+          }
+        }
+      },
+      {
+        "id": "clemens-agonopterix",
+        "taxon_id": 212739,
+        "taxon_name": "Agonopterix clemensella",
+        "name": "Clemens’ Agonopterix",
+        "group": "Moths",
+        "interpretation": "A close photograph of a resting moth can preserve the wing markings needed for an identification. Add whether it was found at a light or away from one.",
+        "events": {
+          "341987868": {
+            "date": "2026-03-08",
+            "type": "Adult",
+            "photo_id": "622702316"
+          },
+          "342168368": {
+            "date": "2026-03-09",
+            "type": "Adult",
+            "photo_id": "623048068"
+          },
+          "342341323": {
+            "date": "2026-03-10",
+            "type": "Adult",
+            "photo_id": "623399694"
+          },
+          "342341343": {
+            "date": "2026-03-10",
+            "type": "Adult",
+            "photo_id": "623399753"
+          },
+          "342408065": {
+            "date": "2026-03-11",
+            "type": "Adult",
+            "photo_id": "623539475"
+          },
+          "347403328": {
+            "date": "2026-04-04",
+            "type": "Adult",
+            "photo_id": "633418760"
+          },
+          "350670423": {
+            "date": "2026-04-17",
+            "type": "Adult",
+            "photo_id": "639856018"
+          }
+        }
+      },
+      {
+        "id": "yellow-trout-lily",
+        "taxon_id": 48240,
+        "taxon_name": "Erythronium americanum",
+        "name": "yellow trout lily",
+        "group": "Plants",
+        "interpretation": "Look at the mottling on the leaves as well as any flower. A photograph of the entire plant helps separate flowering from leaf-only records."
+      },
+      {
+        "id": "northern-starflower",
+        "taxon_id": 204174,
+        "taxon_name": "Lysimachia borealis",
+        "name": "northern starflower",
+        "group": "Plants",
+        "interpretation": "Use the leaf arrangement and any visible bloom together. A second visit can show how much changed since the first photograph.",
+        "events": {
+          "364126392": {
+            "date": "2026-05-21",
+            "type": "Flowering",
+            "photo_id": "664716078"
+          }
+        }
+      },
+      {
+        "id": "gray-treefrog",
+        "taxon_id": 1668923,
+        "taxon_name": "Dryophytes versicolor",
+        "name": "Gray Treefrog",
+        "group": "Amphibians",
+        "interpretation": "The linked dates show encounters. A sound recording with a timestamp would add direct evidence of calling."
+      },
+      {
+        "id": "common-baskettail",
+        "taxon_id": 100212,
+        "taxon_name": "Epitheca cynosura",
+        "name": "Common Baskettail",
+        "group": "Odonates",
+        "interpretation": "Look closely at the base of the hindwing when comparing the photograph with a field guide.",
+        "events": {
+          "366424482": {
+            "date": "2026-05-29",
+            "type": "Adult",
+            "photo_id": "669081322"
+          }
+        }
+      }
+    ],
+    "sources": [
+      {
+        "label": "New York State DEC on spring amphibian movements",
+        "url": "https://dec.ny.gov/nature/waterbodies/oceans-estuaries/hudson-river-estuary-program/conservation-and-land-use-program/amphibian-migrations-and-road-crossings"
+      }
+    ],
+    "bird_examples": [
+      {
+        "name": "Rusty Blackbird",
+        "date": "2026-04-18",
+        "url": "https://ebird.org/checklist/S323464879",
+        "note": "This April checklist records Rusty Blackbird at Kingfisher Hollow on one visit."
+      }
+    ],
+    "single_period_intro": "The Hollow has one spring of iNaturalist records to draw on so far.",
+    "opening_detail_passage": "after-the-rain"
+  },
+  "summer": {
+    "title": "Summer at Kingfisher Hollow",
+    "intro": "In summer the pond and creek wear a dense green fringe. Daylight brings the pond margin into focus. After dark, the moths give the same season another side.",
+    "next_observation": "Pick one pond vantage point and return to it on two summer dates. Spend the same amount of time watching, and record the weather, time, and what each animal was doing.",
+    "passages": [
+      {
+        "id": "pond-in-daylight",
+        "phase": "Early summer",
+        "title": "The pond in daylight",
+        "body": "Along the pond margin, bright water meets the shade of the bank. Dragonflies move between perches above the surface and frogs come into view at the edge.",
+        "look_for": "Record whether a dragonfly was perched, flying, or emerging. Photograph any shed skin in place and mark it as a separate kind of evidence.",
+        "row_ids": [
+          "eastern-pondhawk",
+          "pickerel-frog"
+        ],
+        "phase_month": 6,
+        "illustration": {
+          "id": 371303953,
+          "date": "2026-06-13",
+          "photo_id": "678387489"
+        },
+        "claims": [
+          {
+            "text": "At the Hollow, Eastern Pondhawks were recorded in July in both 2025 and 2026. Reporting coverage was uneven across the two summers.",
+            "requires": [
+              {
+                "id": 297297241,
+                "date": "2025-07-12",
+                "quality": "research"
+              },
+              {
+                "id": 384609783,
+                "date": "2026-07-24",
+                "quality": "research"
+              }
+            ]
+          },
+          {
+            "text": "June and August photographs from 2026 show adult pondhawks beyond those July encounters.",
+            "requires": [
+              {
+                "id": 371303953,
+                "date": "2026-06-13",
+                "event_type": "Adult",
+                "quality": "research"
+              },
+              {
+                "id": 389421993,
+                "date": "2026-08-08",
+                "event_type": "Adult",
+                "quality": "research"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "after-dark",
+        "phase": "Mid-summer",
+        "title": "After dark",
+        "body": "After dark, the wide view narrows to what comes into the light. A resting moth offers the kind of close detail that disappears in a daytime view across the pond.",
+        "look_for": "Use the same light and checking time for repeat visits. Record the hours and weather, even when there is little to photograph.",
+        "row_ids": [
+          "lettered-habrosyne"
+        ],
+        "phase_month": 7,
+        "illustration": {
+          "id": 382488681,
+          "date": "2026-07-17",
+          "photo_id": "699971587"
+        },
+        "claims": [
+          {
+            "text": "The July 17, 2026, photograph catches the pale bands of a Lettered Habrosyne Moth against dark mesh. The Hollow also has August records of the same moth from 2025.",
+            "requires": [
+              {
+                "id": 382488681,
+                "date": "2026-07-17",
+                "event_type": "Adult",
+                "quality": "research"
+              },
+              {
+                "id": 305677774,
+                "date": "2025-08-11",
+                "event_type": "Adult",
+                "quality": "research"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "tangle-at-the-creek",
+        "phase": "Late summer",
+        "title": "The tangle at the creek edge",
+        "body": "At the creek, the summer growth brings the view back to the water. Arrow-shaped leaves stand out among the crowded stems. At the waterline, leaves give way to wet rock and the animals that move among it.",
+        "look_for": "Include a whole plant and a close view of its leaf shape. If you see a crayfish, photograph the animal where it is and include the streambed or bank in the frame.",
+        "row_ids": [
+          "arrow-leaved-tearthumb",
+          "calico-crayfish"
+        ],
+        "phase_month": 8,
+        "illustration": {
+          "id": 389384274,
+          "date": "2026-08-08",
+          "photo_id": "713238954"
+        },
+        "claims": [
+          {
+            "text": "The Hollow recorded arrow-leaved tearthumb in August in both summers.",
+            "requires": [
+              {
+                "id": 305089436,
+                "date": "2025-08-09",
+                "quality": "research"
+              },
+              {
+                "id": 389384274,
+                "date": "2026-08-08",
+                "quality": "research"
+              }
+            ]
+          },
+          {
+            "text": "On August 8, 2026, a Calico Crayfish was photographed in water on the same date as one of the plant records.",
+            "requires": [
+              {
+                "id": 389384274,
+                "date": "2026-08-08",
+                "quality": "research"
+              },
+              {
+                "id": 389421604,
+                "date": "2026-08-08",
+                "photo_id": "713311212"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "id": "eastern-pondhawk",
+        "taxon_id": 61495,
+        "taxon_name": "Erythemis simplicicollis",
+        "name": "Eastern Pondhawk",
+        "group": "Odonates",
+        "interpretation": "Date and life stage answer different questions. Keep an adult sighting, a shed skin, and observed emergence as separate records.",
+        "events": {
+          "371303953": {
+            "date": "2026-06-13",
+            "type": "Adult",
+            "photo_id": "678387489"
+          },
+          "389421993": {
+            "date": "2026-08-08",
+            "type": "Adult",
+            "photo_id": "713311995"
+          }
+        }
+      },
+      {
+        "id": "pickerel-frog",
+        "taxon_id": 66002,
+        "taxon_name": "Lithobates palustris",
+        "name": "Pickerel Frog",
+        "group": "Amphibians",
+        "interpretation": "A photograph of the back can preserve the shape and arrangement of the spots for identification."
+      },
+      {
+        "id": "lettered-habrosyne",
+        "taxon_id": 220826,
+        "taxon_name": "Habrosyne scripta",
+        "name": "Lettered Habrosyne Moth",
+        "group": "Moths",
+        "interpretation": "The pale bands on the wings are details to keep in focus. An observation time or light-check note adds context to the date.",
+        "events": {
+          "305677774": {
+            "date": "2025-08-11",
+            "type": "Adult",
+            "photo_id": "551173334"
+          },
+          "305678571": {
+            "date": "2025-08-11",
+            "type": "Adult",
+            "photo_id": "551175337"
+          },
+          "305679162": {
+            "date": "2025-08-11",
+            "type": "Adult",
+            "photo_id": "551176524"
+          },
+          "305705354": {
+            "date": "2025-08-12",
+            "type": "Adult",
+            "photo_id": "551226966"
+          },
+          "305919383": {
+            "date": "2025-08-12",
+            "type": "Adult",
+            "photo_id": "551631704"
+          },
+          "382488681": {
+            "date": "2026-07-17",
+            "type": "Adult",
+            "photo_id": "699971587"
+          },
+          "389537638": {
+            "date": "2026-08-08",
+            "type": "Adult",
+            "photo_id": "713537641"
+          },
+          "392555210": {
+            "date": "2026-08-18",
+            "type": "Adult",
+            "photo_id": "719422760"
+          }
+        }
+      },
+      {
+        "id": "arrow-leaved-tearthumb",
+        "taxon_id": 204179,
+        "taxon_name": "Persicaria sagittata",
+        "name": "arrow-leaved tearthumb",
+        "group": "Plants",
+        "interpretation": "Include where the pointed leaves join the stem. If you can see flowers or fruits, frame those separately so the stage can be recorded."
+      },
+      {
+        "id": "calico-crayfish",
+        "taxon_id": 776085,
+        "taxon_name": "Faxonius immunis",
+        "name": "Calico Crayfish",
+        "group": "Freshwater life",
+        "interpretation": "A view from above can show the outline of the body and claws. A wider view preserves context for the encounter."
+      }
+    ]
+  },
+  "autumn": {
+    "title": "Autumn at Kingfisher Hollow",
+    "intro": "Autumn starts in the yellow of the open edge and leads down into leaf litter and fallen wood. Even late in the chapter, the insect records hold details a view of the changing canopy would miss.",
+    "next_observation": "Return to one woodland edge and one waterside spot in September, October, and November. Record the time and conditions at each stop and separate flowers, fungal fruiting bodies, and insect encounters in your notes.",
+    "passages": [
+      {
+        "id": "at-the-goldenrod-edge",
+        "phase": "Early autumn",
+        "title": "At the goldenrod edge",
+        "body": "Goldenrod brings yellow to the open edge while much of the surrounding foliage is still green. Its stems give autumn a close-up view before attention shifts to color in the canopy and leaves on the ground.",
+        "look_for": "Frame the stem, leaves, and flower heads together. Photograph any insect you see visiting a flower and write down what it was doing.",
+        "row_ids": [
+          "wrinkle-leaved-goldenrod"
+        ],
+        "phase_month": 9,
+        "illustration": {
+          "id": 313850668,
+          "date": "2025-09-14",
+          "photo_id": "566812913"
+        },
+        "claims": [
+          {
+            "text": "September photographs in 2025 and 2026 both show flowering goldenrod.",
+            "requires": [
+              {
+                "id": 313850668,
+                "date": "2025-09-14",
+                "event_type": "Flowering"
+              },
+              {
+                "id": 396527812,
+                "date": "2026-09-01",
+                "event_type": "Flowering"
+              }
+            ]
+          },
+          {
+            "text": "The 2026 wrinkle-leaved goldenrod identification is provisional.",
+            "requires": [
+              {
+                "id": 396527812,
+                "date": "2026-09-01",
+                "event_type": "Flowering",
+                "quality": "needs_id"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "look-down-to-fallen-wood",
+        "phase": "Mid-autumn",
+        "title": "Look down to fallen wood",
+        "body": "As leaves collect, the eye moves from standing stems to fallen wood. Fungal fruiting bodies make small shapes against its surface, from round clusters to shelves that lie flat against the grain.",
+        "look_for": "Record what a fungus is growing on and photograph the underside when you can see it without breaking anything off.",
+        "row_ids": [
+          "pear-shaped-puffball",
+          "conifer-mazegill"
+        ],
+        "phase_month": 10,
+        "illustration": {
+          "id": 412527318,
+          "date": "2026-10-31",
+          "photo_id": "759092263"
+        },
+        "claims": [
+          {
+            "text": "An October 31, 2026, photograph shows a cluster provisionally identified as Pear-shaped Puffball. The November 7 photograph shows a shelf provisionally identified as Conifer Mazegill.",
+            "requires": [
+              {
+                "id": 412527318,
+                "date": "2026-10-31",
+                "event_type": "Fruiting body",
+                "quality": "needs_id"
+              },
+              {
+                "id": 413366563,
+                "date": "2026-11-07",
+                "event_type": "Fruiting body",
+                "quality": "needs_id"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "insects-into-november",
+        "phase": "Late autumn",
+        "title": "Along the bank and after dark",
+        "body": "As the woods open up again, a perched dragonfly or a moth in the evening can make the last weeks of the season visible at a different scale from the canopy.",
+        "look_for": "Note the time and conditions beside a dragonfly photograph. For a moth, add whether you found it at a light or away from one.",
+        "row_ids": [
+          "autumn-meadowhawk",
+          "bicolored-sallow"
+        ],
+        "phase_month": 11,
+        "illustration": {
+          "id": 414235537,
+          "date": "2026-11-11",
+          "photo_id": "762535012"
+        },
+        "claims": [
+          {
+            "text": "Bicolored Sallow was photographed in September 2025 and in November 2026. Those dates place the moth in different parts of autumn across two years with uneven coverage.",
+            "requires": [
+              {
+                "id": 315131852,
+                "date": "2025-09-19",
+                "event_type": "Adult",
+                "quality": "research"
+              },
+              {
+                "id": 413254190,
+                "date": "2026-11-06",
+                "event_type": "Adult",
+                "quality": "research"
+              }
+            ]
+          },
+          {
+            "text": "On November 11, 2026, a photographed adult Autumn Meadowhawk added a dragonfly to that late-season picture.",
+            "requires": [
+              {
+                "id": 414235537,
+                "date": "2026-11-11",
+                "event_type": "Adult",
+                "quality": "research"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "id": "wrinkle-leaved-goldenrod",
+        "taxon_id": 128551,
+        "taxon_name": "Solidago rugosa",
+        "name": "wrinkle-leaved goldenrod",
+        "group": "Plants",
+        "interpretation": "Leaf texture and flower-head arrangement are worth capturing in the same view. The dates mark encounters, with flowering shown where it is documented.",
+        "events": {
+          "313850668": {
+            "date": "2025-09-14",
+            "type": "Flowering",
+            "photo_id": "566812913"
+          },
+          "396527812": {
+            "date": "2026-09-01",
+            "type": "Flowering",
+            "photo_id": "727182312"
+          }
+        }
+      },
+      {
+        "id": "pear-shaped-puffball",
+        "taxon_id": 972793,
+        "taxon_name": "Apioperdon pyriforme",
+        "name": "Pear-shaped Puffball",
+        "group": "Fungi",
+        "interpretation": "Use the photographs as identification leads. A view of the cluster and the material directly beneath it would help a reviewer.",
+        "events": {
+          "400015067": {
+            "date": "2026-09-13",
+            "type": "Fruiting body",
+            "photo_id": "733969026"
+          },
+          "412527318": {
+            "date": "2026-10-31",
+            "type": "Fruiting body",
+            "photo_id": "759092263"
+          }
+        }
+      },
+      {
+        "id": "conifer-mazegill",
+        "taxon_id": 67338,
+        "taxon_name": "Gloeophyllum sepiarium",
+        "name": "Conifer Mazegill",
+        "group": "Fungi",
+        "interpretation": "The underside and type of wood are details to document when checking this identification.",
+        "events": {
+          "413366563": {
+            "date": "2026-11-07",
+            "type": "Fruiting body",
+            "photo_id": "760782141"
+          }
+        }
+      },
+      {
+        "id": "autumn-meadowhawk",
+        "taxon_id": 68139,
+        "taxon_name": "Sympetrum vicinum",
+        "name": "Autumn Meadowhawk",
+        "group": "Odonates",
+        "interpretation": "The dates give a window of documented encounters. Close side views that show the legs and face can help check a meadowhawk identification.",
+        "events": {
+          "319016022": {
+            "date": "2025-10-05",
+            "type": "Adult",
+            "photo_id": "576624496"
+          },
+          "414235537": {
+            "date": "2026-11-11",
+            "type": "Adult",
+            "photo_id": "762535012"
+          }
+        }
+      },
+      {
+        "id": "bicolored-sallow",
+        "taxon_id": 154353,
+        "taxon_name": "Sunira bicolorago",
+        "name": "Bicolored Sallow",
+        "group": "Moths",
+        "interpretation": "Open the records to compare the dates and wing patterns. Recording how each moth was found would make the timing easier to interpret.",
+        "events": {
+          "315131852": {
+            "date": "2025-09-19",
+            "type": "Adult",
+            "photo_id": "569253767"
+          },
+          "315134134": {
+            "date": "2025-09-19",
+            "type": "Adult",
+            "photo_id": "569258934"
+          },
+          "317138934": {
+            "date": "2025-09-27",
+            "type": "Adult",
+            "photo_id": "573040104"
+          },
+          "317148538": {
+            "date": "2025-09-27",
+            "type": "Adult",
+            "photo_id": "573058174"
+          },
+          "317219194": {
+            "date": "2025-09-27",
+            "type": "Adult",
+            "photo_id": "573194704"
+          },
+          "317418677": {
+            "date": "2025-09-28",
+            "type": "Adult",
+            "photo_id": "573568359"
+          },
+          "317419532": {
+            "date": "2025-09-28",
+            "type": "Adult",
+            "photo_id": "573570010"
+          },
+          "410847996": {
+            "date": "2026-10-25",
+            "type": "Adult",
+            "photo_id": "755696017"
+          },
+          "411674338": {
+            "date": "2026-10-29",
+            "type": "Adult",
+            "photo_id": "757369350"
+          },
+          "412527331": {
+            "date": "2026-11-02",
+            "type": "Adult",
+            "photo_id": "759092304"
+          },
+          "413254190": {
+            "date": "2026-11-06",
+            "type": "Adult",
+            "photo_id": "760558597"
+          },
+          "414093261": {
+            "date": "2026-11-10",
+            "type": "Adult",
+            "photo_id": "762246126"
+          }
+        }
+      }
+    ]
+  },
+  "winter": {
+    "title": "Winter at Kingfisher Hollow",
+    "intro": "Winter opens the view between the pond and creek. Bare branches change the scale of the landscape, and small signs of life stand out against its larger shapes.",
+    "next_observation": "Repeat a short walk from the same starting point after fresh snow. Take a wide picture of any track trail and a close view with a scale, then record the snow conditions and time.",
+    "passages": [
+      {
+        "id": "read-the-open-woods",
+        "phase": "Early winter",
+        "title": "Read the open woods",
+        "body": "Bare hardwood branches open sightlines through the woods, while conifers keep their dark outline. Snow can make the shapes easier to read. In the winter landscape above, the pond is a broad bright surface and the creek a narrow dark line.",
+        "look_for": "Frame the bank and water together from a safe position. Note how much snow or ice you can see from that spot.",
+        "row_ids": [],
+        "phase_month": 12
+      },
+      {
+        "id": "check-the-sheltered-edges",
+        "phase": "Mid-winter",
+        "title": "Check the sheltered edges",
+        "body": "Close to a trunk or sheltered edge, a smaller winter scene comes into focus. Some insects pass the cold months as adults in protected places.",
+        "look_for": "Check sheltered surfaces without moving bark or disturbing leaf litter. If an insect is visible, photograph where it was resting as well as the insect.",
+        "row_ids": [
+          "western-conifer-seed-bug",
+          "american-mink"
+        ],
+        "phase_month": 1,
+        "illustration": {
+          "id": 336830595,
+          "date": "2026-01-31",
+          "photo_id": "612178321"
+        },
+        "claims": [
+          {
+            "text": "An adult Western Conifer Seed Bug was photographed at the Hollow on January 31, 2026. Where it spent the winter remains open.",
+            "requires": [
+              {
+                "id": 336830595,
+                "date": "2026-01-31",
+                "event_type": "Adult",
+                "quality": "research"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "follow-the-signs",
+        "phase": "Late winter",
+        "title": "Follow the signs",
+        "body": "Snow makes movement through the woods easier to read, from a line of tracks to an animal crossing an exposed log. A trail camera catches a moment in a place that can look still from a path.",
+        "look_for": "Photograph a run of prints before walking through it. Add a scale and note whether the snow is fresh, crusted, or melting.",
+        "row_ids": [
+          "fisher",
+          "gray-fox"
+        ],
+        "phase_month": 2,
+        "illustration": {
+          "id": 341999745,
+          "date": "2026-02-26",
+          "photo_id": "622711162"
+        },
+        "claims": [
+          {
+            "text": "On February 26, 2026, a camera at the Hollow caught a Fisher crossing a fallen log with snow on either side.",
+            "requires": [
+              {
+                "id": 341999745,
+                "date": "2026-02-26",
+                "event_type": "Trail-camera encounter",
+                "quality": "research"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "id": "western-conifer-seed-bug",
+        "taxon_id": 67771,
+        "taxon_name": "Leptoglossus occidentalis",
+        "name": "Western Conifer Seed Bug",
+        "group": "Insects",
+        "interpretation": "Adults of this species can overwinter in sheltered places. A winter date records one encounter. A wider photograph can help show the kind of shelter where it was seen.",
+        "sources": [
+          {
+            "label": "US Forest Service field guide to Western Conifer Seed Bug",
+            "url": "https://www.fs.usda.gov/rm/pubs/rmrs_gtr292/2003_hagle.pdf#page=160"
+          }
+        ],
+        "events": {
+          "336830595": {
+            "date": "2026-01-31",
+            "type": "Adult",
+            "photo_id": "612178321"
+          }
+        }
+      },
+      {
+        "id": "american-mink",
+        "taxon_id": 1264432,
+        "taxon_name": "Neogale vison",
+        "name": "American Mink",
+        "group": "Mammals",
+        "interpretation": "A camera image, track, and direct sighting are different kinds of evidence. Keep the method and date with the observation.",
+        "events": {
+          "337133397": {
+            "date": "2026-01-24",
+            "type": "Trail-camera encounter",
+            "photo_id": "612795901"
+          }
+        }
+      },
+      {
+        "id": "fisher",
+        "taxon_id": 453109,
+        "taxon_name": "Pekania pennanti",
+        "name": "Fisher",
+        "group": "Mammals",
+        "interpretation": "Look at the sequence and spacing of prints as well as individual toes when comparing a track trail with a guide. Multiple dated records can show repeat encounters even when the individuals cannot be told apart.",
+        "sources": [
+          {
+            "label": "New York State DEC on identifying Fisher signs",
+            "url": "https://dec.ny.gov/nature/animals-fish-plants/fisher"
+          }
+        ],
+        "events": {
+          "341999745": {
+            "date": "2026-02-26",
+            "type": "Trail-camera encounter",
+            "photo_id": "622711162"
+          }
+        }
+      },
+      {
+        "id": "gray-fox",
+        "taxon_id": 42076,
+        "taxon_name": "Urocyon cinereoargenteus",
+        "name": "Gray Fox",
+        "group": "Mammals",
+        "interpretation": "A camera image can be checked for visible features. Save the original frame so the whole animal and its posture are available for review.",
+        "events": {
+          "341997425": {
+            "date": "2026-02-18",
+            "type": "Trail-camera encounter",
+            "photo_id": "622707760"
+          }
+        }
+      }
+    ],
+    "bird_examples": [
+      {
+        "name": "Red Crossbill",
+        "date": "2025-12-13",
+        "url": "https://ebird.org/checklist/S288385085",
+        "note": "This December checklist includes a photographed Red Crossbill at Kingfisher Hollow."
+      }
+    ],
+    "single_period_intro": "The Hollow has one winter of iNaturalist records to draw on so far."
+  }
+}

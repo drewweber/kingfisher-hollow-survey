@@ -81,7 +81,7 @@ class EvidenceViewsTests(unittest.TestCase):
             self.assertEqual(natural_history.seasonal_context(date(2026,month,1))['key'], expected)
         html = report.seasonal_body([], set(), date(2026,11,11))
         self.assertIn('November', html)
-        self.assertIn('Seasonal guide', html)
+        self.assertIn('One place, through the seasons', html)
         self.assertNotIn('Observed this week', html)
 
 
