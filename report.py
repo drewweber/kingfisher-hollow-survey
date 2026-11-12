@@ -1078,8 +1078,8 @@ def seasonal_body(observations, odonate_ids, on=None):
         '<div class="max-w-5xl mx-auto">'
         '<p class="text-hollow-700 font-semibold text-xs uppercase tracking-widest">One place, through the seasons</p>'
         '<p class="text-stone-600 text-lg leading-relaxed mt-4 max-w-3xl">'
-        'Follow the landscape from opening leaves to winter branches. Each chapter brings together '
-        'the available years of observations, the field questions they open, and the records behind the story.</p>'
+        'Follow spring wildflowers, summer dragonflies, autumn moths, and winter wildlife '
+        'through the changing woods and water of Kingfisher Hollow.</p>'
         '<div class="grid sm:grid-cols-2 gap-6 mt-8">' + ''.join(cards) + '</div>'
         '<p class="mt-7"><a class="text-hollow-700 underline underline-offset-4" href="/seasons/">Explore all four seasons →</a></p>'
         '</div>'
@@ -3790,7 +3790,7 @@ def build():
     odonate_ids = set(analyze.load_odonates()["taxon_id"].dropna().astype(int))
     parts.append(section("season", "Through the year", 'A Season to <em class="text-hollow-600">Look Closer</em>',
                          seasonal_body(raw_df.to_dict("records"), odonate_ids, datetime.now(ZoneInfo("America/New_York")).date()),
-                         intro="Explore each season across the recorded years, from landscape and field questions to the evidence behind them."))
+                         intro="From the first woodland flowers to tracks in the snow, follow how life changes through the year."))
     latest_body = (
         whats_new_body(analyze.whats_new(df, stats))
         + anchor_alias("gallery")

@@ -254,9 +254,6 @@ def build_chapters(observations, today=None):
         opening_detail = next((p['photo_record_id'] for p in passages
                                if p['id'] == story.get('opening_detail_passage')), None)
         coverage = _coverage(dates[key], key, months)
-        intro = story['intro']
-        if len(coverage) == 1 and story.get('single_period_intro'):
-            intro = f"{intro} {story['single_period_intro']}"
         latest = max((max(days) for days in dates[key].values()), default=None)
         chapter_sources = {
             source['url']: source
@@ -266,7 +263,7 @@ def build_chapters(observations, today=None):
             'key': key, 'label': key.title(),
             'months': f'{calendar.month_name[months[0]]}–{calendar.month_name[months[-1]]}',
             'month_numbers': list(months), 'route': f'/seasons/{key}/',
-            'title': story['title'], 'intro': intro, 'framing': _framing(coverage, latest, key),
+            'title': story['title'], 'intro': story['intro'], 'framing': _framing(coverage, latest, key),
             'opening_detail_record_id': opening_detail,
             'passages': passages, 'rows': list(rows.values()), 'coverage': coverage,
             'source_years': [period['period'] for period in coverage],

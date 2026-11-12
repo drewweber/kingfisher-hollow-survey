@@ -1,14 +1,14 @@
 {
   "spring": {
     "title": "Spring at Kingfisher Hollow",
-    "intro": "Spring opens near the ground. Rain brings the woods and water into contact, then the forest floor greens beneath the opening canopy.",
+    "intro": "Spring begins with rain and thaw in the low places. Woodland flowers make the most of the light before the trees leaf out, and frogs and insects become part of life around the warming water.",
     "next_observation": "Choose a patch of woodland you can photograph from the same spot every week. Include the canopy and forest floor in the frame, and record whether any plants are in bud, in flower, or leafing out.",
     "passages": [
       {
         "id": "after-the-rain",
         "phase": "Early spring",
         "title": "After the rain",
-        "body": "In early spring, water collects where the ground is low. In New York's woodland-pool surveys, spotted salamanders move on rainy nights as the ground thaws. Their eggs bring the change into view at the water's edge.",
+        "body": "Rain and thaw fill shallow pools in the woods. In New York, spotted salamanders leave their winter shelters on mild, rainy nights and move to these pools to lay eggs.",
         "look_for": "From a dry bank, look for amphibian egg masses and photograph them in place. Record whether you saw eggs, a moving animal, or heard a call.",
         "row_ids": [
           "spotted-salamander",
@@ -22,7 +22,7 @@
         },
         "claims": [
           {
-            "text": "At Kingfisher Hollow, the photograph from March 31, 2026, shows eggs identified as Spotted Salamander.",
+            "text": "Spotted salamander eggs mark that early-spring transition at the Hollow.",
             "requires": [
               {
                 "id": 346449861,
@@ -38,7 +38,7 @@
         "id": "under-the-open-canopy",
         "phase": "Mid-spring",
         "title": "Under the open canopy",
-        "body": "As buds open, light still reaches the ground between the branches. Small leaves and flowers emerge through the old leaf litter. They give the forest floor a layer of color before summer shade.",
+        "body": "Spring wildflowers brighten the forest floor while the branches are still bare. Trout lilies make use of that brief window of sunlight, followed in May by white starflower blooms as shade deepens.",
         "look_for": "Photograph the leaf pattern and include a flower or bud when you can see one on the same plant.",
         "row_ids": [
           "yellow-trout-lily",
@@ -49,31 +49,13 @@
           "id": 349674147,
           "date": "2026-04-13",
           "photo_id": "637909260"
-        },
-        "claims": [
-          {
-            "text": "The April 13, 2026, trout lily photograph catches mottled leaves among dry leaves. A May 21 photograph shows northern starflower in bloom.",
-            "requires": [
-              {
-                "id": 349674147,
-                "date": "2026-04-13",
-                "photo_id": "637909260"
-              },
-              {
-                "id": 364126392,
-                "date": "2026-05-21",
-                "event_type": "Flowering",
-                "quality": "research"
-              }
-            ]
-          }
-        ]
+        }
       },
       {
         "id": "listen-at-the-water",
         "phase": "Late spring",
         "title": "Life at the water's edge",
-        "body": "As the canopy fills, the water's edge stays open to the sky. The scale of the story shifts from small shoots on the woodland floor to frogs and insects around the water and its vegetation.",
+        "body": "By late spring, the canopy shades the woodland floor while the pond still catches the sun. Gray treefrogs can call from branches near breeding water, and adult dragonflies hunt along sunny water margins.",
         "look_for": "Save a short recording if you hear a frog. Note the time, and keep the recording linked to the same date as any photographs.",
         "row_ids": [
           "gray-treefrog",
@@ -84,29 +66,7 @@
           "id": 366537712,
           "date": "2026-05-29",
           "photo_id": "669301351"
-        },
-        "claims": [
-          {
-            "text": "The late-May 2026 records include two Gray Treefrog encounters and a dragonfly provisionally identified as Common Baskettail.",
-            "requires": [
-              {
-                "id": 365586353,
-                "date": "2026-05-26",
-                "quality": "research"
-              },
-              {
-                "id": 366537712,
-                "date": "2026-05-29",
-                "quality": "research"
-              },
-              {
-                "id": 366424482,
-                "date": "2026-05-29",
-                "quality": "needs_id"
-              }
-            ]
-          }
-        ]
+        }
       }
     ],
     "rows": [
@@ -221,6 +181,18 @@
       {
         "label": "New York State DEC on spring amphibian movements",
         "url": "https://dec.ny.gov/nature/waterbodies/oceans-estuaries/hudson-river-estuary-program/conservation-and-land-use-program/amphibian-migrations-and-road-crossings"
+      },
+      {
+        "label": "Trout lily and the northern hardwood spring light window",
+        "url": "https://esajournals.onlinelibrary.wiley.com/doi/10.2307/2937357"
+      },
+      {
+        "label": "University of Maine on starflower",
+        "url": "https://extension.umaine.edu/blueberries/weed-images/herbaceous-broadleaf-weeds/white-flowers/starflower/"
+      },
+      {
+        "label": "Maryland DNR on Gray Treefrog habitat and seasonal calls",
+        "url": "https://dnr.maryland.gov/wildlife/Pages/plants_wildlife/herps/Anura.aspx?FrogToadName=Gray"
       }
     ],
     "bird_examples": [
@@ -231,19 +203,18 @@
         "note": "This April checklist records Rusty Blackbird at Kingfisher Hollow on one visit."
       }
     ],
-    "single_period_intro": "The Hollow has one spring of iNaturalist records to draw on so far.",
     "opening_detail_passage": "after-the-rain"
   },
   "summer": {
     "title": "Summer at Kingfisher Hollow",
-    "intro": "In summer the pond and creek wear a dense green fringe. Daylight brings the pond margin into focus. After dark, the moths give the same season another side.",
+    "intro": "Summer settles in around the pond and creek. Dragonflies hunt above the water by day, moths fly after dusk, and plants fill in the wet margins as the season advances.",
     "next_observation": "Pick one pond vantage point and return to it on two summer dates. Spend the same amount of time watching, and record the weather, time, and what each animal was doing.",
     "passages": [
       {
         "id": "pond-in-daylight",
         "phase": "Early summer",
         "title": "The pond in daylight",
-        "body": "Along the pond margin, bright water meets the shade of the bank. Dragonflies move between perches above the surface and frogs come into view at the edge.",
+        "body": "A dragonfly's life straddles the waterline. A mature nymph climbs out of the water and sheds its skin, then takes to the air to hunt once its wings harden.",
         "look_for": "Record whether a dragonfly was perched, flying, or emerging. Photograph any shed skin in place and mark it as a separate kind of evidence.",
         "row_ids": [
           "eastern-pondhawk",
@@ -257,7 +228,7 @@
         },
         "claims": [
           {
-            "text": "At the Hollow, Eastern Pondhawks were recorded in July in both 2025 and 2026. Reporting coverage was uneven across the two summers.",
+            "text": "Eastern Pondhawks are among the dragonflies of midsummer at the Hollow.",
             "requires": [
               {
                 "id": 297297241,
@@ -270,23 +241,6 @@
                 "quality": "research"
               }
             ]
-          },
-          {
-            "text": "June and August photographs from 2026 show adult pondhawks beyond those July encounters.",
-            "requires": [
-              {
-                "id": 371303953,
-                "date": "2026-06-13",
-                "event_type": "Adult",
-                "quality": "research"
-              },
-              {
-                "id": 389421993,
-                "date": "2026-08-08",
-                "event_type": "Adult",
-                "quality": "research"
-              }
-            ]
           }
         ]
       },
@@ -294,7 +248,7 @@
         "id": "after-dark",
         "phase": "Mid-summer",
         "title": "After dark",
-        "body": "After dark, the wide view narrows to what comes into the light. A resting moth offers the kind of close detail that disappears in a daytime view across the pond.",
+        "body": "Warm summer evenings extend insect activity beyond daylight. As dragonflies settle for the night, many moths take to the air around the woods and field edges.",
         "look_for": "Use the same light and checking time for repeat visits. Record the hours and weather, even when there is little to photograph.",
         "row_ids": [
           "lettered-habrosyne"
@@ -307,17 +261,11 @@
         },
         "claims": [
           {
-            "text": "The July 17, 2026, photograph catches the pale bands of a Lettered Habrosyne Moth against dark mesh. The Hollow also has August records of the same moth from 2025.",
+            "text": "The Lettered Habrosyne is among the moths active after dusk at the Hollow.",
             "requires": [
               {
                 "id": 382488681,
                 "date": "2026-07-17",
-                "event_type": "Adult",
-                "quality": "research"
-              },
-              {
-                "id": 305677774,
-                "date": "2025-08-11",
                 "event_type": "Adult",
                 "quality": "research"
               }
@@ -329,7 +277,7 @@
         "id": "tangle-at-the-creek",
         "phase": "Late summer",
         "title": "The tangle at the creek edge",
-        "body": "At the creek, the summer growth brings the view back to the water. Arrow-shaped leaves stand out among the crowded stems. At the waterline, leaves give way to wet rock and the animals that move among it.",
+        "body": "By late summer, plants fill in the wet margins of the creek. Arrow-leaved tearthumb threads its stems through streamside growth, and vegetation in shallow water can offer cover for crayfish.",
         "look_for": "Include a whole plant and a close view of its leaf shape. If you see a crayfish, photograph the animal where it is and include the streambed or bank in the frame.",
         "row_ids": [
           "arrow-leaved-tearthumb",
@@ -340,39 +288,7 @@
           "id": 389384274,
           "date": "2026-08-08",
           "photo_id": "713238954"
-        },
-        "claims": [
-          {
-            "text": "The Hollow recorded arrow-leaved tearthumb in August in both summers.",
-            "requires": [
-              {
-                "id": 305089436,
-                "date": "2025-08-09",
-                "quality": "research"
-              },
-              {
-                "id": 389384274,
-                "date": "2026-08-08",
-                "quality": "research"
-              }
-            ]
-          },
-          {
-            "text": "On August 8, 2026, a Calico Crayfish was photographed in water on the same date as one of the plant records.",
-            "requires": [
-              {
-                "id": 389384274,
-                "date": "2026-08-08",
-                "quality": "research"
-              },
-              {
-                "id": 389421604,
-                "date": "2026-08-08",
-                "photo_id": "713311212"
-              }
-            ]
-          }
-        ]
+        }
       }
     ],
     "rows": [
@@ -470,18 +386,36 @@
         "group": "Freshwater life",
         "interpretation": "A view from above can show the outline of the body and claws. A wider view preserves context for the encounter."
       }
+    ],
+    "sources": [
+      {
+        "label": "National Park Service on the dragonfly life cycle",
+        "url": "https://home.nps.gov/articles/species-spotlight-dragonflies.htm"
+      },
+      {
+        "label": "University of Michigan on arrow-leaved tearthumb",
+        "url": "https://climbers.lsa.umich.edu/persicaria-sagittata/"
+      },
+      {
+        "label": "Michigan DNR guide to crayfish and their habitats",
+        "url": "https://www.michigan.gov/dnr/-/media/Project/Websites/dnr/Documents/Education/Misc/MI-Crayfish-ID-Guide-62024.pdf?rev=77a14e2f174a4572bcb9a4d3b17ba1d6"
+      },
+      {
+        "label": "National Park Service moth surveys at Acadia",
+        "url": "https://www.nps.gov/articles/000/acadia_moth.htm"
+      }
     ]
   },
   "autumn": {
     "title": "Autumn at Kingfisher Hollow",
-    "intro": "Autumn starts in the yellow of the open edge and leads down into leaf litter and fallen wood. Even late in the chapter, the insect records hold details a view of the changing canopy would miss.",
+    "intro": "Goldenrods flower as the woods begin to change color. With leaf fall, fresh litter joins the wood already breaking down on the forest floor, and some insects stay active into November.",
     "next_observation": "Return to one woodland edge and one waterside spot in September, October, and November. Record the time and conditions at each stop and separate flowers, fungal fruiting bodies, and insect encounters in your notes.",
     "passages": [
       {
         "id": "at-the-goldenrod-edge",
         "phase": "Early autumn",
         "title": "At the goldenrod edge",
-        "body": "Goldenrod brings yellow to the open edge while much of the surrounding foliage is still green. Its stems give autumn a close-up view before attention shifts to color in the canopy and leaves on the ground.",
+        "body": "Goldenrods flower along open edges while much of the canopy is still green. Their clusters of small yellow blooms supply pollen and nectar to insects into early autumn.",
         "look_for": "Frame the stem, leaves, and flower heads together. Photograph any insect you see visiting a flower and write down what it was doing.",
         "row_ids": [
           "wrinkle-leaved-goldenrod"
@@ -494,7 +428,7 @@
         },
         "claims": [
           {
-            "text": "September photographs in 2025 and 2026 both show flowering goldenrod.",
+            "text": "At the Hollow, flowering goldenrod is a recurring sign of September.",
             "requires": [
               {
                 "id": 313850668,
@@ -507,17 +441,6 @@
                 "event_type": "Flowering"
               }
             ]
-          },
-          {
-            "text": "The 2026 wrinkle-leaved goldenrod identification is provisional.",
-            "requires": [
-              {
-                "id": 396527812,
-                "date": "2026-09-01",
-                "event_type": "Flowering",
-                "quality": "needs_id"
-              }
-            ]
           }
         ]
       },
@@ -525,7 +448,7 @@
         "id": "look-down-to-fallen-wood",
         "phase": "Mid-autumn",
         "title": "Look down to fallen wood",
-        "body": "As leaves collect, the eye moves from standing stems to fallen wood. Fungal fruiting bodies make small shapes against its surface, from round clusters to shelves that lie flat against the grain.",
+        "body": "As leaves fall, they add a fresh layer of litter over branches and logs already breaking down. Fungi help return nutrients from dead wood to the forest floor. Puffballs and bracket fungi are among the forms that fruit on wood.",
         "look_for": "Record what a fungus is growing on and photograph the underside when you can see it without breaking anything off.",
         "row_ids": [
           "pear-shaped-puffball",
@@ -536,32 +459,13 @@
           "id": 412527318,
           "date": "2026-10-31",
           "photo_id": "759092263"
-        },
-        "claims": [
-          {
-            "text": "An October 31, 2026, photograph shows a cluster provisionally identified as Pear-shaped Puffball. The November 7 photograph shows a shelf provisionally identified as Conifer Mazegill.",
-            "requires": [
-              {
-                "id": 412527318,
-                "date": "2026-10-31",
-                "event_type": "Fruiting body",
-                "quality": "needs_id"
-              },
-              {
-                "id": 413366563,
-                "date": "2026-11-07",
-                "event_type": "Fruiting body",
-                "quality": "needs_id"
-              }
-            ]
-          }
-        ]
+        }
       },
       {
         "id": "insects-into-november",
         "phase": "Late autumn",
         "title": "Along the bank and after dark",
-        "body": "As the woods open up again, a perched dragonfly or a moth in the evening can make the last weeks of the season visible at a different scale from the canopy.",
+        "body": "As autumn cools, mild days and evenings can still bring insect activity. Dragonflies and moths can both extend the season after many of the leaves are down.",
         "look_for": "Note the time and conditions beside a dragonfly photograph. For a moth, add whether you found it at a light or away from one.",
         "row_ids": [
           "autumn-meadowhawk",
@@ -575,25 +479,14 @@
         },
         "claims": [
           {
-            "text": "Bicolored Sallow was photographed in September 2025 and in November 2026. Those dates place the moth in different parts of autumn across two years with uneven coverage.",
+            "text": "At the Hollow, both Bicolored Sallows and Autumn Meadowhawks can still turn up in November.",
             "requires": [
-              {
-                "id": 315131852,
-                "date": "2025-09-19",
-                "event_type": "Adult",
-                "quality": "research"
-              },
               {
                 "id": 413254190,
                 "date": "2026-11-06",
                 "event_type": "Adult",
                 "quality": "research"
-              }
-            ]
-          },
-          {
-            "text": "On November 11, 2026, a photographed adult Autumn Meadowhawk added a dragonfly to that late-season picture.",
-            "requires": [
+              },
               {
                 "id": 414235537,
                 "date": "2026-11-11",
@@ -751,18 +644,32 @@
           }
         }
       }
+    ],
+    "sources": [
+      {
+        "label": "Bucknell University on goldenrod and its insects",
+        "url": "https://solidago.scholar.bucknell.edu/goldenrod-biology/"
+      },
+      {
+        "label": "US Forest Service on wood decay and forest fungi",
+        "url": "https://research.fs.usda.gov/treesearch/54715"
+      },
+      {
+        "label": "New York State DEC on regional dragonfly seasons",
+        "url": "https://extapps.dec.ny.gov/docs/lands_forests_pdf/greatdivideump2006a.pdf"
+      }
     ]
   },
   "winter": {
     "title": "Winter at Kingfisher Hollow",
-    "intro": "Winter opens the view between the pond and creek. Bare branches change the scale of the landscape, and small signs of life stand out against its larger shapes.",
+    "intro": "Leaf fall opens the woods between the pond and creek. Some insects spend the cold months in shelter, while mammals that remain active leave tracks across the snow.",
     "next_observation": "Repeat a short walk from the same starting point after fresh snow. Take a wide picture of any track trail and a close view with a scale, then record the snow conditions and time.",
     "passages": [
       {
         "id": "read-the-open-woods",
         "phase": "Early winter",
         "title": "Read the open woods",
-        "body": "Bare hardwood branches open sightlines through the woods, while conifers keep their dark outline. Snow can make the shapes easier to read. In the winter landscape above, the pond is a broad bright surface and the creek a narrow dark line.",
+        "body": "When hardwoods lose their leaves, more light reaches the ground and the conifers stay green. Snow and ice can accent the difference between the broad surface of the pond and the creek winding past it.",
         "look_for": "Frame the bank and water together from a safe position. Note how much snow or ice you can see from that spot.",
         "row_ids": [],
         "phase_month": 12
@@ -771,7 +678,7 @@
         "id": "check-the-sheltered-edges",
         "phase": "Mid-winter",
         "title": "Check the sheltered edges",
-        "body": "Close to a trunk or sheltered edge, a smaller winter scene comes into focus. Some insects pass the cold months as adults in protected places.",
+        "body": "Protected places carry some insects through winter. Adults of some species spend the cold months beneath loose bark or in sheltered cracks, ready to resume activity when conditions warm.",
         "look_for": "Check sheltered surfaces without moving bark or disturbing leaf litter. If an insect is visible, photograph where it was resting as well as the insect.",
         "row_ids": [
           "western-conifer-seed-bug",
@@ -785,7 +692,7 @@
         },
         "claims": [
           {
-            "text": "An adult Western Conifer Seed Bug was photographed at the Hollow on January 31, 2026. Where it spent the winter remains open.",
+            "text": "The Western Conifer Seed Bug is one of the insects that make it through winter as an adult.",
             "requires": [
               {
                 "id": 336830595,
@@ -801,7 +708,7 @@
         "id": "follow-the-signs",
         "phase": "Late winter",
         "title": "Follow the signs",
-        "body": "Snow makes movement through the woods easier to read, from a line of tracks to an animal crossing an exposed log. A trail camera catches a moment in a place that can look still from a path.",
+        "body": "Some mammals keep moving through the woods all winter. Fishers are active through the cold months, and snow can preserve the tracks they leave as they travel.",
         "look_for": "Photograph a run of prints before walking through it. Add a scale and note whether the snow is fresh, crusted, or melting.",
         "row_ids": [
           "fisher",
@@ -812,20 +719,7 @@
           "id": 341999745,
           "date": "2026-02-26",
           "photo_id": "622711162"
-        },
-        "claims": [
-          {
-            "text": "On February 26, 2026, a camera at the Hollow caught a Fisher crossing a fallen log with snow on either side.",
-            "requires": [
-              {
-                "id": 341999745,
-                "date": "2026-02-26",
-                "event_type": "Trail-camera encounter",
-                "quality": "research"
-              }
-            ]
-          }
-        ]
+        }
       }
     ],
     "rows": [
@@ -909,7 +803,6 @@
         "url": "https://ebird.org/checklist/S288385085",
         "note": "This December checklist includes a photographed Red Crossbill at Kingfisher Hollow."
       }
-    ],
-    "single_period_intro": "The Hollow has one winter of iNaturalist records to draw on so far."
+    ]
   }
 }
