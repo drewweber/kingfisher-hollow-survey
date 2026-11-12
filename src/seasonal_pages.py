@@ -158,6 +158,12 @@ def evidence_html(chapter):
     """Keep curated vouchers accessible without presenting a shortlist as the community."""
     items=[]
     key=chapter['key']
+    purpose={
+        'spring':'spring-water reproduction, woodland plants, and spring insects',
+        'summer':'water-margin animals, night-flying moths, and wetland plants',
+        'autumn':'late flowers, wood fungi, and late-season insects',
+        'winter':'sheltered insects and active mammals',
+    }[key]
     for row in chapter.get('rows', []):
         rid=ident(row['id'])
         specialist=''
@@ -166,7 +172,7 @@ def evidence_html(chapter):
             context=quote(f'/seasons/{key}/#evidence-{rid}',safe='')
             specialist=f'<a href="{target}?from={context}">All-season {noun} records ↗</a>'
         items.append(f'<details class="voucher-row" id="evidence-{rid}"><summary>{esc(row.get("name"))}</summary>{records_html(row.get("records",[]))}{specialist}</details>')
-    return f'''<details class="voucher-appendix" id="evidence"><summary>Selected observation sources</summary><p>These {len(items)} selected taxa are illustrative records retained from the chapter’s source register. They are not a sample of the whole community. The community summary above uses all eligible seasonal iNaturalist records.</p>{''.join(items) or '<p>No supporting records in this register.</p>'}</details>'''
+    return f'''<details class="voucher-appendix" id="evidence"><summary>Selected observation sources</summary><p>These {len(items)} selected taxa offer local examples of {purpose}. They are examples, not a sample of the whole community. The community summary above uses all eligible seasonal iNaturalist records.</p>{''.join(items) or '<p>No supporting records in this register.</p>'}</details>'''
 
 
 def community_html(chapter):
