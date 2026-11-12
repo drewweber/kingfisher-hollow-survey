@@ -605,7 +605,7 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertNotIn("Typical error", html)
         self.assertNotIn("Rest / process records", html)
 
-    def test_section_flow_follows_the_configured_reading_order(self):
+    def test_section_preserves_heading_without_sequential_navigation(self):
         html = report.section(
             "unique",
             "Distinctiveness",
@@ -614,11 +614,9 @@ class ReportNavigationTests(unittest.TestCase):
         )
         self.assertIn('aria-labelledby="unique-title"', html)
         self.assertIn('id="unique-title"', html)
-        self.assertIn('href="#discovery"', html)
-        self.assertIn("Growth", html)
-        self.assertIn('href="#activity"', html)
-        self.assertIn("Records", html)
-        self.assertIn("05 / 09", html)
+        self.assertIn("<p>Body</p>", html)
+        self.assertNotIn("<nav", html)
+        self.assertNotIn("section-flow", html)
 
     def test_legacy_chapter_links_can_be_preserved_as_aliases(self):
         html = report.anchor_alias("uniqueness", "gallery", "moth-diversity")

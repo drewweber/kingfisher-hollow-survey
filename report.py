@@ -412,44 +412,6 @@ def anchor_alias(*ids):
     )
 
 
-def _section_flow(id_, dark=False):
-    """Render the sequential trail between top-level sections in one view."""
-    current_href = f"#{id_}"
-    for config in VIEW_CONFIG.values():
-        internal = [(href, label) for href, label in config["links"]
-                    if href.startswith("#")]
-        hrefs = [href for href, _ in internal]
-        if current_href not in hrefs:
-            continue
-        if len(internal) < 2:
-            return ""
-        index = hrefs.index(current_href)
-        previous = internal[index - 1] if index else None
-        following = internal[index + 1] if index + 1 < len(internal) else internal[0]
-        border = "border-white/10" if dark else "border-stone-200"
-        muted = "text-white/35" if dark else "text-stone-400"
-        link = "text-white hover:text-hollow-300" if dark else "text-stone-700 hover:text-hollow-700"
-        previous_html = (
-            f'<a href="{previous[0]}" class="section-flow-link {link}">'
-            f'<span aria-hidden="true">←</span><span><small>Previous</small>{previous[1]}</span></a>'
-            if previous else '<span aria-hidden="true"></span>'
-        )
-        next_label = "Next" if index + 1 < len(internal) else "Back to start"
-        following_html = (
-            f'<a href="{following[0]}" class="section-flow-link section-flow-next {link}">'
-            f'<span><small>{next_label}</small>{following[1]}</span>'
-            f'<span aria-hidden="true">{"→" if next_label == "Next" else "↥"}</span></a>'
-        )
-        return (
-            f'<nav class="section-flow mt-16 pt-6 border-t {border}" '
-            f'aria-label="Continue through {config["label"]}">'
-            f'{previous_html}'
-            f'<span class="section-flow-count {muted}">{index + 1:02d} / {len(internal):02d}</span>'
-            f'{following_html}</nav>'
-        )
-    return ""
-
-
 def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
     bg = "bg-hollow-950" if dark else (tint or "")
     eb = "text-hollow-400" if dark else "text-hollow-500"
@@ -467,7 +429,6 @@ def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
       {intro_html}
     </div>
     {body}
-    {_section_flow(id_, dark)}
   </div>
 </section>"""
 
