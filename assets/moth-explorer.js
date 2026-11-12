@@ -29,6 +29,7 @@
       for (const key of ['from', 'moth']) {
         const value = new URLSearchParams(location.search).get(key);
         if (value) url.searchParams.set(key, value);
+        else url.searchParams.delete(key);
       }
       link.href = url.pathname + url.search;
     });

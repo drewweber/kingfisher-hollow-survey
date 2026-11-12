@@ -54,6 +54,14 @@ class MothPageTests(unittest.TestCase):
         empty = moth_page.forecast_panel({}, [], {})
         self.assertIn('No forecast dates available', empty)
 
+    def test_forecast_null_and_missing_measurements_have_unavailable_markers(self):
+        rows = [{'date':'2026-11-12', 'temp_f_9pm':None, 'wind_mph_9pm':None, 'rain_chance_pct':None},
+                {'date':'2026-11-13'},
+                {'date':'2026-11-14', 'temp_f_9pm':0, 'wind_mph_9pm':0, 'rain_chance_pct':0}]
+        html = moth_page.forecast_panel({}, rows, {})
+        self.assertEqual(html.count('—°F at 9 PM · Wind — mph · Rain —%'), 2)
+        self.assertIn('0°F at 9 PM · Wind 0 mph · Rain 0%', html)
+
     def test_discovery_visible_endpoint_and_native_values(self):
         self.story['discovery'] = [{'date':'2025-07-03','cumulative_taxa':3},{'date':'2026-11-11','cumulative_taxa':889}]
         html = moth_page.discovery(self.story, {'observed':889,'estimated':1100,'pct_complete':81})

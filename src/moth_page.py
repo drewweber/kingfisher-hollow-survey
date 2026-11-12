@@ -196,7 +196,7 @@ def forecast_panel(forecast, ranked, validation):
     rows = []
     for r in ranked:
         rows.append(f'<li><strong>{esc(r.get("date"))}</strong> · {esc(r.get("rating", "Incomplete"))}'
-                    f'<br>{esc(r.get("temp_f_9pm", "—"))}°F at 9 PM · Wind {esc(r.get("wind_mph_9pm", "—"))} mph · Rain {esc(r.get("rain_chance_pct", "—"))}%</li>')
+                    f'<br>{esc(r.get("temp_f_9pm") if r.get("temp_f_9pm") is not None else "—")}°F at 9 PM · Wind {esc(r.get("wind_mph_9pm") if r.get("wind_mph_9pm") is not None else "—")} mph · Rain {esc(r.get("rain_chance_pct") if r.get("rain_chance_pct") is not None else "—")}%</li>')
     return ('<div class="moth-panel" id="moth-forecast"><h3>Choose an evening</h3>'
             f'<p class="moth-small">Forecast: {window}<br>{status} · Updated {updated}</p><p class="moth-takeaway">{lead}</p>'
             + ('<ul class="moth-forecast-list">' + ''.join(rows) + '</ul>' if rows else '')

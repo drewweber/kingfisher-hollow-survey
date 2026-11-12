@@ -15,17 +15,18 @@ function setup({search='', fail=false, back=false}={}) {
   for (const id of ['moth-explorer','moth-search','moth-search-status','moth-search-results','moth-timing-result','moth-timing']) ids[id]=new Element(id==='moth-timing'?'details':'div');
   ids['moth-explorer'].dataset.src='/assets/moth-timing-version.json';
   if(back) ids['moth-timing-back']=new Element('a');
+  const contextLinks=['/moths/timing/','/moths/targets/'].map(href=>Object.assign(new Element('a'),{href}));
   const data=Array.from({length:889},(_,i)=>({id:i+1,common_name:'Moth '+(i+1),scientific_name:'Taxon '+(i+1),monthly_records:[0,0,1,0,0,0,0,2,0,0,0,0],stages:[]}));
   const location={href:'https://example.org/moths/'+search,origin:'https://example.org',search,hash:''};
   const events={}; let requests=0; const pushes=[];
   vm.runInNewContext(source,{
     URL,URLSearchParams,location,
-    document:{getElementById:id=>ids[id]||null,createElement:tag=>new Element(tag),querySelectorAll:()=>[]},
+    document:{getElementById:id=>ids[id]||null,createElement:tag=>new Element(tag),querySelectorAll:()=>contextLinks},
     history:{pushState:(_,__,url)=>{pushes.push(url);const u=new URL(url,location.origin);location.search=u.search;location.hash=u.hash;}},
     window:{addEventListener:(name,fn)=>{events[name]=fn;}},
     fetch:async()=>{requests++;return {ok:!fail,json:async()=>data};},
   });
-  return {ids,data,location,events,pushes,requests:()=>requests};
+  return {ids,data,location,events,pushes,contextLinks,requests:()=>requests};
 }
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
 test('payload waits for disclosure, searches all taxa and prints gaps as exact values',async()=>{
@@ -55,4 +56,25 @@ test('native page return preserves moth and season but does not become an extern
   const s=setup({search:'?from=https%3A%2F%2Fevil.example&moth=12',back:true});
   assert.match(s.ids['moth-timing-back'].href,/^\/moths\/\?/);
   assert.match(s.ids['moth-timing-back'].href,/moth=12/);
+});
+
+test('Back removes stale moth and seasonal keys from both native exploration links',async()=>{
+  const s=setup({search:'?from=%2Fseasons%2Fautumn%2F'});
+  s.ids['moth-timing'].open=true;await s.ids['moth-timing'].fire('toggle');await settle();
+  s.ids['moth-search'].value='Moth 889';await s.ids['moth-search'].fire('input');
+  await s.ids['moth-search-results'].children[0].children[0].fire('click');
+  for(const link of s.contextLinks){
+    const url=new URL(link.href,s.location.origin);
+    assert.equal(url.searchParams.get('moth'),'889');
+    assert.equal(url.searchParams.get('from'),'/seasons/autumn/');
+  }
+  s.location.search='?from=%2Fseasons%2Fautumn%2F';s.events.popstate();
+  assert.equal(s.ids['moth-timing-result'].children.length,0);
+  for(const link of s.contextLinks){
+    const url=new URL(link.href,s.location.origin);
+    assert.equal(url.searchParams.has('moth'),false);
+    assert.equal(url.searchParams.get('from'),'/seasons/autumn/');
+  }
+  s.location.search='';s.events.popstate();
+  assert.deepEqual(s.contextLinks.map(link=>link.href),['/moths/timing/','/moths/targets/']);
 });
