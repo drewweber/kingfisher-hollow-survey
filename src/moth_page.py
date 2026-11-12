@@ -114,16 +114,19 @@ def inventory_estimate(comp):
 
 FREQUENCY_SERIES = [
     ('once', 'Recorded on one night', '#d8b783', '3 5'),
-    ('twice', 'Recorded on two nights', '#a8c8ee', '10 5'),
-    ('three_plus', 'Recorded on 3+ nights', '#8ec8b1', ''),
+    ('two_plus', 'Recorded on 2+ nights', '#8ec8b1', ''),
 ]
+
+
+def _frequency_value(row, key):
+    return row['twice'] + row['three_plus'] if key == 'two_plus' else row[key]
 
 
 def frequency_history_csv(story):
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=['night', 'one_night', 'two_nights', 'three_plus_nights', 'total_taxa'], lineterminator='\n')
+    writer = csv.DictWriter(output, fieldnames=['night', 'one_night', 'two_plus_nights', 'total_taxa'], lineterminator='\n')
     writer.writeheader()
-    writer.writerows(dict(zip(writer.fieldnames, [row[key] for key in ('date', 'once', 'twice', 'three_plus', 'total')]))
+    writer.writerows(dict(zip(writer.fieldnames, [_frequency_value(row, key) for key in ('date', 'once', 'two_plus', 'total')]))
                     for row in story['frequency_history'])
     text = output.getvalue()
     return '/assets/moth-frequency-' + hashlib.sha256(text.encode()).hexdigest()[:16] + '.csv', text
@@ -135,7 +138,7 @@ def _frequency_svg(rows, narrow=False):
     left, right, top, bottom = 40, width - 16, 30, height - 65
     first, last = date.fromisoformat(rows[0]['date']), date.fromisoformat(rows[-1]['date'])
     days = (last - first).days
-    maximum = max(row[key] for row in rows for key, *_ in FREQUENCY_SERIES)
+    maximum = max(_frequency_value(row, key) for row in rows for key, *_ in FREQUENCY_SERIES)
     rough_step = max(maximum / 3, 1)
     magnitude = 10 ** math.floor(math.log10(rough_step))
     step = math.ceil(rough_step / magnitude) * magnitude
@@ -157,7 +160,7 @@ def _frequency_svg(rows, narrow=False):
                      f'<text x="{x(day):.1f}" y="{bottom + 24}" text-anchor="{anchor}">{day:%b} {day.day}'
                      f'<tspan x="{x(day):.1f}" dy="19">{day.year}</tspan></text>')
     for key, label, color, dash in FREQUENCY_SERIES:
-        points = [(x(date.fromisoformat(row['date'])), y(row[key])) for row in rows]
+        points = [(x(date.fromisoformat(row['date'])), y(_frequency_value(row, key))) for row in rows]
         path = f'M {points[0][0]:.2f} {points[0][1]:.2f}' + ''.join(f' H {px:.2f} V {py:.2f}' for px, py in points[1:])
         parts.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-width="2.5" stroke-dasharray="{dash}" vector-effect="non-scaling-stroke"/>'
                      f'<circle cx="{points[-1][0]:.2f}" cy="{points[-1][1]:.2f}" r="3.5" fill="{color}"/>')
@@ -171,14 +174,14 @@ def frequency_history_chart(story):
     latest = rows[-1]
     labels = []
     for key, label, color, dash in FREQUENCY_SERIES:
-        labels.append(f'<div><dt><svg viewBox="0 0 36 12" aria-hidden="true"><line x1="0" x2="36" y1="6" y2="6" stroke="{color}" stroke-width="3" stroke-dasharray="{dash}"/></svg>{label}</dt><dd>{latest[key]:,}</dd></div>')
-    description = (f'From {rows[0]["date"]} to {latest["date"]}, these lines track moth taxa recorded on exactly one, exactly two, or three or more distinct nights. '
-                   'The one-night and two-night groups are Q1 and Q2—the counts used in the completeness estimate above.')
+        labels.append(f'<div><dt><svg viewBox="0 0 36 12" aria-hidden="true"><line x1="0" x2="36" y1="6" y2="6" stroke="{color}" stroke-width="3" stroke-dasharray="{dash}"/></svg>{label}</dt><dd>{_frequency_value(latest, key):,}</dd></div>')
+    description = ('New finds join the one-night group. Once recorded on another night, they move into the two-or-more group—'
+                   'showing how the list grows from first encounters into repeat sightings.')
     return ('<h3>Which finds return on another night?</h3>'
             f'<figure aria-label="Moth detection history by distinct night"><figcaption>{description}</figcaption>'
             + _frequency_svg(rows, narrow=True) + _frequency_svg(rows)
             + f'<p class="moth-small">Latest counts · {latest["date"]}</p><dl class="moth-frequency-labels">' + ''.join(labels) + '</dl></figure>'
-            '<p class="moth-small">Inferred night date → · Repeat photos on the same night count once. A later night moves a moth to the next group, so the one- and two-night lines can fall. Records before noon belong to the preceding night; records without a time use their recorded date.</p>'
+            '<p class="moth-small">Inferred night date → · Repeat photos on the same night count once. Records before noon belong to the preceding night; records without a time use their recorded date.</p>'
             f'<p><a class="moth-native-link" href="{frequency_history_csv(story)[0]}" download>Download exact night history (CSV)</a></p>')
 
 

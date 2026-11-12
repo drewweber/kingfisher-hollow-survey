@@ -67,8 +67,10 @@ class MothPageTests(unittest.TestCase):
         self.story['frequency_history'] = [{'date':'2026-06-01','once':1,'twice':0,'three_plus':2,'total':3}]
         html = moth_page.frequency_history_chart(self.story)
         self.assertIn('Recorded on one night',html)
-        self.assertIn('Recorded on two nights',html)
-        self.assertIn('Recorded on 3+ nights',html)
+        self.assertIn('Recorded on 2+ nights',html)
+        self.assertNotIn('Recorded on two nights',html)
+        self.assertNotIn('Recorded on 3+ nights',html)
+        self.assertNotIn('Q1 and Q2',html)
         self.assertIn('2026-06-01',html)
         self.assertIn('stroke-dasharray=',html)
         self.assertNotIn('nan',html)
@@ -86,15 +88,17 @@ class MothPageTests(unittest.TestCase):
         # June 2 is one tenth across the interval, not halfway between reports.
         self.assertIn('M 40.00 132.50 H 66.40 V 235.00 H 304.00 V 30.00',html)
         self.assertIn('text-anchor="end">0</text>',html)
-        self.assertEqual(html.count('<path '),3)
+        self.assertEqual(html.count('<path '),2)
         self.assertIn('stroke-dasharray="3 5"',html)
-        self.assertIn('stroke-dasharray="10 5"',html)
         self.assertIn('stroke-dasharray=""',html)
 
     def test_frequency_csv_is_complete_and_content_addressed(self):
-        self.story['frequency_history'] = [{'date':'2026-06-01','once':1,'twice':0,'three_plus':2,'total':3}]
+        self.story['frequency_history'] = [{'date':'2026-06-01','once':1,'twice':2,'three_plus':3,'total':6}]
+        html = moth_page.frequency_history_chart(self.story)
+        self.assertIn('<dd>5</dd>',html)
+        self.assertIn('<dd>1</dd>',html)
         url, text = moth_page.frequency_history_csv(self.story)
-        self.assertEqual(text,'night,one_night,two_nights,three_plus_nights,total_taxa\n2026-06-01,1,0,2,3\n')
+        self.assertEqual(text,'night,one_night,two_plus_nights,total_taxa\n2026-06-01,1,5,6\n')
         with tempfile.TemporaryDirectory() as tmp:
             assets = Path(tmp) / 'assets'
             assets.mkdir()

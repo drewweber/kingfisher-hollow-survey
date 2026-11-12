@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 
-COLUMNS = ['night', 'one_night', 'two_nights', 'three_plus_nights', 'total_taxa']
+COLUMNS = ['night', 'one_night', 'two_plus_nights', 'total_taxa']
 
 
 def verify(public):
@@ -35,8 +35,8 @@ def verify(public):
                 raise ValueError(f'Aggregate dates must be chronological ISO dates: {relative}')
             if not all(re.fullmatch(r'0|[1-9][0-9]*', value) for value in row[1:]):
                 raise ValueError(f'Aggregate counts must be nonnegative integers: {relative}')
-            once, twice, three_plus, total = map(int, row[1:])
-            if once + twice + three_plus != total:
+            once, two_plus, total = map(int, row[1:])
+            if once + two_plus != total:
                 raise ValueError(f'Aggregate categories must sum to total: {relative}')
             previous = day
         count += 1
