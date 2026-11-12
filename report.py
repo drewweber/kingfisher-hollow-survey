@@ -15,6 +15,7 @@ import subprocess
 import sys
 import hashlib
 import json
+import os
 import re
 import shutil
 import time
@@ -29,11 +30,13 @@ import analyze  # noqa: E402
 import field_guide  # noqa: E402
 import inat_api  # noqa: E402
 import new_county_species  # noqa: E402
+import natural_history  # noqa: E402
 import public_api  # noqa: E402
 import social_export  # noqa: E402
 import tiger_swallowtail  # noqa: E402
 import viz  # noqa: E402
 import weather  # noqa: E402
+from pandas import isna  # noqa: E402
 from config import (  # noqa: E402
     DATA_DIR,
     EBIRD_BARCHART_URL,
@@ -56,7 +59,8 @@ HERO_WEBP = "/assets/hero/dji_fly_20251020_173830_305_1760996794506_photo_optimi
 # Change this only after the section-writer makes a substantial editorial
 # refresh across the report. Routine data syncs, generated output, code work,
 # and small copy corrections must not move the public "Content updated" date.
-MAJOR_CONTENT_UPDATED_AT = "2026-08-26T05:28:48-04:00"
+MAJOR_CONTENT_UPDATED_AT = "2026-11-11T19:00:00-05:00"
+REVIEW_PREVIEW = os.environ.get("SURVEY_REVIEW_PREVIEW") == "1"
 
 
 def _asset_version(path):
@@ -167,7 +171,7 @@ def sval(x, default=""):
     if x is None:
         return default
     try:
-        if x != x:                      # NaN
+        if isna(x):
             return default
     except (TypeError, ValueError):
         pass
@@ -181,8 +185,10 @@ def esc(x):
 
 def fdate(x, fmt="%b %-d, %Y"):
     try:
+        if isinstance(x, str):
+            x = date.fromisoformat(x[:10])
         return x.strftime(fmt)
-    except (ValueError, AttributeError):
+    except (TypeError, ValueError, AttributeError):
         return ""
 
 
@@ -223,11 +229,13 @@ VIEW_CONFIG = {
         "description": "A living biodiversity survey of Kingfisher Hollow: recent records, discovery, survey effort, seasonality, and where observations are concentrated.",
         "plotly": True,
         "links": [
+            ("#season", "This season"),
             ("#whats-new", "Latest"),
+            ("#habitats", "Habitats"),
             ("#discovery", "Growth"),
             ("#unique", "Distinctiveness"),
-            ("#activity", "Survey effort"),
-            ("#phenology", "Seasonality"),
+            ("#activity", "Records"),
+            ("#phenology", "Seasonal records"),
             ("#observers", "Observers"),
             ("#map", "Map"),
         ],
@@ -252,7 +260,7 @@ VIEW_CONFIG = {
             ("#moth-families", "Gap by family"),
             ("#moth-standouts", "Standouts"),
             ("#moth-completeness", "Inventory status"),
-            ("#moth-calendar", "Flight calendar"),
+            ("#moth-calendar", "Seasonal calendar"),
             ("#moth-methods", "Survey methods"),
         ],
     },
@@ -317,6 +325,14 @@ VIEW_CONFIG = {
             ("#plant-gap", "Targets"),
             ("#plant-methods", "Survey methods"),
         ],
+    },
+    "fungi": {
+        "label": "Fungi",
+        "route": "/fungi/",
+        "taxa_group": True,
+        "description": "Fungi recorded at Kingfisher Hollow: dated photographs, identification evidence, and a seasonal guide to looking closely.",
+        "plotly": False,
+        "links": [("#fungi", "Overview"), ("#fungi-records", "Recorded fungi"), ("#fungi-methods", "Look closer")],
     },
     "amphibians": {
         "label": "Herps",
@@ -492,16 +508,21 @@ def moth_forecast_body(forecast, validation):
         key=lambda row: row["priority_rank"],
     )
     if not scored:
+        unsuitable = bool(ranked) and all(row.get("rating") == "Skip" for row in ranked)
+        title = "No suitable nights in this forecast" if unsuitable else "Forecast temporarily unavailable"
+        message = ("The available forecast does not support a recommended light session. "
+                   "Use the seasonal record below to plan a later visit."
+                   if unsuitable else
+                   "There is not enough forecast information to rank the coming nights. "
+                   "The historical record remains available below.")
         return (
             '<div class="bg-white/[0.04] border border-white/10 rounded-2xl '
             'p-6 md:p-8 mb-10">'
             '<p class="text-hollow-300 text-xs font-semibold uppercase '
             'tracking-[0.18em]">Night planner</p>'
             '<h3 class="font-serif text-2xl text-white font-bold mt-2">'
-            'Forecast temporarily unavailable</h3>'
-            '<p class="text-white/60 leading-relaxed mt-3">The historical '
-            'calendar remains below. The next successful daily build will '
-            'restore the planning queue.</p></div>'
+            f'{title}</h3>'
+            f'<p class="text-white/70 leading-relaxed mt-3">{message}</p></div>'
         )
 
     best = scored[0]
@@ -731,17 +752,18 @@ def hero(s, county_firsts):
       Life at <em class="font-normal text-hollow-200" style="font-style:italic;">the Hollow</em>
     </h1>
     <p class="fade-up delay-2 text-white/70 text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-12">
-      {s['species']:,} species across 30 riparian acres in Tioga County, NY — {county_firsts:,} of them new to the county record. The survey is a year old and still nowhere near done.
+      Follow the year through creek, pond, and woods. {s['species']:,} recorded species open a window onto life on these 30 riparian acres in Tioga County, NY.
     </p>
     <div class="fade-up delay-3 flex flex-wrap items-center justify-center gap-8 md:gap-12">
       {stat(f"{s['species']:,}", "Species")}
       <div class="w-px h-12 bg-white/20"></div>
-      {stat(f"{s['observations']:,}", "Records")}
+      {stat(f"{s.get('inat_observations', s['observations']):,}", "iNat records")}
       <div class="w-px h-12 bg-white/20"></div>
       {stat(f"{s['observers']:,}", "iNat observers")}
       <div class="w-px h-12 bg-white/20"></div>
-      {stat(f"{county_firsts:,}", "County firsts")}
+      {stat(f"{county_firsts:,}", "iNat county firsts")}
     </div>
+    <a href="#season" class="inline-block mt-8 mb-8 text-hollow-200 underline underline-offset-4">Explore this season ↓</a>
   </div>
 </section>"""
 
@@ -760,7 +782,7 @@ def whats_new_body(recent):
         state_n = r.get("state_obs_count")
         flag = ""
         if r.get("is_county_first") == 1:
-            flag = '<span class="badge badge-accent">County first</span>'
+            flag = '<span class="badge badge-accent" title="At or before cached earliest Tioga iNaturalist date; ties included">iNat county first</span>'
         elif state_n == state_n and state_n is not None and state_n <= 25:
             flag = f'<span class="badge badge-green">{int(state_n)} in NY</span>'
         photo = r.get("photo_url")
@@ -808,7 +830,7 @@ def showcase_body(show):
         <a href="{href}" target="_blank" rel="noopener" class="photo-card relative rounded-2xl overflow-hidden block" style="height:300px;">
           <div class="absolute inset-0 overflow-hidden">{img}</div>
           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"></div>
-          <div class="absolute top-3 left-3"><span class="badge badge-accent">County first</span></div>
+          <div class="absolute top-3 left-3"><span class="badge badge-accent" title="At or before cached earliest Tioga iNaturalist date; ties included">iNat county first</span></div>
           <div class="absolute bottom-0 inset-x-0 p-5">
             <div class="font-serif text-xl font-bold text-white leading-snug">{name}</div>
             <div class="text-white/70 text-sm italic">{sci}</div>
@@ -878,44 +900,54 @@ def life_list_body(life, dark=False):
     if rest:
         opts = "".join(f'<option value="{esc(g)}">{esc(g)} ({int(counts[g])})</option>'
                        for g in rest)
-        select = (f'<select id="ll-select" class="ll-select px-3 py-1.5 rounded-full '
+        select = (f'<select id="ll-select" aria-label="More taxon groups" class="ll-select px-3 py-1.5 rounded-full '
                   f'border border-stone-200 text-sm text-stone-600 bg-white">'
                   f'<option value="">More groups…</option>{opts}</select>')
     rows = []
     for _, r in life.iterrows():
         name = r["label"]
-        sci = esc(r.get("taxon_name") or "")
-        grp = esc(r.get("group") or "Other")
-        family = esc(r.get("family_name") or "")
+        sci = esc(sval(r.get("taxon_name")))
+        grp = esc(sval(r.get("group")) or "Other")
+        family = esc(sval(r.get("family_name")))
         link = taxon_link(r["taxon_id"], name, cls="ll-species-link")
+        history_known = bool(r.get("repeat_history_known", True))
+        source_url = sval(r.get("source_url"))
+        if isinstance(source_url, str) and source_url.startswith("https://"):
+            link = (f'<a class="ll-species-link" href="{esc(source_url)}" '
+                    f'target="_blank" rel="noopener">{esc(name)}</a>')
+        records = str(int(r['observations'])) if history_known else '—'
+        last_seen = fdate(r['last_seen']) if history_known else '—'
+        date_note = ('<span class="block text-xs text-stone-500">Life-list date · eBird</span>'
+                     if not history_known else '')
         rows.append(f"""
       <tr class="ll-row" data-family="{family}">
         <td class="ll-number">{int(r['list_number']):,}</td>
         <td class="ll-species-cell">{link}
             <span class="ll-scientific-name">{sci}</span></td>
         <td class="ll-group-cell">{grp}</td>
-        <td class="ll-records-cell">{int(r['observations'])}</td>
-        <td class="ll-added-cell">{fdate(r['first_seen'])}</td>
-        <td class="ll-last-seen-cell">{fdate(r['last_seen'])}</td>
+        <td class="ll-records-cell">{records}</td>
+        <td class="ll-added-cell">{fdate(r['first_seen'])}{date_note}</td>
+        <td class="ll-last-seen-cell">{last_seen}</td>
       </tr>""")
     return f"""
     <div class="max-w-4xl mx-auto">
       <div class="flex flex-col gap-4 mb-6 items-center">
-        <input id="ll-search" type="search" placeholder="Search species…"
+        <input id="ll-search" type="search" aria-label="Search species" placeholder="Search species…"
           class="w-full sm:w-80 px-4 py-2.5 rounded-full border border-stone-200 focus:border-hollow-400 focus:ring-2 focus:ring-hollow-100 outline-none text-sm">
         <div class="flex flex-wrap gap-2 justify-center items-center" role="group" aria-label="Filter by group">{''.join(btns)}{select}</div>
         <label class="sr-only" for="ll-taxon-select">Filter selected group by family</label>
-        <select id="ll-taxon-select" class="ll-select px-3 py-2 rounded-full border border-stone-200 text-sm text-stone-600 bg-white disabled:opacity-50" disabled>
+        <select id="ll-taxon-select" aria-label="Family within selected group" class="ll-select px-3 py-2 rounded-full border border-stone-200 text-sm text-stone-600 bg-white disabled:opacity-50" disabled>
           <option value="">Choose a taxon group first…</option>
         </select>
       </div>
       <div class="bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm max-h-[560px] overflow-y-auto">
         <table class="w-full text-[0.95rem]"><thead class="text-stone-400 text-xs uppercase tracking-wider border-b-2 border-stone-100">
           <tr><th class="text-right pb-2 pr-3 font-semibold">#</th><th class="text-left pb-2 font-semibold">Species</th><th class="text-left pb-2 font-semibold hidden md:table-cell">Group</th>
-          <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Added</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
+          <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Record date</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
       </div>
       <p id="ll-count" class="text-center {outer_text} text-sm mt-4">{total:,} species shown</p>
+      <p class="text-center {outer_text} text-sm mt-3">Bird dates come from the eBird life list; repeat detections and last-seen dates are unavailable here. Other dates mark the earliest and latest iNaturalist records in this survey. Names link to supporting records where available.</p>
     </div>"""
 
 
@@ -1003,6 +1035,110 @@ def moth_portrait_showcase(df, dark=False):
 
 
 # ── moth view ("After Dark") ─────────────────────────────────────────────────
+def _evidence_photo(row, dark=False):
+    """A licensed photograph with its observation date, attribution and ID status."""
+    name = esc(sval(row.get("common_name")) or sval(row.get("taxon_name")))
+    url = str(sval(row.get("url")))
+    if not url.startswith("https://"):
+        url = f"{OBS_URL}{int(row['id'])}"
+    name_tone = "text-white" if dark else "text-stone-900"
+    tone = "text-white/70" if dark else "text-stone-600"
+    grade = "Community-supported ID" if row.get("quality_grade") == "research" else "Identification needs review"
+    return (
+        f'<figure><a href="{esc(url)}" target="_blank" rel="noopener" class="block">'
+        f'<img src="{esc(row.get("photo_url"))}" alt="{name}" width="600" height="450" '
+        'class="w-full aspect-[4/3] object-cover rounded-xl" loading="lazy" decoding="async">'
+        f'<span class="block mt-3 font-semibold {name_tone}">{name} ↗</span></a>'
+        f'<figcaption class="mt-1 text-xs leading-relaxed {tone}">'
+        f'{fdate(row.get("observed_on"))} · {grade}<br>{esc(row.get("photo_attribution"))}'
+        '</figcaption></figure>'
+    )
+
+
+def seasonal_body(observations, odonate_ids, on=None):
+    season = natural_history.seasonal_context(on or datetime.now(ZoneInfo("America/New_York")).date())
+    months = []
+    for item in natural_history.SEASONS:
+        active = item['key'] == season['key']
+        style = 'border-hollow-500 bg-hollow-50' if active else 'border-stone-200'
+        current = ' · Current season' if active else ''
+        months.append(
+            f'<a href="{item["route"]}" class="block rounded-xl border p-5 {style}">'
+            f'<span class="block text-xs text-stone-600">{item["months"]}{current}</span>'
+            f'<h3 class="font-serif text-xl font-bold mt-1">{item["label"]}</h3>'
+            f'<p class="text-sm leading-relaxed text-stone-600 mt-2">{item["cue"]}</p></a>'
+        )
+    stories = []
+    for lens in natural_history.story_records(observations, odonate_ids):
+        stories.append(
+            '<article class="min-w-0">'
+            + _evidence_photo(lens['record'])
+            + f'<h3 class="font-serif text-2xl font-bold mt-5">{esc(lens["title"])}</h3>'
+            + f'<p class="text-stone-600 text-sm leading-relaxed mt-3">{esc(lens["body"])}</p>'
+            + f'<a class="block mt-4 text-hollow-700 underline underline-offset-4" href="{lens["route"]}">{lens["link"]} →</a>'
+            + f'<a class="block mt-3 text-xs text-stone-600 underline" href="{lens["source"]}" target="_blank" rel="noopener">{lens["source_label"]} ↗</a>'
+            + '</article>'
+        )
+    evidence = ('<div class="mt-12 pt-10 border-t border-stone-200">'
+                '<h3 class="font-serif text-2xl font-bold mb-3">Look closer through the year</h3>'
+                '<p class="text-stone-600 text-sm mb-7">Dated observations open these field questions. '
+                'They may come from a different season than the guide above.</p>'
+                '<div class="grid md:grid-cols-3 gap-8">' + ''.join(stories) + '</div></div>') if stories else ''
+    return (
+        '<div class="max-w-5xl mx-auto">'
+        f'<p class="text-hollow-700 font-semibold text-xs uppercase tracking-widest">Seasonal guide · {season["month"]} {season["year"]}</p>'
+        f'<h3 class="font-serif text-3xl md:text-4xl font-bold mt-3">{season["title"]}</h3>'
+        f'<p class="text-stone-600 text-lg leading-relaxed mt-4 max-w-3xl">{season["body"]}</p>'
+        '<p class="text-sm text-stone-600 mt-4">A guide to where to look; the dated records below show what has actually been documented.</p>'
+        '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">' + ''.join(months) + '</div>'
+        '<div class="flex flex-wrap gap-x-7 gap-y-3 mt-6 text-hollow-700 underline underline-offset-4">'
+        '<a href="/field/">Open the field guide →</a><a href="/log/">Read the field journal →</a></div>'
+        + evidence + '</div>'
+    )
+
+
+def habitats_body():
+    habitats = [
+        ('Michigan Creek', 'Follow the water through shade, riffles, and quiet edges. Compare seasonal visits and look for emergence evidence on banks and stems.', '/dragonflies/', 'Dragonflies and damselflies'),
+        ('Pond and wet margins', 'Return as water levels and vegetation change. Listen for frogs, watch the shoreline, and record the stage or behavior that you see.', '/herps/', 'Frogs and salamanders'),
+        ('Slope forest', 'The canopy, bark, fallen wood, and leaf litter offer different places to look. Visit again after rain and as leaves open or fall.', '/fungi/', 'Fungi and forest-floor records'),
+        ('Ridge and openings', 'Follow flowers, developing fruit, and changing leaves. Look for feeding signs as well as the insects moving between plants.', '/plants/', 'Plants and their seasonal clues'),
+    ]
+    return ('<div class="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">'
+            + ''.join(f'<article class="border-l-2 border-hollow-300 pl-6 py-2"><h3 class="font-serif text-2xl font-bold">{title}</h3><p class="text-stone-600 mt-3 leading-relaxed">{body}</p><a class="inline-block mt-4 text-hollow-700 underline underline-offset-4" href="{href}">{label} →</a></article>' for title, body, href, label in habitats)
+            + '</div><p class="text-center text-stone-600 text-sm mt-8">These are places to explore, not measured differences in species richness. Individual records need reliable locations before they can be assigned to a habitat.</p>')
+
+
+def fungi_view(df):
+    observations = df.to_dict('records')
+    inventory = natural_history.fungal_inventory(observations)
+    photos = [r['photo'] for r in inventory['taxa'] if r['photo']][:9]
+    intro = (f"{len(inventory['taxa'])} named fungal taxa are represented in the available records. "
+             "Fruiting bodies and lichens invite a slower look at bark, soil, leaves, and fallen wood. "
+             "The photographs document encounters; they do not measure how much fungus is present.")
+    gallery = ('<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">'
+               + ''.join(_evidence_photo(r, dark=True) for r in photos) + '</div>') if photos else '<p class="text-white/70 text-center">No fungal records with licensed photographs are available in this view yet.</p>'
+    rows = []
+    for row in inventory['taxa']:
+        record = row['record']
+        href = f"{OBS_URL}{int(record['id'])}"
+        status = 'Includes community-supported ID' if row['research_records'] else 'Identification needs review'
+        rows.append(f'<tr class="border-b border-white/10"><th scope="row" class="text-left py-3 pr-4 font-normal"><a class="underline underline-offset-4" href="{href}" target="_blank" rel="noopener">{esc(row["common_name"] or row["taxon_name"])}</a><span class="block text-white/70 text-xs italic">{esc(row["taxon_name"])}</span><span class="block md:hidden text-white/70 text-xs mt-1">{status}</span></th><td class="hidden sm:table-cell py-3 pr-4">{row["records"]}</td><td class="py-3 whitespace-nowrap">{fdate(row["last_seen"])}<span class="block sm:hidden text-white/70 text-xs">{row["records"]} record{"" if row["records"] == 1 else "s"}</span></td><td class="hidden md:table-cell py-3 pl-4 text-white/70 text-xs">{status}</td></tr>')
+    table = ('<div class="overflow-x-auto"><table class="w-full text-sm text-white"><caption class="text-left text-white/70 mb-4">Named fungal records; dates show observations, not fruiting limits.</caption><thead><tr class="text-left text-hollow-200"><th scope="col">Fungus</th><th scope="col" class="hidden sm:table-cell">Records</th><th scope="col">Last recorded</th><th scope="col" class="hidden md:table-cell pl-4">ID evidence</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table></div>') if rows else '<p class="text-white/70">No fungal records resolved to a named species or finer taxon are available yet.</p>'
+    counts = f'<p class="text-center text-white/70 mb-8">{inventory["records"]} observations · {inventory["unresolved_records"]} records still at broader identifications · latest record {fdate(inventory["as_of"]) if inventory["as_of"] else "not available"}</p>'
+    methods = (
+        '<div class="grid md:grid-cols-3 gap-7 text-white">'
+        '<article><h3 class="font-serif text-2xl font-bold">Record the substrate</h3><p class="text-white/70 mt-3 leading-relaxed">Photograph the fungus in place. Note living or dead wood, leaf litter, soil, rock, or bark. Identify the tree or plant only as far as the evidence allows.</p></article>'
+        '<article><h3 class="font-serif text-2xl font-bold">Show the useful details</h3><p class="text-white/70 mt-3 leading-relaxed">Include the whole fruiting body, underside, stem, base, and a scale where visible. Some groups need microscopy or specialist examination; keep broader identifications when a photograph cannot settle the name.</p></article>'
+        '<article><h3 class="font-serif text-2xl font-bold">Return through the seasons</h3><p class="text-white/70 mt-3 leading-relaxed">Revisit the same patch after rain and at other times of year. A day without visible fruiting bodies does not establish that the fungus is absent.</p></article>'
+        '</div><p class="mt-8 text-white/70 text-sm">Substrate and ecological roles have not been assigned automatically to these records. '
+        '<a href="https://sweetgum.nybg.org/science/collections/fungi/" class="underline" target="_blank" rel="noopener">Explore NYBG fungal reference collections ↗</a></p>'
+    )
+    return (section('fungi', 'A slower look', 'The <em class="text-hollow-300">Fungi</em>', counts + gallery, intro=intro, dark=True)
+            + section('fungi-records', 'The record', 'Recorded <em class="text-hollow-300">Fungi</em>', table, intro='Names are working identifications. Follow each record to see photographs and the identification discussion.', dark=True)
+            + section('fungi-methods', 'Through the year', 'What to <em class="text-hollow-300">Look For</em>', methods, dark=True))
+
+
 def _dark_stat(num, label, sub=""):
     sub_html = (f'<div class="text-white/35 text-[0.62rem] mt-1 max-w-[9.5rem] '
                 f'mx-auto leading-tight normal-case tracking-normal">{sub}</div>'
@@ -1018,45 +1154,15 @@ def _dark_divider():
 
 
 def property_profile_body(plant_count=0, moth_count=0):
-    """Three-column ecological explanation of why Michigan Creek drives moth diversity."""
-    plant_label = f"{plant_count:,} species · 30 acres" if plant_count else "Plant-rich · 30 acres"
-    plant_sentence = (
-        f"{plant_count:,} wild/established plants × ~1.8 predicted moths per plant species predicts "
-        f"~{round(plant_count * 1.8):,}. "
-        if plant_count else
-        "The recorded plant base predicts a large moth fauna because Eastern Lepidoptera are mostly host-plant specialists. "
-    )
-    col1 = (
-        '<div class="space-y-3">'
-        + _dark_stat("35–50% richer", "Creek Ecotone")
-        + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
-        'Arthropod richness at a stream-hardwood edge runs 35–50% above comparable upland sites. '
-        'The transition between water and forest stacks microhabitats and host-plant niches that '
-        'a uniform woodland can\'t provide.'
-        '</p></div>'
-    )
-    col2 = (
-        '<div class="space-y-3">'
-        + _dark_stat("50–100 m from bank", "Humidity Buffer")
-        + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
-        'Dry air below ~65°F suppresses moth flight — but creek-side humidity counters that within '
-        '50–100 m of the bank. Marginal nights that shut down upland sites often stay productive here.'
-        '</p></div>'
-    )
-    col3 = (
-        '<div class="space-y-3">'
-        + _dark_stat(plant_label, "Host Plants")
-        + '<p class="text-white/50 text-sm leading-relaxed mt-2">'
-        '2–3× the NY mixed-hardwood baseline. Eastern Lepidoptera are mostly host-plant specialists; '
-        f'{plant_sentence}'
-        f'Observed: {moth_count:,} — the creek concentrates the high-value host genera, which pushes the count above the prediction.'
-        '</p></div>'
-    )
-    return (
-        '<div class="grid md:grid-cols-3 gap-8 text-center max-w-4xl mx-auto">'
-        + col1 + col2 + col3
-        + '</div>'
-    )
+    """Offer testable habitat questions without invented richness multipliers."""
+    cards = [
+        ("Follow the creek", "Compare the shaded water edge with the slope on the same night. Matched light, duration, and weather records can test how the two places differ."),
+        ("Return in another season", "Spring, summer, and cool-season visits reveal different records. Dates without observations remain gaps in documentation, not evidence of absence."),
+        ("Look at the plants", "Search leaves, stems, and feeding signs as well as the lights. A moth near a plant is a lead; photograph direct feeding or diagnostic signs before claiming local host use."),
+    ]
+    return '<div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-12">' + ''.join(
+        f'<article><h3 class="font-serif text-2xl text-hollow-300">{title}</h3><p class="mt-3 text-white/70 text-sm leading-relaxed">{body}</p></article>'
+        for title, body in cards) + '</div>'
 
 
 def moth_stats(msum, comp):
@@ -1067,8 +1173,8 @@ def moth_stats(msum, comp):
         ci = (f"Chao2 estimate; 95% CI {comp['low']}–{comp['high']}"
               if comp.get("high", 0) > comp.get("low", 0) else "Chao2 estimate")
         tiles.append(_dark_stat(f"{comp['pct_complete']}%", "Est. complete",
-                                f"of the ~{comp['estimated']:,} species estimated on this site (Chao2)"))
-        tiles.append(_dark_stat(f"~{comp['estimated']:,}", "Likely total", ci))
+                                f"of the ~{comp['estimated']:,} taxa estimated for this sample (Chao2)"))
+        tiles.append(_dark_stat(f"~{comp['estimated']:,}", "Sample estimate", ci))
     if msum.get("top_month"):
         tiles.append(_dark_stat(esc(msum["top_month"]), "Peak month"))
     return ('<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12">'
@@ -1131,6 +1237,11 @@ def _taxa_card(r, placeholder, gmax):
         establishment_html = ""
     photo_url = r.get("photo_url") or ""
     inat_url = f"https://www.inaturalist.org/taxa/{taxon_id}" if taxon_id else "#"
+    evidence_note = natural_history.text(r.get("evidence_note"))
+    evidence_url = natural_history.text(r.get("evidence_url"))
+    if evidence_url.startswith("https://"):
+        inat_url = evidence_url
+    evidence_html = f'<p class="mt-2 text-xs leading-5 text-white/70">{esc(evidence_note)}</p>' if evidence_note else ''
     if photo_url:
         photo_html = (
             f'<img src="{esc(photo_url)}" alt="{esc(common)}" loading="lazy" '
@@ -1149,7 +1260,7 @@ def _taxa_card(r, placeholder, gmax):
         f'  <div class="p-2.5">'
         f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
         f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
-        f'    {establishment_html}'
+        f'    {establishment_html}{evidence_html}'
         f'    <div class="mt-2 flex items-center justify-between gap-1">'
         f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
         f'        <div class="h-1 rounded-full" style="width:{bar_pct}%;background:#8ec8b1"></div>'
@@ -1202,25 +1313,15 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
 
 
 def moth_gap_body(gap):
-    """Regional moths not yet found here — photo grid ranked by nearby frequency."""
+    """Regional reporting candidates, not a local completeness estimate."""
     if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No gap data yet.</p>'
-    radius = gap.get("region_radius_km", 80)
-    miles = round(radius / 1.609)
-    region_total = gap.get("region_total", 0)
-    county_line = ""
-    if gap.get("county_total"):
-        county_line = (f' That already represents <strong class="text-hollow-300">{gap["county_pct"]}%</strong>'
-                       f' of the {gap["county_total"]} moths ever recorded across all of Tioga County — a county'
-                       f' sparsely enough documented that the ~{miles}-mile regional pool is the truer completeness yardstick.')
-    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">Kingfisher Hollow has recorded '
-            f'<strong class="text-hollow-300">{gap["have"]}</strong> of the '
-            f'<strong class="text-hollow-300">{region_total}</strong> moth species documented within '
-            f'~{miles} miles — <strong class="text-hollow-300">{gap["pct"]}%</strong> of the regional '
-            f'pool.{county_line} The <strong class="text-hollow-300">{gap["missing_count"]}</strong> '
-            f'species below have all been seen by someone nearby. They\'re not rare. They\'re not '
-            f'hypothetical. They need the right night, the right trap position, or the right observer '
-            f'paying attention.</p>')
+        return '<p class="text-center text-white/70">No regional candidates available for this view.</p>'
+    miles = round(gap.get("region_radius_km", 80) / 1.609)
+    lead = (f'<p class="text-center text-white/70 max-w-2xl mx-auto mb-8">'
+            f'{gap["have"]} of {gap["region_total"]} moth species documented within about {miles} miles '
+            f'have records here. The {len(gap["missing"])} candidates below are ranked by regional reporting. '
+            'That wider area includes habitats and survey methods not represented on the property; '
+            'regional overlap is not an estimate of local completeness or abundance.</p>')
     return lead + _gap_photo_grid(gap["missing"])
 
 
@@ -1239,12 +1340,23 @@ def mammal_gap_body(gap):
     return lead + _gap_photo_grid(gap["missing"], placeholder="🦌")
 
 
-def amphibian_found_body(found):
+def amphibian_found_body(found, observations=None):
     """Amphibians recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
         return ('<p class="text-center text-white/50 py-8">Amphibian roster not '
                 'synced yet.</p>')
-    return _gap_photo_grid(found, placeholder="🐸", group_by="family_name")
+    if observations is None:
+        return _gap_photo_grid(found, placeholder="🐸", group_by="family_name")
+    evidence = natural_history.record_evidence(observations, found["taxon_id"])
+    annotated = found.copy()
+    annotated["evidence_note"] = annotated["taxon_id"].map(
+        lambda tid: (f'{evidence[tid]["records"]} local records · {evidence[tid]["photo_records"]} with photos · '
+                     f'{evidence[tid]["research_records"]} research grade') if tid in evidence else 'Local evidence unavailable')
+    annotated["evidence_url"] = annotated["taxon_id"].map(lambda tid: evidence.get(tid, {}).get("url"))
+    return ('<p class="text-white/70 text-sm mb-6">Card images are species reference photos and may come from elsewhere. '
+            'The evidence counts refer to local wild observations; a photo supports review but does not guarantee an identification. '
+            'Records without supporting evidence remain documentation leads. Sounds and field notes can support a record even when no photo is present; check the source observation.</p>'
+            + _gap_photo_grid(annotated, placeholder="🐸", group_by="family_name"))
 
 
 def amphibian_gap_body(gap):
@@ -1309,17 +1421,19 @@ def odonate_gap_body(gap):
 
 def bird_source_body(summary):
     species = summary.get("species", 0)
+    if not species:
+        return '<p class="text-white/70 text-center">The local eBird life-list export has no countable rows available. The property bird total is unavailable in this view.</p>'
     latest = fdate(summary.get("latest"))
     earliest = fdate(summary.get("earliest"))
+    date_note = f"Listed dates span {esc(earliest)} to {esc(latest)}." if earliest and latest else "Listed dates are unavailable in this export."
     return (
         '<div class="max-w-3xl mx-auto bg-white/[0.04] border border-white/10 rounded-2xl p-6 md:p-8">'
         '<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5">'
         '<div>'
         '<div class="text-hollow-300 text-xs font-semibold tracking-[0.18em] uppercase mb-2">eBird source</div>'
         f'<p class="text-white/70 leading-relaxed">This page follows the eBird location life list for '
-        f'<strong class="text-hollow-300">Kingfisher Hollow</strong>. The current location list has '
-        f'<strong class="text-hollow-300">{species}</strong> countable bird species, with listed dates from '
-        f'{esc(earliest)} to {esc(latest)}.</p>'
+        f'<strong class="text-hollow-300">Kingfisher Hollow</strong>. This export contains '
+        f'<strong class="text-hollow-300">{species}</strong> countable bird species. {date_note}</p>'
         '</div>'
         f'<a href="{EBIRD_BARCHART_URL}" target="_blank" rel="noopener" '
         'class="inline-flex items-center justify-center rounded-full bg-hollow-300 text-hollow-950 '
@@ -1378,7 +1492,7 @@ def bird_life_list_body(birds):
 def bird_gap_body(gap):
     links = [
         ("Kingfisher Hollow location", EBIRD_BARCHART_URL,
-         "The property list. Use this as the confirmed bird roster for the site."),
+         "The source location list and its current observations."),
         ("Tioga County", EBIRD_TIOGA_BARCHART_URL,
          "The relevant county comparison for likely local misses and seasonal targets."),
         ("Tompkins County", EBIRD_TOMPKINS_BARCHART_URL,
@@ -1403,6 +1517,8 @@ def bird_gap_body(gap):
             'regional context for Kingfisher Hollow, Tioga County, and nearby Tompkins County.</p>'
             + link_grid + '</div>'
         )
+    if gap.get("missing_property"):
+        return '<p class="text-center text-white/70">The local eBird life-list export is unavailable, so local gap candidates cannot be selected. Explore the source lists below.</p>' + link_grid
     missing = gap.get("missing")
     if missing is None or missing.empty:
         return (
@@ -1661,30 +1777,33 @@ def reptile_gap_body(gap):
 
 
 def plant_gap_body(gap):
-    """Regional plants not yet documented — photo grid."""
+    """Keep field identification and microscopy candidates distinct."""
     if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No gap data yet.</p>'
+        return '<p class="text-center text-white/70">No regional candidates available for this view.</p>'
     miles = round(gap.get("region_radius_km", 80) / 1.609)
-    lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
-            f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
-            f'<strong class="text-hollow-300">{gap["region_total"]}</strong> plant species documented within '
-            f'~{miles} miles have been recorded here. '
-            f'This list uses iNaturalist wild records only, excluding observations marked cultivated and taxa listed as introduced in New York. '
-            f'The ~{miles}-mile regional pool includes many habitat types the property doesn\'t have, '
-            f'so the raw completeness figure understates how thoroughly the property flora is known. '
-            f'The <strong class="text-hollow-300">{len(gap["missing"])}</strong> species below '
-            f'are ranked by how often they turn up in county records this month — all plausible finds '
-            f'on a careful walk.</p>')
-    return lead + _gap_photo_grid(gap["missing"], placeholder="🌿")
+    lead = (f'<p class="text-center text-white/70 max-w-2xl mx-auto mb-8">'
+            f'{gap["have"]} of {gap["region_total"]} eligible regional plant taxa have records here. '
+            f'The roughly {miles}-mile pool excludes known introduced taxa and cultivated records. '
+            'It spans many habitats and methods, so its overlap with this property is not a completeness estimate. '
+            f'{gap["missing_count"]} candidates remain before display limits.</p>')
+    field = gap["missing"]
+    body = '<h3 class="font-serif text-2xl text-hollow-300 mb-4">Field identification</h3>'
+    body += '<p class="text-white/70 mb-6">Check habitat and seasonal identification features before choosing a target.</p>'
+    body += _gap_photo_grid(field, placeholder="🌿") if not field.empty else '<p class="text-white/70">No field candidates in this seasonal view.</p>'
+    microscopic = gap.get("microscopic")
+    if microscopic is not None and not microscopic.empty:
+        body += '<h3 class="font-serif text-2xl text-hollow-300 mt-12 mb-4">A closer look: microscopy</h3><p class="text-white/70 mb-6">These algae are best identified with appropriate samples, microscopy, and specialist review. They are separate from walking targets.</p>'
+        body += _gap_photo_grid(microscopic, placeholder="🔬")
+    return lead + body
 
 
 def moth_diversity_body(div):
     simp_pct = round(float(div["simpson"]) * 100, 1)
     tiles = [
-        _dark_stat(div["shannon"], "Shannon H′", f"equivalent to {round(2**float(div['shannon']), 0):.0f} equally common species"),
+        _dark_stat(div["shannon"], "Shannon H′", f"diversity of the submitted record frequencies"),
         _dark_stat(div["simpson"], "Simpson",
                    f"two random records are different species {simp_pct}% of the time"),
-        _dark_stat(div["evenness"], "Evenness", "near 1.0 — the community is unusually well-balanced, no species dominates"),
+        _dark_stat(div["evenness"], "Evenness", "distribution of submitted records among taxa; not individual abundance"),
     ]
     return ('<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-10">'
             + _dark_divider().join(tiles) + "</div>")
@@ -1712,6 +1831,7 @@ def taxa_page_species_totals(df, birds=None, moths=None):
         "birds": int(analyze.bird_summary(birds)["species"]),
         "mammals": species(analyze.mammal_summary, mammals),
         "plants": species(analyze.plant_summary, plants),
+        "fungi": len(natural_history.fungal_inventory(df.to_dict("records"))["taxa"]),
         "amphibians": (
             species(analyze.amphibian_summary, amphibians)
             + species(analyze.reptile_summary, reptiles)
@@ -1751,6 +1871,7 @@ def taxa_page_recent_species(df, birds=None, moths=None, as_of=None):
             "birds": None,
             "mammals": None,
             "plants": None,
+            "fungi": None,
             "amphibians": None,
         }
     window_start = as_of_date - timedelta(days=29)
@@ -1842,11 +1963,14 @@ def taxa_page_recent_species(df, birds=None, moths=None, as_of=None):
         "birds": None,
         "mammals": first_seen(mammals),
         "plants": first_seen(plants),
+        "fungi": sum(window_start <= date.fromisoformat(row["first_seen"]) <= as_of_date
+                     for row in natural_history.fungal_inventory(df.to_dict("records"))["taxa"]
+                     if row["first_seen"]),
         "amphibians": herp_recent,
     }
 
 
-def log_taxa_stats_panel(totals, recent=None):
+def log_taxa_stats_panel(totals, recent=None, as_of=None):
     """Render one linked panel of taxon totals and recent discoveries."""
     taxa_pages = [
         (mode, config)
@@ -1911,6 +2035,9 @@ def log_taxa_stats_panel(totals, recent=None):
             caption += ' <span aria-hidden="true">·</span> added in last 30 days'
         else:
             caption += ' <span aria-hidden="true">·</span> 30-day data unavailable'
+    if as_of and recent is not None:
+        local_end = as_of.astimezone(_EASTERN) if isinstance(as_of, datetime) and as_of.tzinfo is not None else as_of
+        caption += f' <span class="block">Window ends {esc(fdate(local_end))}</span>'
     return (
         '<nav class="mx-auto mb-8 max-w-3xl rounded-2xl border border-stone-200 '
         'bg-white p-1 shadow-sm" aria-label="Species totals by survey group">'
@@ -1928,7 +2055,6 @@ def id_changes_body(changes):
     if not changes:
         return '<p class="text-stone-400 text-sm text-center py-4">No recent identification changes.</p>'
 
-    taxon_url = "https://www.inaturalist.org/taxa/"
     rows = []
     for c in changes:
         date_str = c["obs_date"]
@@ -1937,15 +2063,15 @@ def id_changes_body(changes):
         prev_name = c["prev_taxon_common"] or c["prev_taxon_name"] or "—"
         new_name = c["new_taxon_common"] or c["new_taxon_name"] or "—"
 
-        prev_html = (
-            f'<a href="{taxon_url}{c["prev_taxon_id"]}" target="_blank" rel="noopener" '
-            f'class="text-stone-600 italic">{esc(prev_name)}</a>'
-            if c["prev_taxon_id"] else f'<span class="text-stone-500 italic">{esc(prev_name)}</span>'
-        )
-        new_html = (
-            f'<a href="{taxon_url}{c["new_taxon_id"]}" target="_blank" rel="noopener" '
-            f'class="font-medium text-stone-800 italic">{esc(new_name)}</a>'
-            if c["new_taxon_id"] else f'<span class="font-medium text-stone-800 italic">{esc(new_name)}</span>'
+        change_link = (
+            f'<a href="{esc(c["obs_url"])}" target="_blank" rel="noopener" '
+            'class="block rounded hover:underline focus-visible:outline-none '
+            'focus-visible:ring-2 focus-visible:ring-hollow-500" '
+            'title="View observation on iNaturalist">'
+            f'<span class="text-stone-600 italic">{esc(prev_name)}</span> → '
+            f'<span class="font-medium text-stone-800 italic">{esc(new_name)}</span> '
+            '<span class="text-stone-400 text-xs ml-1" aria-hidden="true">↗</span>'
+            '</a>'
         )
 
         if c["category"] == "improving":
@@ -1959,11 +2085,6 @@ def id_changes_body(changes):
             f'class="text-stone-500 hover:text-stone-700">{esc(c["identifier_login"])}</a>'
         )
 
-        obs_link = (
-            f'<a href="{c["obs_url"]}" target="_blank" rel="noopener" '
-            f'class="text-stone-400 hover:text-hollow-600 text-xs ml-1" title="View observation">↗</a>'
-        )
-
         rows.append(
             f'<div class="flex items-start gap-3 py-2.5 border-b border-stone-100 last:border-0">'
             f'  <div class="w-20 shrink-0 text-xs text-stone-400 pt-0.5">'
@@ -1971,7 +2092,7 @@ def id_changes_body(changes):
             f'    <div class="text-stone-300">obs {esc(date_str)}</div>'
             f'  </div>'
             f'  <div class="flex-1 min-w-0 text-sm">'
-            f'    {prev_html} → {new_html} {obs_link}'
+            f'    {change_link}'
             f'  </div>'
             f'  <div class="flex items-center gap-2 shrink-0">'
             f'    {badge}'
@@ -2094,6 +2215,11 @@ def log_update_control(updated_at):
             f'<time datetime="{iso}" '
             'class="whitespace-nowrap font-medium text-stone-600 tabular-nums">'
             f'{readable}</time>'
+        )
+    if REVIEW_PREVIEW:
+        return (
+            '<div class="text-center text-xs text-stone-600">'
+            f'Cached iNaturalist refresh · {timestamp_html}</div>'
         )
     return (
         '<div class="self-center flex min-h-11 flex-wrap items-center justify-center gap-2 text-xs">'
@@ -2300,8 +2426,7 @@ def head(s, county_firsts, moth_species=None, mode="all", legacy_routes=None):
     moth_phrase = f"{moth_species:,} moth species, " if moth_species else ""
     overview_desc = (f"Biodiversity survey of Kingfisher Hollow — {s['species']:,} species on 30 riparian acres along Michigan Creek, "
                      "Tioga County, NY. Stream-edge habitat at the Appalachian / northern hardwood / mid-Atlantic junction: "
-                     f"{county_firsts:,} county-first records, {moth_phrase}plant diversity 2–3× the NY upland baseline. "
-                     "Data updated nightly.")
+                     f"{moth_phrase}seasonal field notes, photographs, and linked observation records.")
     desc = overview_desc if mode == "all" else config["description"]
     title = ("Kingfisher Hollow · Biodiversity Survey"
              if mode == "all"
@@ -2311,6 +2436,11 @@ def head(s, county_firsts, moth_species=None, mode="all", legacy_routes=None):
                     "window.__plotlyRender=(...args)=>{window.__plotlyQueue.push(args);window.dispatchEvent(new CustomEvent('kh-plotly-payload',{detail:args}));};\n"
                     "</script>" if config["plotly"] else "")
     legacy_redirect = legacy_hash_redirect_script(legacy_routes) if mode == "all" else ""
+    preview_notice = (
+        '<p class="bg-hollow-950 px-4 py-2 text-center text-sm text-white">'
+        'Review preview · Cached iNaturalist records and eBird life-list export</p>'
+        if REVIEW_PREVIEW else ""
+    )
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{title}</title>
@@ -2331,7 +2461,7 @@ def head(s, county_firsts, moth_species=None, mode="all", legacy_routes=None):
 {legacy_redirect}
 {plotly_queue}
 </head>
-<body class="font-sans text-stone-800 antialiased" data-mode="{mode}">"""
+<body class="font-sans text-stone-800 antialiased" data-mode="{mode}">{preview_notice}"""
 
 
 def nav(active_mode="all"):
@@ -2374,19 +2504,19 @@ def nav(active_mode="all"):
     return f"""
 <a id="skip-link" href="{skip_link}" class="sr-only focus:not-sr-only focus:fixed focus:z-[70] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-2 focus:rounded-lg focus:ring-2 focus:ring-hollow-500">Skip to survey content</a>
 <nav id="navbar" aria-label="Survey navigation" class="nav-transparent fixed top-0 inset-x-0 z-50 transition-all duration-300">
-  <div class="nav-primary max-w-6xl mx-auto px-5 sm:px-6 py-3 flex items-center justify-between gap-4">
+  <div class="nav-primary max-w-7xl mx-auto px-5 sm:px-6 py-3 flex items-center justify-between gap-4">
     <a href="/" class="survey-brand flex items-center gap-2.5 shrink-0" aria-label="Kingfisher Hollow biodiversity survey home">{LOGO}
       <span id="nav-brand" class="font-serif text-white text-lg sm:text-xl font-semibold tracking-wide transition-colors">Kingfisher Hollow</span>
       <span class="brand-divider hidden sm:block" aria-hidden="true"></span>
       <span class="brand-context hidden sm:block">Survey</span></a>
-    <div class="hidden xl:flex items-center gap-4 min-w-0">
+    <div class="hidden 2xl:flex items-center gap-4 min-w-0">
       <div class="mode-toggle flex items-center rounded-2xl p-0.5 gap-0.5 bg-white/10 border border-white/15" role="group" aria-label="Explore survey views">
         {mode_links("wide")}
       </div>
-      <a href="{SITE}" class="main-site-link text-white/60 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
+      <a href="{SITE}" class="main-site-link text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
     </div>
-    <div class="xl:hidden flex items-center gap-2">
-      <a href="{SITE}" class="main-site-link hidden sm:inline text-white/60 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
+    <div class="2xl:hidden flex items-center gap-2">
+      <a href="{SITE}" class="main-site-link hidden sm:inline text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
       <button id="survey-menu-button" type="button" class="survey-menu-button" aria-label="Open survey index" aria-expanded="false" aria-controls="survey-menu">
         <span class="hidden sm:inline">Explore</span>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path class="menu-open-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/><path class="menu-close-icon hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/></svg>
@@ -2401,7 +2531,7 @@ def nav(active_mode="all"):
       </div>
     </div>
   </div>
-  <div id="survey-menu" class="survey-menu hidden xl:hidden" aria-hidden="true">
+  <div id="survey-menu" class="survey-menu hidden 2xl:hidden" aria-hidden="true">
     <div class="max-w-4xl mx-auto px-6 py-6">
       <p class="survey-menu-label">Explore the survey</p>
       <div class="mode-toggle survey-view-grid mt-3" role="group" aria-label="Explore survey views">
@@ -2494,32 +2624,35 @@ def data_updated_date():
     return _fmt_dt(updated_at) if updated_at else "—"
 
 
-def footer(code_updated, content_updated, data_updated):
+def footer(code_updated, content_updated, data_updated, bird_date=None):
     def ts(label, value):
         return (f'<span class="flex flex-col items-center gap-0.5">'
-                f'<span class="text-white/25 text-[0.6rem] uppercase tracking-[0.15em]">{label}</span>'
+                f'<span class="text-white/65 text-[0.6rem] uppercase tracking-[0.15em]">{label}</span>'
                 f'<strong class="text-white/60 font-medium">{value}</strong>'
                 f'</span>')
+    bird_note = f"eBird life-list dates through {esc(bird_date)}; export refresh date unavailable." if bird_date else "eBird uses a separate life-list export; its refresh date is unavailable."
     return f"""
 <footer class="bg-hollow-950 py-12 px-6">
   <div class="max-w-6xl mx-auto">
     <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 pb-8 border-b border-white/10">
       <div class="flex items-center gap-3">{LOGO}
         <div><div class="font-serif text-white text-lg font-semibold">Kingfisher Hollow</div>
-        <div class="text-white/30 text-xs">Biodiversity Survey</div></div></div>
-      <nav class="flex flex-wrap justify-center gap-x-7 gap-y-2 text-white/45 text-sm">
+        <div class="text-white/65 text-xs">Biodiversity Survey</div></div></div>
+      <nav class="flex flex-wrap justify-center gap-x-7 gap-y-2 text-white/70 text-sm">
         <a href="{SITE}" class="hover:text-white/75 transition-colors">Main site</a>
+        <a href="/field/" class="hover:text-white transition-colors">Field Targets</a>
+        <a href="https://moth-stations.kingfisher-hollow.com/stations/kingfisher" class="hover:text-white transition-colors">Moth station</a>
         <a href="{PROJECT_URL}" target="_blank" rel="noopener" class="hover:text-white/75 transition-colors">iNaturalist project ↗</a>
       </nav>
     </div>
     <div class="flex flex-wrap items-start justify-center gap-x-8 gap-y-3 text-xs tracking-wide mb-4">
-      {ts("Data synced", data_updated)}
+      {ts("iNaturalist property refreshed", data_updated)}
       <span class="hidden sm:inline text-white/15 self-center">·</span>
       {ts("Content updated", content_updated)}
       <span class="hidden sm:inline text-white/15 self-center">·</span>
       {ts("Code updated", code_updated)}
     </div>
-    <p class="text-center text-white/25 text-xs tracking-wide">Data from iNaturalist · Photos © their respective observers · Survey ongoing June 2025–2026</p>
+    <p class="text-center text-white/65 text-xs leading-6">{bird_note}<br>Working identifications include species and finer taxa. Photos © their respective observers.</p>
   </div>
 </footer>"""
 
@@ -2718,7 +2851,7 @@ _SCRIPT_SHELL = """
       setSurveyMenu(false,true);
     }
   });
-  const wideNav=window.matchMedia('(min-width: 1280px)');
+  const wideNav=window.matchMedia('(min-width: 1536px)');
   wideNav.addEventListener?.('change',event=>{if(event.matches)setSurveyMenu(false,false);});
   document.querySelectorAll('#survey-menu a').forEach(link=>link.addEventListener('click',()=>{
     const internal=link.getAttribute('href')?.startsWith('#');
@@ -2804,7 +2937,7 @@ def scripts(mode):
             .replace("__PLOTLY_SCRIPT__",
                      PLOTLY_SCRIPT if VIEW_CONFIG[mode]["plotly"] else "")
             .replace("__LOG_UPDATE_SCRIPT__",
-                     LOG_UPDATE_SCRIPT if mode == "log" else "")
+                     LOG_UPDATE_SCRIPT if mode == "log" and not REVIEW_PREVIEW else "")
             .replace("__PLOTLY_CDN__", PLOTLY_CDN))
 
 
@@ -2835,21 +2968,24 @@ def _legacy_hash_routes(view_markup):
 
 
 def _write_survey_pages(view_markup, public_summary, county_firsts, moth_species,
-                        code_updated, content_updated, data_updated):
+                        code_updated, content_updated, data_updated, bird_date=None):
     """Write one static document per configured route and return their digests."""
     digests = {}
     legacy_routes = _legacy_hash_routes(view_markup)
     for mode in VIEW_CONFIG:
         out = _view_output_path(mode)
         out.parent.mkdir(parents=True, exist_ok=True)
+        fragment = _view_fragment(view_markup, mode)
+        if mode != "all":
+            fragment = re.sub(r'<h2([^>]*)>(.*?)</h2>', r'<h1\1>\2</h1>', fragment, count=1, flags=re.S)
         html = "".join((
             head(public_summary, county_firsts, moth_species, mode=mode,
                  legacy_routes=legacy_routes),
             nav(mode),
             '<main id="survey-content">',
-            _view_fragment(view_markup, mode),
+            fragment,
             '</main>',
-            footer(code_updated, content_updated, data_updated),
+            footer(code_updated, content_updated, data_updated, bird_date),
             scripts(mode),
         ))
         out.write_text(html, encoding="utf-8")
@@ -2894,22 +3030,13 @@ def moth_view(df, stats):
         moth_stats(msum, comp)
         + property_profile_body(plant_count, msum["species"])
         + takeaway(
-            "The late-August additions sharpen the host-search map. A provisional Polymorphic Pondweed "
-            "Moth identification and a research-grade Spotted Peppergrass Moth record make pondweeds and "
-            "peppergrass useful inspection targets; provisional Oak Skeletonizer, Beech Midget, oak-feeding <em>Stigmella</em>, "
-            "and Thistle Stem Borer identifications point toward oak leaves, beech leaves, and thistle stems. "
-            "These adult records are survey leads, not proof of larvae, breeding, or host use here. Search "
-            "for mines, skeletonizing, rolls, borings, frass, or feeding sign, and photograph the evidence "
-            "with the identified plant.",
+            "Follow the year with more than one method: spring and autumn visits, summer nights at the lights, "
+            "and daytime searches for feeding signs on identified plants. A nearby adult suggests a place to look; "
+            "it does not establish local larval host use. Keep the plant and insect evidence together.",
             dark=True),
-        intro=f"{msum['species']:,} moth species are confirmed on 30 riparian acres, including "
-              f"{moth_county_firsts:,} first iNaturalist records for Tioga County. That county-first "
-              "total strengthens a thin public baseline; it does not make every species rare. The "
-              "clearest property signal is a broad fauna spanning humid creek margins, wetland edge, "
-              "northern-hardwood slope, and oak-hickory upland. With "
-              f"{plant_count:,} wild or established plant species recorded, the most informative next "
-              "gains should come from sugar bait, canopy lighting, cold-season surveys, dusk walks, "
-              "and host-focused searches.",
+        intro=f"{msum['species']:,} moth taxa are recorded across the seasons. The creek, pond margins, woodland, "
+              "and upland edge offer different places to return to. The inventory includes working identifications; "
+              "seasonal charts describe submitted records across life stages.",
         dark=True))
     out.append(section(
         "moth-gallery", "In Pictures",
@@ -2926,15 +3053,11 @@ def moth_view(df, stats):
         'The <em class="text-hollow-300">Gap List</em>',
         moth_gap_body(gap)
         + takeaway(
-            f"Filtered to species with county records in {_months_label} — the flight window covering the next two weeks. "
-            "Tioga County's moth records are thin, and many nearby records come from well-worked Tompkins County, "
-            "so this list draws from the ~50-mile regional pool with that bias in mind. Species at the top are "
-            "seen repeatedly nearby in these same weeks; their absence here is usually a survey-method gap, not "
-            "evidence that the property lacks the habitat. Current host-plant clues keep pointing at grape, "
-            "dogwood, willow, oak, hickory, basswood, jewelweed, and wetland composites. "
-            "Catocala underwings come poorly to UV but readily to sugar bait on warm August nights. "
-            "Different gaps need different methods.", dark=True),
-        intro=f"Moth species recorded within ~50 miles but not yet found on the property, ranked by how often they appear in {_months_label} county records. Tompkins County effort inflates some regional frequencies, especially for micros, so treat this as a practical field queue.",
+            f"Ranked using county records in {_months_label}, the calendar months overlapping the next two weeks. "
+            "These are whole-month reporting signals, not precise flight forecasts. Check the species, habitat, "
+            "life stage, and current conditions before planning a search. A regional record does not show that "
+            "a species occurs on the property.", dark=True),
+        intro=f"Moth species in the roughly 50-mile regional pool without property records, ranked using {_months_label} Tioga County record counts. Uneven reporting affects these rankings; use them as search leads.",
         dark=True))
     out.append(section(
         "moth-families", "By Family",
@@ -2964,7 +3087,7 @@ def moth_view(df, stats):
         + _dark_divider().join([
             _dark_stat(f"{comp['q1']}", "On one night only"),
             _dark_stat(f"{comp['q2']}", "On just two nights"),
-            _dark_stat(f"{comp['nights']}", "Survey nights"),
+            _dark_stat(f"{comp['nights']}", "Dates with moth records"),
         ]) + '</div>')
     inventory_status_body = (
         '<div class="mb-8 text-center">'
@@ -2976,17 +3099,13 @@ def moth_view(df, stats):
         + once_band
         + chart_card(
             viz.completeness_curve(eff, comp),
-            note=f"Chao2 uses the ratio of species seen on exactly one night (Q1) vs. exactly two nights (Q2) across {comp['nights']} survey sessions to project undetected species. Shaded band: 95% CI. The curve hasn't flattened yet.",
+            note=f"Chao2 uses species recorded on one inferred night (Q1) or two (Q2), across {comp['nights']} dates with moth records. Timestamps before noon belong to the previous night. Shaded band: model 95% CI; survey effort and identification uncertainty are additional limitations.",
             dark=True)
         + takeaway(
-            f"Of the <strong>{comp['observed']}</strong> moth species confirmed here, "
-            f"<strong>{comp['q1']}</strong> have appeared on exactly one night. That high single-night "
-            f"count keeps the accumulation curve rising and yields a Chao2 estimate near "
-            f"<strong>{comp['estimated']}</strong> species (95% CI: {comp['low']}–{comp['high']}), or "
-            f"about <strong>{comp['pct_complete']}%</strong> observed. Treat that as a sampling-based "
-            f"estimate, not a fixed property ceiling. The roughly {comp['remaining']} undetected "
-            "species are most likely concentrated in cold seasons, bait-feeders, canopy species, and "
-            "host-linked micros poorly sampled by a ground-level UV sheet.", dark=True)
+            f"Of {comp['observed']} recorded taxa, {comp['q1']} occur on exactly one inferred night. "
+            f"The model estimates about {comp['estimated']} taxa for this mix of recorded detections, "
+            f"with {comp['pct_complete']}% observed. Changing methods, seasons, identification confidence, "
+            "or effort can change the estimate. It is not a fixed property total or a guide to which taxa remain.", dark=True)
         + anchor_alias("moth-diversity")
         + '<div class="mt-16 border-t border-white/10 pt-14">'
           '<div class="mx-auto mb-9 max-w-3xl text-center">'
@@ -3001,11 +3120,11 @@ def moth_view(df, stats):
         + moth_diversity_body(div)
         + chart_card(
             viz.rank_abundance(div.get("rank_abundance", [])),
-            note="Species ranked by total records, log scale. A steep initial drop followed by a long flat tail indicates high evenness — no species dominates. Terracotta: species recorded only once or twice.",
+            note="Taxa ranked by submitted records, log scale. Record frequency is not a count of individual moths. Terracotta: taxa recorded only once or twice.",
             dark=True)
         + takeaway(
             f"Across {msum['species']:,} documented moth species, the gentle slope shows that no single "
-            "species dominates this photo-vouchered sample. That is consistent with a broad habitat "
+            "species dominates this record-frequency sample. That can reflect a broad habitat "
             f"mosaic and {plant_count:,} recorded wild or established plants, but the curve also "
             "reflects survey method and the long tail of one- and two-record species; it is not by "
             "itself a habitat-quality test. Repeat records and stronger evidence for that tail will "
@@ -3016,7 +3135,7 @@ def moth_view(df, stats):
         "moth-completeness", "Inventory Status",
         'Inventory <em class="text-hollow-300">Status</em>',
         inventory_status_body,
-        intro=f"{comp['observed']:,} species are confirmed, while a sampling model estimates about {comp['estimated']:,}. Coverage and evenness describe the documented sample from different angles; neither is a complete habitat-quality test.",
+        intro=f"{comp['observed']:,} recorded taxa and a sampling estimate near {comp['estimated']:,}. These describe the documented sample under its mix of dates and methods.",
         dark=True))
 
     # Combined calendar section: Month by Month + On the Wing + Phenology
@@ -3028,33 +3147,20 @@ def moth_view(df, stats):
     season_months = [r for r in msum_monthly if r['survey_season'] and r['nights_surveyed'] > 0]
     best_roi = max(season_months, key=lambda r: r['new_species_count'] / r['nights_surveyed']) if season_months else None
     best_roi_text = (
-        f"<strong>{best_roi['month_name']}</strong> has produced the most new species per survey night "
-        f"({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} nights). "
-        "Months with a tall terracotta bar but a short green one are where additional effort would pay off. "
-        "The core season runs late June through August; cool nights tend to narrow flight activity, while "
-        "bright moonlight can reduce what reaches or is detected at the sheet."
+        f"{best_roi['month_name']} has the most first records per recorded session date in this snapshot "
+        f"({best_roi['new_species_count']} firsts across {best_roi['nights_surveyed']} dates). "
+        "This describes past reporting, with changing methods and effort; it does not predict the return from another visit."
     ) if best_roi else ''
+    seasonal = analyze.moth_seasonal(df, moths)
     season_shape_text = (
-        "Each row is one species. The thick bar is its core flight window — the middle 50% of records. "
-        f"The faint line reaches its earliest and latest confirmed dates. Read all {msum['species']:,} rows together and "
-        "you get the season's shape: a small March opening, a sharp June rise, and "
-    )
-    if july_summary:
-        season_shape_text += (
-            f"the broadest sampled community in July — {july_summary['species_count']:,} species across "
-            f"{july_summary['nights_surveyed']} nights — before the list narrows through late summer and fall. "
-        )
-    else:
-        season_shape_text += (
-            "the broadest sampled community in midsummer before the list narrows through late summer and fall. "
-        )
-    season_shape_text += (
-        "These windows now combine two partial field seasons. They are useful search calendars, not fixed "
-        "flight limits; additional early spring, late fall, and repeat midsummer nights will keep changing them."
+        f"The {len(seasonal)} displayed taxa have at least three dated records. The thick bar contains the middle "
+        "half of their observation dates; the faint line reaches the earliest and latest. Records can include "
+        "different life stages and years. Use this as a search calendar, with survey gaps and identification "
+        "revisions in mind, rather than an adult flight-period reference."
     )
     out.append(section(
         "moth-calendar", "The Calendar",
-        'Flight <em class="text-hollow-300">Seasons</em>',
+        'Through the <em class="text-hollow-300">Seasons</em>',
         moth_forecast_body(moth_forecast, moth_weather_validation)
         + chart_card(viz.nightly_species_calendar(nightly_species),
                    note='Each filled square is one evening survey session; the printed number is the distinct moth species reported that night. '
@@ -3067,22 +3173,21 @@ def moth_view(df, stats):
             "then used as a richness predictor. Effort still varies, so the result describes the historical "
             "survey protocol rather than weather acting alone.", dark=True)
         + chart_card(viz.monthly_survey_bar(msum_monthly),
-                   note='Green: species recorded that month. Terracotta: species recorded for the first time ever. '
-                        'Faded months are outside the May–September core flight season. Hover for survey-night counts.',
+                   note='Green: taxa recorded in that session month. Terracotta: first records. '
+                        'Faded months fall outside May–September. Hover for dates with moth records; these are not complete effort logs.',
                    dark=True)
         + takeaway(best_roi_text, dark=True)
-        + chart_card(viz.seasonal_cascade(analyze.moth_seasonal(df, moths), dark=True),
-                     note="Faint line: full observed date range. Thick bar: middle 50% of records (core flight window). Dot: median date. Species with fewer than 3 records omitted. Sorted by median flight date.",
+        + chart_card(viz.seasonal_cascade(seasonal, dark=True),
+                     note="Dated records across life stages. Line: observed date range. Bar: middle 50%. Dot: median date. Up to 42 taxa with at least three records, sorted by median observation date.",
                      dark=True)
         + takeaway(season_shape_text, dark=True)
         + chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
                      note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
                      dark=True)
         + takeaway(
-            "Scan a row: that species' season, bright at its peak, dark where it disappears. Scan a column: "
-            "the active community for that month. The sparse winter columns are partly real — few moths fly "
-            "in January and February — and partly a survey gap, since few people run lights in the cold. "
-            "Both things are true, and more data will eventually separate them.", dark=True),
+            "Read a row to compare the months represented in a taxon’s records. Read a column to see which "
+            "taxa have been documented in that month. Blank cells can reflect seasonal timing, life stage, "
+            "method, or missing visits; they do not prove absence.", dark=True),
         intro="A practical queue for choosing which nights deserve a complete multi-station survey, followed by the whole-night evidence behind it.",
         dark=True))
     out.append(section(
@@ -3119,13 +3224,9 @@ def mammals_view(df, stats):
         'The <em class="text-hollow-300">Mammals</em>',
         stats_band
         + takeaway(
-            f"What stands out in {msum['species']} species is the carnivore set: ten species on 30 acres, "
-            "including four mustelids (fisher, mink, long-tailed weasel, and ermine), both foxes, "
-            "raccoon, black bear, coyote, and bobcat. The records fit Michigan Creek as a travel and "
-            "foraging corridor: mink follows the water, while fisher, foxes, coyotes, bobcats, bears, "
-            "and raccoons move through the forested valley. Eastern cottontail remains the newest "
-            "addition, first recorded June 15. Eastern woodland jumping mouse adds an uncommon "
-            "moist-forest record and remains sparsely documented across Tioga County.", dark=True)
+            "Seasonal signs can be easier to find than the animals: tracks after snow, camera records along "
+            "repeat routes, and acoustic evidence on suitable nights. Note method and effort, and keep uncertain "
+            "tracks or sounds as leads until diagnostic evidence supports a name.", dark=True)
         + mammal_found_body(found),
         intro="The mammal list is detection-limited. Trail cameras and incidental sign show the mid-sized corridor users well, while bats, shrews, voles, mice, moles, and semi-aquatic mammals need targeted methods. Warm-season nights suit bat acoustics over Michigan Creek; wet forest edges, culverts, and log crossings are better places to look for overlooked small mammals and sign of otter, skunk, or porcupine.",
         dark=True))
@@ -3133,13 +3234,13 @@ def mammals_view(df, stats):
         "mammal-gap", "Who's Missing?",
         'Mammal <em class="text-hollow-300">Gap List</em>',
         mammal_gap_body(gap),
-        intro="Mammals confirmed within ~50 miles but not yet recorded at Kingfisher Hollow. The useful targets are not the most photographed regional mammals; they're the ones that fit the creek corridor, wet margins, forest floor, and night sky.",
+        intro="Mammals recorded within ~50 miles but not yet recorded at Kingfisher Hollow. The useful targets are not the most photographed regional mammals; they're the ones that fit the creek corridor, wet margins, forest floor, and night sky.",
         dark=True))
     out.append(section(
         "mammal-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(MAMMAL_METHODS),
-        intro=f"{msum['species']} species, with no bat yet confirmed. These methods target the guilds a trail camera misses: acoustic "
+        intro=f"{msum['species']} species are recorded. These complementary methods reach groups that trail cameras can miss: acoustic "
               "fliers over the creek, small mammals in leaf litter, and semi-aquatic mammals moving through "
               "culverts, riffles, and log crossings.",
         dark=True))
@@ -3180,16 +3281,12 @@ def plants_view(df, stats):
         'The <em class="text-hollow-300">Plants</em>',
         stats_band
         + takeaway(
-            "A provisional American Water-pennywort identification adds a moisture-loving groundcover to "
-            "the wet-margin search on August 22; a confirmed repeat would establish occurrence, not abundance "
-            "or biological rarity. The latest "
-            "moth records also make known white and northern red oaks, American beech, and broad-leaved "
-            "pondweed especially useful places to look for host-linked sign. Sedges, willows, aquatics, "
-            "late composites, ferns and allies, and bryophytes still need identification-ready passes. "
-            "<em>Salix</em> remains at one species and <em>Carex</em> at two. Those are survey gaps, not "
-            "ecological absences.", dark=True)
+            "Return to the same paths as the year changes: spring flowers, summer sedge fruits, autumn seed heads, "
+            "and winter buds each offer different identification clues. Photograph the useful structures and "
+            "keep unresolved plants at the level the evidence supports. Plant presence alone does not establish "
+            "local insect feeding, abundance, or habitat condition.", dark=True)
         + plant_found_body(found),
-        intro=f"{psum['species']:,} wild or established plant species on 30 acres. The confirmed flora "
+        intro=f"{psum['species']:,} wild or established plant species on 30 acres. The recorded flora "
               "spans oak-hickory upland, northern-hardwood and hemlock slope, creek and pond margins, "
               "and old-field edge. Together these plants provide canopy, understory, fruit, nectar, "
               "bank structure, and larval hosts; southern-edge woody plants remain habitat-filtered "
@@ -3199,7 +3296,7 @@ def plants_view(df, stats):
         "plant-gap", "What's Unrecorded?",
         'Plant <em class="text-hollow-300">Gap List</em>',
         plant_gap_body(gap),
-        intro="Plants confirmed within ~50 miles but not yet documented at Kingfisher Hollow. Treat this as a field checklist filtered by habitat: spring rich woods, seep and pond edge, acidic upland, creek corridor, and sunny old-field margins.",
+        intro="Plants recorded within ~50 miles but not yet documented at Kingfisher Hollow. Treat this as a field checklist filtered by habitat: spring rich woods, seep and pond edge, acidic upland, creek corridor, and sunny old-field margins.",
         dark=True))
     out.append(section(
         "plant-methods", "Find More",
@@ -3237,30 +3334,21 @@ def amphibians_view(df, stats):
         'The <em class="text-hollow-300">Amphibians</em>',
         stats_band
         + takeaway(
-            f"The {asum['species']}-species amphibian list is strong for incidental records, and activity "
-            "continues well beyond the spring chorus. A Spring Salamander was reported on August 16, but "
-            "the entry has no photograph, audio, or field notes, so it is a documentation lead rather than "
-            "a confirmed property voucher. It focuses the next search on cold seeps and clean creek runs; "
-            "a documented repeat would establish occurrence, not by itself breeding or water quality. "
-            "Two-lined, Allegheny mountain dusky, and northern dusky salamanders remain the clearest gaps "
-            "in the stream assemblage.", dark=True)
-        + amphibian_found_body(amp_found),
-        intro="Frogs and salamanders are method- and season-dependent. The current list spans pond, "
-              "wet-margin, and forest-floor species, but targeted stream and breeding-season surveys "
-              "remain sparse. The unvouchered Spring Salamander report makes a careful return to the exact "
-              "cold-water microhabitat especially worthwhile. Cool, damp days favor creek and seep checks, while "
-              "warm evenings keep frogs visible around the pond and wet margins. Early-spring rainy "
-              "nights remain essential for migration, choruses, and egg-mass searches.",
+            f"The {asum['species']}-taxon amphibian roster includes working identifications. A report without "
+            "supporting photographs, audio, or field notes remains a documentation lead. Return observations "
+            "can strengthen the evidence; occurrence alone does not establish breeding or water quality.", dark=True)
+        + amphibian_found_body(amp_found, df.to_dict("records")),
+        intro="Follow amphibians through spring migration and choruses, summer pond margins, and cool, damp "
+              "woodland visits. Record the life stage and behavior as well as the identification, and keep "
+              "sensitive locations private.",
         dark=True))
     out.append(section(
         "reptiles-found", "Sun & Scale",
         'The <em class="text-hollow-300">Reptiles</em>',
         reptile_found_body(rep_found),
-        intro=f"{rsum['species']} reptile species are confirmed: Common Watersnake, Common Snapping Turtle, "
-              "Painted Turtle, Eastern Milksnake, DeKay's Brownsnake, Common Garter Snake, and Central "
-              "Ratsnake. Recent turtle and garter snake records show that ordinary pond-edge and trail "
-              "encounters still add useful seasonal evidence. Warm days favor slow basking checks, pond-edge "
-              "turtle scans, and careful cover-object work for small secretive snakes.",
+        intro=f"{rsum['species']} reptile taxa are recorded. Warm days invite slow pond-edge and basking checks; "
+              "repeat photographs and dates build the seasonal picture. Let animals retain their cover and "
+              "observe from a distance.",
         dark=True))
     out.append(section(
         "amphibian-gap", "Yet to Find",
@@ -3322,16 +3410,10 @@ def butterflies_view(df, stats):
         'The <em class="text-hollow-300">Butterflies</em>',
         stats_band + tiger_swallowtail_case_study_card()
         + butterfly_found_body(found),
-        intro="The butterfly list is still effort-limited. "
-              f"{bsum['species']} species beside {moth_species:,} moths says more about day-versus-night "
-              "survey effort than habitat. Mourning Cloak and Red-spotted Admiral joined the list on "
-              "August 9, followed by Least Skipper on August 11 and Black Swallowtail on August 13. "
-              "The swallowtail record makes flowering parsley-family plants worth checking for eggs and "
-              "larvae, but an adult alone doesn't establish host use here. Together the additions reward "
-              "two complementary "
-              "methods: fruit bait and shaded woodland-edge watches for admirals and anglewings, plus slow "
-              "sunny passes through wet, grassy openings for small skippers. Photograph both wing surfaces "
-              "and repeat the same route through late summer.",
+        intro=f"{bsum['species']} butterfly species are recorded here. Follow sunny woodland edges in spring, "
+              "flowering openings in summer, and warm sheltered margins into autumn. Repeating the same route "
+              "gives these daytime records seasonal context. Photograph both wing surfaces when possible; "
+              "an adult on or near a plant does not establish larval host use.",
         dark=True))
     out.append(section(
         "butterfly-gap", "Yet to Find",
@@ -3346,7 +3428,7 @@ def butterflies_view(df, stats):
         "butterfly-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(BUTTERFLY_METHODS),
-        intro=f"With {bsum['species']} species confirmed, the daytime inventory is still early. Repeated "
+        intro=f"With {bsum['species']} species recorded, the daytime inventory is still early. Repeated "
               "sunny transects, dorsal and ventral photographs, fruit bait, puddling checks, and "
               "host-plant searches across spring, midsummer, and fall offer the best route to broader "
               "coverage.",
@@ -3374,14 +3456,10 @@ def odonates_view(df, stats):
         "odonates", "On the Wing",
         'Dragonflies <em class="text-hollow-300">&amp; Damselflies</em>',
         stats_band + odonate_found_body(found),
-        intro=f"{osum['species']} species already divide the property into distinct waters. Three August 21-23 "
-              "records sharpen the next checks: provisional Fawn Darner and Familiar Bluet identifications would "
-              "fit shaded moving water and quieter pond margins, while research-grade Black Saddlebags may still be "
-              "a migrant or brief visitor. Adult occurrence does not show local emergence. Ebony Jewelwing follows the creek; "
-              "spreadwings, bluets, forktails, and Aurora Damsel work quieter water; skimmers patrol sunny edges; "
-              "darners and meadowhawks carry the season into fall. Repeated daytime circuits should add species "
-              "quickly, while exuviae, tenerals, mating pairs, and oviposition will show which waters are actually "
-              "producing them.",
+        intro=f"{osum['species']} dragonfly and damselfly taxa have records here. Return to pond, creek, and "
+              "sunny edges through the warmer months, noting date, weather, and life stage. Adults can travel "
+              "between waters, so a sighting is evidence of a visit. Exuviae and observed emergence can "
+              "provide stronger evidence that a waterbody produced them.",
         dark=True))
     out.append(section(
         "odonate-gap", "Yet to Find",
@@ -3395,7 +3473,7 @@ def odonates_view(df, stats):
         "odonate-methods", "Find More",
         'How to Find <em class="text-hollow-300">More</em>',
         survey_methods_body(ODONATE_METHODS),
-        intro="Adults show who visits; exuviae, tenerals, mating pairs, and oviposition show who is breeding. "
+        intro="Adults show who visits; mating and oviposition document reproductive behavior, while exuviae or observed emergence support local development. "
               "Repeat the same pond and creek routes across the whole flight season, and photograph the face, "
               "thorax, wings, abdomen, and terminal appendages whenever identification is close.",
         dark=True))
@@ -3407,11 +3485,11 @@ def birds_view():
     birds = analyze.load_birds()
     bsum = analyze.bird_summary(birds)
     recent = analyze.bird_recent(birds, n=12)
-    gap = analyze.bird_gap_from_ebird_barcharts(birds, n=40)
+    gap = analyze.bird_gap_from_ebird_barcharts(birds, n=40) if not birds.empty else {"missing_property": True}
     stats_band = (
         '<div class="flex flex-wrap items-start justify-center gap-8 md:gap-12 mb-8">'
         + _dark_divider().join([
-            _dark_stat(str(bsum["species"]), "eBird species"),
+            _dark_stat(str(bsum["species"]) if not birds.empty else "—", "eBird species" if not birds.empty else "Snapshot unavailable"),
         ]) + '</div>')
     out = []
     out.append(section(
@@ -3419,27 +3497,23 @@ def birds_view():
         'The <em class="text-hollow-300">Birds</em>',
         stats_band
         + takeaway(
-            f"The {bsum['species']}-species list reaches well beyond backyard birds. Spotted and Solitary "
-            "Sandpipers, Great Egret, Pied-billed Grebe, and several ducks show the wetland or flyover "
-            "opportunity; Wood Thrush, Louisiana Waterthrush, Ovenbird, Scarlet Tanager, Blackburnian "
-            "Warbler, and Black-throated Green Warbler mark the forest signal; Cape May, Bay-breasted, "
-            "Blackpoll, and Wilson's Warblers show migration in the hollow. Late-August Yellow-bellied "
-            "Flycatcher and Northern Waterthrush make quiet, insect-rich creek and wet-edge cover worth "
-            "repeated dawn checks, while Lesser Yellowlegs is a brief pond-margin or creek-bar opportunity. "
-            f"The latest addition is dated {fdate(bsum['latest'], '%b %-d')}. Occurrence doesn't prove breeding: repeated territories, "
-            "food carrying, fledglings, and habitat-specific checklists are the next layer of evidence.",
+            "Listen through the year: spring arrivals and song, summer territorial activity, autumn passage, "
+            "and winter flocks. The life list brings these records together but cannot show seasonal frequency. "
+            "Complete checklists with duration, distance, and breeding evidence would support that next layer. "
+            f"Latest life-list date: {fdate(bsum['latest']) or 'unavailable'}. The export has no independent refresh timestamp.",
             dark=True)
+        + bird_source_body(bsum)
         + bird_life_list_body(birds),
-        intro=f"{bsum['species']} species are recorded at the Kingfisher Hollow eBird location. "
-              "The list includes birds associated with creek, pond, forest, and shrub-edge habitat, "
-              "along with migrants and open-sky flyovers; a location record alone does not establish "
-              "breeding or sustained use of a particular habitat patch.",
+        intro=(f"{bsum['species']} species are listed in the available Kingfisher Hollow eBird export. "
+               "It includes habitat visitors and open-sky flyovers; a location record alone does not establish "
+               "breeding or sustained use of a particular habitat patch." if not birds.empty else
+               "Bird records are unavailable in the local export. Follow the eBird source for the current list."),
         dark=True))
     out.append(section(
-        "bird-recent", "New Additions",
+        "bird-recent", "Dated Records",
         'Recent <em class="text-hollow-300">eBird Records</em>',
         bird_recent_body(recent),
-        intro="The newest species added to the Kingfisher Hollow eBird location list. Records link back to their eBird checklists when available.",
+        intro="The most recent dates in the eBird life-list export. The export does not identify whether its date toggle used first or latest sightings. Follow the source checklists when available.",
         dark=True))
     out.append(section(
         "bird-gap", "Seasonal Priorities",
@@ -3482,40 +3556,40 @@ def survey_methods_body(methods):
 # ── Field methods to expand each list — sourced from the taxa expert agents ───
 MOTH_METHODS = [
     {"method": "Sugar baiting",
-     "where": "Rum-molasses-overripe-banana ferment painted in vertical streaks on mature oak, maple, and shagbark hickory trunks along the mesic slope edge and the floodplain terrace, 50–100 m from the creek where humidity holds.",
+     "where": "Rum-molasses-overripe-banana ferment painted in vertical streaks on mature oak, maple, and shagbark hickory trunks along the mesic slope edge and the floodplain terrace, at documented positions suitable for repeat comparisons.",
      "when": "Warm, humid August nights, 64–75°F, no moon, light wind; bait at dusk and check by headlamp every 45–60 min until 1 AM. Repeat on warm September nights.",
-     "targets": "Catocala underwings (come poorly to UV) and bait-positive Noctuidae — Eupsilia, Lithophane, Sunira, Amphipyra, Scoliopteryx — that the light sheet misses."},
+     "targets": "Record bait visitors separately from light visitors. Repeated matched visits can show which methods add records and when."},
     {"method": "Larval beating",
      "where": "Beating sheet under low streamside Salix and Alnus, plus Carya, Quercus, Acer and Betula on the mesic slope; tap branches and rear what drops.",
      "when": "June–July daytime for peak Tortricidae and Gelechiidae larvae; a second pass in September. Rear larvae on host foliage to confirm species on emergence.",
-     "targets": "Micro-moths that never reach UV: Tortricidae, Gelechiidae, Coleophoridae case-bearers, Nepticulidae leaf-miners — the bulk of the undetected species."},
+     "targets": "Different life stages and signs: rolled leaves, portable cases, leaf mines, and feeding damage. Record the host identification and ask for specialist review where needed."},
     {"method": "Canopy light sheet",
      "where": "A second sheet hoisted 10–15 m on a rope-and-pulley over a canopy gap in the mesic slope forest, well above the standard ground sheet.",
      "when": "Calm June–July nights, 60–72°F, humidity above 60%, no moon; run from 30 min before dark to 2 AM alongside the ground sheet.",
-     "targets": "The Eupithecia complex (20+ species likely) and canopy-flying micro-geometrids and Tortricidae that rarely descend to a ground sheet."},
+     "targets": "Compare detections at the two heights under the same conditions. The result describes that paired sample, not the size of an unseen canopy fauna."},
     {"method": "Dual light comparison",
-     "where": "A 160W mercury-vapor bulb and a 15W actinic on separate sheets ~30 m apart at the floodplain-creek ecotone, the property's richest edge.",
+     "where": "A 160W mercury-vapor bulb and a 15W actinic on separate sheets ~30 m apart at the floodplain-creek ecotone, a repeatable comparison location.",
      "when": "Peak June and July nights, 60–72°F, no moon, light wind; full dark to 2 AM, swapping observers between stations hourly.",
-     "targets": "Species one light type filters out — MV pulls large Sphingidae, Saturniidae (watch for Hyalophora cecropia) and Catocala; actinic adds small Geometridae and microleps."},
+     "targets": "Compare the records produced by each lamp on the same dates. Log bulb type, position, duration, and weather before interpreting differences."},
     {"method": "Shoulder-season runs",
-     "where": "The standard ground sheet at the sheltered creek bank, where the humidity buffer keeps moths flying on cold nights.",
-     "when": "Seasons the survey neglects: warm late-September and October nights, November dusk runs at 38–50°F for Operophtera, and late-March/April nights above 45°F.",
-     "targets": "Cold-season specialists absent from the June/August-heavy record: Operophtera, Sunira, late Noctuidae, and the early-spring Orthosia quaker complex."},
+     "where": "Repeat the same documented light-sheet location and record local weather, equipment, and duration.",
+     "when": "Extend seasonal coverage with warm late-September and October nights, November dusk runs at 38–50°F for Operophtera, and late-March/April nights above 45°F.",
+     "targets": "Cold-season search groups to check against the current inventory: Operophtera, Sunira, late Noctuidae, and the early-spring Orthosia quaker complex."},
 ]
 
 BUTTERFLY_METHODS = [
     {"method": "Transect netting",
      "where": "A fixed walk along the sunlit upland edge and the mowed floodplain openings, hitting nectar patches (milkweed, dogbane, joe-pye, asters) and damp creek-bank mud.",
      "when": "Warm sunny days late April–September, 10 AM–3 PM, above 65°F with little wind; weekly visits to catch successive flights.",
-     "targets": "Most of the missing 40+ resident butterflies — whites and sulphurs, fritillaries and admirals, and the grass-skippers no one has netted."},
+     "targets": "Regional candidates whose habitat and season fit the route. Record duration, weather, and repeated visits, including those with no detections."},
     {"method": "Creek mud-puddling",
      "where": "Wet gravel bars, seep margins, and damp sandy mud along Michigan Creek and at spring seeps where minerals concentrate.",
      "when": "Hot sunny mid-summer afternoons, 75–90°F, low wind, especially the day after rain when fresh mud is exposed.",
      "targets": "Puddling swallowtails, sulphurs, and the blues and hairstreaks (Celastrina, Satyrium, Cupido) drawn to mineral seeps."},
     {"method": "Host-plant larval search",
-     "where": "Known larval hosts on site: violets on the mesic slope, Salix and Populus on the floodplain, spicebush and Prunus along edges, grasses and sedges in openings.",
+     "where": "Start with independently identified plants on the property, then match published host associations to regional butterfly candidates. Do not assume a host or its butterfly occurs here.",
      "when": "May–August daytime; search leaf damage, rolled leaves, and frass, and rear larvae to adult.",
-     "targets": "Breeding residents missed by adult counts — fritillaries, viceroy and admirals, spicebush swallowtail, and cryptic satyrs."},
+     "targets": "Direct local feeding evidence: photograph the insect, feeding sign, and diagnostic plant structures together. Keep uncertain insect or plant names provisional."},
     {"method": "Fermented-fruit traps",
      "where": "Van Someren-Rydon hanging traps baited with fermented banana, 3–5 m up at the mesic slope forest edge and along shaded floodplain woodland.",
      "when": "Mid-June through September; set in the morning and check daily, best on warm humid stretches.",
@@ -3565,11 +3639,11 @@ PLANT_METHODS = [
     {"method": "Sedge survey",
      "where": "Active floodplain and gravel bars along the creek, plus wet seeps and the shrub-wetland transition; revisit drier upland edges.",
      "when": "Mid-June through July when perigynia are mature, any time of day.",
-     "targets": "Streamside Carex (lurida, crinita, stipata, vulpinoidea) and upland sedges; also Scirpus, Glyceria, Sparganium. Two Carex confirmed against 108 in the regional pool — still the property's biggest botanical gap."},
+     "targets": "Streamside Carex (lurida, crinita, stipata, vulpinoidea) and upland sedges; also Scirpus, Glyceria, Sparganium. Use the current inventory to select unrecorded targets; regional presence does not establish local habitat suitability."},
     {"method": "Willow inventory",
      "where": "Creek banks, point bars, and the riparian shrub fringe alongside Alnus and Cornus.",
      "when": "April for catkins (sex and bloom timing), then June–July for mature leaves; midday for good underside lighting.",
-     "targets": "Salix — one species confirmed (shining willow) against ~26 in the pool; likely eriocephala, sericea, nigra, discolor still unrecorded. Note leaf shape, underside, stipules, catkin timing."},
+     "targets": "Salix — compare the current roster with habitat-suitable regional candidates. Note leaf shape, underside, stipules, catkin timing."},
     {"method": "Late-composite pass",
      "where": "Sunny upland edges, the old-field/shrub transition, and the open floodplain margin.",
      "when": "Late August into September at peak bloom, midday — Solidago and aster ID needs open flower heads.",
@@ -3661,7 +3735,7 @@ def build():
     s = _timed("summary-property", analyze.summary, df)
     public_s = _timed("summary-overview", analyze.summary, overview_df)
     life = _timed("life-list", analyze.life_list, overview_df)
-    firsts = _timed("firsts-timeline", analyze.firsts_timeline, overview_df)
+    firsts = _timed("firsts-timeline", analyze.firsts_timeline, df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
     moths_for_header = _timed("load-moths-header", analyze.load_moths)
@@ -3690,6 +3764,11 @@ def build():
     section_start = time.monotonic()
     parts.append('<div id="view-all" data-view-label="All life">')
     parts.append(hero(public_s, county_firsts))
+    raw_df = _timed("load-all-property", analyze.load_property, species_only=False)
+    odonate_ids = set(analyze.load_odonates()["taxon_id"].dropna().astype(int))
+    parts.append(section("season", "Through the year", 'A Season to <em class="text-hollow-600">Look Closer</em>',
+                         seasonal_body(raw_df.to_dict("records"), odonate_ids, datetime.now(ZoneInfo("America/New_York")).date()),
+                         intro="Follow the changing year from creek and pond to the woods. Seasonal prompts suggest where to look; dated photographs show what has been recorded."))
     latest_body = (
         whats_new_body(analyze.whats_new(df, stats))
         + anchor_alias("gallery")
@@ -3700,7 +3779,7 @@ def build():
             '<h3 class="font-serif text-3xl md:text-4xl font-bold text-stone-900">'
               'More from the latest survey work</h3>'
             '<p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-stone-500">'
-              'Recent research-grade photographs from iNaturalist—the visual record '
+              'Recent photographs from iNaturalist—the visual record '
               'behind both new additions and return sightings.</p>'
           '</div>'
         + gallery_body(analyze.photo_highlights(df))
@@ -3709,23 +3788,14 @@ def build():
     parts.append(section(
         "whats-new", "Latest", 'What\'s <em class="text-hollow-600">New</em>',
         latest_body,
-        intro="Start with species added to the Kingfisher Hollow list, then scan the latest photographic evidence—including return sightings that show what remains active now.",
+        intro=f"Recent additions and return sightings in the available iNaturalist records. Property records last refreshed {fdate(property_data_sync) if property_data_sync else 'date unavailable'}.",
         tint="bg-stone-100"))
+    parts.append(section("habitats", "One place, many ways to look", 'From Water to <em class="text-hollow-600">Woodland</em>', habitats_body(), tint="bg-stone-100"))
     parts.append(section(
-        "discovery", "The Story So Far",
-        'A Growing <em class="text-hollow-600">Life List</em>',
-        chart_card(viz.discovery_curve(firsts),
-                   note=f"Each step marks a species' first record at Kingfisher Hollow. New steps after {public_s['observations']:,} records show that the inventory is still actively growing.")
-        + takeaway(
-            f"The curve is still gaining species after {public_s['observations']:,} records. The latest rise "
-            "again came from changing methods. Close fungal work on August 22-23 produced a sharp run of "
-            "additions; creek and pond circuits added research-grade Black Saddlebags and provisional Fawn "
-            "Darner and Familiar Bluet leads; night "
-            "lighting added host-search leads from pondweed, oak, beech, peppergrass, and thistle moths. Several "
-            "of the smallest moth identifications remain provisional, and mobile dragonflies do not prove local "
-            "emergence. Strong records expand the ecological story; provisional records sharpen the next field "
-            "check. No single method owns the remaining frontier."),
-        intro=f"{public_s['species']:,} steps, each the moment a species was recorded at Kingfisher Hollow for the first time. The curve hasn't levelled off."))
+        "discovery", "The Story So Far", 'A Growing <em class="text-hollow-600">Record</em>',
+        chart_card(viz.discovery_curve(firsts), note="Each step marks the earliest available iNaturalist record for a named taxon. Identification revisions can change this history.")
+        + takeaway("Different seasons and methods reveal different parts of the inventory. Return visits can strengthen an identification as well as add a name. Bird life-list dates come from a separate eBird export and are listed in the combined inventory, outside this curve."),
+        intro=f"{s['species']:,} named taxa in the iNaturalist record. The curve describes documentation, not the arrival of species on the property."))
 
     # ── Distinctiveness arc: public county contribution → rarity test ─────────
     distinctiveness_body = (
@@ -3733,18 +3803,13 @@ def build():
           '<p class="text-hollow-300 text-xs font-semibold uppercase tracking-[0.18em]">'
             'Evidence 1 · County contribution</p>'
           '<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
-            'First in the public county record</h3>'
+            'Earliest dates in the public county record</h3>'
         '</div>'
         + showcase_body(analyze.county_first_showcase(df, stats))
         + takeaway(
-            f"{county_firsts:,} county-first iNaturalist records means Kingfisher Hollow has added {county_firsts:,} species "
-            "to Tioga County's public, photo-vouchered baseline. That is not the same as proving each species "
-            "was absent from the county before. Tioga is under-sampled, while nearby Tompkins County has heavy "
-            "naturalist and entomology effort. The right reading is still powerful: KH is turning private "
-            "regional likelihood into documented county evidence, especially for moths and plants tied to "
-            "Michigan Creek's transition-zone habitats. The newest cluster is especially instructive: leafminers, "
-            "leafrollers, small beetles, flies, barklice, and planthoppers dominate it, exactly the groups most likely "
-            "to be missed where close photography and specialist attention are sparse.", dark=True)
+            f"{county_firsts:,} taxa have a property observation dated on or before the earliest Tioga County date in the cached iNaturalist comparison. "
+            "Same-day ties are included. These are public-record contributions to investigate, not proof of biological rarity or an exclusive first discovery. "
+            "Check the linked observation, identification evidence, and regional comparison before making a stronger claim.", dark=True)
         + anchor_alias("uniqueness")
         + '<div class="mt-16 rounded-3xl bg-stone-100 p-5 text-stone-900 shadow-2xl '
           'shadow-black/15 md:p-10">'
@@ -3759,7 +3824,7 @@ def build():
           '</div>'
         + chart_card(
             viz.uniqueness_scatter(stats),
-            note="Each dot is one species. X-axis: NY public-record scarcity (further left = fewer statewide records). Y-axis: frequency at Kingfisher Hollow. Terracotta: first iNaturalist record for Tioga County.")
+            note="Each dot is one species. X-axis: NY public-record scarcity (further left = fewer statewide records). Y-axis: frequency at Kingfisher Hollow. Terracotta: dated at or before the cached county earliest record; ties included.")
         + takeaway(
             "Upper-left is the territory to investigate: few public New York records, but repeated records here. "
             "Some dots may be genuinely notable; others are under-documented groups, hard IDs, or observer-bias "
@@ -3784,11 +3849,11 @@ def build():
         "life-list", "The Full Roll",
         'The <em class="text-hollow-300">Life List</em>',
         moth_portrait_showcase(df, dark=True) + life_list_body(life, dark=True),
-        intro="The property life list, newest additions first. Each number marks when a species joined the Kingfisher Hollow record; search by name, then filter by taxon group and family.",
+        intro="The combined iNaturalist and eBird inventory, ordered by available record date. Search by name, then filter by group and family. eBird life-list dates do not establish first arrival or repeat frequency.",
         dark=True)
     two_up = (
         '<div class="grid lg:grid-cols-2 gap-6">'
-        + chart_card(viz.per_day(analyze.obs_per_day(overview_df)))
+        + chart_card(viz.per_day(analyze.obs_per_day(df)))
         + chart_card(viz.taxa_bar(life))
         + '</div>')
     parts.append(section(
@@ -3796,24 +3861,21 @@ def build():
         'Activity &amp; <em class="text-hollow-600">Taxa</em>',
         two_up
         + takeaway(
-            "The tall spikes are nights at the mothing lights; a well-run session can generate 50 to 100 "
-            "observations before dawn. That effort reveals a real insect-heavy fauna, but it also exposes the "
-            "survey's bias. Plants need seasonal ID passes, butterflies need sunny transects, mammals need "
-            "cameras and acoustics, and herps need wet-night and stream methods. The site is rich, and the "
-            "method mix still decides what becomes visible.",),
-        intro="Daily record totals and a taxonomic breakdown — how the effort is distributed and what it's actually finding.",
+            "A tall bar means more records carry that observation date; they may have been uploaded later. Lighting, field walks, cameras, "
+            "and identification effort each shape this record. Comparing seasons or groups fairly will need "
+            "visit duration, method, and visits with no detections as well as the observations shown here.",),
+        intro="Daily iNaturalist reporting volume and the combined species inventory. A day without a submitted record does not establish whether anyone surveyed.",
         tint="bg-stone-100"))
     parts.append(section(
         "phenology", "Phenology",
         'When Things <em class="text-hollow-600">Appear</em>',
-        chart_card(viz.phenology(analyze.phenology(overview_df, top=24), normalize=True),
+        chart_card(viz.phenology(analyze.phenology(df, top=24), normalize=True),
                    note="Each row is normalized to its own peak, so a species seen 5 times reads as vividly as one seen 500 times — rare species' patterns show up alongside common ones. Hover for raw counts.")
         + takeaway(
-            "Read across any row: one species' warm-up, peak, and fade. Read down any column: the community "
-            "active in that month. The bright diagonal moving from spring to autumn is the year itself, "
-            "written in species. Sparse months are both biology and effort: some taxa are truly seasonal, "
-            "and some simply have not been searched for at the right time."),
-        intro="The 24 most-recorded species across the calendar year — each one's seasonal rhythm in a single row."))
+            "Read across a row for the months represented in that taxon’s records. Each row is scaled to its "
+            "own peak, so equal brightness does not mean equal numbers. Dates can span years and life stages; "
+            "the pattern reflects what was documented as well as when and how people looked."),
+        intro="The 24 most-recorded iNaturalist taxa by observation month, across all recorded life stages. Empty months can reflect survey coverage as well as seasonal timing."))
     parts.append(section(
         "observers", "Credit Where Due",
         'The <em class="text-hollow-600">Observers</em>',
@@ -3828,12 +3890,9 @@ def build():
         "map", "Where", 'On the <em class="text-hollow-600">Land</em>',
         chart_card(viz.obs_map(df))
         + takeaway(
-            "The heaviest clusters follow the stream corridor and the mothing-light stations. The sparser "
-            "areas aren't empty; they're under-walked or need different methods. Upland edge transects, wetland "
-            "plant passes, creek rock surveys, and camera or acoustic stations would all move records into "
-            "currently blank-looking parts of the map. iNaturalist automatically obscures coordinates for rare "
-            "or sensitive species."),
-        intro="Every GPS-tagged observation on the 30 acres. The clusters show where effort has been concentrated; the gaps show what's still unwalked."))
+            "Points show submitted locations. A gap means no mapped record, not unvisited or unsuitable habitat. "
+            "Some iNaturalist coordinates are obscured and displayed away from the observation site; use the map as broad context rather than an exact habitat map."),
+        intro="Mapped iNaturalist records. Sensitive or obscured locations can be approximate."))
     parts.append('</div>')  # /view-all
     _log_timing("all-life-view", section_start)
 
@@ -3874,6 +3933,10 @@ def build():
     parts.append(_timed("plants-view", plants_view, df, stats))
     parts.append('</div>')  # /view-plants
 
+    parts.append('<div id="view-fungi" data-view-label="Fungi">')
+    parts.append(_timed("fungi-view", fungi_view, raw_df))
+    parts.append('</div>')
+
     # ── Amphibians view (dark) ───────────────────────────────────────────────
     parts.append('<div id="view-amphibians" data-view-label="Herps">')
     parts.append(_timed("amphibians-view", amphibians_view, df, stats))
@@ -3888,11 +3951,11 @@ def build():
     parts.append(section(
         "log-journal", "Field Journal",
         'The <em class="text-hollow-600">Daily Log</em>',
-        log_taxa_stats_panel(taxa_page_totals, taxa_page_recent)
-        + activity_log_body(log_entries, weather_cache, last_data_sync)
+        log_taxa_stats_panel(taxa_page_totals, taxa_page_recent, property_data_sync)
+        + activity_log_body(log_entries, weather_cache, property_data_sync)
         + id_changes_body(id_changes)
         + log_resource_links(),
-        intro="A night-by-night record of every session: weather, observers, and every species appearing for the first time on the property."))
+        intro="Dated observation summaries, available weather, and species first documented in the stored records. These entries do not include visits with no submitted observations."))
     parts.append('</div>')  # /view-log
 
     page_digests = _write_survey_pages(
@@ -3902,7 +3965,8 @@ def build():
         moth_head_count,
         _code_updated(),
         _content_updated(),
-        data_updated,
+        fdate(property_data_sync) if property_data_sync else "Unavailable",
+        fdate(analyze.bird_summary(birds_for_totals).get("latest")),
     )
     _timed("public-api", public_api.build)
     _timed("social-export", social_export.build)

@@ -173,6 +173,24 @@ class MothNightlySpeciesTests(unittest.TestCase):
             list(result.columns),
         )
 
+    def test_seasonal_cascade_keeps_the_same_calendar_date_across_leap_years(self):
+        observations = pd.DataFrame([
+            {
+                "id": i,
+                "taxon_id": 1,
+                "taxon_name": "Exempla motha",
+                "common_name": "Example Moth",
+                "observed_on": pd.Timestamp(day),
+            }
+            for i, day in enumerate(["2024-03-01", "2025-03-01"], start=1)
+        ])
+
+        result = analyze._seasonal_agg(observations, min_obs=1, max_species=10)
+        row = result.iloc[0]
+
+        self.assertEqual((row["first_doy"], row["last_doy"]), (61, 61))
+        self.assertEqual(viz.MONTH_STARTS[2], row["median_doy"])
+
 
 if __name__ == "__main__":
     unittest.main()

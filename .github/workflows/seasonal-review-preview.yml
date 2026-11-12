@@ -1,0 +1,108 @@
+name: Seasonal survey preview
+
+on:
+  push:
+    branches: [seasonal-review-2026-11-11]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seasonal-survey-preview
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            field-alerts/package-lock.json
+
+      - name: Restore existing observation database
+        uses: actions/cache/restore@v5
+        with:
+          path: data/inat.db
+          key: seasonal-review-db-${{ github.run_id }}
+          restore-keys: |
+            inat-db-
+          fail-on-cache-miss: true
+
+      - name: Restore report inputs
+        uses: actions/cache/restore@v5
+        with:
+          path: data/cache
+          key: seasonal-review-inputs-${{ github.run_id }}
+          restore-keys: |
+            report-inputs-
+
+      - name: Install dependencies and check source
+        run: |
+          test -s data/inat.db
+          pip install -r requirements.txt
+          npm ci --ignore-scripts
+          npm ci --prefix field-alerts --ignore-scripts
+          python -m unittest discover -s tests
+          node --test tests/*.test.mjs
+
+      - name: Build and check static pages
+        env:
+          SURVEY_REVIEW_PREVIEW: "1"
+        run: |
+          npm run build:css
+          python report.py
+          python tests/verify_survey_pages.py
+          test ! -e public/_worker.js
+          test ! -e public/_routes.json
+          test -z "$(find public -type l -print -quit)"
+          test -z "$(find public -type f \( -iname '*.sqlite*' -o -iname '*.db*' -o -iname '.env*' -o -iname '*.pem' -o -iname '*.key' -o -iname '*.csv' \) -print -quit)"
+          grep -Fq 'Review preview' public/index.html
+          grep -Fq 'Review preview' public/fungi/index.html
+          if grep -Fq 'id="trigger-update"' public/log/index.html; then
+            echo "::error::The preview contains the refresh action."
+            exit 1
+          fi
+
+      - name: Deploy static review branch only
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          test "$GITHUB_REF" = refs/heads/seasonal-review-2026-11-11
+          curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/kingfisher-survey" \
+            | jq -e '.success and .result.name == "kingfisher-survey" and .result.production_branch == "main"' >/dev/null
+          stage=$(mktemp -d)
+          cd "$stage"
+          "$GITHUB_WORKSPACE/field-alerts/node_modules/.bin/wrangler" pages deploy "$GITHUB_WORKSPACE/public" \
+            --project-name=kingfisher-survey --branch=seasonal-review-2026-11-11 \
+            --commit-hash="$GITHUB_SHA" </dev/null
+
+      - name: Verify live review pages
+        run: |
+          review_url=https://seasonal-review-2026-11-11.kingfisher-survey.pages.dev
+          curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "$review_url/" -o "$RUNNER_TEMP/survey-review.html"
+          curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors "$review_url/fungi/" -o "$RUNNER_TEMP/fungi-review.html"
+          grep -Fq 'id="season"' "$RUNNER_TEMP/survey-review.html"
+          grep -Fq 'Review preview' "$RUNNER_TEMP/survey-review.html"
+          grep -Fq 'id="view-fungi"' "$RUNNER_TEMP/fungi-review.html"
+          grep -Fq 'Review preview' "$RUNNER_TEMP/fungi-review.html"
+          printf 'Survey review: %s/#season\nFungi: %s/fungi/\n' "$review_url" "$review_url"

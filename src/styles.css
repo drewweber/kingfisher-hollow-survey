@@ -103,6 +103,7 @@
   }
 
   .main-site-link { color: var(--nav-muted); }
+  .main-site-link:hover { color: var(--nav-text); }
 
   .survey-menu-button {
     display: inline-flex;
