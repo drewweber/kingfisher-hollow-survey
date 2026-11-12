@@ -1,72 +1,35 @@
 {
   "spring": {
     "title": "Spring at Kingfisher Hollow",
-    "intro": "Spring begins with rain and thaw in the low places. Woodland flowers make the most of the light before the trees leaf out, and frogs and insects become part of life around the warming water.",
-    "next_observation": "How long does spring light reach the forest floor? Return to a patch of trout lily as the trees leaf out and see which flowers open as shade deepens.",
+    "intro": "At Kingfisher Hollow, spring starts with water and light. Rain and thaw wet the low ground while sunlight still reaches the forest floor. Woodland flowers, their insect visitors, and animals moving to breed in water respond to different parts of that change.",
+    "next_observation": "How long does spring light reach the forest floor? Revisit the same stretch of woods as the canopy fills in and see where flowers and their visitors are still active.",
     "passages": [
       {
         "id": "after-the-rain",
-        "phase": "Early spring",
-        "title": "After the rain",
-        "body": "Rain and thaw fill shallow pools in the woods. In New York, spotted salamanders leave their winter shelters on mild, rainy nights and move to these pools to lay eggs.",
-        "look_for": "From a dry bank, look for clusters of dark salamander eggs suspended in clear or milky jelly just below the surface.",
-        "row_ids": [
-          "spotted-salamander",
-          "clemens-agonopterix"
-        ],
-        "phase_month": 3,
-        "illustration": {
-          "id": 346449861,
-          "date": "2026-03-31",
-          "photo_id": "631527312"
-        },
-        "claims": [
-          {
-            "text": "Spotted salamander eggs mark that early-spring transition at the Hollow.",
-            "requires": [
-              {
-                "id": 346449861,
-                "date": "2026-03-31",
-                "event_type": "Eggs",
-                "quality": "research"
-              }
-            ]
-          }
-        ]
+        "phase": "Thaw",
+        "title": "Where water gathers",
+        "body": "Rain and thaw collect in low places. In New York woodlands, pools that dry later in the year can give frogs and salamanders breeding water with fewer fish predators. Some of the small crustaceans in those pools lay eggs that survive the dry months and hatch when water returns.",
+        "look_for": "Where rainwater collects, compare shallow water with the deeper pond margin from firm ground. Look for egg masses and for movement in open water and among stems.",
+        "row_ids": [],
+        "phase_month": 3
       },
       {
         "id": "under-the-open-canopy",
-        "phase": "Mid-spring",
-        "title": "Under the open canopy",
-        "body": "Spring wildflowers brighten the forest floor while the branches are still bare. Trout lilies make use of that brief window of sunlight, followed in May by white starflower blooms as shade deepens.",
-        "look_for": "Look for mottled trout lily leaves low in the litter, then for the white points of starflower held above a ring of leaves in May.",
-        "row_ids": [
-          "yellow-trout-lily",
-          "northern-starflower"
-        ],
-        "phase_month": 4,
-        "illustration": {
-          "id": 349674147,
-          "date": "2026-04-13",
-          "photo_id": "637909260"
-        }
+        "phase": "Open canopy",
+        "title": "A short window of woodland light",
+        "body": "Before trees leaf out, sunlight reaches the litter and warms the ground. Some woodland herbs grow and flower in that brief window, bringing pollen and nectar within reach of spring-active bees and flies. Other woodland plants flower later, as the first leaves begin to cast shade.",
+        "look_for": "Compare flowers in a sunny opening and beneath trees that have begun to leaf out. Which flowers have visitors in each setting?",
+        "row_ids": [],
+        "phase_month": 4
       },
       {
         "id": "listen-at-the-water",
-        "phase": "Late spring",
-        "title": "Life at the water's edge",
-        "body": "By late spring, the canopy shades the woodland floor while the pond still catches the sun. Gray treefrogs can call from branches near breeding water, and adult dragonflies hunt along sunny water margins.",
-        "look_for": "Listen for a gray treefrog’s short trill from branches near water. At the pond margin, watch for a baskettail making repeated passes low over the water.",
-        "row_ids": [
-          "gray-treefrog",
-          "common-baskettail"
-        ],
-        "phase_month": 5,
-        "illustration": {
-          "id": 366537712,
-          "date": "2026-05-29",
-          "photo_id": "669301351"
-        }
+        "phase": "Leaf-out",
+        "title": "Life moves into the leaves and stems",
+        "body": "As the canopy fills, spring adds fresh leaves and stems. Caterpillars can feed on young foliage, while plants along water margins give aquatic insects cover and, for emerging dragonflies, a way out of the water. By late spring, the woods and pond margins are offering different kinds of food and shelter.",
+        "look_for": "Look for new leaves with holes, folds, or fine trails inside the leaf. At the pond, notice which insects move among stems and which fly over open water.",
+        "row_ids": [],
+        "phase_month": 5
       }
     ],
     "rows": [
@@ -227,20 +190,24 @@
     ],
     "sources": [
       {
-        "label": "New York State DEC on spring amphibian movements",
+        "label": "NYSDEC on amphibian spring movements",
         "url": "https://dec.ny.gov/nature/waterbodies/oceans-estuaries/hudson-river-estuary-program/conservation-and-land-use-program/amphibian-migrations-and-road-crossings"
       },
       {
-        "label": "Trout lily and the northern hardwood spring light window",
-        "url": "https://esajournals.onlinelibrary.wiley.com/doi/10.2307/2937357"
+        "label": "Pennsylvania Natural Heritage Program on woodland-pool invertebrates",
+        "url": "https://www.naturalheritage.dcnr.pa.gov/VernalPool_Invertebrate.aspx"
       },
       {
-        "label": "University of Maine on starflower",
-        "url": "https://extension.umaine.edu/blueberries/weed-images/herbaceous-broadleaf-weeds/white-flowers/starflower/"
+        "label": "Field study of spring bees in eastern deciduous forests",
+        "url": "https://doi.org/10.1111/1365-2656.13003"
       },
       {
-        "label": "Maryland DNR on Gray Treefrog habitat and seasonal calls",
-        "url": "https://dnr.maryland.gov/wildlife/Pages/plants_wildlife/herps/Anura.aspx?FrogToadName=Gray"
+        "label": "Study of seasonal light and deciduous woodland herbs",
+        "url": "https://doi.org/10.1111/nph.15404"
+      },
+      {
+        "label": "National Park Service on dragonfly life stages",
+        "url": "https://home.nps.gov/articles/species-spotlight-dragonflies.htm"
       }
     ],
     "bird_examples": [
@@ -250,93 +217,39 @@
         "url": "https://ebird.org/checklist/S323464879",
         "note": "This April checklist records Rusty Blackbird at Kingfisher Hollow on one visit."
       }
-    ],
-    "opening_detail_passage": "after-the-rain"
+    ]
   },
   "summer": {
     "title": "Summer at Kingfisher Hollow",
-    "intro": "Summer settles in around the pond and creek. Dragonflies hunt above the water by day, moths fly after dusk, and plants fill in the wet margins as the season advances.",
-    "next_observation": "Do pondhawks return to the same perch after a short flight? Watch a sunny stretch of bank and see which low stems they come back to.",
+    "intro": "Summer at the Hollow takes different forms in the pond, the moving creek, and the woods and sunny edges around them. Insects that hunt by day, moths that fly after dusk, and the plants their young feed on are part of the same summer community.",
+    "next_observation": "What changes at an edge between afternoon and dusk? Watch the same patch of pond bank and vegetation at both times, and see which animals move over the water or among the stems.",
     "passages": [
       {
         "id": "pond-in-daylight",
-        "phase": "Early summer",
-        "title": "The pond in daylight",
-        "body": "A dragonfly's life straddles the waterline. A mature nymph climbs out of the water and sheds its skin, then takes to the air to hunt once its wings harden.",
-        "look_for": "Check stems rising from the pond for the empty skins dragonflies leave behind. Watch for an adult pondhawk making short flights from a low perch.",
-        "row_ids": [
-          "eastern-pondhawk",
-          "pickerel-frog"
-        ],
-        "phase_month": 6,
-        "illustration": {
-          "id": 371303953,
-          "date": "2026-06-13",
-          "photo_id": "678387489"
-        },
-        "claims": [
-          {
-            "text": "Eastern Pondhawks are among the dragonflies of midsummer at the Hollow.",
-            "requires": [
-              {
-                "id": 297297241,
-                "date": "2025-07-12",
-                "quality": "research"
-              },
-              {
-                "id": 384609783,
-                "date": "2026-07-24",
-                "quality": "research"
-              }
-            ]
-          }
-        ]
+        "phase": "Water",
+        "title": "Still water and current",
+        "body": "Still water and current offer different places for young animals to live. In a pond, shallow vegetation gives tadpoles and aquatic insects places to feed or hide. In a creek, stones and quieter pockets along the bank give aquatic insects places to hold on or get out of the main current.",
+        "look_for": "Compare quiet water among pond stems with the moving water around creek stones. From the bank, notice where surface insects gather and where small animals hold their place in the current.",
+        "row_ids": [],
+        "phase_month": 6
       },
       {
         "id": "after-dark",
-        "phase": "Mid-summer",
-        "title": "After dark",
-        "body": "Warm summer evenings extend insect activity beyond daylight. As dragonflies settle for the night, many moths take to the air around the woods and field edges.",
-        "look_for": "As dusk deepens on a warm evening, notice which moths settle nearby. A Lettered Habrosyne has pale zigzag bands across its wings.",
-        "row_ids": [
-          "lettered-habrosyne"
-        ],
-        "phase_month": 7,
-        "illustration": {
-          "id": 382488681,
-          "date": "2026-07-17",
-          "photo_id": "699971587"
-        },
-        "claims": [
-          {
-            "text": "The Lettered Habrosyne is among the moths active after dusk at the Hollow.",
-            "requires": [
-              {
-                "id": 382488681,
-                "date": "2026-07-17",
-                "event_type": "Adult",
-                "quality": "research"
-              }
-            ]
-          }
-        ]
+        "phase": "After dusk",
+        "title": "The summer moth community",
+        "body": "Summer moth diversity starts with what caterpillars eat. Some feed openly on foliage. Others mine between a leaf’s surfaces, feed from inside a fold, or bore into shoots. The plants in the woods and open edges help determine which caterpillars can live there. Different adults fly at different points in the season, so the mix of moths changes through summer.",
+        "look_for": "Look for the work of different leaf feeders in daylight. A winding trail inside a leaf, an edge rolled into a shelter, and a leaf chewed from the outside each show a different way of feeding.",
+        "row_ids": [],
+        "phase_month": 7
       },
       {
         "id": "tangle-at-the-creek",
-        "phase": "Late summer",
-        "title": "The tangle at the creek edge",
-        "body": "By late summer, plants fill in the wet margins of the creek. Arrow-leaved tearthumb threads its stems through streamside growth, and vegetation in shallow water can offer cover for crayfish.",
-        "look_for": "Look for arrow-shaped tearthumb leaves where prickly stems weave through the bankside plants. In the shallows, look for crayfish moving between patches of cover.",
-        "row_ids": [
-          "arrow-leaved-tearthumb",
-          "calico-crayfish"
-        ],
-        "phase_month": 8,
-        "illustration": {
-          "id": 389384274,
-          "date": "2026-08-08",
-          "photo_id": "713238954"
-        }
+        "phase": "Woods and edges",
+        "title": "How vegetation feeds the summer community",
+        "body": "With the canopy in full leaf, the shaded woods and sunny edges offer different food. Flowering herbs draw insects that feed on pollen and nectar, while foliage feeds caterpillars that can in turn feed nestlings. Streamside plants provide cover at the boundary between water and land.",
+        "look_for": "Choose a spot where shade meets sun. Notice which insects use flowers, which stay among leaves, and where birds search the vegetation for food.",
+        "row_ids": [],
+        "phase_month": 8
       }
     ],
     "rows": [
@@ -479,113 +392,74 @@
     ],
     "sources": [
       {
-        "label": "National Park Service on the dragonfly life cycle",
-        "url": "https://home.nps.gov/articles/species-spotlight-dragonflies.htm"
+        "label": "National Park Service guide to dragonfly habitats",
+        "url": "https://irma.nps.gov/DataStore/FileSource/Get/2253665?filename=2018_DragonflyHg_SamplingGuide.pdf"
       },
       {
-        "label": "University of Michigan on arrow-leaved tearthumb",
-        "url": "https://climbers.lsa.umich.edu/persicaria-sagittata/"
+        "label": "NYSDEC on freshwater wetlands and wildlife",
+        "url": "https://dec.ny.gov/nature/waterbodies/wetlands"
       },
       {
-        "label": "Michigan DNR guide to crayfish and their habitats",
-        "url": "https://www.michigan.gov/dnr/-/media/Project/Websites/dnr/Documents/Education/Misc/MI-Crayfish-ID-Guide-62024.pdf?rev=77a14e2f174a4572bcb9a4d3b17ba1d6"
+        "label": "InsectGUILD research dataset on how caterpillars feed",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12119911/"
       },
       {
-        "label": "National Park Service moth surveys at Acadia",
+        "label": "Research on plant host relationships in North American moths and butterflies",
+        "url": "https://www.nature.com/articles/s41467-020-19565-4"
+      },
+      {
+        "label": "Field study of seasonal change in eastern forest caterpillars",
+        "url": "https://nsojournals.onlinelibrary.wiley.com/doi/10.1111/oik.08265"
+      },
+      {
+        "label": "Smithsonian study of plant, caterpillar, and nesting bird relationships",
+        "url": "https://repository.si.edu/server/api/core/bitstreams/ddc458ac-655e-4667-9681-f02d823a3ffb/content"
+      },
+      {
+        "label": "National Park Service on moths in Acadia",
         "url": "https://www.nps.gov/articles/000/acadia_moth.htm"
+      },
+      {
+        "label": "West Virginia environmental agency on stream invertebrate adaptations",
+        "url": "https://dep.wv.gov/WWE/watershed/bio_fish/Pages/Bio_Fish.aspx"
+      },
+      {
+        "label": "Indiana forest study of seasonal moth communities",
+        "url": "https://doi.org/10.1111/afe.12035"
       }
     ]
   },
   "autumn": {
     "title": "Autumn at Kingfisher Hollow",
-    "intro": "Goldenrods flower as the woods begin to change color. With leaf fall, fresh litter joins the wood already breaking down on the forest floor, and some insects stay active into November.",
-    "next_observation": "Which insects are still active after leaf fall? On a sunny afternoon, watch for meadowhawks where bare ground catches the light. After dusk, look for moths on a mild evening.",
+    "intro": "Autumn changes what the Hollow offers to animals. Late flowers keep some insects fed, seeds and fruits carry food later into the season, and falling leaves bring fresh material to the forest floor and creek.",
+    "next_observation": "Where do fallen leaves come to rest after a rain? Follow the change from dry leaf litter to wet streamside piles and see where leaves are still whole and where they are already breaking apart.",
     "passages": [
       {
         "id": "at-the-goldenrod-edge",
-        "phase": "Early autumn",
-        "title": "At the goldenrod edge",
-        "body": "Goldenrods flower along open edges while much of the canopy is still green. Their clusters of small yellow blooms supply pollen and nectar to insects into early autumn.",
-        "look_for": "Watch a goldenrod spray for bees and other insects visiting its small yellow blooms. Later in autumn, look for dry seed heads in the same patch.",
-        "row_ids": [
-          "wrinkle-leaved-goldenrod"
-        ],
-        "phase_month": 9,
-        "illustration": {
-          "id": 313850668,
-          "date": "2025-09-14",
-          "photo_id": "566812913"
-        },
-        "claims": [
-          {
-            "text": "At the Hollow, flowering goldenrod is a recurring sign of September.",
-            "requires": [
-              {
-                "id": 313850668,
-                "date": "2025-09-14",
-                "event_type": "Flowering"
-              },
-              {
-                "id": 396527812,
-                "date": "2026-09-01",
-                "event_type": "Flowering"
-              }
-            ]
-          }
-        ]
+        "phase": "Late flowers",
+        "title": "Food changes at the edge",
+        "body": "Flowering along open edges can continue as trees begin to change color. Late blooms offer pollen and nectar on days when insects can still fly. As flowers go to seed and shrubs bear fruit, the edge offers different food to animals that remain or pass through.",
+        "look_for": "Compare open flowers with dry seed heads and fruiting shrubs. Notice whether the same patch is used by flower visitors, seed-eating birds, or both.",
+        "row_ids": [],
+        "phase_month": 9
       },
       {
         "id": "look-down-to-fallen-wood",
-        "phase": "Mid-autumn",
-        "title": "Look down to fallen wood",
-        "body": "As leaves fall, they add a fresh layer of litter over branches and logs already breaking down. Fungi help return nutrients from dead wood to the forest floor. Puffballs and bracket fungi are among the forms that fruit on wood.",
-        "look_for": "Look along fallen wood for rounded clusters of puffballs and for shelves with gill-like ridges underneath.",
-        "row_ids": [
-          "pear-shaped-puffball",
-          "conifer-mazegill"
-        ],
-        "phase_month": 10,
-        "illustration": {
-          "id": 412527318,
-          "date": "2026-10-31",
-          "photo_id": "759092263"
-        }
+        "phase": "Leaf fall",
+        "title": "Leaves and wood feed another community",
+        "body": "Fallen leaves join wood already breaking down in the forest. Fungi work through dead branches and logs, and some produce fruiting bodies on the surface. Leaves that reach the creek feed a different community of decomposers and aquatic insects that break the litter into smaller pieces.",
+        "look_for": "Compare the fungi on solid wood with those on soft, crumbling logs. Along the creek, look for whole leaves caught in quiet pockets and softer leaves breaking into pieces.",
+        "row_ids": [],
+        "phase_month": 10
       },
       {
         "id": "insects-into-november",
-        "phase": "Late autumn",
-        "title": "Along the bank and after dark",
-        "body": "As autumn cools, mild days and evenings can still bring insect activity. Dragonflies and moths can both extend the season after many of the leaves are down.",
-        "look_for": "On a cool, sunny day, watch for a meadowhawk basking on bare ground or wood. On a mild evening, notice whether moths such as the Bicolored Sallow are still flying.",
-        "row_ids": [
-          "autumn-meadowhawk",
-          "bicolored-sallow"
-        ],
-        "phase_month": 11,
-        "illustration": {
-          "id": 414235537,
-          "date": "2026-11-11",
-          "photo_id": "762535012"
-        },
-        "claims": [
-          {
-            "text": "At the Hollow, both Bicolored Sallows and Autumn Meadowhawks can still turn up in November.",
-            "requires": [
-              {
-                "id": 413254190,
-                "date": "2026-11-06",
-                "event_type": "Adult",
-                "quality": "research"
-              },
-              {
-                "id": 414235537,
-                "date": "2026-11-11",
-                "event_type": "Adult",
-                "quality": "research"
-              }
-            ]
-          }
-        ]
+        "phase": "Cooling nights",
+        "title": "Preparing for the cold",
+        "body": "Mild afternoons and evenings can still bring flying insects after many leaves are down. Other insects are already spending the season as eggs, larvae, pupae, or adults in sheltered places. The stems, leaves, and bark that supported summer activity can also provide winter cover.",
+        "look_for": "On a mild afternoon, watch for insects where the sun warms bare ground or a sheltered edge. In the shade, look for intact stems, loose bark, and leaf piles that will hold cover through winter.",
+        "row_ids": [],
+        "phase_month": 11
       }
     ],
     "rows": [
@@ -775,79 +649,62 @@
     ],
     "sources": [
       {
-        "label": "Bucknell University on goldenrod and its insects",
+        "label": "Bucknell University research on goldenrod and its insects",
         "url": "https://solidago.scholar.bucknell.edu/goldenrod-biology/"
+      },
+      {
+        "label": "USDA plant guide to wrinkle-leaved goldenrod",
+        "url": "https://plants.sc.egov.usda.gov/DocumentLibrary/plantguide/pdf/pg_soru2.pdf"
       },
       {
         "label": "US Forest Service on wood decay and forest fungi",
         "url": "https://research.fs.usda.gov/treesearch/54715"
       },
       {
-        "label": "New York State DEC on regional dragonfly seasons",
-        "url": "https://extapps.dec.ny.gov/docs/lands_forests_pdf/greatdivideump2006a.pdf"
+        "label": "US Forest Service stream experiment on leaf litter and aquatic insects",
+        "url": "https://research.fs.usda.gov/treesearch/20215"
+      },
+      {
+        "label": "Nebraska Game and Parks on how insects overwinter",
+        "url": "https://magazine.outdoornebraska.gov/blogs/nebraska-nature/where-do-insects-go-in-winter/"
+      },
+      {
+        "label": "University of Wisconsin–Milwaukee Field Station on late-season dragonflies",
+        "url": "https://uwm.edu/field-station/bug-of-the-week/autumn-meadowhawk-dragonfly/"
       }
     ]
   },
   "winter": {
     "title": "Winter at Kingfisher Hollow",
-    "intro": "Leaf fall opens the woods between the pond and creek. Some insects spend the cold months in shelter, while mammals that remain active leave tracks across the snow.",
-    "next_observation": "How does a track trail change over open ground, roots, and fallen wood? Follow a line of prints from the side and see where pairs draw together or spread apart.",
+    "intro": "Leaf fall opens the view between the pond, creek, and slope woods. Snow can reveal animals still moving, while bark, litter, standing stems, and water shelter life through the cold months.",
+    "next_observation": "Which parts of the Hollow still offer food and cover in winter? Compare a sheltered woodland edge with a stretch of creek, looking for standing seeds, feeding birds, and tracks where the two settings meet.",
     "passages": [
       {
         "id": "read-the-open-woods",
-        "phase": "Early winter",
-        "title": "Read the open woods",
-        "body": "When hardwoods lose their leaves, more light reaches the ground and the conifers stay green. Snow and ice can accent the difference between the broad surface of the pond and the creek winding past it.",
-        "look_for": "From a safe bank, notice where snow gathers on still ice and where the creek’s current can keep a channel open.",
+        "phase": "Bare woods",
+        "title": "What winter leaves standing",
+        "body": "With the hardwood canopy bare, evergreen trees, standing stems, and fallen wood are easier to see. Conifer boughs provide cover, seed heads can still hold food, and fallen leaves shelter small animals. Along the creek and pond, snow and ice make the difference between still water and current visible.",
+        "look_for": "From a safe bank, notice which parts of the pond or creek carry snow on ice and where water is open. In the woods, compare the cover under evergreens with the open ground under bare trees.",
         "row_ids": [],
         "phase_month": 12
       },
       {
         "id": "check-the-sheltered-edges",
-        "phase": "Mid-winter",
-        "title": "Check the sheltered edges",
-        "body": "Protected places carry some insects through winter. Adults of some species spend the cold months beneath loose bark or in sheltered cracks, ready to resume activity when conditions warm.",
-        "look_for": "On a mild day, check sheltered surfaces for a seed bug with a zigzag across its folded wings and flared hind legs. Leave bark and leaf litter in place.",
-        "row_ids": [
-          "western-conifer-seed-bug",
-          "american-mink"
-        ],
-        "phase_month": 1,
-        "illustration": {
-          "id": 336830595,
-          "date": "2026-01-31",
-          "photo_id": "612178321"
-        },
-        "claims": [
-          {
-            "text": "The Western Conifer Seed Bug is one of the insects that make it through winter as an adult.",
-            "requires": [
-              {
-                "id": 336830595,
-                "date": "2026-01-31",
-                "event_type": "Adult",
-                "quality": "research"
-              }
-            ]
-          }
-        ]
+        "phase": "Winter shelter",
+        "title": "Life above and below the waterline",
+        "body": "Winter shelter depends on the animal and its stage of life. Some insects wait out the cold under bark or in litter as eggs, pupae, or adults. Many stream insects spend winter underwater as larvae, and in eastern streams a few kinds even emerge as adults during the cold months.",
+        "look_for": "Notice where bark crevices, dead stems, and accumulated leaves offer small pockets of shelter. At open water, look from the bank for insect movement without lifting bark or overturning stones.",
+        "row_ids": [],
+        "phase_month": 1
       },
       {
         "id": "follow-the-signs",
-        "phase": "Late winter",
-        "title": "Follow the signs",
-        "body": "Some mammals keep moving through the woods all winter. Fishers are active through the cold months, and snow can preserve the tracks they leave as they travel.",
-        "look_for": "Follow a line of tracks from the side. See whether the prints fall in pairs and whether the spacing changes where the animal crossed roots or a log.",
-        "row_ids": [
-          "fisher",
-          "gray-fox"
-        ],
-        "phase_month": 2,
-        "illustration": {
-          "id": 341999745,
-          "date": "2026-02-26",
-          "photo_id": "622711162"
-        }
+        "phase": "Winter activity",
+        "title": "Following food and cover",
+        "body": "Some animals stay active and move among the food and shelter winter leaves available. Snow can trace mammals along banks and over fallen wood. Birds use the same landscape at a different height, feeding among seed heads, probing bark for insects, or searching branches and twigs.",
+        "look_for": "Look for paired or single-file prints in fresh snow, then watch where birds feed. Which activity stays close to the ground, and which follows bark, branches, or standing stems?",
+        "row_ids": [],
+        "phase_month": 2
       }
     ],
     "rows": [
@@ -950,6 +807,24 @@
         "date": "2025-12-13",
         "url": "https://ebird.org/checklist/S288385085",
         "note": "This December checklist includes a photographed Red Crossbill at Kingfisher Hollow."
+      }
+    ],
+    "sources": [
+      {
+        "label": "Nebraska Game and Parks on how insects overwinter",
+        "url": "https://magazine.outdoornebraska.gov/blogs/nebraska-nature/where-do-insects-go-in-winter/"
+      },
+      {
+        "label": "Maryland DNR on stream insects active in winter",
+        "url": "https://news.maryland.gov/dnr/2025/01/02/native-animal-profile-cold-weather-loving-bugs/"
+      },
+      {
+        "label": "Cornell Lab of Ornithology winter trail guide",
+        "url": "https://www.birds.cornell.edu/home/wp-content/uploads/2018/10/WinterTrailGuide_New.pdf"
+      },
+      {
+        "label": "NYSDEC on tracks and winter foraging along streams",
+        "url": "https://dec.ny.gov/nature/animals-fish-plants/mink"
       }
     ]
   }

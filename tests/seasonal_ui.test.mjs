@@ -44,3 +44,15 @@ test('real controller restores Back, keeps source records and propagates compari
  resetListeners.click({preventDefault(){}}); assert.equal(loc.search,''); assert.equal(select.value,'all');assert.equal(pooled[0].hidden,false);assert.equal(select.focused,true);
  assert.equal(sources[0].hidden,false); assert.equal(new URL(link.href,loc).searchParams.get('from'),'/seasons/winter/#evidence-pine');
 });
+
+test('legacy voucher links reveal their native source disclosures',()=>{
+ const events={};
+ const appendix={tagName:'DETAILS',open:false,parentElement:null};
+ const voucher={tagName:'DETAILS',open:false,parentElement:appendix,scrollIntoView(){this.scrolled=true;}};
+ const doc={querySelector:()=>null,querySelectorAll:()=>[],getElementById:id=>id==='evidence-pine'?voucher:null};
+ const context={document:doc,location:{hash:'#evidence-pine'},addEventListener:(event,fn)=>events[event]=fn};
+ vm.runInNewContext(fs.readFileSync(new URL('../assets/seasons/seasonal.js',import.meta.url),'utf8'),context);
+ assert.equal(appendix.open,true);assert.equal(voucher.open,true);assert.equal(voucher.scrolled,true);
+ appendix.open=false;voucher.open=false;events.hashchange();
+ assert.equal(appendix.open,true);assert.equal(voucher.open,true);
+});

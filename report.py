@@ -33,6 +33,7 @@ import new_county_species  # noqa: E402
 import natural_history  # noqa: E402
 import seasonal  # noqa: E402
 import seasonal_pages  # noqa: E402
+import seasonal_community  # noqa: E402
 import public_api  # noqa: E402
 import social_export  # noqa: E402
 import tiger_swallowtail  # noqa: E402
@@ -1078,8 +1079,8 @@ def seasonal_body(observations, odonate_ids, on=None):
         '<div class="max-w-5xl mx-auto">'
         '<p class="text-hollow-700 font-semibold text-xs uppercase tracking-widest">One place, through the seasons</p>'
         '<p class="text-stone-600 text-lg leading-relaxed mt-4 max-w-3xl">'
-        'Follow spring wildflowers, summer dragonflies, autumn moths, and winter wildlife '
-        'through the changing woods and water of Kingfisher Hollow.</p>'
+        'Follow changing light, water, food, and shelter '
+        'through the connected woodland, creek, pond, and edge communities of Kingfisher Hollow.</p>'
         '<div class="grid sm:grid-cols-2 gap-6 mt-8">' + ''.join(cards) + '</div>'
         '<p class="mt-7"><a class="text-hollow-700 underline underline-offset-4" href="/seasons/">Explore all four seasons →</a></p>'
         '</div>'
@@ -3991,6 +3992,16 @@ def build():
         fdate(analyze.bird_summary(birds_for_totals).get("latest")),
     )
     chapters = seasonal.build_chapters(raw_df.to_dict("records"), today=datetime.now(ZoneInfo("America/New_York")).date())
+    taxonomy = analyze._join_taxonomy(raw_df[["taxon_id"]].drop_duplicates())
+    community = seasonal_community.build_community(
+        raw_df.to_dict("records"), today=datetime.now(ZoneInfo("America/New_York")).date(),
+        moth_ids=set(moths_for_header["taxon_id"].dropna().astype(int)),
+        butterfly_ids=set(analyze.load_butterflies()["taxon_id"].dropna().astype(int)),
+        odonate_ids=odonate_ids,
+        family_by_taxon=dict(zip(taxonomy["taxon_id"], taxonomy["family_name"])),
+    )
+    for key, chapter in chapters.items():
+        chapter["community"] = community[key]
     _timed("seasonal-chapters", seasonal_pages.write_seasonal_pages, chapters, PUBLIC_DIR, home_url=SITE)
     _timed("public-api", public_api.build)
     _timed("social-export", social_export.build)

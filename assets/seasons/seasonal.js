@@ -55,6 +55,22 @@
     addEventListener('popstate', apply);
     apply();
   }
+  // Existing shared voucher links open their native disclosure ancestors.
+  function revealAnchor() {
+    let id;
+    try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+    if (!id || !document.getElementById) return;
+    const target = document.getElementById(id);
+    if (!target) return;
+    let ancestor = target;
+    while (ancestor) {
+      if (ancestor.tagName === 'DETAILS') ancestor.open = true;
+      ancestor = ancestor.parentElement;
+    }
+    if (target.scrollIntoView) target.scrollIntoView({block: 'start'});
+  }
+  addEventListener('hashchange', revealAnchor);
+  revealAnchor();
   document.querySelectorAll('.landscape img, .detail-photo img, .opening-detail img').forEach(img => {
     const unavailable = () => img.parentElement.classList.add('media-unavailable');
     img.addEventListener('error', unavailable);

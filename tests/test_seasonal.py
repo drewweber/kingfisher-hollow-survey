@@ -144,7 +144,8 @@ class SeasonalTests(unittest.TestCase):
                        photo_url='https://static.inaturalist.org/photos/631527312/medium.jpg')
         intact = build_chapters([egg], today=date(2026, 6, 1))['spring']
         claim = 'Spotted salamander eggs mark that early-spring transition at the Hollow.'
-        self.assertIn(claim, intact['passages'][0]['body'])
+        self.assertEqual(intact['rows'][0]['records'][0]['event_type'], 'Eggs')
+        self.assertNotIn(claim, intact['passages'][0]['body'])
         for photo in (None, 'https://static.inaturalist.org/photos/123/medium.jpg'):
             spring = build_chapters([dict(egg, photo_url=photo)],
                                     today=date(2026, 6, 1))['spring']
@@ -166,38 +167,19 @@ class SeasonalTests(unittest.TestCase):
         before = build_chapters([], today=date(2025, 12, 12))['winter']
         self.assertEqual(before['bird_examples'], [])
 
-    def test_cross_year_story_requires_both_reviewed_pondhawk_records(self):
-        july_2025 = seed_bug(297297241, '2025-07-12', taxon_id=61495,
-                             taxon_name='Erythemis simplicicollis')
-        july_2026 = dict(july_2025, id=384609783, observed_on='2026-07-24')
-        cutoff = date(2026, 11, 11)
-        summer = build_chapters([july_2025, july_2026], today=cutoff)['summer']
-        self.assertIn('among the dragonflies of midsummer at the Hollow', summer['passages'][0]['body'])
-        for changed in ([july_2026], [july_2025, dict(july_2026, observed_on='2026-08-01')],
-                        [july_2025, dict(july_2026, quality_grade='needs_id')]):
-            summer = build_chapters(changed, today=cutoff)['summer']
-            self.assertNotIn('among the dragonflies of midsummer at the Hollow', summer['passages'][0]['body'])
-            self.assertIn('water', summer['passages'][0]['body'])
-
-    def test_passage_and_opening_use_the_reviewed_illustration_only(self):
+    def test_community_story_is_independent_of_selected_vouchers(self):
         egg = seed_bug(346449861, '2026-03-31', taxon_id=26790,
                        taxon_name='Ambystoma maculatum', iconic_taxon='Amphibia',
                        photo_url='https://static.inaturalist.org/photos/631527312/medium.jpg')
-        later = dict(egg, id=350160639, observed_on='2026-04-15')
-        spring = build_chapters([egg, later], today=date(2026, 6, 1))['spring']
-        self.assertEqual([p['phase_month'] for p in spring['passages']], [3, 4, 5])
-        self.assertEqual(spring['passages'][0]['photo_record_id'], 346449861)
-        self.assertEqual(spring['opening_detail_record_id'], 346449861)
-        for changed in (
-            [later],
-            [dict(egg, observed_on='2026-04-01'), later],
-            [dict(egg, photo_url='https://static.inaturalist.org/photos/123/medium.jpg'), later],
-            [dict(egg, photo_license=None), later],
-        ):
-            spring = build_chapters(changed, today=date(2026, 6, 1))['spring']
-            self.assertIsNone(spring['passages'][0]['photo_record_id'])
-            self.assertIsNone(spring['opening_detail_record_id'])
-            self.assertEqual(spring['passages'][0]['row_ids'], ['spotted-salamander'])
+        with_voucher = build_chapters([egg], today=date(2026, 11, 11))
+        without_voucher = build_chapters([], today=date(2026, 11, 11))
+        self.assertEqual(len(with_voucher['spring']['rows']), 1)
+        for key, chapter in with_voucher.items():
+            self.assertIsNone(chapter['opening_detail_record_id'])
+            self.assertEqual(chapter['passages'], without_voucher[key]['passages'])
+            for passage in chapter['passages']:
+                self.assertFalse(passage['row_ids'])
+                self.assertIsNone(passage['photo_record_id'])
 
     def test_empty_input_still_produces_readable_chapters(self):
         chapters = build_chapters([], today=date(2026, 3, 1))

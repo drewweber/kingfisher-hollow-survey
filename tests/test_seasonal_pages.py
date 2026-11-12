@@ -51,11 +51,11 @@ class SeasonalPagesTests(unittest.TestCase):
         self.assertRegex(page,r'seasonal\.js\?v=[a-f0-9]{12}')
     def test_winter_evidence_native_fallback_and_context(self):
         page=self.render({'winter':chapter()})['seasons/winter/index.html']
-        self.assertLess(page.index('December</span>'), page.index('January</span>'))
-        self.assertLess(page.index('January</span>'), page.index('February</span>'))
         self.assertIn('2024-12-31',page); self.assertIn('2026-01-01',page)
         self.assertIn('2024–25',page); self.assertIn('2025–26',page)
-        self.assertIn('<details',page); self.assertIn('Return to “Read the branches”',page)
+        self.assertIn('<details class="voucher-appendix" id="evidence">',page)
+        self.assertIn('not a sample of the whole community',page)
+        self.assertNotIn('class="pooled-calendar"',page)
         self.assertIn('/plants/?from=%2Fseasons%2Fwinter%2F%23evidence-pine',page)
         self.assertIn('/field/?from=%2Fseasons%2Fwinter%2F%23next-observation',page)
         self.assertNotIn('/field-guide/',page)
@@ -99,18 +99,23 @@ class SeasonalPagesTests(unittest.TestCase):
         c['passages'][0]['photo_record_id']=None
         page=self.render({'winter':c})['seasons/winter/index.html']
         self.assertNotIn('class="detail-photo"',page)
-    def test_opening_detail_is_explicit_licensed_dated_and_in_season(self):
-        c=chapter('spring');c['month_numbers']=[3,4,5];c['opening_detail_record_id']=1
-        r=c['rows'][0]['records'][0]
-        r.update(date='2026-03-31',month=3,event_type='Eggs',photo_url='https://example.org/egg.jpg',photo_credit='Photographer',photo_license='cc-by')
-        page=self.render({'spring':c})['seasons/spring/index.html']
-        self.assertIn('class="opening-detail"',page)
-        self.assertLess(page.index('class="opening-detail"'),page.index('class="chapter-contents"'))
-        self.assertIn('March 31, 2026',page)
-        self.assertIn('Eggs',page)
-        r['date']='2026-01-31'
-        page=self.render({'spring':c})['seasons/spring/index.html']
+    def test_community_summary_has_full_counts_and_secondary_year_coverage(self):
+        c=chapter('summer')
+        c['community'] = dict(record_count=100, taxa_count=45, reporting_days=8,
+            first_date='2025-06-01', as_of='2026-08-31',
+            groups=[dict(label='Moths',taxa_count=40,reporting_days=7),dict(label='Plants',taxa_count=5,reporting_days=3)],
+            months=[dict(month=6,taxa_count=20,reporting_days=4)],
+            periods=[dict(period='2025',taxa_count=20,reporting_days=4,moth_taxa_count=17),dict(period='2026',taxa_count=30,reporting_days=4,moth_taxa_count=27)],
+            moths=dict(taxa_count=40,family_count=4,months=[]))
+        page=self.render({'summer':c})['seasons/summer/index.html']
+        self.assertIn('45 taxa across 2 broad groups',page)
+        self.assertIn('40 moth taxa across 4 identified families',page)
+        self.assertIn('<details class="community-methods">',page)
+        self.assertIn('Species and subspecies may have separate IDs',page)
+        self.assertLess(page.index('id="community"'),page.index('id="evidence"'))
+        self.assertIn('2025</th>',page);self.assertIn('2026</th>',page)
         self.assertNotIn('class="opening-detail"',page)
+
     def test_empty_missing_chapters_still_provide_complete_journey(self):
         pages=self.render({})
         self.assertEqual(len(pages),5)

@@ -125,7 +125,7 @@ def passage_html(passage, rows, key, used_photos):
         if candidate and candidate.get('photo_url') not in used_photos:
             photo=candidate; photo_name=row.get('name','Observation'); used_photos.add(candidate['photo_url']); break
     links=''.join(f'<a href="#evidence-{ident(r["id"])}">{esc(r.get("name"))} <span aria-hidden="true">↘</span></a>' for r in matches)
-    evidence=f'<div class="passage-links"><span>Behind this passage</span>{links}</div>' if links else '<p class="quiet">A field question to carry into future observations; no linked local record is available for this passage.</p>'
+    evidence=f'<div class="passage-links"><span>Behind this passage</span>{links}</div>' if links else ''
     look_for=f'<aside class="look-for"><h3>A closer look</h3><p>{esc(passage.get("look_for"))}</p></aside>' if passage.get('look_for') else ''
     return f'''<article class="passage {'with-photo' if photo else 'text-only'}" id="{pid}" tabindex="-1"><div class="passage-copy"><p class="eyebrow">{esc(passage.get('phase'))}</p><h2>{esc(passage.get('title'))}</h2><p>{esc(passage.get('body'))}</p>{look_for}{evidence}</div>{record_photo(photo,photo_name)}</article>'''
 
@@ -155,31 +155,55 @@ def records_html(records):
 
 
 def evidence_html(chapter):
-    rows=chapter.get('rows',[]); key=chapter['key']; months=chapter['month_numbers']
-    scope=esc(chapter.get('framing',''))
-    if not rows:
-        return f'<section class="evidence-section" id="evidence"><div class="section-heading"><p class="eyebrow">The dated evidence</p><h2>A picture still taking shape</h2><p>{scope}</p><p>No supporting records are available for this season yet. A reporting gap does not establish ecological absence.</p></div></section>'
-    years=chapter.get('source_years',[])
-    options=''.join(f'<option value="{esc(y)}">{esc(y)}</option>' for y in years)
-    control=f'''<div class="comparison-controls" hidden><label for="comparison-mode">Calendar view</label><select id="comparison-mode"><option value="all">Season together</option><option value="years">Compare years</option>{options}</select><a class="reset-comparison" href="/seasons/{key}/#evidence">Show the whole season</a><span id="comparison-status" role="status"></span></div>'''
+    """Keep curated vouchers accessible without presenting a shortlist as the community."""
     items=[]
-    for row in rows:
-        rid=ident(row['id']); records=row.get('records',[])
-        back=''.join(f'<a href="#{ident(p["id"])}">Return to “{esc(p["title"])}” ↑</a>' for p in chapter.get('passages',[]) if row['id'] in p.get('row_ids',[]))
+    key=chapter['key']
+    for row in chapter.get('rows', []):
+        rid=ident(row['id'])
         specialist=''
         if row.get('group') in GROUP_ROUTES:
             target,noun=GROUP_ROUTES[row['group']]
-            source=quote(f'/seasons/{key}/#evidence-{rid}',safe='')
-            specialist=f'<a href="{target}?from={source}">All-season {noun} records ↗</a>'
-        bands=''.join(f'<div class="year-band" data-year="{esc(y)}"><span>{esc(y)}</span>{marks([r for r in records if r.get("period")==y])}</div>' for y in row.get('years',[]))
-        interpretation = f'<p>{esc(row.get("interpretation"))}</p>' if row.get('interpretation') else ''
-        items.append(f'''<article class="evidence-row" id="evidence-{rid}" tabindex="-1"><div class="row-heading"><div><p class="eyebrow">{esc('Dragonflies & damselflies' if row.get('group') == 'Odonates' else row.get('group'))}</p><h3>{esc(row.get('name'))}</h3></div></div>{interpretation}<div class="pooled-calendar">{month_axis(months)}{marks(records)}</div><details class="year-calendar"><summary>Compare years for {esc(row.get('name'))}</summary>{month_axis(months)}{bands}<p class="year-empty" hidden>No available records for this row in the selected period. This does not establish absence.</p></details><details class="source-records"><summary>{len(records)} {'observation' if len(records)==1 else 'observations'} · {esc(', '.join(str(y) for y in row.get('years',[])))} — dates and identifications</summary>{records_html(records)}</details><div class="evidence-exits">{back}{specialist}</div></article>''')
-    coverage=[]
-    for period in chapter.get('coverage',[]):
-        cells=''.join(f'<td>{esc(m.get("reporting_days",0))}<small>{esc(m.get("record_count",0))} records</small></td>' for m in period.get('months',[]))
-        coverage.append(f'<tr><th scope="row">{esc(period.get("period"))}</th>{cells}</tr>')
-    coverage_table=f'''<details class="coverage"><summary>How much of the season is represented?</summary><p>Reporting days are dates with at least one available iNaturalist record, across all eligible property records. They do not measure visits, search time, or abundance. A zero means no available record.</p><div class="table-scroll" role="region" aria-label="Reporting coverage" tabindex="0"><table><caption>Reporting days by month and seasonal period</caption><thead><tr><th scope="col">Period</th>{''.join(f'<th scope="col">{esc(month_name[int(m)])}</th>' for m in months)}</tr></thead><tbody>{''.join(coverage)}</tbody></table></div></details>'''
-    return f'''<section class="evidence-section" id="evidence"><div class="section-heading"><p class="eyebrow">The dated evidence</p><h2>One season. Every recorded year.</h2><p>{scope}</p><p class="calendar-note">Each equal-size mark is one documented encounter. Marks may overlap. Open the dated records to read every observation; these dates do not establish a flight period, arrival, abundance, or absence.</p><p class="source-years">Contributing periods: {esc(', '.join(str(y) for y in years)) or 'None yet'}{(' · Latest included observation: '+esc(pretty_date(chapter['as_of']))) if chapter.get('as_of') else ''}</p></div>{control}<div class="calendar-rows">{''.join(items)}</div>{coverage_table}</section>'''
+            context=quote(f'/seasons/{key}/#evidence-{rid}',safe='')
+            specialist=f'<a href="{target}?from={context}">All-season {noun} records ↗</a>'
+        items.append(f'<details class="voucher-row" id="evidence-{rid}"><summary>{esc(row.get("name"))}</summary>{records_html(row.get("records",[]))}{specialist}</details>')
+    return f'''<details class="voucher-appendix" id="evidence"><summary>Selected observation sources</summary><p>These {len(items)} selected taxa are illustrative records retained from the chapter’s source register. They are not a sample of the whole community. The community summary above uses all eligible seasonal iNaturalist records.</p>{''.join(items) or '<p>No supporting records in this register.</p>'}</details>'''
+
+
+def community_html(chapter):
+    community=chapter.get('community',{})
+    if not community or not community.get('record_count'):
+        return '<section class="community-section" id="community"><h2>The local record is still taking shape</h2><p>No eligible seasonal records are available for this summary yet.</p></section>'
+    key=chapter['key']
+    groups=community.get('groups',[])
+    periods=community.get('periods',[])
+    years=', '.join(str(p['period']) for p in periods)
+    count=community['taxa_count']
+    first=pretty_date(community.get('first_date'))
+    latest=pretty_date(community.get('as_of'))
+    if key=='winter':
+        title='A season larger than its records'
+        lead=f"Winter’s iNaturalist record is still small: {count:,} taxa across {community['reporting_days']} reporting days. It cannot describe the full winter community or tell us which groups are scarce. The chapter’s account of sheltered life and winter resources draws on natural history; local winter coverage remains a gap."
+    else:
+        title={'spring':'Many lives share the spring opening','summer':'Diversity across the summer community','autumn':'Life continues beyond the turning canopy'}[key]
+        lead=f"The {key} iNaturalist record brings together {count:,} taxa across {len(groups)} broad groups. These are the organisms documented in that source through the available years, including provisional identifications. Each group opens a different view of the season; the unequal totals also reflect where and how often people looked."
+    group_html=''.join(f'<li><span>{esc(g["label"])}</span><strong>{g["taxa_count"]:,}</strong></li>' for g in groups)
+    breadth=f'<div class="community-breadth"><p class="data-label">Documented taxa · {esc(years)}</p><ul>{group_html}</ul></div>' if key!='winter' else ''
+    moths=community.get('moths',{})
+    moth_block=''
+    if key=='summer' and moths.get('taxa_count'):
+        family=f' across {moths["family_count"]} identified families' if moths.get('family_count') else ''
+        comparisons=[m for m in moths.get('months',[])[1:] if m.get('shared_with_previous') is not None]
+        overlap=''
+        if comparisons:
+            m=comparisons[-1]; previous=12 if m['month']==1 else m['month']-1
+            overlap=f"Of the {m['taxa_count']:,} moth taxa recorded in {month_name[m['month']]}, {m['shared_with_previous']:,} also have {month_name[previous]} records; {m['only_this_month']:,} do not. This describes a changing set of recorded taxa, not arrivals, departures, or a measured change in abundance."
+        moth_block=f'''<div class="assemblage"><p class="eyebrow">The moth community</p><h3>Hundreds of life histories, sharing a season</h3><p>The summer records contain {moths['taxa_count']:,} moth taxa{family}. Their larvae use different foods and their life cycles do not follow a single summer schedule.</p><p>{esc(overlap)}</p><p class="quiet">Months pool all available years. Uneven observation effort and different years represented can also change which moths appear in the record.</p><a href="/moths/?from={quote('/seasons/summer/#community',safe='')}">Explore the complete moth inventory ↗</a></div>'''
+    moth_month_rows=''.join(f'<tr><th scope="row">{month_name[m["month"]]}</th><td>{m["taxa_count"]:,}</td><td>{m.get("reporting_days",0):,}</td><td>{esc(", ".join(str(y) for y in m.get("source_years",[]))) or "None"}</td></tr>' for m in moths.get('months',[]))
+    moth_coverage=f'<table><caption>Moth coverage behind the month comparison</caption><thead><tr><th scope="col">Month</th><th scope="col">Taxa</th><th scope="col">Reporting days</th><th scope="col">Years</th></tr></thead><tbody>{moth_month_rows}</tbody></table>' if key=='summer' else ''
+    month_rows=''.join(f'<tr><th scope="row">{month_name[m["month"]]}</th><td>{m["taxa_count"]:,}</td><td>{m["reporting_days"]:,}</td></tr>' for m in community.get('months',[]))
+    period_rows=''.join(f'<tr><th scope="row">{esc(p["period"])}</th><td>{p["taxa_count"]:,}</td><td>{p["reporting_days"]:,}</td><td>{p.get("moth_taxa_count",0):,}</td></tr>' for p in periods)
+    group_rows=''.join(f'<tr><th scope="row">{esc(g["label"])}</th><td>{g["taxa_count"]:,}</td><td>{g.get("reporting_days", "—")}</td></tr>' for g in groups)
+    return f'''<section class="community-section" id="community"><div class="community-intro"><p class="eyebrow">The recorded community</p><h2>{title}</h2><p>{esc(lead)}</p><p class="quiet community-scope">iNaturalist records · Bird observations are tracked separately in <a href="/birds/">the eBird-based bird inventory</a>.</p></div>{breadth}{moth_block}<details class="community-methods"><summary>Years, coverage &amp; what these counts mean</summary><p>All eligible iNaturalist property records dated {esc(first)}–{esc(latest)} contribute to this seasonal summary. Birds are tracked separately through eBird; the bird life list does not measure seasonal frequency.</p><p>“Taxa” counts distinct species-level or finer identification IDs, including provisional identifications. Species and subspecies may have separate IDs, so these are not normalized species totals. Captive, future-dated, invalid-date and duplicate records are excluded. Coarser identifications contribute to reporting days, but not taxon counts. Totals describe documented breadth, not abundance or a complete census.</p><p>A reporting day has at least one eligible observation; it is not a visit or a measure of search time. Months pool the available years. Monthly and yearly totals overlap and must not be added together. Missing records do not establish absence.</p><div class="coverage-tables">{moth_coverage}<table><caption>Calendar months, all available years</caption><thead><tr><th scope="col">Month</th><th scope="col">Taxa</th><th scope="col">Reporting days</th></tr></thead><tbody>{month_rows}</tbody></table><table><caption>Contributing seasonal periods</caption><thead><tr><th scope="col">Period</th><th scope="col">Taxa</th><th scope="col">Reporting days</th><th scope="col">Moth taxa</th></tr></thead><tbody>{period_rows}</tbody></table><table><caption>Coverage by group · dates with records of the taxa counted</caption><thead><tr><th scope="col">Group</th><th scope="col">Taxa</th><th scope="col">Reporting days</th></tr></thead><tbody>{group_rows}</tbody></table></div><p><a href="/life-list/?from={quote('/seasons/'+key+'/#community',safe='')}">Browse the complete life list and source records ↗</a></p></details></section>'''
 
 
 def chapter_body(chapter):
@@ -197,7 +221,7 @@ def chapter_body(chapter):
         birds=f'<section class="bird-examples"><h2>Checklist glimpses</h2><p>These eBird checklists are individual illustrations, separate from the iNaturalist calendar. They are not comprehensive seasonal bird coverage.</p><ul>{examples}</ul></section>'
     keys=list(SEASONS); following=keys[(keys.index(key)+1)%4]
     context=quote(f'/seasons/{key}/#next-observation',safe='')
-    return f'''<section class="chapter-opening"><div class="opening-copy"><p class="eyebrow">{esc(chapter.get('months'))} · Through the recorded years</p><h1>{label}<span>at the Hollow</span></h1>{subtitle}<p class="intro">{esc(chapter.get('intro'))}</p>{opening_detail(chapter)}</div>{landscape(key)}</section><nav class="chapter-contents" aria-label="In this chapter"><span>Read the season</span>{passage_links}<a href="#evidence">Dated evidence</a><a href="#next-observation">A next observation</a></nav><div class="story">{passages}</div>{evidence_html(chapter)}{birds}<section class="next-observation" id="next-observation"><p class="eyebrow">Carry the question outside</p><h2>A next observation</h2><p>{esc(chapter.get('next_observation'))}</p><a href="/field/?from={context}">Open the complete field guide ↗</a>{source_block}</section><a class="next-season" href="/seasons/{following}/"><span>Keep reading through the year</span><strong>Continue into {following}</strong><span aria-hidden="true">→</span></a>'''
+    return f'''<section class="chapter-opening"><div class="opening-copy"><p class="eyebrow">{esc(chapter.get('months'))} · Through the recorded years</p><h1>{label}<span>at the Hollow</span></h1>{subtitle}<p class="intro">{esc(chapter.get('intro'))}</p></div>{landscape(key)}</section><nav class="chapter-contents" aria-label="In this chapter"><span>Read the season</span>{passage_links}<a href="#community">The local community</a><a href="#next-observation">A next observation</a></nav><div class="story">{passages}</div>{community_html(chapter)}{evidence_html(chapter)}<section class="next-observation" id="next-observation"><p class="eyebrow">Carry the question outside</p><h2>A next observation</h2><p>{esc(chapter.get('next_observation'))}</p><a href="/field/?from={context}">Open the complete field guide ↗</a>{source_block}</section><a class="next-season" href="/seasons/{following}/"><span>Keep reading through the year</span><strong>Continue into {following}</strong><span aria-hidden="true">→</span></a>'''
 
 
 def hub_body(chapters):
@@ -206,7 +230,7 @@ def hub_body(chapters):
     for key,(label,months,*_) in SEASONS.items():
         c=chapters[key]; current=' · Current calendar season' if current_month in months else ''
         features.append(f'''<article class="season-feature season-{key}"><a class="season-feature-image" href="/seasons/{key}/" aria-label="Explore {key}">{landscape(key,eager=False)}</a><div><p class="eyebrow">{esc(c.get('months'))}{current}</p><h2><a href="/seasons/{key}/">{label} <span aria-hidden="true">↗</span></a></h2><p>{esc(c.get('intro'))}</p><a class="text-link" href="/seasons/{key}/">Read the {key} chapter</a></div></article>''')
-    return f'''<section class="hub-opening"><p class="eyebrow">Kingfisher Hollow · Seasonal field stories</p><h1>One place.<br>A changing year.</h1><p>Wildflowers emerge as the woods leaf out. Summer fills the creek margins with green, autumn brings color and fallen leaves, and winter opens the view again. Explore how plants and animals live through each season.</p></section><div class="season-features">{''.join(features)}</div><aside class="hub-note"><h2>A living, uneven record</h2><p>These chapters bring together dated encounters across the available years. Some parts of the season are better documented than others. Each story keeps its sources close, and leaves room for what we have yet to notice.</p><a href="/">Explore the full biodiversity survey ↗</a></aside>'''
+    return f'''<section class="hub-opening"><p class="eyebrow">Kingfisher Hollow · Seasonal field stories</p><h1>One place.<br>A changing year.</h1><p>Light, water, leaves, and shelter connect the Hollow’s woodland, creek, pond, and edges. Follow the communities that grow, feed, reproduce, and find refuge as those conditions change through the year.</p></section><div class="season-features">{''.join(features)}</div><aside class="hub-note"><h2>A living, uneven record</h2><p>These chapters bring together dated encounters across the available years. Some parts of the season are better documented than others. Each story keeps its sources close, and leaves room for what we have yet to notice.</p><a href="/">Explore the full biodiversity survey ↗</a></aside>'''
 
 
 def write_seasonal_pages(chapters, output_dir, *, home_url='https://www.kingfisher-hollow.com', survey_url='https://survey.kingfisher-hollow.com'):
