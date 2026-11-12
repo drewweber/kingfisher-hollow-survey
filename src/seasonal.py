@@ -180,7 +180,7 @@ def _build_rows(story, entries, key, months):
             'id': row_id, 'taxon_id': entry['taxon_id'], 'name': entry['name'],
             'group': entry['group'],
             'record_type': next(iter(types)) if len(types) == 1 else 'Dated encounters',
-            'interpretation': entry['interpretation'],
+            'interpretation': entry.get('interpretation', ''),
             'records': records,
             'years': list(dict.fromkeys(item['period'] for item in records)),
             'record_count': len(records),

@@ -149,7 +149,7 @@ def records_html(records):
         quality={'needs_id':'Identification under review','research':'Research grade','casual':'Casual grade'}.get(r.get('quality'),'Identification status unrecorded')
         when=f'<time datetime="{esc(r.get("date"))}">{esc(pretty_date(r.get("date")))}</time>'
         url=safe_url(r.get('url'))
-        link=f'<a href="{esc(url)}">{when}<span class="source-label">iNaturalist record ↗</span></a>' if url else when+'<span class="source-label">Source link unavailable</span>'
+        link=f'<a href="{esc(url)}">{when} <span class="source-label">iNaturalist record ↗</span></a>' if url else when+'<span class="source-label">Source link unavailable</span>'
         result.append(f'<li data-record-period="{esc(r.get("period"))}">{link}<span>{esc(r.get("event_type") or "Unspecified encounter")}<small>{esc(quality)}</small></span><span class="record-period">{esc(r.get("period"))}</span></li>')
     return '<ul class="record-list">'+''.join(result)+'</ul>' if result else '<p>No supporting records are available for this account.</p>'
 
@@ -172,7 +172,8 @@ def evidence_html(chapter):
             source=quote(f'/seasons/{key}/#evidence-{rid}',safe='')
             specialist=f'<a href="{target}?from={source}">All-season {noun} records ↗</a>'
         bands=''.join(f'<div class="year-band" data-year="{esc(y)}"><span>{esc(y)}</span>{marks([r for r in records if r.get("period")==y])}</div>' for y in row.get('years',[]))
-        items.append(f'''<article class="evidence-row" id="evidence-{rid}" tabindex="-1"><div class="row-heading"><div><p class="eyebrow">{esc(row.get('group'))} · {esc(row.get('record_type') or 'Unspecified encounter')}</p><h3>{esc(row.get('name'))}</h3></div><p class="record-total">{len(records)} dated {'record' if len(records)==1 else 'records'}<span>{esc(', '.join(str(y) for y in row.get('years',[])))}</span></p></div><p>{esc(row.get('interpretation'))}</p><div class="pooled-calendar">{month_axis(months)}{marks(records)}</div><details class="year-calendar"><summary>Compare years for {esc(row.get('name'))}</summary>{month_axis(months)}{bands}<p class="year-empty" hidden>No available records for this row in the selected period. This does not establish absence.</p></details><details class="source-records"><summary>Open {len(records)} dated {'record' if len(records)==1 else 'records'} and identification details</summary>{records_html(records)}</details><div class="evidence-exits">{back}{specialist}</div></article>''')
+        interpretation = f'<p>{esc(row.get("interpretation"))}</p>' if row.get('interpretation') else ''
+        items.append(f'''<article class="evidence-row" id="evidence-{rid}" tabindex="-1"><div class="row-heading"><div><p class="eyebrow">{esc('Dragonflies & damselflies' if row.get('group') == 'Odonates' else row.get('group'))}</p><h3>{esc(row.get('name'))}</h3></div></div>{interpretation}<div class="pooled-calendar">{month_axis(months)}{marks(records)}</div><details class="year-calendar"><summary>Compare years for {esc(row.get('name'))}</summary>{month_axis(months)}{bands}<p class="year-empty" hidden>No available records for this row in the selected period. This does not establish absence.</p></details><details class="source-records"><summary>{len(records)} {'observation' if len(records)==1 else 'observations'} · {esc(', '.join(str(y) for y in row.get('years',[])))} — dates and identifications</summary>{records_html(records)}</details><div class="evidence-exits">{back}{specialist}</div></article>''')
     coverage=[]
     for period in chapter.get('coverage',[]):
         cells=''.join(f'<td>{esc(m.get("reporting_days",0))}<small>{esc(m.get("record_count",0))} records</small></td>' for m in period.get('months',[]))

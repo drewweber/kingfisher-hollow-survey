@@ -2,14 +2,14 @@
   "spring": {
     "title": "Spring at Kingfisher Hollow",
     "intro": "Spring begins with rain and thaw in the low places. Woodland flowers make the most of the light before the trees leaf out, and frogs and insects become part of life around the warming water.",
-    "next_observation": "Choose a patch of woodland you can photograph from the same spot every week. Include the canopy and forest floor in the frame, and record whether any plants are in bud, in flower, or leafing out.",
+    "next_observation": "How long does spring light reach the forest floor? Return to a patch of trout lily as the trees leaf out and see which flowers open as shade deepens.",
     "passages": [
       {
         "id": "after-the-rain",
         "phase": "Early spring",
         "title": "After the rain",
         "body": "Rain and thaw fill shallow pools in the woods. In New York, spotted salamanders leave their winter shelters on mild, rainy nights and move to these pools to lay eggs.",
-        "look_for": "From a dry bank, look for amphibian egg masses and photograph them in place. Record whether you saw eggs, a moving animal, or heard a call.",
+        "look_for": "From a dry bank, look for clusters of dark salamander eggs suspended in clear or milky jelly just below the surface.",
         "row_ids": [
           "spotted-salamander",
           "clemens-agonopterix"
@@ -39,7 +39,7 @@
         "phase": "Mid-spring",
         "title": "Under the open canopy",
         "body": "Spring wildflowers brighten the forest floor while the branches are still bare. Trout lilies make use of that brief window of sunlight, followed in May by white starflower blooms as shade deepens.",
-        "look_for": "Photograph the leaf pattern and include a flower or bud when you can see one on the same plant.",
+        "look_for": "Look for mottled trout lily leaves low in the litter, then for the white points of starflower held above a ring of leaves in May.",
         "row_ids": [
           "yellow-trout-lily",
           "northern-starflower"
@@ -56,7 +56,7 @@
         "phase": "Late spring",
         "title": "Life at the water's edge",
         "body": "By late spring, the canopy shades the woodland floor while the pond still catches the sun. Gray treefrogs can call from branches near breeding water, and adult dragonflies hunt along sunny water margins.",
-        "look_for": "Save a short recording if you hear a frog. Note the time, and keep the recording linked to the same date as any photographs.",
+        "look_for": "Listen for a gray treefrog’s short trill from branches near water. At the pond margin, watch for a baskettail making repeated passes low over the water.",
         "row_ids": [
           "gray-treefrog",
           "common-baskettail"
@@ -76,14 +76,20 @@
         "taxon_name": "Ambystoma maculatum",
         "name": "Spotted Salamander",
         "group": "Amphibians",
-        "interpretation": "Look for the jelly surrounding an egg mass. Photograph the whole mass and its immediate setting without moving it.",
+        "interpretation": "Spotted salamanders lay their eggs in jelly-covered masses in spring pools. Green algae can grow inside the masses and supply oxygen as the embryos develop.",
         "events": {
           "346449861": {
             "date": "2026-03-31",
             "type": "Eggs",
             "photo_id": "631527312"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "Experimental study of algae in spotted salamander eggs",
+            "url": "https://pubmed.ncbi.nlm.nih.gov/23038736/"
+          }
+        ]
       },
       {
         "id": "clemens-agonopterix",
@@ -91,7 +97,7 @@
         "taxon_name": "Agonopterix clemensella",
         "name": "Clemens’ Agonopterix",
         "group": "Moths",
-        "interpretation": "A close photograph of a resting moth can preserve the wing markings needed for an identification. Add whether it was found at a light or away from one.",
+        "interpretation": "Clemens’ Agonopterix survives winter as an adult and can fly again when the weather warms. Its caterpillars feed inside folded leaves of carrot-family plants.",
         "events": {
           "341987868": {
             "date": "2026-03-08",
@@ -128,7 +134,17 @@
             "type": "Adult",
             "photo_id": "639856018"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "North Carolina State Parks account of Clemens’ Agonopterix",
+            "url": "https://auth1.dpr.ncparks.gov/moths/view.php?MONA_number=862.00"
+          },
+          {
+            "label": "Tompkins County study of Clemens’ Agonopterix host plants",
+            "url": "https://images.peabody.yale.edu/lepsoc/jls/1980s/1982/1982-36%282%29160-Berenbaum.pdf"
+          }
+        ]
       },
       {
         "id": "yellow-trout-lily",
@@ -136,7 +152,17 @@
         "taxon_name": "Erythronium americanum",
         "name": "yellow trout lily",
         "group": "Plants",
-        "interpretation": "Look at the mottling on the leaves as well as any flower. A photograph of the entire plant helps separate flowering from leaf-only records."
+        "interpretation": "Yellow trout lilies use the short stretch of sunlight between snowmelt and canopy closure. After the flowers set seed, ants carry the seeds away for the rich morsel attached to each one.",
+        "sources": [
+          {
+            "label": "Research on the trout lily’s spring light window",
+            "url": "https://esajournals.onlinelibrary.wiley.com/doi/10.2307/2937357"
+          },
+          {
+            "label": "Duke Gardens on trout lily and seed dispersal by ants",
+            "url": "https://gardens.duke.edu/garden-talk/trout-lily/"
+          }
+        ]
       },
       {
         "id": "northern-starflower",
@@ -144,14 +170,20 @@
         "taxon_name": "Lysimachia borealis",
         "name": "northern starflower",
         "group": "Plants",
-        "interpretation": "Use the leaf arrangement and any visible bloom together. A second visit can show how much changed since the first photograph.",
+        "interpretation": "In late spring, northern starflower lifts white blooms above a ring of leaves. The plant also spreads below ground, where tubers send up new shoots.",
         "events": {
           "364126392": {
             "date": "2026-05-21",
             "type": "Flowering",
             "photo_id": "664716078"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "Kasey Hartz Natural Area account of northern starflower",
+            "url": "https://www.muskegoncc.edu/wp-content/uploads/2024/04/Trientalis.pdf"
+          }
+        ]
       },
       {
         "id": "gray-treefrog",
@@ -159,7 +191,13 @@
         "taxon_name": "Dryophytes versicolor",
         "name": "Gray Treefrog",
         "group": "Amphibians",
-        "interpretation": "The linked dates show encounters. A sound recording with a timestamp would add direct evidence of calling."
+        "interpretation": "From late spring, male gray treefrogs trill from shrubs and branches near breeding water. Broad toe pads help them grip the stems and branches they climb.",
+        "sources": [
+          {
+            "label": "Maryland DNR on gray treefrog calls and habitat",
+            "url": "https://dnr.maryland.gov/wildlife/Pages/plants_wildlife/herps/Anura.aspx?FrogToadName=Gray"
+          }
+        ]
       },
       {
         "id": "common-baskettail",
@@ -167,14 +205,24 @@
         "taxon_name": "Epitheca cynosura",
         "name": "Common Baskettail",
         "group": "Odonates",
-        "interpretation": "Look closely at the base of the hindwing when comparing the photograph with a field guide.",
+        "interpretation": "Common Baskettails patrol pond margins in late spring and early summer. A female carries a cluster of eggs at the tip of her abdomen and deposits it among floating plants or algae.",
         "events": {
           "366424482": {
             "date": "2026-05-29",
             "type": "Adult",
             "photo_id": "669081322"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "University of Nebraska State Museum on baskettail patrols and season",
+            "url": "https://unsm-ento.unl.edu/Odonata/epcy.html"
+          },
+          {
+            "label": "Wisconsin Odonata Survey on Common Baskettail egg laying",
+            "url": "https://wiatri.net/inventory/odonata/speciesaccounts/SpeciesDetail.cfm?TaxaID=63"
+          }
+        ]
       }
     ],
     "sources": [
@@ -208,14 +256,14 @@
   "summer": {
     "title": "Summer at Kingfisher Hollow",
     "intro": "Summer settles in around the pond and creek. Dragonflies hunt above the water by day, moths fly after dusk, and plants fill in the wet margins as the season advances.",
-    "next_observation": "Pick one pond vantage point and return to it on two summer dates. Spend the same amount of time watching, and record the weather, time, and what each animal was doing.",
+    "next_observation": "Do pondhawks return to the same perch after a short flight? Watch a sunny stretch of bank and see which low stems they come back to.",
     "passages": [
       {
         "id": "pond-in-daylight",
         "phase": "Early summer",
         "title": "The pond in daylight",
         "body": "A dragonfly's life straddles the waterline. A mature nymph climbs out of the water and sheds its skin, then takes to the air to hunt once its wings harden.",
-        "look_for": "Record whether a dragonfly was perched, flying, or emerging. Photograph any shed skin in place and mark it as a separate kind of evidence.",
+        "look_for": "Check stems rising from the pond for the empty skins dragonflies leave behind. Watch for an adult pondhawk making short flights from a low perch.",
         "row_ids": [
           "eastern-pondhawk",
           "pickerel-frog"
@@ -249,7 +297,7 @@
         "phase": "Mid-summer",
         "title": "After dark",
         "body": "Warm summer evenings extend insect activity beyond daylight. As dragonflies settle for the night, many moths take to the air around the woods and field edges.",
-        "look_for": "Use the same light and checking time for repeat visits. Record the hours and weather, even when there is little to photograph.",
+        "look_for": "As dusk deepens on a warm evening, notice which moths settle nearby. A Lettered Habrosyne has pale zigzag bands across its wings.",
         "row_ids": [
           "lettered-habrosyne"
         ],
@@ -278,7 +326,7 @@
         "phase": "Late summer",
         "title": "The tangle at the creek edge",
         "body": "By late summer, plants fill in the wet margins of the creek. Arrow-leaved tearthumb threads its stems through streamside growth, and vegetation in shallow water can offer cover for crayfish.",
-        "look_for": "Include a whole plant and a close view of its leaf shape. If you see a crayfish, photograph the animal where it is and include the streambed or bank in the frame.",
+        "look_for": "Look for arrow-shaped tearthumb leaves where prickly stems weave through the bankside plants. In the shallows, look for crayfish moving between patches of cover.",
         "row_ids": [
           "arrow-leaved-tearthumb",
           "calico-crayfish"
@@ -298,7 +346,7 @@
         "taxon_name": "Erythemis simplicicollis",
         "name": "Eastern Pondhawk",
         "group": "Odonates",
-        "interpretation": "Date and life stage answer different questions. Keep an adult sighting, a shed skin, and observed emergence as separate records.",
+        "interpretation": "Eastern Pondhawks hunt around ponds and other slow water in summer. They launch from low perches and can catch flying insects nearly their own size.",
         "events": {
           "371303953": {
             "date": "2026-06-13",
@@ -310,7 +358,17 @@
             "type": "Adult",
             "photo_id": "713311995"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "Wisconsin Odonata Survey on Eastern Pondhawk",
+            "url": "https://www.wiatri.net/inventory/odonata/SpeciesAccounts/SpeciesDetail.cfm?TaxaID=133"
+          },
+          {
+            "label": "North Carolina State Parks dragonfly accounts",
+            "url": "https://auth1.dpr.ncparks.gov/odes/PDFs/8th_ver_8.1.pdf"
+          }
+        ]
       },
       {
         "id": "pickerel-frog",
@@ -318,7 +376,13 @@
         "taxon_name": "Lithobates palustris",
         "name": "Pickerel Frog",
         "group": "Amphibians",
-        "interpretation": "A photograph of the back can preserve the shape and arrangement of the spots for identification."
+        "interpretation": "Pickerel frogs favor cool, wooded streams in summer and also leave the water to feed in nearby grassy openings.",
+        "sources": [
+          {
+            "label": "Minnesota DNR on Pickerel Frog summer habitat",
+            "url": "https://www.dnr.state.mn.us/reptiles_amphibians/frogs_toads/truefrogs/pickerel.html"
+          }
+        ]
       },
       {
         "id": "lettered-habrosyne",
@@ -326,7 +390,7 @@
         "taxon_name": "Habrosyne scripta",
         "name": "Lettered Habrosyne Moth",
         "group": "Moths",
-        "interpretation": "The pale bands on the wings are details to keep in focus. An observation time or light-check note adds context to the date.",
+        "interpretation": "Adult Lettered Habrosynes fly after dusk in summer. Their caterpillars eat blackberry leaves, so the brambles at a woodland edge can support another stage of the same moth.",
         "events": {
           "305677774": {
             "date": "2025-08-11",
@@ -368,7 +432,17 @@
             "type": "Adult",
             "photo_id": "719422760"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "North Carolina State Parks on Lettered Habrosyne host plants",
+            "url": "https://auth1.dpr.ncparks.gov/moths/view.php?MONA_number=6235.00"
+          },
+          {
+            "label": "Summer night encounter at Kingfisher Hollow",
+            "url": "https://www.inaturalist.org/observations/382488681"
+          }
+        ]
       },
       {
         "id": "arrow-leaved-tearthumb",
@@ -376,7 +450,17 @@
         "taxon_name": "Persicaria sagittata",
         "name": "arrow-leaved tearthumb",
         "group": "Plants",
-        "interpretation": "Include where the pointed leaves join the stem. If you can see flowers or fruits, frame those separately so the stage can be recorded."
+        "interpretation": "Arrow-leaved tearthumb scrambles over neighboring stems in wet places, helped by tiny backward-pointing prickles. Clusters of pale flowers open from midsummer into early autumn.",
+        "sources": [
+          {
+            "label": "University of Michigan on how arrow-leaved tearthumb climbs",
+            "url": "https://climbers.lsa.umich.edu/persicaria-sagittata/"
+          },
+          {
+            "label": "Michigan State University on tearthumb flowering",
+            "url": "https://www.canr.msu.edu/nativeplants/uploads/files/Arrowleaf_tearthumb.pdf"
+          }
+        ]
       },
       {
         "id": "calico-crayfish",
@@ -384,7 +468,13 @@
         "taxon_name": "Faxonius immunis",
         "name": "Calico Crayfish",
         "group": "Freshwater life",
-        "interpretation": "A view from above can show the outline of the body and claws. A wider view preserves context for the encounter."
+        "interpretation": "Calico crayfish use underwater vegetation for cover in slow water. As water recedes, they can retreat into burrows.",
+        "sources": [
+          {
+            "label": "Michigan DNR field guide to crayfish",
+            "url": "https://www.michigan.gov/dnr/-/media/Project/Websites/dnr/Documents/Education/Misc/MI-Crayfish-ID-Guide-62024.pdf?rev=77a14e2f174a4572bcb9a4d3b17ba1d6"
+          }
+        ]
       }
     ],
     "sources": [
@@ -409,14 +499,14 @@
   "autumn": {
     "title": "Autumn at Kingfisher Hollow",
     "intro": "Goldenrods flower as the woods begin to change color. With leaf fall, fresh litter joins the wood already breaking down on the forest floor, and some insects stay active into November.",
-    "next_observation": "Return to one woodland edge and one waterside spot in September, October, and November. Record the time and conditions at each stop and separate flowers, fungal fruiting bodies, and insect encounters in your notes.",
+    "next_observation": "Which insects are still active after leaf fall? On a sunny afternoon, watch for meadowhawks where bare ground catches the light. After dusk, look for moths on a mild evening.",
     "passages": [
       {
         "id": "at-the-goldenrod-edge",
         "phase": "Early autumn",
         "title": "At the goldenrod edge",
         "body": "Goldenrods flower along open edges while much of the canopy is still green. Their clusters of small yellow blooms supply pollen and nectar to insects into early autumn.",
-        "look_for": "Frame the stem, leaves, and flower heads together. Photograph any insect you see visiting a flower and write down what it was doing.",
+        "look_for": "Watch a goldenrod spray for bees and other insects visiting its small yellow blooms. Later in autumn, look for dry seed heads in the same patch.",
         "row_ids": [
           "wrinkle-leaved-goldenrod"
         ],
@@ -449,7 +539,7 @@
         "phase": "Mid-autumn",
         "title": "Look down to fallen wood",
         "body": "As leaves fall, they add a fresh layer of litter over branches and logs already breaking down. Fungi help return nutrients from dead wood to the forest floor. Puffballs and bracket fungi are among the forms that fruit on wood.",
-        "look_for": "Record what a fungus is growing on and photograph the underside when you can see it without breaking anything off.",
+        "look_for": "Look along fallen wood for rounded clusters of puffballs and for shelves with gill-like ridges underneath.",
         "row_ids": [
           "pear-shaped-puffball",
           "conifer-mazegill"
@@ -466,7 +556,7 @@
         "phase": "Late autumn",
         "title": "Along the bank and after dark",
         "body": "As autumn cools, mild days and evenings can still bring insect activity. Dragonflies and moths can both extend the season after many of the leaves are down.",
-        "look_for": "Note the time and conditions beside a dragonfly photograph. For a moth, add whether you found it at a light or away from one.",
+        "look_for": "On a cool, sunny day, watch for a meadowhawk basking on bare ground or wood. On a mild evening, notice whether moths such as the Bicolored Sallow are still flying.",
         "row_ids": [
           "autumn-meadowhawk",
           "bicolored-sallow"
@@ -505,7 +595,7 @@
         "taxon_name": "Solidago rugosa",
         "name": "wrinkle-leaved goldenrod",
         "group": "Plants",
-        "interpretation": "Leaf texture and flower-head arrangement are worth capturing in the same view. The dates mark encounters, with flowering shown where it is documented.",
+        "interpretation": "Wrinkle-leaved goldenrod opens sprays of small yellow flowers as summer turns to autumn. Bees and other insects feed on the nectar and pollen, and birds can eat the seeds that follow.",
         "events": {
           "313850668": {
             "date": "2025-09-14",
@@ -517,7 +607,13 @@
             "type": "Flowering",
             "photo_id": "727182312"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "USDA plant guide to wrinkle-leaved goldenrod",
+            "url": "https://plants.sc.egov.usda.gov/DocumentLibrary/plantguide/pdf/pg_soru2.pdf"
+          }
+        ]
       },
       {
         "id": "pear-shaped-puffball",
@@ -525,7 +621,7 @@
         "taxon_name": "Apioperdon pyriforme",
         "name": "Pear-shaped Puffball",
         "group": "Fungi",
-        "interpretation": "Use the photographs as identification leads. A view of the cluster and the material directly beneath it would help a reviewer.",
+        "interpretation": "Pear-shaped puffballs fruit in clusters on decaying logs and stumps in autumn. A pore opens at the top as each puffball ripens, releasing a cloud of spores when raindrops strike it.",
         "events": {
           "400015067": {
             "date": "2026-09-13",
@@ -537,7 +633,13 @@
             "type": "Fruiting body",
             "photo_id": "759092263"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "Ohio DNR field guide to stump puffballs",
+            "url": "https://dam.assets.ohio.gov/image/upload/ohiodnr.gov/documents/wildlife/backyard-wildlife/Pub_5552_Mushrooms_of_Ohio-WEB.pdf"
+          }
+        ]
       },
       {
         "id": "conifer-mazegill",
@@ -545,14 +647,24 @@
         "taxon_name": "Gloeophyllum sepiarium",
         "name": "Conifer Mazegill",
         "group": "Fungi",
-        "interpretation": "The underside and type of wood are details to document when checking this identification.",
+        "interpretation": "Conifer Mazegill breaks down dead wood, especially conifers, leaving a brown rot. Its tough shelves can persist after leaf fall, with gill-like folds beneath.",
         "events": {
           "413366563": {
             "date": "2026-11-07",
             "type": "Fruiting body",
             "photo_id": "760782141"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "NC State Mycological Herbarium on Conifer Mazegill",
+            "url": "https://ncslg.cals.ncsu.edu/gloeophyllum-sepiarium-wulfenp-karst/"
+          },
+          {
+            "label": "Natural Resources Canada on Conifer Mazegill and brown rot",
+            "url": "https://tidcf.nrcan.gc.ca/en/diseases-caused-by-pathogens/factsheet/201"
+          }
+        ]
       },
       {
         "id": "autumn-meadowhawk",
@@ -560,7 +672,7 @@
         "taxon_name": "Sympetrum vicinum",
         "name": "Autumn Meadowhawk",
         "group": "Odonates",
-        "interpretation": "The dates give a window of documented encounters. Close side views that show the legs and face can help check a meadowhawk identification.",
+        "interpretation": "Autumn Meadowhawks can bask on bare ground on cool days, then dart after small flying insects. Sun-warmed perches help them stay active well into autumn.",
         "events": {
           "319016022": {
             "date": "2025-10-05",
@@ -572,7 +684,17 @@
             "type": "Adult",
             "photo_id": "762535012"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "Illinois DNR on Autumn Meadowhawk behavior",
+            "url": "https://dnr.illinois.gov/education/wildaboutpages/wildaboutinvertebrates/wildaboutdragonflies/family-libellulidae/wadfautumnmeadowhawk.html"
+          },
+          {
+            "label": "University of Wisconsin–Milwaukee Field Station on late flight",
+            "url": "https://uwm.edu/field-station/bug-of-the-week/autumn-meadowhawk-dragonfly/"
+          }
+        ]
       },
       {
         "id": "bicolored-sallow",
@@ -580,7 +702,7 @@
         "taxon_name": "Sunira bicolorago",
         "name": "Bicolored Sallow",
         "group": "Moths",
-        "interpretation": "Open the records to compare the dates and wing patterns. Recording how each moth was found would make the timing easier to interpret.",
+        "interpretation": "Bicolored Sallows fly well into autumn. In spring, their young caterpillars can feed on opening red maple buds.",
         "events": {
           "315131852": {
             "date": "2025-09-19",
@@ -642,7 +764,13 @@
             "type": "Adult",
             "photo_id": "762246126"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "North Carolina State Parks account of Bicolored Sallow",
+            "url": "https://auth1.dpr.ncparks.gov/moths/view.php?MONA_number=9957.00"
+          }
+        ]
       }
     ],
     "sources": [
@@ -663,14 +791,14 @@
   "winter": {
     "title": "Winter at Kingfisher Hollow",
     "intro": "Leaf fall opens the woods between the pond and creek. Some insects spend the cold months in shelter, while mammals that remain active leave tracks across the snow.",
-    "next_observation": "Repeat a short walk from the same starting point after fresh snow. Take a wide picture of any track trail and a close view with a scale, then record the snow conditions and time.",
+    "next_observation": "How does a track trail change over open ground, roots, and fallen wood? Follow a line of prints from the side and see where pairs draw together or spread apart.",
     "passages": [
       {
         "id": "read-the-open-woods",
         "phase": "Early winter",
         "title": "Read the open woods",
         "body": "When hardwoods lose their leaves, more light reaches the ground and the conifers stay green. Snow and ice can accent the difference between the broad surface of the pond and the creek winding past it.",
-        "look_for": "Frame the bank and water together from a safe position. Note how much snow or ice you can see from that spot.",
+        "look_for": "From a safe bank, notice where snow gathers on still ice and where the creek’s current can keep a channel open.",
         "row_ids": [],
         "phase_month": 12
       },
@@ -679,7 +807,7 @@
         "phase": "Mid-winter",
         "title": "Check the sheltered edges",
         "body": "Protected places carry some insects through winter. Adults of some species spend the cold months beneath loose bark or in sheltered cracks, ready to resume activity when conditions warm.",
-        "look_for": "Check sheltered surfaces without moving bark or disturbing leaf litter. If an insect is visible, photograph where it was resting as well as the insect.",
+        "look_for": "On a mild day, check sheltered surfaces for a seed bug with a zigzag across its folded wings and flared hind legs. Leave bark and leaf litter in place.",
         "row_ids": [
           "western-conifer-seed-bug",
           "american-mink"
@@ -709,7 +837,7 @@
         "phase": "Late winter",
         "title": "Follow the signs",
         "body": "Some mammals keep moving through the woods all winter. Fishers are active through the cold months, and snow can preserve the tracks they leave as they travel.",
-        "look_for": "Photograph a run of prints before walking through it. Add a scale and note whether the snow is fresh, crusted, or melting.",
+        "look_for": "Follow a line of tracks from the side. See whether the prints fall in pairs and whether the spacing changes where the animal crossed roots or a log.",
         "row_ids": [
           "fisher",
           "gray-fox"
@@ -729,11 +857,15 @@
         "taxon_name": "Leptoglossus occidentalis",
         "name": "Western Conifer Seed Bug",
         "group": "Insects",
-        "interpretation": "Adults of this species can overwinter in sheltered places. A winter date records one encounter. A wider photograph can help show the kind of shelter where it was seen.",
+        "interpretation": "Adult Western Conifer Seed Bugs leave their feeding grounds on conifer cones in autumn and pass the winter under loose bark or in sheltered crevices, including in buildings.",
         "sources": [
           {
             "label": "US Forest Service field guide to Western Conifer Seed Bug",
             "url": "https://www.fs.usda.gov/rm/pubs/rmrs_gtr292/2003_hagle.pdf#page=160"
+          },
+          {
+            "label": "Penn State Extension on Western Conifer Seed Bug life history",
+            "url": "https://extension.psu.edu/western-conifer-seed-bug"
           }
         ],
         "events": {
@@ -750,14 +882,20 @@
         "taxon_name": "Neogale vison",
         "name": "American Mink",
         "group": "Mammals",
-        "interpretation": "A camera image, track, and direct sighting are different kinds of evidence. Keep the method and date with the observation.",
+        "interpretation": "American mink hunt fish in winter and can surface through openings in stream ice. On snowy banks, their loping gait often leaves paired prints.",
         "events": {
           "337133397": {
             "date": "2026-01-24",
             "type": "Trail-camera encounter",
             "photo_id": "612795901"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "New York State DEC on mink foraging and tracks",
+            "url": "https://dec.ny.gov/nature/animals-fish-plants/mink"
+          }
+        ]
       },
       {
         "id": "fisher",
@@ -765,7 +903,7 @@
         "taxon_name": "Pekania pennanti",
         "name": "Fisher",
         "group": "Mammals",
-        "interpretation": "Look at the sequence and spacing of prints as well as individual toes when comparing a track trail with a guide. Multiple dated records can show repeat encounters even when the individuals cannot be told apart.",
+        "interpretation": "Fishers travel over snow in a bounding gait that often leaves prints in pairs. They mate in late winter and early spring, with young born around the same season the following year.",
         "sources": [
           {
             "label": "New York State DEC on identifying Fisher signs",
@@ -786,14 +924,24 @@
         "taxon_name": "Urocyon cinereoargenteus",
         "name": "Gray Fox",
         "group": "Mammals",
-        "interpretation": "A camera image can be checked for visible features. Save the original frame so the whole animal and its posture are available for review.",
+        "interpretation": "Gray foxes stay active on winter nights, hunting mice and rabbits. They can also climb trees by gripping the trunk with their front feet and pushing upward with their hind feet.",
         "events": {
           "341997425": {
             "date": "2026-02-18",
             "type": "Trail-camera encounter",
             "photo_id": "622707760"
           }
-        }
+        },
+        "sources": [
+          {
+            "label": "US Forest Service on gray fox diet and winter activity",
+            "url": "https://www.fs.usda.gov/psw/publications/documents/psw_gtr037/mammals/m074.pdf"
+          },
+          {
+            "label": "New York State DEC on gray fox climbing",
+            "url": "https://dec.ny.gov/nature/animals-fish-plants/gray-fox"
+          }
+        ]
       }
     ],
     "bird_examples": [
