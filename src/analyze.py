@@ -1221,9 +1221,7 @@ def moth_seasonal(df, moths, min_obs=3, max_species=42):
 
 
 def moth_highlights(moths, stats, df=None, n=12):
-    """A showcase of standout moths: rarest in New York where we know it, topped
-    up with the most-recorded species so the gallery is always full. Each keeps
-    its representative photo."""
+    """Show the least-reported moths with available New York counts."""
     if moths.empty:
         return moths
     m = moths.copy()
@@ -1235,21 +1233,34 @@ def moth_highlights(moths, stats, df=None, n=12):
             on="taxon_id", how="left")
     else:
         m["state_obs_count"] = float("nan")
-    rare = m[m["state_obs_count"].notna()].sort_values("state_obs_count")
-    chosen = rare.head(n)
-    if len(chosen) < n:                       # backfill with most-recorded
-        extra = (m[~m["taxon_id"].isin(chosen["taxon_id"])]
-                 .sort_values("obs_count", ascending=False)
-                 .head(n - len(chosen)))
-        chosen = pd.concat([chosen, extra], ignore_index=True)
-    chosen = chosen.head(n)
-    if df is not None and not df.empty and "id" in df.columns:
-        first = (df.dropna(subset=["taxon_id", "id"])
-                   .sort_values("observed_on")
-                   .groupby("taxon_id")["id"].first()
-                   .reset_index()
-                   .rename(columns={"id": "first_obs_id"}))
-        chosen = chosen.merge(first, on="taxon_id", how="left")
+    chosen = (m[m["state_obs_count"].notna()]
+              .sort_values(["state_obs_count", "taxon_id"]).head(n).copy())
+    chosen["photo_source"] = chosen.get("photo_url", pd.Series(index=chosen.index, dtype=object)).map(
+        lambda url: "representative" if pd.notna(url) and url else None
+    )
+    chosen["photo_observation_id"] = None
+    if df is None or df.empty or "id" not in df:
+        return chosen
+
+    local = _observation_rows(df).dropna(subset=["taxon_id", "id"])
+    local = local[local["taxon_id"].isin(chosen["taxon_id"])]
+    local = local.sort_values(["observed_on", "id"])
+    first = local.drop_duplicates("taxon_id").set_index("taxon_id")
+    chosen["first_obs_id"] = chosen["taxon_id"].map(first["id"])
+    if "photo_url" not in local:
+        return chosen
+
+    photos = local[local["photo_url"].fillna("").ne("")]
+    photos = photos.drop_duplicates("taxon_id").set_index("taxon_id")
+    has_local_photo = chosen["taxon_id"].isin(photos.index)
+    for field in ("photo_url", "photo_attribution", "photo_license"):
+        chosen.loc[has_local_photo, field] = chosen.loc[has_local_photo, "taxon_id"].map(
+            photos.get(field, pd.Series(index=photos.index, dtype=object))
+        )
+    chosen.loc[has_local_photo, "photo_source"] = "local_observation"
+    chosen.loc[has_local_photo, "photo_observation_id"] = chosen.loc[
+        has_local_photo, "taxon_id"
+    ].map(photos["id"])
     return chosen
 
 
@@ -1312,28 +1323,45 @@ def moth_completeness(df, moths):
 
 
 def moth_family_breakdown(moths, n=14):
-    """Per-family: moth species recorded here vs. species known from the ~50-mile
-    region. Reframes overall completeness — typically near-complete on the big
-    macro-moth families, barely scratching the species-rich micro families.
-    Uses the regional pool (county is too undersampled to compare fairly)."""
+    """Summarize local family breadth and membership in the available reference."""
+    columns = ["family_name", "recorded", "region_total", "overlap", "gap", "label",
+               "reference_scope"]
     meta = _load_table("taxon_meta")
-    region = _load_table("region_moth_taxa")
-    ref = region if not region.empty else _load_table("county_moth_taxa")
-    if meta.empty or moths.empty or ref.empty:
-        return pd.DataFrame()
-    meta = meta[["taxon_id", "family_name", "family_common"]]
-    fam_common = (meta.dropna(subset=["family_name"]).drop_duplicates("family_name")
-                  .set_index("family_name")["family_common"].to_dict())
-    prop = moths[["taxon_id"]].merge(meta, on="taxon_id", how="left")
-    reg = ref[["taxon_id"]].merge(meta, on="taxon_id", how="left")
-    rec = prop.dropna(subset=["family_name"]).groupby("family_name")["taxon_id"].nunique()
-    rtot = reg.dropna(subset=["family_name"]).groupby("family_name")["taxon_id"].nunique()
-    out = pd.DataFrame({"recorded": rec, "region_total": rtot}).fillna(0).astype(int)
-    # Regional tally is a floor; never let it read below what we've recorded.
-    out["region_total"] = out[["region_total", "recorded"]].max(axis=1)
-    out["gap"] = out["region_total"] - out["recorded"]
-    out["label"] = [fam_common.get(f) or f for f in out.index]
-    return out.sort_values("region_total", ascending=False).head(n).reset_index(drop=True)
+    if meta.empty or moths.empty:
+        return pd.DataFrame(columns=columns)
+    ref = _load_table("region_moth_taxa")
+    scope = "region"
+    if ref.empty:
+        ref = _load_table("county_moth_taxa")
+        scope = None if ref.empty else "county"
+
+    taxonomy = meta.dropna(subset=["family_name", "taxon_id"])
+    taxonomy = taxonomy[taxonomy["family_name"].ne("")]
+    local_ids = set(moths["taxon_id"].dropna())
+    ref_ids = set() if ref.empty else set(ref["taxon_id"].dropna())
+    family_counts = []
+    for family, rows in taxonomy.groupby("family_name"):
+        ids = set(rows["taxon_id"])
+        local = ids & local_ids
+        reference = ids & ref_ids
+        if local or reference:
+            overlap = len(local & reference)
+            names = rows["family_common"].dropna()
+            names = names[names.ne("")]
+            family_counts.append({
+                "family_name": family,
+                "recorded": len(local),
+                "region_total": len(reference),
+                "overlap": overlap,
+                "gap": len(reference) - overlap,
+                "label": names.iloc[0] if not names.empty else family,
+                "reference_scope": scope,
+            })
+    out = pd.DataFrame(family_counts, columns=columns)
+    out = out.sort_values(["recorded", "family_name"], ascending=[False, True])
+    if n is not None:
+        out = out.head(n)
+    return out.reset_index(drop=True)
 
 
 def moth_survey_nights(df, moths):
