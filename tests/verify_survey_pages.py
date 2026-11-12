@@ -107,7 +107,7 @@ def main() -> int:
         route_features = {
             "Life-list filters": mode == "life-list",
             "Plotly and each chart payload": bool(config["plotly"]),
-            "trigger a private survey data refresh": mode == "log",
+            "trigger a private survey data refresh": mode == "log" and not report.REVIEW_PREVIEW,
         }
         for marker, expected in route_features.items():
             if (marker in html) != expected:
