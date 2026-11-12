@@ -76,7 +76,8 @@ jobs:
           test ! -e public/_worker.js
           test ! -e public/_routes.json
           test -z "$(find public -type l -print -quit)"
-          test -z "$(find public -type f \( -iname '*.sqlite*' -o -iname '*.db*' -o -iname '.env*' -o -iname '*.pem' -o -iname '*.key' -o -iname '*.csv' \) -print -quit)"
+          test -z "$(find public -type f \( -iname '*.sqlite*' -o -iname '*.db*' -o -iname '.env*' -o -iname '*.pem' -o -iname '*.key' \) -print -quit)"
+          python scripts/verify_preview_csv.py
           grep -Fq 'Review preview' public/index.html
           grep -Fq 'Review preview' public/fungi/index.html
           if grep -Fq 'id="trigger-update"' public/log/index.html; then
