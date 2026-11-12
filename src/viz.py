@@ -22,7 +22,7 @@ GREEN_SCALE = [[0.0, "#f0f7f4"], [0.5, "#5eab8d"], [1.0, "#1d3d33"]]
 FONT = "Inter, system-ui, sans-serif"
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-MONTH_STARTS = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+MONTH_STARTS = pd.date_range("2000-01-01", periods=12, freq="MS").day_of_year.tolist()
 
 # Dark-mode equivalents for the moth view (charts sit on bg-hollow-950).
 DARK_INK = "#e8f0ec"
@@ -122,11 +122,12 @@ def per_day(daily):
     fig = go.Figure()
     fig.add_bar(x=daily["observed_on"], y=daily["observations"],
                 marker_color="rgba(94,171,141,0.45)",
-                hovertemplate="%{x|%b %e, %Y}<br>%{y} records<extra></extra>",
-                name="Records")
+                hovertemplate="%{x|%b %e, %Y}<br>%{y} observations recorded<extra></extra>",
+                name="Observations")
     fig.add_scatter(x=daily["observed_on"], y=daily["rolling_30d"],
                     mode="lines", line=dict(color=HOLLOW[3], width=2.5),
-                    hoverinfo="skip", name="30-day average")
+                    hovertemplate="%{x|%b %e, %Y}<br>%{y:.1f} observations per day<extra></extra>",
+                    name="Trailing 30-day reporting average")
     return _html(_style(fig, height=340))
 
 
@@ -163,7 +164,7 @@ def phenology(matrix, dark=False, normalize=False):
     if normalize:
         row_max = matrix.max(axis=1).replace(0, 1)
         z = matrix.div(row_max, axis=0).values
-        cbar_title = "share of<br>peak month"
+        cbar_title = "relative to<br>peak reporting month"
     else:
         z = raw
         cbar_title = ""
@@ -173,7 +174,7 @@ def phenology(matrix, dark=False, normalize=False):
         colorscale=_palette(dark)["green_scale"], showscale=True,
         colorbar=dict(title=dict(text=cbar_title, font=dict(size=10)),
                       thickness=10, len=0.6, outlinewidth=0),
-        hovertemplate="%{y}<br>%{x}: %{text} obs<extra></extra>",
+        hovertemplate="%{y}<br>%{x}: %{text} observations recorded<extra></extra>",
         xgap=2, ygap=2,
     ))
     fig.update_yaxes(autorange="reversed", showgrid=False)
@@ -211,7 +212,11 @@ def seasonal_cascade(agg, group_label="Birds", dark=False):
         x=agg["median_doy"], y=y, mode="markers",
         marker=dict(color=dot, size=9,
                     line=dict(color=c["hover_bg"], width=1.5)),
-        hovertemplate="<b>%{y}</b><br>typically around day %{x:.0f}<extra></extra>",
+        customdata=agg["n"],
+        hovertemplate=(
+            "<b>%{y}</b><br>Median observation day of year: %{x:.0f}<br>"
+            "%{customdata} dated records<extra></extra>"
+        ),
         showlegend=False,
     )
     fig.update_xaxes(tickvals=MONTH_STARTS, ticktext=MONTHS,
@@ -377,9 +382,7 @@ def family_breakdown(fam, dark=True):
 
 
 def rank_abundance(counts, dark=True):
-    """Whittaker rank-abundance: species ranked by observation count (log y).
-    The once/twice-seen tail is highlighted — the long flat tail of barely-
-    recorded species is the 'unfinished edge' of the inventory."""
+    """Species ranked by observation count, highlighting one or two records."""
     if not counts:
         return "<p class='chart-empty'>Not enough data.</p>"
     c = _palette(dark)
@@ -394,11 +397,11 @@ def rank_abundance(counts, dark=True):
                     line=dict(color=c["line"], width=2),
                     marker=dict(color=c["line2"], size=4),
                     hovertemplate="rank %{x}: %{y} observations<extra></extra>",
-                    name="seen 3+ times")
+                    name="3+ records")
     fig.add_scatter(x=x, y=tail, mode="markers",
                     marker=dict(color=ACCENT, size=5),
                     hovertemplate="rank %{x}: %{y} observation(s)<extra></extra>",
-                    name="seen once/twice")
+                    name="1–2 records")
     fig.add_hline(y=1, line=dict(color=c["grid"], width=1))
     if singletons:
         fig.add_annotation(
@@ -413,12 +416,12 @@ def rank_abundance(counts, dark=True):
 
 
 def monthly_survey_bar(summary, dark=True):
-    """Horizontal grouped bar chart of monthly moth survey effort and discovery.
+    """Horizontal grouped bar chart of monthly moth reports and discoveries.
 
     Each month is a row. The primary (wider) bar shows species_count in
     hollow-green. A thinner overlay bar shows new_species_count in terracotta.
-    Months outside the core survey season (October–April) render at 30% opacity.
-    Hover shows species count, new species count, and survey nights.
+    October–April render at 30% opacity. Hover shows species counts and the
+    number of dates with reports. Months use the overnight session date.
 
     `summary` is the list of 12 dicts returned by analyze.monthly_survey_summary().
     Returns an HTML fragment (include_plotlyjs=False, displayModeBar=False).
@@ -454,8 +457,8 @@ def monthly_survey_bar(summary, dark=True):
         customdata=list(zip(species_counts, new_counts, nights)),
         hovertemplate=(
             "<b>%{y}</b><br>"
-            "%{customdata[0]} species · %{customdata[1]} new<br>"
-            "%{customdata[2]} nights surveyed<extra></extra>"
+            "%{customdata[0]} species recorded · %{customdata[1]} first records<br>"
+            "%{customdata[2]} dates with moth reports<extra></extra>"
         ),
     )
 
@@ -482,7 +485,7 @@ def monthly_survey_bar(summary, dark=True):
 
 
 def nightly_species_calendar(nightly, dark=True):
-    """Calendar heatmap of distinct moth species reported per survey night.
+    """Calendar heatmap of distinct moth species reported per session date.
 
     Each year is a Monday–Sunday calendar row. Dates without moth reports stay
     blank rather than appearing as zeroes. Exact counts are printed in active
@@ -500,7 +503,7 @@ def nightly_species_calendar(nightly, dark=True):
     data = data.dropna(subset=["night"]).sort_values("night")
     if data.empty:
         return (
-            "<p class='chart-empty text-pretty'>No valid survey dates yet. "
+            "<p class='chart-empty text-pretty'>No dated moth reports yet. "
             "Add dated observations to populate the calendar.</p>"
         )
 
@@ -584,7 +587,7 @@ def nightly_species_calendar(nightly, dark=True):
                 showscale=row_num == 1,
                 hoverongaps=False,
                 hovertemplate=(
-                    "<b>Night of %{customdata[0]}</b><br>"
+                    "<b>Reporting date: %{customdata[0]}</b><br>"
                     "%{customdata[1]} species reported<br>"
                     "%{customdata[2]} observations<extra></extra>"
                 ),

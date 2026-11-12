@@ -22,7 +22,9 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertEqual(
             [href for href, _label in report.VIEW_CONFIG["all"]["links"]],
             [
+                "#season",
                 "#whats-new",
+                "#habitats",
                 "#discovery",
                 "#unique",
                 "#activity",
@@ -49,6 +51,7 @@ class ReportNavigationTests(unittest.TestCase):
                 "birds",
                 "mammals",
                 "plants",
+                "fungi",
                 "amphibians",
             ],
             [
@@ -66,11 +69,11 @@ class ReportNavigationTests(unittest.TestCase):
         ]
         totals = {
             mode: total
-            for mode, total in zip(modes, [1234, 0, 33, 141, 22, 261, 17])
+            for mode, total in zip(modes, [1234, 0, 33, 141, 22, 261, 47, 17])
         }
         recent = {
             mode: total
-            for mode, total in zip(modes, [42, 0, 3, None, 0, 6, 1])
+            for mode, total in zip(modes, [42, 0, 3, None, 0, 6, 2, 1])
         }
 
         html = report.log_taxa_stats_panel(totals, recent)
@@ -297,6 +300,7 @@ class ReportNavigationTests(unittest.TestCase):
             "birds": 2,
             "mammals": 4,
             "plants": 5,
+            "fungi": 0,
             "amphibians": 5,
         }, totals)
 
@@ -347,6 +351,7 @@ class ReportNavigationTests(unittest.TestCase):
             "birds": None,
             "mammals": 1,
             "plants": 1,
+            "fungi": 0,
             "amphibians": 1,
         }, recent)
 
@@ -611,8 +616,8 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn('href="#discovery"', html)
         self.assertIn("Growth", html)
         self.assertIn('href="#activity"', html)
-        self.assertIn("Survey effort", html)
-        self.assertIn("03 / 07", html)
+        self.assertIn("Records", html)
+        self.assertIn("05 / 09", html)
 
     def test_legacy_chapter_links_can_be_preserved_as_aliases(self):
         html = report.anchor_alias("uniqueness", "gallery", "moth-diversity")

@@ -156,14 +156,22 @@ def add_group_column(df):
 
 
 # --- summary ----------------------------------------------------------------
+def _observation_rows(df):
+    """Exclude life-list rows when a combined inventory is passed."""
+    if "repeat_history_known" in df:
+        return df[df["repeat_history_known"]]
+    return df
+
+
 def summary(df):
+    obs = _observation_rows(df)
     return {
-        "observations": len(df),
+        "observations": len(obs),
         "species": df["taxon_id"].nunique(),
-        "observers": df["user_login"].nunique(),
-        "research_grade": int((df["quality_grade"] == "research").sum()),
-        "first_obs": df["observed_on"].min(),
-        "latest_obs": df["observed_on"].max(),
+        "observers": obs["user_login"].nunique(),
+        "research_grade": int((obs["quality_grade"] == "research").sum()),
+        "first_obs": obs["observed_on"].min(),
+        "latest_obs": obs["observed_on"].max(),
     }
 
 
@@ -204,23 +212,23 @@ def species_accumulation(df):
 
 # --- observations per day ---------------------------------------------------
 def obs_per_day(df):
-    daily = (
-        df.dropna(subset=["observed_on"])
-        .groupby(df["observed_on"].dt.date)
-        .size()
-        .rename("observations")
-        .reset_index()
-    )
-    daily["observed_on"] = pd.to_datetime(daily["observed_on"])
-    daily = daily.sort_values("observed_on")
+    """Daily report volume and its trailing mean over up to 30 calendar days.
+
+    The series starts at the earliest dated record. In-range days with no
+    reports contribute zero reports, and the series has no effort measure.
+    """
+    dates = _observation_rows(df)["observed_on"].dropna().dt.normalize()
+    daily = dates.value_counts(sort=False).sort_index().rename("observations").to_frame()
+    if not daily.empty:
+        daily = daily.asfreq("D", fill_value=0)
     daily["rolling_30d"] = daily["observations"].rolling(30, min_periods=1).mean()
-    return daily
+    return daily.rename_axis("observed_on").reset_index()
 
 
 # --- phenology --------------------------------------------------------------
 def phenology(df, iconic_taxon=None, top=40):
     """Species x month observation-count matrix (optionally one taxon group)."""
-    sub = df.dropna(subset=["observed_on", "taxon_id"])
+    sub = _observation_rows(df).dropna(subset=["observed_on", "taxon_id"])
     if iconic_taxon:
         sub = sub[sub["iconic_taxon"] == iconic_taxon]
     if sub.empty:
@@ -295,9 +303,22 @@ def _label(row):
 
 
 # --- life list --------------------------------------------------------------
+def _inventory_sources(df):
+    """Attach the source of a raw property frame, or keep combined provenance."""
+    if "source" in df:
+        return df
+    return df.assign(
+        source="iNaturalist",
+        source_url=df.get("url", pd.NA),
+        repeat_history_known=True,
+    )
+
+
 def life_list(df):
-    """One row per species: names, taxonomy, first/last seen, and counts."""
-    sub = df.dropna(subset=["taxon_id"])
+    """One row per taxon with a source date and any available record history."""
+    sub = _inventory_sources(df).dropna(subset=["taxon_id"])
+    if "observed_at" not in sub:
+        sub = sub.assign(observed_at=pd.NA)
     g = sub.groupby("taxon_id").agg(
         common_name=("common_name", "first"),
         taxon_name=("taxon_name", "first"),
@@ -309,6 +330,16 @@ def life_list(df):
         last_seen=("observed_on", "max"),
         observers=("user_login", "nunique"),
     ).reset_index()
+    source_rows = sub.sort_values("observed_on", kind="stable").drop_duplicates("taxon_id")
+    g = g.merge(
+        source_rows[["taxon_id", "source", "source_url", "repeat_history_known"]],
+        on="taxon_id",
+        how="left",
+    )
+    history_known = g["repeat_history_known"]
+    for count in ("observations", "observers"):
+        g[count] = g[count].astype("Int64").where(history_known)
+    g["last_seen"] = g["last_seen"].where(history_known)
     g["label"] = g["common_name"].fillna(g["taxon_name"])
     g["iconic_taxon"] = g["iconic_taxon"].fillna("Other")
     g = add_group_column(g)
@@ -355,13 +386,13 @@ def county_first_showcase(df, stats, n=12):
 
 # --- species "firsts" timeline ---------------------------------------------
 def firsts_timeline(df):
-    """The first time each species was recorded on the property — the
-    discovery story. One row per taxon at its first observation."""
-    sub = df.dropna(subset=["taxon_id", "observed_on"]).sort_values("observed_on")
-    first_idx = sub.groupby("taxon_id")["observed_on"].idxmin()
-    firsts = sub.loc[first_idx].copy()
+    """Earliest dated record per taxon in the supplied inventory.
+
+    For birds the available date belongs to the eBird life-list export.
+    """
+    sub = _inventory_sources(df).dropna(subset=["taxon_id", "observed_on"])
+    firsts = sub.sort_values("observed_on", kind="stable").drop_duplicates("taxon_id").copy()
     firsts["label"] = firsts["common_name"].fillna(firsts["taxon_name"])
-    firsts = firsts.sort_values("observed_on")
     firsts["cumulative"] = range(1, len(firsts) + 1)
     return firsts
 
@@ -369,10 +400,13 @@ def firsts_timeline(df):
 # --- seasonal / migration timing -------------------------------------------
 def _seasonal_agg(sub, min_obs, max_species):
     """Day-of-year distribution per species for a (pre-filtered) sub-frame."""
-    sub = sub.dropna(subset=["observed_on", "taxon_id"]).copy()
+    sub = _observation_rows(sub).dropna(subset=["observed_on", "taxon_id"]).copy()
     if sub.empty:
         return pd.DataFrame()
-    sub["doy"] = sub["observed_on"].dt.dayofyear
+    dates = sub["observed_on"].dt
+    # Align month and day on a common calendar with room for February 29.
+    leap_day_offset = ~dates.is_leap_year & dates.month.gt(2)
+    sub["doy"] = dates.day_of_year + leap_day_offset.astype(int)
     sub["label"] = sub["common_name"].fillna(sub["taxon_name"])
     grouped = sub.groupby("label")
     agg = grouped.agg(
@@ -410,11 +444,13 @@ def photo_highlights(df, n=18):
 
 # --- mammals & plants shared gap helper -------------------------------------
 def _region_gap(taxa, region_table, n=30, target_months=None,
-                allowed_taxon_names=None):
-    """Generic regional gap: species in region_table not yet in taxa, with optional
-    seasonal filter via county_obs phenology. When ``allowed_taxon_names`` is
-    supplied, eligibility is applied before totals, ranking, and truncation.
-    Mirrors moth_county_gap logic."""
+                allowed_taxon_names=None, exclude_introduced=False):
+    """Regional species overlap and ranked candidates.
+
+    Eligibility filters apply before the overlap totals. The optional month
+    filter ranks and limits candidates by county records in those months.
+    Pass n=None to return the entire eligible candidate pool.
+    """
     region = _load_table(region_table)
     have = set(taxa["taxon_id"].dropna().astype(int)) if not taxa.empty else set()
 
@@ -422,6 +458,15 @@ def _region_gap(taxa, region_table, n=30, target_months=None,
         region = region[
             region["taxon_name"].fillna("").isin(allowed_taxon_names)
         ].copy()
+
+    if exclude_introduced:
+        keep = pd.Series(True, index=region.index)
+        if "introduced" in region:
+            introduced = pd.to_numeric(region["introduced"], errors="coerce")
+            keep &= introduced.fillna(0).ne(1)
+        if "establishment_means" in region:
+            keep &= region["establishment_means"].fillna("").str.lower().ne("introduced")
+        region = region[keep]
 
     if region.empty:
         return {"region_total": 0, "region_radius_km": REGION_RADIUS_KM, "have": 0,
@@ -461,7 +506,7 @@ def _region_gap(taxa, region_table, n=30, target_months=None,
         "have": region_have,
         "pct": region_pct,
         "missing_count": int(len(missing)),
-        "missing": missing.head(n),
+        "missing": missing if n is None else missing.head(n),
         "target_months": target_months or [],
     }
 
@@ -512,6 +557,20 @@ def mammal_gap(mammals, n=30, target_months=None):
 
 
 # --- plants ------------------------------------------------------------------
+# The cached plant_group assigns some algae to Bryophyte. Use the scientific
+# genus for known microscopy targets until the roster stores algal ancestry.
+# References: Royal Botanic Garden Sydney's Census of Freshwater Algae and the
+# South African Department of Water Affairs' microscopic freshwater algae guide.
+_MICROSCOPY_GENERA = frozenset({
+    "Ankistrodesmus", "Aphanochaete", "Cladophora", "Closterium", "Compsopogon",
+    "Cosmarium", "Desmidium", "Desmodesmus", "Euastrum", "Eudorina", "Gonatozygon",
+    "Hyalotheca", "Micrasterias", "Microthamnion", "Monactinus", "Mucidosphaerium",
+    "Netrium", "Pandorina", "Pediastrum", "Penium", "Pleurotaenium",
+    "Pseudopediastrum", "Spirotaenia", "Staurastrum", "Stauridium", "Staurodesmus",
+    "Teilingia", "Tetraspora", "Trentepohlia", "Xanthidium",
+})
+
+
 def load_plants():
     with connect() as conn:
         return pd.read_sql_query("SELECT * FROM plant_taxa", conn)
@@ -541,18 +600,18 @@ def plant_found(df, plants):
 
 
 def plant_gap(plants, n=50, target_months=None):
-    gap = _region_gap(plants, "region_plant_taxa", n=n * 3, target_months=target_months)
+    gap = _region_gap(
+        plants, "region_plant_taxa", n=None, target_months=target_months,
+        exclude_introduced=True,
+    )
     missing = gap["missing"]
-    if not missing.empty:
-        introduced = missing.get("introduced")
-        means = missing.get("establishment_means")
-        keep = pd.Series(True, index=missing.index)
-        if introduced is not None:
-            keep &= introduced.fillna(0).astype(int) != 1
-        if means is not None:
-            keep &= means.fillna("") != "introduced"
-        gap["missing"] = missing[keep].head(n)
-        gap["missing_count"] = int(keep.sum())
+    names = missing.get("taxon_name", pd.Series(dtype=str, index=missing.index))
+    genera = names.astype("string").str.split().str[0]
+    microscopy = genera.isin(_MICROSCOPY_GENERA)
+    gap["field_missing_count"] = int((~microscopy).sum())
+    gap["microscopic_missing_count"] = int(microscopy.sum())
+    gap["missing"] = missing[~microscopy].head(n)
+    gap["microscopic"] = missing[microscopy].head(n)
     gap["wild_only"] = True
     gap["exclude_introduced"] = True
     return gap
@@ -733,25 +792,21 @@ def bird_summary(birds):
 
 
 def overview_observations(property_df, birds):
-    """Combined life-list records for all public overview charts.
-
-    The iNaturalist property table remains the source for non-bird groups. Birds
-    are represented by one eBird life-list row per countable species so overview
-    species totals, accumulation, group bars, life list, phenology, and daily
-    records all include the bird taxa tracked for the site.
-    """
+    """Combine the property observations and eBird life list for the inventory."""
+    property_rows = _inventory_sources(property_df)
     if birds is None or birds.empty:
-        return property_df.copy()
+        return property_rows.copy()
     bird_rows = []
     for idx, r in birds.reset_index(drop=True).iterrows():
         taxon_order = r.get("taxon_order")
         try:
             synthetic_taxon_id = -900000000 - int(taxon_order)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             synthetic_taxon_id = -901000000 - idx
-        sub_id = r.get("sub_id") or f"ebird-{idx}"
+        sub_id = r.get("sub_id")
+        sub_id = str(sub_id).strip() if pd.notna(sub_id) else ""
         bird_rows.append({
-            "id": f"ebird-{sub_id}",
+            "id": f"ebird-{sub_id or idx}",
             "taxon_id": synthetic_taxon_id,
             "common_name": r.get("common_name"),
             "taxon_name": r.get("taxon_name"),
@@ -761,9 +816,12 @@ def overview_observations(property_df, birds):
             "created_at": pd.NaT,
             "user_login": pd.NA,
             "quality_grade": "",
+            "source": "eBird",
+            "source_url": f"https://ebird.org/checklist/{sub_id}" if sub_id else pd.NA,
+            "repeat_history_known": False,
         })
     bird_df = pd.DataFrame(bird_rows)
-    combined = pd.concat([property_df, bird_df], ignore_index=True, sort=False)
+    combined = pd.concat([property_rows, bird_df], ignore_index=True, sort=False)
     combined["observed_on"] = pd.to_datetime(combined["observed_on"], errors="coerce")
     return combined
 
@@ -1279,8 +1337,7 @@ def moth_family_breakdown(moths, n=14):
 
 
 def moth_survey_nights(df, moths):
-    """Distinct dates with a moth record + the date range — survey effort, for
-    the Methods panel and effort-aware caveats."""
+    """Distinct session dates with moth records and the observation date range."""
     sub = moth_obs(df, moths).dropna(subset=["observed_on"])
     if sub.empty:
         return {"nights": 0, "first": None, "last": None}
@@ -1290,7 +1347,7 @@ def moth_survey_nights(df, moths):
 
 
 def moth_nightly_species(df, moths):
-    """Distinct moth species and observations reported per survey night.
+    """Distinct moth species and observations reported per session date.
 
     Uses the same noon cutoff as the completeness analysis: records made after
     midnight but before noon belong to the evening session that began the day
@@ -1959,33 +2016,29 @@ def moth_diversity(df, moths):
 
 
 def monthly_survey_summary(df, moths):
-    """Returns a list of 12 dicts (one per calendar month, ordered 1–12) describing
-    moth survey effort and discovery rate.
+    """Monthly moth reporting totals, pooled by the month of the session date.
 
-    Uses the existing _session_dates() noon-cutoff logic so overnight sessions
-    spanning midnight are attributed to the correct evening date. 'new_species_count'
-    is computed from each taxon's all-time first session-date — stable as new data
-    arrives because a species' first month never changes.
+    The noon cutoff groups overnight records on the preceding evening's date.
+    Untimed records use their observation date. All recorded life stages count.
 
     Returns list of 12 dicts with keys:
         month_num         int 1–12
         month_name        str
         obs_count         int
-        species_count     int  (distinct species ever recorded that month)
-        new_species_count int  (species whose first-ever property record fell in that month)
-        nights_surveyed   int  (distinct session-dates with at least one moth observation)
+        species_count     int  (distinct species recorded in that session month)
+        new_species_count int  (species whose earliest session date falls in that month)
+        nights_surveyed   int  (distinct session dates with a moth report)
         survey_season     bool (True for May–September inclusive)
     """
     import calendar
     sub = moth_obs(df, moths).dropna(subset=['taxon_id', 'observed_on']).copy()
-    sub['night'] = _session_dates(sub)
-    sub['month_num'] = sub['observed_on'].dt.month
+    sub['night'] = pd.to_datetime(_session_dates(sub))
+    sub['month_num'] = sub['night'].dt.month
     month_obs = sub.groupby('month_num')['id'].count().rename('obs_count')
     month_spp = sub.groupby('month_num')['taxon_id'].nunique().rename('species_count')
-    sub['night_month'] = pd.to_datetime(sub['night']).dt.month
-    month_nights = sub.drop_duplicates('night').groupby('night_month').size().rename('nights_surveyed')
+    month_nights = sub.groupby('month_num')['night'].nunique()
     first_night = sub.groupby('taxon_id')['night'].min().reset_index()
-    first_night['month_num'] = pd.to_datetime(first_night['night']).dt.month
+    first_night['month_num'] = first_night['night'].dt.month
     month_new = first_night.groupby('month_num').size().rename('new_species_count')
     rows = []
     for m in range(1, 13):
