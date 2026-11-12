@@ -1,6 +1,7 @@
 """Local moth community datasets for the survey page."""
 
 from calendar import month_name
+from collections import Counter
 
 import pandas as pd
 
@@ -50,8 +51,18 @@ def build_story(df, moths):
 
     discovery = []
     discovered = set()
+    running_counts = Counter()
+    frequency_history = []
     for date, rows in records.groupby("date", sort=True):
         discovered.update(rows["taxon_id"])
+        running_counts.update(rows["taxon_id"])
+        frequency_history.append({
+            "date": date.date().isoformat(),
+            "once": sum(count == 1 for count in running_counts.values()),
+            "twice": sum(count == 2 for count in running_counts.values()),
+            "three_plus": sum(count >= 3 for count in running_counts.values()),
+            "total": len(running_counts),
+        })
         discovery.append({"date": date.date().isoformat(), "cumulative_taxa": len(discovered)})
 
     totals = records.groupby("taxon_id").size()
@@ -88,6 +99,7 @@ def build_story(df, moths):
         "comparisons": comparisons,
         "discovery": discovery,
         "frequency": frequency,
+        "frequency_history": frequency_history,
         "timing": timing,
         "years": sorted({int(year) for year in records["date"].dt.year}),
         "first_date": discovery[0]["date"] if discovery else None,

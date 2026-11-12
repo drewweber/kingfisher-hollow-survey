@@ -496,9 +496,6 @@
 .moth-detail > div { padding: .5rem 0 1.5rem; }
 .moth-native-list { display: grid; gap: .75rem; padding-left: 1.2rem; list-style: disc; }
 .moth-estimate strong { display: block; color: #a8d5be; font: 600 3.5rem/1.2 'Playfair Display',serif; }
-.moth-curve { display: block; width: 100%; height: auto; margin-top: 1.5rem; }
-.moth-estimate-line { stroke: #d8b783; stroke-dasharray: 6 5; }
-.moth-curve-labels { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: .8rem; }
 .moth-photo-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2rem; margin: 2rem 0; }
 .moth-photo { min-width: 0; }
 .moth-photo img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: .5rem; }
@@ -543,3 +540,20 @@
 @media (min-width: 641px) { .moth-photo-pair { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 /* Preserve the evidence-bearing outlines: Luna tails and the plume moth's T. */
 .moth-photo img { object-fit: contain; background: #182d24; }
+
+/* Two native geometries keep date and count ticks readable on narrow screens. */
+.moth-frequency-svg { display: block; width: 100%; height: auto; margin: 1.5rem 0 .5rem; }
+.moth-frequency-svg text { fill: #d7e3dc; font: 16px Inter, sans-serif; }
+.moth-frequency-svg.is-wide { display: none; }
+.moth-frequency-labels { display: grid; gap: .8rem; margin: .8rem 0 1.5rem; }
+.moth-frequency-labels > div { display: flex; justify-content: space-between; gap: 1rem; }
+.moth-frequency-labels dt { display: flex; gap: .7rem; align-items: center; }
+.moth-frequency-labels dt svg { width: 36px; height: 12px; flex: 0 0 36px; }
+.moth-frequency-labels dd { font-weight: 600; font-variant-numeric: tabular-nums; color: #fff; }
+@media (min-width: 800px) {
+ .moth-frequency-svg.is-wide { display: block; }
+ .moth-frequency-svg.is-narrow { display: none; }
+ .moth-frequency-labels { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2rem; }
+ .moth-frequency-labels > div { flex-direction: column; gap: .35rem; }
+ .moth-frequency-labels dd { font-size: 1.6rem; margin-left: 2.95rem; }
+}

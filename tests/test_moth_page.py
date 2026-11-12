@@ -62,12 +62,44 @@ class MothPageTests(unittest.TestCase):
         self.assertEqual(html.count('—°F at 9 PM · Wind — mph · Rain —%'), 2)
         self.assertIn('0°F at 9 PM · Wind 0 mph · Rain 0%', html)
 
-    def test_discovery_visible_endpoint_and_native_values(self):
-        self.story['discovery'] = [{'date':'2025-07-03','cumulative_taxa':3},{'date':'2026-11-11','cumulative_taxa':889}]
-        html = moth_page.discovery(self.story, {'observed':889,'estimated':1100,'pct_complete':81})
-        self.assertIn('<strong>889 taxa</strong>', html)
-        self.assertIn('estimated 1,100', html)
-        self.assertIn('2025-07-03: <strong>3</strong>', html)
+    def test_frequency_history_empty_single_date_and_estimate_separation(self):
+        self.assertIn('first dated moth records',moth_page.frequency_history_chart(self.story))
+        self.story['frequency_history'] = [{'date':'2026-06-01','once':1,'twice':0,'three_plus':2,'total':3}]
+        html = moth_page.frequency_history_chart(self.story)
+        self.assertIn('Recorded once',html)
+        self.assertIn('Recorded twice',html)
+        self.assertIn('Recorded 3+ times',html)
+        self.assertIn('2026-06-01',html)
+        self.assertIn('stroke-dasharray=',html)
+        self.assertNotIn('nan',html)
+        self.assertNotIn('Estimated',html)
+        estimate = moth_page.inventory_estimate({'observed':889,'estimated':1100,'pct_complete':81})
+        self.assertIn('1,100',estimate)
+        self.assertNotIn('<svg',estimate)
+        self.assertNotIn('Exact discovery dates',estimate)
+
+    def test_frequency_plot_uses_elapsed_dates_and_shared_zero_scale(self):
+        rows = [{'date':'2026-06-01','once':1,'twice':0,'three_plus':0,'total':1},
+                {'date':'2026-06-02','once':0,'twice':1,'three_plus':0,'total':1},
+                {'date':'2026-06-11','once':2,'twice':0,'three_plus':1,'total':3}]
+        html = moth_page._frequency_svg(rows,narrow=True)
+        # June 2 is one tenth across the interval, not halfway between reports.
+        self.assertIn('M 40.00 132.50 H 66.40 V 235.00 H 304.00 V 30.00',html)
+        self.assertIn('text-anchor="end">0</text>',html)
+        self.assertEqual(html.count('<path '),3)
+        self.assertIn('stroke-dasharray="3 5"',html)
+        self.assertIn('stroke-dasharray="10 5"',html)
+        self.assertIn('stroke-dasharray=""',html)
+
+    def test_frequency_csv_is_complete_and_content_addressed(self):
+        self.story['frequency_history'] = [{'date':'2026-06-01','once':1,'twice':0,'three_plus':2,'total':3}]
+        url, text = moth_page.frequency_history_csv(self.story)
+        self.assertEqual(text,'date,once,twice,three_plus,total\n2026-06-01,1,0,2,3\n')
+        with tempfile.TemporaryDirectory() as tmp:
+            moth_page.write_exploration(self.story,tmp)
+            self.assertEqual((Path(tmp)/url.lstrip('/')).read_text(),text)
+        self.story['frequency_history'][0]['once'] = 2
+        self.assertNotEqual(url,moth_page.frequency_history_csv(self.story)[0])
 
     def test_complete_native_timing_is_separate_and_escaped(self):
         self.story['timing'] = [{'id':1,'common_name':'A <B>','scientific_name':'Test','monthly_records':[0]*12,'stages':['larva']}]

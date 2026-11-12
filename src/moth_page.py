@@ -1,9 +1,12 @@
 """The moth visitor story: native values first, optional exploration second."""
 from calendar import month_name
-from datetime import date
+from datetime import date, timedelta
 from html import escape
 import json
 import hashlib
+import math
+import csv
+import io
 from pathlib import Path
 
 
@@ -98,39 +101,83 @@ def family_chart(families):
             + detail('Compare with the surrounding region', '<ul class="moth-native-list">' + ''.join(regional) + '</ul>' if regional else '<p>Regional family records are not available yet.</p>'))
 
 
-def discovery(story, comp):
-    rows = story['discovery']
+def inventory_estimate(comp):
     observed, estimated = comp.get('observed', 0), comp.get('estimated', 0)
     lead = (f'<p class="moth-estimate"><strong>{comp.get("pct_complete", 0)}%</strong> estimated completeness</p>'
-            f'<p>With {observed:,} moths recorded and an estimated total around {estimated:,}, there is plenty left to look forward to.</p>') if observed else '<p>The discovery story begins with the first dated record.</p>'
-    if not rows:
-        return lead
-    first = date.fromisoformat(rows[0]['date'])
-    span = max((date.fromisoformat(rows[-1]['date']) - first).days, 1)
-    maximum = max(estimated, observed, 1)
-    points = ' '.join(f'{30 + 540 * (date.fromisoformat(r["date"]) - first).days / span:.1f},{200 - 170 * r["cumulative_taxa"] / maximum:.1f}' for r in rows)
-    estimate_y = 200 - 170 * estimated / maximum
-    chart = (f'<svg class="moth-curve" viewBox="0 0 600 230" role="img" aria-label="Discovery by observation date: {rows[0]["cumulative_taxa"]} taxa on {rows[0]["date"]}, rising to {rows[-1]["cumulative_taxa"]} on {rows[-1]["date"]}. Estimated total {estimated}.">'
-             f'<line x1="30" x2="570" y1="{estimate_y}" y2="{estimate_y}" class="moth-estimate-line"/>'
-             f'<polyline points="{points}" fill="none" stroke="#8ec8b1" stroke-width="3"/>'
-             '<line x1="30" x2="570" y1="200" y2="200" stroke="#81918b"/>'
-             '</svg>'
-             f'<div class="moth-curve-labels"><span>{esc(rows[0]["date"])}<br>{rows[0]["cumulative_taxa"]} taxa</span><span>{esc(rows[-1]["date"])}<br><strong>{rows[-1]["cumulative_taxa"]:,} taxa</strong></span></div>'
-             f'<p class="moth-small">Observation date → · Solid line: recorded taxa · Dashed line: estimated {estimated:,}</p>')
-    values = '<ul class="moth-native-list">' + ''.join(f'<li>{r["date"]}: <strong>{r["cumulative_taxa"]}</strong> taxa recorded so far</li>' for r in rows) + '</ul>'
+            f'<p>With {observed:,} moths recorded and an estimated total around {estimated:,}, there is plenty left to look forward to.</p>') if observed else '<p>The inventory estimate begins with the first dated record.</p>'
     methods = (f'<p>The Chao2 estimate uses {comp.get("nights", 0)} inferred reporting nights, including {comp.get("q1", 0)} taxa on one night and {comp.get("q2", 0)} on two nights. '
                f'Estimated total: {estimated:,}; model 95% interval: {comp.get("low", estimated):,}–{comp.get("high", estimated):,}. '
                'Records before noon are assigned to the preceding night for this calculation. Changing seasons, methods and identification can change the estimate.</p>')
-    return lead + chart + detail('Exact discovery dates and totals', values) + detail('How the estimate works', methods)
+    return lead + detail('How the estimate works', methods)
 
 
-def frequencies(story):
-    counts = story['frequency']
-    maximum = max(counts.values(), default=1)
-    return ('<h3>Familiar faces and brief encounters</h3>'
-            f'<p>Some moths become familiar faces; others appear just once. So far, {counts["once"] + counts["twice"]:,} moths have only one or two records—a long list of encounters worth repeating.</p>'
-            + ''.join(bar(label, counts[key], maximum) for label, key in [('One record', 'once'), ('Two records', 'twice'), ('Three or more records', 'three_plus')])
-            + '<p class="moth-small">Number of moth taxa in each group · Records are submitted observations, not individual moths.</p>')
+FREQUENCY_SERIES = [
+    ('once', 'Recorded once', '#d8b783', '3 5'),
+    ('twice', 'Recorded twice', '#a8c8ee', '10 5'),
+    ('three_plus', 'Recorded 3+ times', '#8ec8b1', ''),
+]
+
+
+def frequency_history_csv(story):
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=['date', 'once', 'twice', 'three_plus', 'total'], lineterminator='\n')
+    writer.writeheader()
+    writer.writerows(story['frequency_history'])
+    text = output.getvalue()
+    return '/assets/moth-frequency-' + hashlib.sha256(text.encode()).hexdigest()[:16] + '.csv', text
+
+
+def _frequency_svg(rows, narrow=False):
+    # Separate geometries preserve readable type rather than shrinking a desktop chart.
+    width, height = (320, 300) if narrow else (800, 330)
+    left, right, top, bottom = 40, width - 16, 30, height - 65
+    first, last = date.fromisoformat(rows[0]['date']), date.fromisoformat(rows[-1]['date'])
+    days = (last - first).days
+    maximum = max(row[key] for row in rows for key, *_ in FREQUENCY_SERIES)
+    rough_step = max(maximum / 3, 1)
+    magnitude = 10 ** math.floor(math.log10(rough_step))
+    step = math.ceil(rough_step / magnitude) * magnitude
+    ceiling = max(step * math.ceil(maximum / step), step)
+    def x(day):
+        return (left + right) / 2 if not days else left + (right - left) * (day - first).days / days
+    def y(value):
+        return bottom - (bottom - top) * value / ceiling
+    parts = [f'<svg class="moth-frequency-svg {"is-narrow" if narrow else "is-wide"}" viewBox="0 0 {width} {height}" aria-hidden="true" focusable="false">']
+    for tick in range(0, ceiling + 1, step):
+        parts.append(f'<line x1="{left}" x2="{right}" y1="{y(tick):.1f}" y2="{y(tick):.1f}" stroke="#40584c"/>'
+                     f'<text x="{left - 8}" y="{y(tick) + 5:.1f}" text-anchor="end">{tick}</text>')
+    parts.append(f'<text x="{left}" y="17">Moth taxa</text>')
+    tick_count = min(days + 1, 3 if narrow else 5)
+    ticks = [first] if not days else [first + timedelta(days=round(days * i / (tick_count - 1))) for i in range(tick_count)]
+    for index, day in enumerate(ticks):
+        anchor = 'middle' if len(ticks) == 1 else ('start' if index == 0 else 'end' if index == len(ticks) - 1 else 'middle')
+        parts.append(f'<line x1="{x(day):.1f}" x2="{x(day):.1f}" y1="{bottom}" y2="{bottom + 5}" stroke="#bfcec7"/>'
+                     f'<text x="{x(day):.1f}" y="{bottom + 24}" text-anchor="{anchor}">{day:%b} {day.day}'
+                     f'<tspan x="{x(day):.1f}" dy="19">{day.year}</tspan></text>')
+    for key, label, color, dash in FREQUENCY_SERIES:
+        points = [(x(date.fromisoformat(row['date'])), y(row[key])) for row in rows]
+        path = f'M {points[0][0]:.2f} {points[0][1]:.2f}' + ''.join(f' H {px:.2f} V {py:.2f}' for px, py in points[1:])
+        parts.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-width="2.5" stroke-dasharray="{dash}" vector-effect="non-scaling-stroke"/>'
+                     f'<circle cx="{points[-1][0]:.2f}" cy="{points[-1][1]:.2f}" r="3.5" fill="{color}"/>')
+    return ''.join(parts) + '</svg>'
+
+
+def frequency_history_chart(story):
+    rows = story['frequency_history']
+    if not rows:
+        return '<p>The pattern of repeat encounters will take shape with the first dated moth records.</p>'
+    latest = rows[-1]
+    labels = []
+    for key, label, color, dash in FREQUENCY_SERIES:
+        labels.append(f'<div><dt><svg viewBox="0 0 36 12" aria-hidden="true"><line x1="0" x2="36" y1="6" y2="6" stroke="{color}" stroke-width="3" stroke-dasharray="{dash}"/></svg>{label}</dt><dd>{latest[key]:,}</dd></div>')
+    description = (f'From {rows[0]["date"]} to {latest["date"]}, the chart tracks how many moth taxa had exactly one, exactly two, or at least three submitted records by each reporting date. '
+                   'A new record can move a moth into the next category, so the once and twice lines can fall as well as rise.')
+    return ('<h3>Which finds become familiar?</h3><p>Each return visit adds to the story. A second record moves a moth out of “Recorded once”; a third moves it into “Recorded 3+ times”.</p>'
+            f'<figure aria-label="Moth record-frequency history"><figcaption class="moth-small">{description}</figcaption>'
+            + _frequency_svg(rows, narrow=True) + _frequency_svg(rows)
+            + f'<p class="moth-small">Latest counts · {latest["date"]}</p><dl class="moth-frequency-labels">' + ''.join(labels) + '</dl></figure>'
+            '<p class="moth-small">Calendar date → · All recorded years · Records are observations, not individual moths. Changes take effect on their recorded date.</p>'
+            f'<p><a class="moth-native-link" href="{frequency_history_csv(story)[0]}" download>Download exact history (CSV)</a></p>')
 
 
 def photo_card(row, caption, notable=False):
@@ -230,6 +277,8 @@ def write_exploration(story, public_dir):
     """Keep the complete 889-taxon native fallback out of the main-page DOM."""
     public_dir = Path(public_dir)
     (public_dir / 'assets').mkdir(parents=True, exist_ok=True)
+    frequency_url, frequency_csv = frequency_history_csv(story)
+    (public_dir / frequency_url.lstrip('/')).write_text(frequency_csv, encoding='utf-8')
     payload_url, payload = timing_payload(story)
     (public_dir / payload_url.lstrip('/')).write_text(payload, encoding='utf-8')
     rows = []
@@ -295,7 +344,7 @@ def render_moth_page(*, story, summary, comp, families, highlights, observations
             break
     family_body = family_chart(families) + purposeful_photos(observations) + detail('Recent moth observations', '<div class="moth-photo-grid">' + ''.join(recent) + '</div>', 'moth-gallery')
     output.append(section('moth-families', 'Shapes, shelter and ways of living', 'Many ways to be a moth', family_body, intro='Moth diversity is a diversity of lifestyles. Caterpillars roll leaves, make mines and feed in the foliage; adults bring a remarkable range of shapes and camouflage to the lights. The families below offer different ways into that world.', dark=True))
-    output.append(section('moth-completeness', 'A growing inventory', 'Still discovering', discovery(story, comp) + '<div id="moth-diversity" class="moth-panel">' + frequencies(story) + '</div>', intro='The list is already impressive, and the discovery curve keeps climbing. Familiar repeat visitors sit alongside moths seen only once or twice. Together they make a broad, changing picture of what lives here—and a good reason to keep looking.', dark=True))
+    output.append(section('moth-completeness', 'A growing inventory', 'Still discovering', inventory_estimate(comp) + '<div id="moth-diversity" class="moth-panel">' + frequency_history_chart(story) + '</div>', intro='Discovery continues after a moth first joins the list. Return visits reveal which finds recur, while new arrivals keep the cast changing. Watch those encounters become a more familiar picture of life here.', dark=True))
     output.append(section('moth-standouts', 'Encounters worth repeating', 'Rare and notable', notable_cards(highlights, observations), intro='Some finds deserve a second look: an ingenious defense, a convincing disguise, or a visitor well beyond the summer peak. These local encounters make the variety of moth life tangible.', dark=True))
     actions = '<div class="moth-action-grid">' + ''.join(f'<article><p class="moth-kicker">{season}</p><h3>{title}</h3><p>{copy}</p><a href="#moth-protocols">How to try it ↓</a></article>' for season, title, copy in ACTIONS) + '</div>'
     next_body = actions + target_html + forecast_panel(forecast, ranked_forecast, validation) + '<div id="moth-gap">' + detail('Current regional search leads', gap_html) + '</div>' + detail('How to try it: equipment and methods', methods_html, 'moth-protocols')

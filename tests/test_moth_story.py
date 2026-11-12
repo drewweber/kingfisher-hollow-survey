@@ -21,6 +21,7 @@ class MothStoryTests(unittest.TestCase):
                             and row["years"] == [] for row in story["monthly"]))
         self.assertEqual(len(story["comparisons"]), 11)
         self.assertEqual(story["discovery"], [])
+        self.assertEqual(story["frequency_history"], [])
         self.assertEqual(story["timing"], [])
         self.assertEqual(story["frequency"], {"once": 0, "twice": 0, "three_plus": 0})
         self.assertEqual(story["years"], [])
@@ -72,6 +73,31 @@ class MothStoryTests(unittest.TestCase):
         self.assertEqual(timing[1]["stages"], ["adult", "larva"])
         self.assertIsNone(timing[3]["common_name"])
         self.assertEqual(timing[5]["monthly_records"], [0] * 12)
+
+    def test_frequency_history_moves_categories_by_calendar_date(self):
+        moths = pd.DataFrame({'taxon_id':[1,2,3,4], 'taxon_name':['A','B','C','D']})
+        # Deliberately out of order; C jumps straight to three on its first day.
+        df = pd.DataFrame([
+            (1,'2026-06-03',True),(3,'2026-06-02',True),
+            (1,'2026-06-01',True),(2,'2026-06-01',True),
+            (3,'2026-06-02',True),(1,'2026-06-02',True),
+            (2,'2026-06-03',True),(3,'2026-06-02',True),
+            (4,'2026-06-01',False),(4,None,True),(99,'2026-06-01',True),
+        ],columns=['taxon_id','observed_on','repeat_history_known'])
+        story = build_story(df,moths)
+        self.assertEqual(story['frequency_history'],[
+            {'date':'2026-06-01','once':2,'twice':0,'three_plus':0,'total':2},
+            {'date':'2026-06-02','once':1,'twice':1,'three_plus':1,'total':3},
+            {'date':'2026-06-03','once':0,'twice':1,'three_plus':2,'total':3},
+        ])
+        for row, discovery in zip(story['frequency_history'],story['discovery']):
+            self.assertEqual(sum(row[key] for key in ('once','twice','three_plus')),row['total'])
+            self.assertEqual(row['total'],discovery['cumulative_taxa'])
+        self.assertEqual({key:story['frequency_history'][-1][key] for key in story['frequency']},story['frequency'])
+        # Both rare-frequency categories can decline rather than accumulating forever.
+        extra = pd.DataFrame([(2,'2026-06-04',True)],columns=df.columns)
+        last = build_story(pd.concat([df,extra]),moths)['frequency_history'][-1]
+        self.assertEqual((last['once'],last['twice'],last['three_plus']),(0,0,3))
 
 
 class MothFamilyTests(unittest.TestCase):
