@@ -33,6 +33,7 @@ import new_county_species  # noqa: E402
 import natural_history  # noqa: E402
 import seasonal  # noqa: E402
 import seasonal_pages  # noqa: E402
+from navigation import survey_destinations  # noqa: E402
 import seasonal_community  # noqa: E402
 import public_api  # noqa: E402
 import social_export  # noqa: E402
@@ -2483,14 +2484,14 @@ def nav(active_mode="all"):
     """Render page navigation with ordinary links between static survey routes."""
     config = VIEW_CONFIG[active_mode]
 
-    def mode_links(context):
-        return f'<a class="mode-btn no-underline" href="/seasons/" data-context="{context}">Seasons</a>' + "".join(
+    def mode_links():
+        return '<a class="mode-btn no-underline" href="/seasons/">Seasons</a>' + "".join(
             f'<a class="mode-btn no-underline{" mode-active" if mode == active_mode else ""}" '
-            f'href="{view_config["route"]}" data-context="{context}"'
+            f'href="{view_config["route"]}"'
             f'{" aria-current=\"page\"" if mode == active_mode else ""}>{view_config["label"]}</a>'
-            for mode, view_config in VIEW_CONFIG.items())
+            for mode, view_config in VIEW_CONFIG.items() if mode != "life-list")
 
-    def section_links(mobile=False):
+    def section_links():
         items = []
         sequence = 0
         for href, label in config["links"]:
@@ -2498,14 +2499,14 @@ def nav(active_mode="all"):
             if not external:
                 sequence += 1
             target = ' target="_blank" rel="noopener"' if external else ""
-            item_class = "survey-index-link" if mobile else "section-index-link nav-link"
+            item_class = "survey-index-link"
             marker = "↗" if external else f"{sequence:02d}"
             items.append(
                 f'<a href="{href}" class="{item_class}" data-section-href="{href}"{target}>'
                 f'<span class="section-index-number" aria-hidden="true">{marker}</span>'
                 f'<span>{label}</span></a>'
             )
-        wrapper_class = "survey-index-grid" if mobile else "section-index-track"
+        wrapper_class = "survey-index-grid"
         return (
             f'<div class="links-{active_mode} {wrapper_class} is-active" '
             f'data-section-links="{active_mode}">{"".join(items)}</div>'
@@ -2513,57 +2514,38 @@ def nav(active_mode="all"):
 
     internal_links = [href for href, _label in config["links"] if href.startswith("#")]
     skip_link = internal_links[0] if internal_links else "#survey-content"
-    desktop_links = section_links()
-    mobile_links = section_links(mobile=True)
+    index_links = section_links()
     section_count = len(internal_links)
     return f"""
 <a id="skip-link" href="{skip_link}" class="sr-only focus:not-sr-only focus:fixed focus:z-[70] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-2 focus:rounded-lg focus:ring-2 focus:ring-hollow-500">Skip to survey content</a>
-<nav id="navbar" aria-label="Survey navigation" class="nav-transparent fixed top-0 inset-x-0 z-50 transition-all duration-300">
+<nav id="navbar" aria-label="Survey navigation" class="nav-transparent top-0 inset-x-0 z-50 transition-all duration-300">
   <div class="nav-primary max-w-7xl mx-auto px-5 sm:px-6 py-3 flex items-center justify-between gap-4">
     <a href="/" class="survey-brand flex items-center gap-2.5 shrink-0" aria-label="Kingfisher Hollow biodiversity survey home">{LOGO}
       <span id="nav-brand" class="font-serif text-white text-lg sm:text-xl font-semibold tracking-wide transition-colors">Kingfisher Hollow</span>
       <span class="brand-divider hidden sm:block" aria-hidden="true"></span>
       <span class="brand-context hidden sm:block">Survey</span></a>
-    <div class="hidden 2xl:flex items-center gap-4 min-w-0">
-      <a id="seasonal-return" data-seasonal-return href="/seasons/" hidden class="main-site-link text-xs font-medium">Back to the seasons</a>
-      <div class="mode-toggle flex items-center rounded-2xl p-0.5 gap-0.5 bg-white/10 border border-white/15" role="group" aria-label="Explore survey views">
-        {mode_links("wide")}
-      </div>
-      <a href="{SITE}" class="main-site-link text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
-    </div>
-    <div class="2xl:hidden flex items-center gap-2">
-      <a href="{SITE}" class="main-site-link hidden sm:inline text-sm font-medium transition-colors whitespace-nowrap">Main site ↗</a>
-      <button id="survey-menu-button" type="button" class="survey-menu-button" aria-label="Open survey index" aria-expanded="false" aria-controls="survey-menu">
-        <span class="hidden sm:inline">Explore</span>
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path class="menu-open-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/><path class="menu-close-icon hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-  </div>
-  <div id="section-bar" class="hidden lg:block">
-    <div class="section-index-shell max-w-6xl mx-auto px-6">
-      <span class="field-index-label">Field index</span>
-      <div class="section-index-scroll">
-        {desktop_links}
-      </div>
-    </div>
-  </div>
-  <div id="survey-menu" class="survey-menu hidden 2xl:hidden" aria-hidden="true">
-    <div class="max-w-4xl mx-auto px-6 py-6">
-      <p class="survey-menu-label">Explore the survey</p>
-      <p><a data-seasonal-return href="/seasons/" hidden class="text-hollow-200 text-sm underline">Back to the seasons</a></p>
-      <div class="mode-toggle survey-view-grid mt-3" role="group" aria-label="Explore survey views">
-        {mode_links("menu")}
-      </div>
-      <div class="survey-menu-rule"></div>
-      <div class="flex items-end justify-between gap-4 mb-3">
-        <div>
-          <p class="survey-menu-label">On this view</p>
-          <p id="survey-menu-view-name" class="font-serif text-2xl text-white mt-1">{config["label"]}</p>
+    <div class="survey-actions">
+      {survey_destinations(config["route"])}
+      <button id="survey-menu-button" type="button" class="survey-menu-button" hidden aria-expanded="false" aria-controls="survey-menu" popovertarget="survey-menu">Explore</button>
+      <div id="survey-menu" class="survey-menu">
+        <div class="max-w-4xl mx-auto px-6 py-6">
+          <p class="survey-menu-label">Explore the survey</p>
+          <p><a id="seasonal-return" data-seasonal-return href="/seasons/" hidden class="text-hollow-200 text-sm underline">Back to the seasons</a></p>
+          <div class="mode-toggle survey-view-grid mt-3" role="group" aria-label="Explore survey views">
+            {mode_links()}
+          </div>
+          <div class="survey-menu-rule"></div>
+          <div class="flex items-end justify-between gap-4 mb-3">
+            <div>
+              <p class="survey-menu-label">On this view</p>
+              <p id="survey-menu-view-name" class="font-serif text-2xl text-white mt-1">{config["label"]}</p>
+            </div>
+            <span id="survey-menu-section-count" class="text-secondary-inverse text-xs tabular-nums">{section_count} section{"" if section_count == 1 else "s"}</span>
+          </div>
+          {index_links}
+          <a href="{SITE}" class="inline-flex mt-6 text-hollow-300 text-sm">Main site ↗</a>
         </div>
-        <span id="survey-menu-section-count" class="text-secondary-inverse text-xs tabular-nums">{section_count} section{"" if section_count == 1 else "s"}</span>
       </div>
-      {mobile_links}
-      <a href="{SITE}" class="inline-flex sm:hidden mt-6 text-hollow-300 text-sm">Main site ↗</a>
     </div>
   </div>
 </nav>"""
@@ -2846,35 +2828,43 @@ _SCRIPT_SHELL = """
     navbar.classList.toggle('nav-solid',p);}
   window.addEventListener('scroll',updateNav,{passive:true});updateNav();
 
-  // Compact survey index for phone and tablet widths.
+  // One index at every width. Without Popover support (or JavaScript),
+  // the same links remain visible in normal document flow.
   const surveyMenu=document.getElementById('survey-menu'),
         surveyMenuButton=document.getElementById('survey-menu-button');
-  function setSurveyMenu(open,restoreFocus=false){
-    if(!surveyMenu||!surveyMenuButton) return;
-    surveyMenu.classList.toggle('hidden',!open);
-    surveyMenu.setAttribute('aria-hidden',open?'false':'true');
-    surveyMenuButton.setAttribute('aria-expanded',open?'true':'false');
-    surveyMenuButton.setAttribute('aria-label',open?'Close survey index':'Open survey index');
-    surveyMenuButton.querySelector('.menu-open-icon')?.classList.toggle('hidden',open);
-    surveyMenuButton.querySelector('.menu-close-icon')?.classList.toggle('hidden',!open);
-    document.body.classList.toggle('survey-menu-open',open);
-    if(!open&&restoreFocus) surveyMenuButton.focus();
-  }
-  surveyMenuButton?.addEventListener('click',()=>{
-    setSurveyMenu(surveyMenuButton.getAttribute('aria-expanded')!=='true');
-  });
-  document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&surveyMenuButton?.getAttribute('aria-expanded')==='true'){
-      setSurveyMenu(false,true);
+  if(surveyMenu&&surveyMenuButton&&'popover' in HTMLElement.prototype){
+    surveyMenu.setAttribute('popover','auto');
+    navbar.classList.add('survey-nav-enhanced');
+    surveyMenuButton.hidden=false;
+    function positionSurveyMenu(){
+      document.documentElement.style.setProperty('--survey-nav-bottom',navbar.getBoundingClientRect().bottom+'px');
     }
-  });
-  const wideNav=window.matchMedia('(min-width: 1536px)');
-  wideNav.addEventListener?.('change',event=>{if(event.matches)setSurveyMenu(false,false);});
-  document.querySelectorAll('#survey-menu a').forEach(link=>link.addEventListener('click',()=>{
-    const internal=link.getAttribute('href')?.startsWith('#');
-    setSurveyMenu(false,internal);
-    if(internal) requestAnimationFrame(()=>surveyMenuButton?.focus());
-  }));
+    positionSurveyMenu();
+    window.addEventListener('resize',positionSurveyMenu,{passive:true});
+    if('ResizeObserver' in window) new ResizeObserver(positionSurveyMenu).observe(navbar);
+    surveyMenu.addEventListener('toggle',event=>{
+      surveyMenuButton.setAttribute('aria-expanded',String(event.newState==='open'));
+    });
+    // This is nonmodal navigation: leaving it must reveal the focused page.
+    navbar.addEventListener('focusout',event=>{
+      if(event.relatedTarget&&!surveyMenu.contains(event.relatedTarget)&&
+          event.relatedTarget!==surveyMenuButton&&surveyMenu.matches(':popover-open')){
+        surveyMenu.hidePopover();
+      }
+    });
+    surveyMenu.addEventListener('click',event=>{
+      const link=event.target.closest('a');
+      if(!link||event.defaultPrevented||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey) return;
+      surveyMenu.hidePopover();
+      if(link.hash&&link.pathname===location.pathname){
+        const target=document.getElementById(decodeURIComponent(link.hash.slice(1)));
+        if(target){
+          target.setAttribute('tabindex','-1');
+          target.focus({preventScroll:true});
+        }
+      }
+    });
+  }
 
 __LIFE_LIST_SCRIPT__
 
@@ -2900,7 +2890,7 @@ __PLOTLY_SCRIPT__
   // in sync with the section in view without retaining hidden pages in memory.
   (function(){
     let activeSection='';
-    function setActiveSection(id,bringIntoView=false){
+    function setActiveSection(id){
       if(!id||id===activeSection) return;
       activeSection=id;
       document.querySelectorAll('[data-section-href^="#"]').forEach(link=>{
@@ -2909,20 +2899,14 @@ __PLOTLY_SCRIPT__
         if(current) link.setAttribute('aria-current','location');
         else link.removeAttribute('aria-current');
       });
-      if(bringIntoView){
-        const current=document.querySelector(
-          `.section-index-track.is-active [data-section-href="#${id}"]`
-        );
-        const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        current?.scrollIntoView({block:'nearest',inline:'center',behavior:reduced?'auto':'smooth'});
-      }
+
     }
     if('IntersectionObserver' in window){
       try{
         const sectionObserver=new IntersectionObserver(entries=>{
           const visible=entries.filter(entry=>entry.isIntersecting)
             .sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
-          if(visible[0]) setActiveSection(visible[0].target.id,true);
+          if(visible[0]) setActiveSection(visible[0].target.id);
         },{rootMargin:'-18% 0px -68% 0px',threshold:0});
         document.querySelectorAll('#survey-content > [id^="view-"] > section[id]')
           .forEach(section=>sectionObserver.observe(section));
@@ -2934,7 +2918,7 @@ __PLOTLY_SCRIPT__
       try{target=document.getElementById(decodeURIComponent(location.hash.slice(1)));}
       catch(_error){return;}
       const section=target?.matches('section[id]') ? target : target?.closest('section[id]');
-      if(section) setActiveSection(section.id,false);
+      if(section) setActiveSection(section.id);
     }
     window.addEventListener('hashchange',applyHash);
     applyHash();
