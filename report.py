@@ -2511,9 +2511,11 @@ def head(s, county_firsts, moth_species=None, mode="all", legacy_routes=None):
 <body class="font-sans text-stone-800 antialiased" data-mode="{mode}">"""
 
 
-def nav(active_mode="all"):
+def nav(active_mode="all", *, include_skip=True):
     """Render page navigation with ordinary links between static survey routes."""
-    config = VIEW_CONFIG[active_mode]
+    config = ({"route": "/field/", "label": "Field Targets",
+               "links": [("#results-heading", "Targets")]}
+              if active_mode == "field" else VIEW_CONFIG[active_mode])
 
     def mode_links():
         return '<a class="mode-btn no-underline" href="/seasons/">Seasons</a>' + "".join(
@@ -2547,8 +2549,9 @@ def nav(active_mode="all"):
     skip_link = internal_links[0] if internal_links else "#survey-content"
     index_links = section_links()
     section_count = len(internal_links)
+    skip_markup = f'''<a id="skip-link" href="{skip_link}" class="sr-only focus:not-sr-only focus:fixed focus:z-[70] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-2 focus:rounded-lg focus:ring-2 focus:ring-hollow-500">Skip to survey content</a>''' if include_skip else ""
     return f"""
-<a id="skip-link" href="{skip_link}" class="sr-only focus:not-sr-only focus:fixed focus:z-[70] focus:top-2 focus:left-2 focus:bg-white focus:text-stone-900 focus:px-3 focus:py-2 focus:rounded-lg focus:ring-2 focus:ring-hollow-500">Skip to survey content</a>
+{skip_markup}
 <nav id="navbar" aria-label="Survey navigation" class="nav-transparent top-0 inset-x-0 z-50 transition-all duration-300">
   <div class="nav-primary max-w-7xl mx-auto px-5 sm:px-6 py-3 flex items-center justify-between gap-4">
     <a href="/" class="survey-brand flex items-center gap-2.5 shrink-0" aria-label="Kingfisher Hollow biodiversity survey home">{LOGO}
@@ -2995,48 +2998,7 @@ LOG_UPDATE_SCRIPT = """
 
 _SCRIPT_SHELL = """
 <script>
-  const navbar=document.getElementById('navbar');
-  function updateNav(){const p=window.scrollY>60;navbar.classList.toggle('nav-transparent',!p);
-    navbar.classList.toggle('nav-solid',p);}
-  window.addEventListener('scroll',updateNav,{passive:true});updateNav();
-
-  // One index at every width. Without Popover support (or JavaScript),
-  // the same links remain visible in normal document flow.
-  const surveyMenu=document.getElementById('survey-menu'),
-        surveyMenuButton=document.getElementById('survey-menu-button');
-  if(surveyMenu&&surveyMenuButton&&'popover' in HTMLElement.prototype){
-    surveyMenu.setAttribute('popover','auto');
-    navbar.classList.add('survey-nav-enhanced');
-    surveyMenuButton.hidden=false;
-    function positionSurveyMenu(){
-      document.documentElement.style.setProperty('--survey-nav-bottom',navbar.getBoundingClientRect().bottom+'px');
-    }
-    positionSurveyMenu();
-    window.addEventListener('resize',positionSurveyMenu,{passive:true});
-    if('ResizeObserver' in window) new ResizeObserver(positionSurveyMenu).observe(navbar);
-    surveyMenu.addEventListener('toggle',event=>{
-      surveyMenuButton.setAttribute('aria-expanded',String(event.newState==='open'));
-    });
-    // This is nonmodal navigation: leaving it must reveal the focused page.
-    navbar.addEventListener('focusout',event=>{
-      if(event.relatedTarget&&!surveyMenu.contains(event.relatedTarget)&&
-          event.relatedTarget!==surveyMenuButton&&surveyMenu.matches(':popover-open')){
-        surveyMenu.hidePopover();
-      }
-    });
-    surveyMenu.addEventListener('click',event=>{
-      const link=event.target.closest('a');
-      if(!link||event.defaultPrevented||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey) return;
-      surveyMenu.hidePopover();
-      if(link.hash&&link.pathname===location.pathname){
-        const target=document.getElementById(decodeURIComponent(link.hash.slice(1)));
-        if(target){
-          target.setAttribute('tabindex','-1');
-          target.focus({preventScroll:true});
-        }
-      }
-    });
-  }
+__SURVEY_NAV_SCRIPT__
 
 __LIFE_LIST_SCRIPT__
 
@@ -3105,6 +3067,8 @@ def scripts(mode):
     if mode not in VIEW_CONFIG:
         raise ValueError(f"Unknown survey view: {mode!r}")
     return (_SCRIPT_SHELL
+            .replace("__SURVEY_NAV_SCRIPT__",
+                     (Path(__file__).parent / "assets" / "survey-navigation.js").read_text())
             .replace("__LIFE_LIST_SCRIPT__",
                      LIFE_LIST_SCRIPT if mode == "life-list" else "")
             .replace("__PLOTLY_SCRIPT__",
@@ -4167,7 +4131,8 @@ def build():
     _timed("social-export", social_export.build)
     _timed("new-county-species", new_county_species.build)
     _timed("tiger-swallowtail-case-study", tiger_swallowtail.build)
-    _timed("field-guide", field_guide.build)
+    _timed("field-guide", lambda: field_guide.build(
+        navigation_html=nav("field", include_skip=False)))
     for out, digest in page_digests.items():
         if hashlib.sha256(out.read_bytes()).hexdigest() != digest:
             raise RuntimeError(f"Field guide build modified generated survey page {out}")

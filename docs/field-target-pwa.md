@@ -12,6 +12,20 @@ must remain functionally unchanged. The guide build records the newly generated
 root document's hash and fails if it mutates that file. Independent report runs
 are not byte-comparable because Plotly assigns fresh random chart element IDs.
 
+## Browser and installed navigation
+
+In a regular browser tab, Field Targets uses the shared survey navigation:
+Kingfisher Hollow home, Inventory, the current Field Targets destination, and
+Explore links to every survey view. The header and filters remain available
+while scrolling when the browser supports the enhanced Explore popover. Without
+Popover support or JavaScript, the links stay visible in document flow.
+
+An installed window running in `display-mode: standalone` (or iOS
+`navigator.standalone`) keeps the focused field app shell. Installing the app does
+not hide navigation in ordinary browser tabs. The shared navigation controller
+and generated routes are included in the versioned offline bundle; the other
+survey pages still require a network connection.
+
 ## Scope
 
 `all targets` means targets derived from the three existing public gap analyses
