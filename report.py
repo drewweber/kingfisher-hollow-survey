@@ -903,8 +903,8 @@ def life_list_body(life, dark=False):
     if rest:
         opts = "".join(f'<option value="{esc(g)}">{esc(g)} ({int(counts[g])})</option>'
                        for g in rest)
-        select = (f'<div class="flex flex-col gap-1 items-center"><label for="ll-select" class="{outer_text}">More groups</label>'
-                  f'<select id="ll-select" class="ll-select ll-control px-3 py-1.5 rounded-full '
+        select = (f'<div class="flex flex-col gap-1 items-center min-w-0 max-w-full"><label for="ll-select" class="{outer_text}">More groups</label>'
+                  f'<select id="ll-select" class="ll-select ll-control max-w-full px-3 py-1.5 rounded-full '
                   f'border border-stone-200 text-stone-600 bg-white">'
                   f'<option value="">Choose a group…</option>{opts}</select></div>')
     rows = []
@@ -923,16 +923,23 @@ def life_list_body(life, dark=False):
         last_seen = fdate(r['last_seen']) if history_known else '—'
         date_note = ('<span class="block text-xs text-secondary">Life-list date · eBird</span>'
                      if not history_known else '')
-        rows.append(f"""
-      <tr class="ll-row" data-family="{family}">
-        <td class="ll-number">{int(r['list_number']):,}</td>
-        <td class="ll-species-cell">{link}
-            <span class="ll-scientific-name">{sci}</span></td>
-        <td class="ll-group-cell">{grp}</td>
-        <td class="ll-records-cell">{records}</td>
-        <td class="ll-added-cell">{fdate(r['first_seen'])}{date_note}</td>
-        <td class="ll-last-seen-cell">{last_seen}</td>
-      </tr>""")
+        # Keep repeated rows compact: the inventory can contain 2,000+ taxa.
+        rows.append(
+            f'<tr class="ll-row" data-family="{family}">'
+            f'<td class="ll-number">{int(r["list_number"]):,}</td>'
+            f'<td class="ll-species-cell">{link} '
+            f'<span class="ll-scientific-name">{sci}</span></td>'
+            f'<td class="ll-group-cell">{grp}</td>'
+            f'<td class="ll-records-cell">{records}</td>'
+            f'<td class="ll-added-cell">{fdate(r["first_seen"])}{date_note}'
+            '<details class="ll-mobile-details">'
+            f'<summary aria-label="Details for {esc(name)}">Details</summary>'
+            f'Group: {grp}\n'
+            f'Records: {records if history_known else "Unavailable"}\n'
+            f'Last seen: {last_seen if history_known else "Unavailable"}'
+            '</details></td>'
+            f'<td class="ll-last-seen-cell">{last_seen}</td></tr>'
+        )
     return f"""
     <div class="max-w-4xl mx-auto">
       <search aria-label="Filter the life list" class="ll-controls flex flex-col gap-4 mb-6 items-center">
@@ -953,10 +960,12 @@ def life_list_body(life, dark=False):
           <button id="ll-clear" type="button" class="ll-control px-4 py-2 rounded-full border border-stone-200 text-stone-800 bg-white">Clear filters</button>
         </div>
       </search>
-      <div class="bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm max-h-[560px] overflow-y-auto">
-        <table class="w-full text-[0.95rem]"><thead class="text-secondary text-xs uppercase tracking-wider border-b-2 border-stone-100">
-          <tr><th class="text-right pb-2 pr-3 font-semibold">#</th><th class="text-left pb-2 font-semibold">Species</th><th class="text-left pb-2 font-semibold hidden md:table-cell">Group</th>
-          <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Record date</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
+      <div class="ll-table-region bg-white border border-stone-100 rounded-2xl shadow-sm" tabindex="0" role="region" aria-label="Life list records">
+        <table class="ll-table w-full text-[0.95rem]">
+          <caption class="sr-only">Species inventory and available record history</caption>
+          <thead class="text-secondary text-xs uppercase tracking-wider">
+          <tr><th scope="col" class="ll-number-heading text-right pb-2 pr-3 font-semibold">#</th><th scope="col" class="text-left pb-2 font-semibold">Species</th><th scope="col" class="ll-group-heading text-left pb-2 font-semibold">Group</th>
+          <th scope="col" class="ll-records-heading text-right pb-2 font-semibold">Records</th><th scope="col" class="ll-added-heading text-right pb-2 pr-3 font-semibold">Record date</th><th scope="col" class="ll-last-seen-heading text-right pb-2 font-semibold">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
       </div>
       <p id="ll-count" role="status" aria-live="polite" aria-atomic="true" class="text-center {outer_text} text-sm mt-4">{total:,} species shown</p>
