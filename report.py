@@ -4105,10 +4105,10 @@ def build():
         'The <em class="text-hollow-600">Observers</em>',
         chart_card(viz.leaderboard(analyze.observer_leaderboard(df)))
         + takeaway(
-            "Every record is attributed. Open the data table to compare how many observations each person submitted and "
-            "how many species only they have found here. Some of those species wouldn't be on the list without "
-            "that one person."),
-        intro="The survey exists because people showed up and submitted what they found. Each bar is one person's contribution; the data table also shows species recorded only by each observer in this dataset.",
+            "Every contributor helps build the record. Compare total species and observations beside each name; "
+            "a species counts toward everyone who recorded it. The data table separately identifies species "
+            "recorded only by one observer in this survey."),
+        intro="The survey exists because people showed up and submitted what they found. Each person has the same space here, with paired points for total species and observations.",
         tint="bg-stone-100"))
     parts.append(section(
         "map", "Where", 'On the <em class="text-hollow-600">Land</em>',

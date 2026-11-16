@@ -10,6 +10,8 @@ uses include_plotlyjs=False.
 from html import escape
 import hashlib
 import json
+import math
+import textwrap
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -431,30 +433,66 @@ def uniqueness_scatter(stats):
 
 # --- observer leaderboard ---------------------------------------------------
 def leaderboard(board):
+    """Give every contributor equal space while comparing two skewed totals.
+
+    Mark position, never bar length, encodes a logarithmic count. Zero has no
+    logarithm: retain it in the exact labels/table without inventing a position.
+    """
     if board.empty:
         return "<p class='chart-empty'>No observers yet.</p>"
-    b = board.head(15).iloc[::-1]
-    labels = b["display_name"].fillna(b["user_login"])
-    fig = go.Figure(go.Bar(
-        x=b["observations"], y=labels, orientation="h",
-        marker_color=HOLLOW[1],
-        text=b["observations"], textposition="outside",
-        textfont=dict(color=INK, size=11),
-        customdata=b[["species", "unique_species"]].values,
-        hovertemplate="<b>%{y}</b><br>%{x} obs · %{customdata[0]} species"
-                      "<br>%{customdata[1]} found only by them<extra></extra>",
-    ))
-    fig.update_xaxes(showticklabels=False)
-    fig.update_yaxes(showgrid=False)
-    shown = board.head(15)
+    b = board.copy()
+    b["label"] = b["display_name"].fillna("").astype(str).str.strip()
+    b["label"] = b["label"].where(b["label"].ne(""), b["user_login"])
+    b = b.sort_values(["label", "user_login"], key=lambda values: values.str.casefold())
+    labels = []
+    for row in b.itertuples():
+        name = "<br>".join(escape(line) for line in textwrap.wrap(row.label, width=18))
+        labels.append(f"<b>{name}</b><br>{int(row.observations):,} observations"
+                      f"<br>{int(row.species):,} species")
+    positions = list(range(len(b)))
+    fig = go.Figure()
+    for metric, title, color, symbol, offset in [
+        ("species", "Total species", HOLLOW[0], "circle", 0.14),
+        ("observations", "Observations", ACCENT_TEXT, "diamond", -0.14),
+    ]:
+        fig.add_scatter(
+            x=[int(value) if value > 0 else None for value in b[metric]],
+            y=[position + offset for position in positions], mode="markers",
+            marker=dict(color=color, symbol=symbol, size=9), name=title,
+            customdata=[[escape(row.label), int(getattr(row, metric))]
+                        for row in b.itertuples()],
+            hovertemplate="<b>%{customdata[0]}</b><br>%{customdata[1]:,} "
+                          + title.lower() + "<extra></extra>",
+        )
+    # Reserve enough height for wrapped names and exact counts at phone widths.
+    row_height = max(76, max(label.count("<br>") + 1 for label in labels) * 16 + 20)
+    _style(fig, height=100 + row_height * len(b), showlegend=True)
+    maximum = max(1, int(b[["observations", "species"]].max().max()))
+    exponent = max(1, math.ceil(math.log10(maximum)))
+    step = max(1, math.ceil(exponent / 4))
+    ticks = [10 ** power for power in range(0, exponent + 1, step)]
+    fig.update_xaxes(type="log", range=[-0.12, exponent + 0.12],
+                     tickmode="array", tickvals=ticks, tickformat="~s",
+                     title_text="Count · logarithmic scale", showgrid=True,
+                     gridcolor=GRID, fixedrange=True)
+    fig.update_yaxes(tickmode="array", tickvals=positions, ticktext=labels,
+                     range=[len(b) - 0.5, -0.5], showgrid=False, fixedrange=True,
+                     tickfont=dict(color=INK, size=11), automargin=True)
+    fig.update_layout(dragmode=False, margin=dict(l=132, r=18, t=50, b=55),
+                      legend=dict(y=1, itemclick=False, itemdoubleclick=False))
+    zero_note = (" Zero counts are labeled but not plotted on the logarithmic axis."
+                 if (b[["observations", "species"]] == 0).any().any() else "")
     return _with_data(
-        _html(_style(fig, height=max(320, 26 * len(b)))), "Observer contributions",
-        f"Showing {len(shown)} of {len(board)} observers, ranked by submitted observations. "
-        "Species recorded only by an observer are counted within this dataset; species totals overlap between observers.",
-        ["Observer", "Observations", "Species", "Species recorded only by this observer"],
-        ((r.display_name if pd.notna(r.display_name) else r.user_login,
-          int(r.observations), int(r.species), int(r.unique_species))
-         for r in shown.itertuples()),
+        _html(fig), "Observer contributions",
+        f"All {len(b)} observers, in alphabetical order. Circles show total distinct species; "
+        "diamonds show observations. The logarithmic count axis keeps small contributions visible: "
+        "each tenfold increase spans the same distance. Counts cover species-level, non-bird "
+        "iNaturalist records in this survey; eBird contributions are not included. "
+        "Species totals include shared species and overlap between observers."
+        + zero_note,
+        ["Observer", "Observations", "Total species", "Species recorded only by this observer"],
+        ((r.label, int(r.observations), int(r.species), int(r.unique_species))
+         for r in b.itertuples()),
     )
 
 
