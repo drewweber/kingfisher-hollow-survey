@@ -605,20 +605,23 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertNotIn("Typical error", html)
         self.assertNotIn("Rest / process records", html)
 
-    def test_section_flow_follows_the_configured_reading_order(self):
-        html = report.section(
-            "unique",
-            "Distinctiveness",
-            "What Stands Out",
-            "<p>Body</p>",
-        )
-        self.assertIn('aria-labelledby="unique-title"', html)
-        self.assertIn('id="unique-title"', html)
-        self.assertIn('href="#discovery"', html)
-        self.assertIn("Growth", html)
-        self.assertIn('href="#activity"', html)
-        self.assertIn("Records", html)
-        self.assertIn("05 / 09", html)
+    def test_sections_keep_deep_links_without_repeated_navigation(self):
+        for mode, config in report.VIEW_CONFIG.items():
+            for href, label in config["links"]:
+                if not href.startswith("#"):
+                    continue
+                id_ = href[1:]
+                for dark in (False, True):
+                    with self.subTest(mode=mode, section=id_, dark=dark):
+                        html = report.section(
+                            id_, "Survey", label, "<p>Body</p>", dark=dark,
+                        )
+                        self.assertIn(f'<section id="{id_}"', html)
+                        self.assertIn(f'aria-labelledby="{id_}-title"', html)
+                        self.assertIn(f'id="{id_}-title"', html)
+                        self.assertIn("<p>Body</p>", html)
+                        self.assertNotIn("<nav", html)
+                        self.assertNotIn("section-flow", html)
 
     def test_legacy_chapter_links_can_be_preserved_as_aliases(self):
         html = report.anchor_alias("uniqueness", "gallery", "moth-diversity")
