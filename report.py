@@ -2728,74 +2728,140 @@ LIFE_LIST_SCRIPT = """
 
 PLOTLY_SCRIPT = """
   // Plotly and each chart payload load only as an individual card nears view.
-  // Chart data lives in fingerprinted external scripts, avoiding initial HTML
-  // parsing and retention for charts a reader never reaches.
+  // Recovery controls and static data alternatives live outside Plotly's host.
   (function(){
     const charts=[...document.querySelectorAll('[data-plotly-chart]')];
     if(!charts.length) return;
     const queued=new Map((window.__plotlyQueue||[]).map(args=>[String(args[0]),args]));
-    const pending=new Set();
-    let loading=false,ready=false;
+    const states=new Map();
+    let library='idle';
+    charts.forEach((chart,index)=>{
+      const figure=chart.closest('[data-chart-figure]');
+      const table=figure?.querySelector('[data-chart-table]');
+      const title=figure?.dataset.chartTitle||'Chart '+(index+1);
+      const panel=document.createElement('div');panel.className='chart-recovery';
+      const progress=document.createElement('span');
+      const status=document.createElement('p');status.id=chart.id+'-status';
+      status.setAttribute('role','status');status.setAttribute('aria-atomic','true');
+      const retry=document.createElement('button');retry.type='button';retry.textContent='Retry chart';
+      retry.setAttribute('aria-label','Retry chart: '+title);
+      retry.setAttribute('aria-describedby',status.id);retry.hidden=true;
+      panel.append(progress,status,retry);chart.before(panel);
+      const state={chart,progress,status,retry,active:false,phase:'waiting',failure:'',payload:'idle'};
+      if(table){
+        const data=document.createElement('button');data.type='button';data.textContent='View chart data';
+        data.setAttribute('aria-label','View chart data: '+title);data.hidden=true;
+        data.addEventListener('click',()=>{table.open=true;table.querySelector('summary')?.focus();});
+        panel.append(data);state.data=data;
+      }
+      states.set(String(chart.id),state);
+      retry.addEventListener('click',()=>{
+        if(retry.getAttribute('aria-disabled')==='true') return;
+        state.userRetried=true;
+        if(state.failure==='render'){
+          window.Plotly?.purge?.(chart);chart.textContent='';
+        }
+        start(state,true);
+      });
+    });
+    function busy(state){
+      state.phase='loading';state.failure='';
+      state.chart.setAttribute('aria-busy','true');
+      state.progress.textContent='Loading chart…';state.status.textContent='';
+      state.retry.setAttribute('aria-disabled','true');
+    }
+    function fail(state,kind,message){
+      if(state.phase==='rendered') return;
+      state.phase='failed';state.failure=kind;
+      state.chart.setAttribute('aria-busy','false');state.progress.textContent='';
+      state.status.textContent=message+(state.data?' The summary and data table are still available.':' Please try again.');
+      state.retry.hidden=false;state.retry.setAttribute('aria-disabled','false');
+      if(state.data)state.data.hidden=false;
+    }
+    // A failed or stalled request is retried only after an explicit action.
+    function requestScript(src,success,failure){
+      const script=document.createElement('script');let settled=false;
+      const finish=ok=>{
+        if(settled)return;settled=true;clearTimeout(timer);
+        if(ok)success();else{script.remove();failure();}
+      };
+      const timer=setTimeout(()=>finish(false),20000);
+      script.src=src;script.async=true;
+      script.onload=()=>finish(true);script.onerror=()=>finish(false);
+      document.head.appendChild(script);
+    }
+    function loadLibrary(explicitRetry=false){
+      if(library==='ready'||library==='loading'||(library==='failed'&&!explicitRetry))return;
+      library='loading';
+      // A shared-library retry also recovers other charts blocked on that file.
+      states.forEach(state=>{if(state.failure==='library')busy(state);});
+      requestScript('__PLOTLY_CDN__',()=>{
+        if(typeof window.Plotly?.newPlot!=='function'){libraryFailed();return;}
+        library='ready';states.forEach(render);
+      },libraryFailed);
+    }
+    function libraryFailed(){
+      library='failed';
+      states.forEach(state=>{
+        if(state.active&&state.phase!=='rendered'&&state.failure!=='payload')
+          fail(state,'library','Interactive charts could not load.');
+      });
+    }
     function receive(args){
-      if(!args?.length) return;
-      const id=String(args[0]);
-      queued.set(id,args);
-      render(id);
+      if(!args?.length)return;
+      const id=String(args[0]);queued.set(id,args);
+      const state=states.get(id);
+      if(state){state.payload='ready';render(state);}
     }
     window.addEventListener('kh-plotly-payload',event=>receive(event.detail));
-    function render(id){
-      if(!ready||!queued.has(id)) return;
-      const chart=document.getElementById(id),args=queued.get(id);
-      if(!chart||chart.dataset.plotlyRendered==='true') return;
-      chart.dataset.plotlyRendered='true';
-      window.Plotly.newPlot(...args);
+    function render(state){
+      const id=String(state.chart.id);
+      if(!state.active||state.phase==='failed'||state.phase==='rendered'||state.phase==='rendering'||
+          library!=='ready'||!queued.has(id))return;
+      state.phase='rendering';
+      function failed(){fail(state,'render','This chart could not be drawn.');}
+      try{
+        Promise.resolve(window.Plotly.newPlot(...queued.get(id))).then(()=>{
+          state.phase='rendered';state.chart.dataset.plotlyRendered='true';
+          state.chart.setAttribute('aria-busy','false');state.progress.textContent='';
+          state.status.textContent=state.userRetried?'Chart loaded.':'';
+          // Do not remove a keyboard user's focused control without a destination.
+          if(document.activeElement===state.retry){
+            state.chart.setAttribute('tabindex','-1');state.chart.focus({preventScroll:true});
+          }
+          if(state.data&&document.activeElement===state.data){
+            state.chart.closest('[data-chart-figure]')?.querySelector('[data-chart-table] summary')?.focus();
+          }
+          state.retry.hidden=true;if(state.data)state.data.hidden=true;
+        },failed);
+      }catch(_error){failed();}
     }
-    function load(){
-      if(loading||ready) return;
-      loading=true;
-      const script=document.createElement('script');
-      script.src='__PLOTLY_CDN__';
-      script.async=true;
-      script.onload=()=>{
-        ready=true;
-        pending.forEach(render);
-        pending.clear();
-      };
-      document.head.appendChild(script);
+    function loadPayload(state){
+      const id=String(state.chart.id),src=state.chart.dataset.plotlySrc;
+      if(queued.has(id)){state.payload='ready';return;}
+      if(state.payload==='loading')return;
+      if(!src){fail(state,'payload','Chart data could not load.');return;}
+      state.payload='loading';
+      function failed(){state.payload='failed';fail(state,'payload','Chart data could not load.');}
+      requestScript(src,()=>{
+        if(!queued.has(id)){failed();return;}
+        state.payload='ready';render(state);
+      },failed);
     }
-    function loadPayload(chart){
-      const src=chart.dataset.plotlySrc;
-      if(!src||chart.dataset.plotlyPayloadLoading==='true'||queued.has(String(chart.id))) return;
-      chart.dataset.plotlyPayloadLoading='true';
-      const script=document.createElement('script');
-      script.src=src;
-      script.async=true;
-      script.onload=()=>{chart.dataset.plotlyPayloadLoading='false';};
-      script.onerror=()=>{
-        chart.dataset.plotlyPayloadLoading='false';
-        chart.dataset.plotlyPayloadFailed='true';
-        chart.textContent='Chart data could not load.';
-      };
-      document.head.appendChild(script);
-    }
-    function observe(chart){
-      const id=String(chart.id);
-      if(!id) return;
-      pending.add(id);
-      load();
-      loadPayload(chart);
-      render(id);
+    function start(state,explicitRetry=false){
+      if(state.phase==='rendered'||state.phase==='rendering')return;
+      state.active=true;busy(state);loadLibrary(explicitRetry);
+      if(library==='failed')fail(state,'library','Interactive charts could not load.');
+      loadPayload(state);render(state);
     }
     if(!('IntersectionObserver' in window)){
-      charts.forEach(observe);
-      return;
+      states.forEach(state=>start(state));return;
     }
-    const chartObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
-      if(!entry.isIntersecting) return;
-      chartObserver.unobserve(entry.target);
-      observe(entry.target);
+    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{
+      if(!entry.isIntersecting)return;
+      observer.unobserve(entry.target);start(states.get(String(entry.target.id)));
     }),{rootMargin:'700px 0px'});
-    charts.forEach(chart=>chartObserver.observe(chart));
+    charts.forEach(chart=>observer.observe(chart));
   })();
 """
 
