@@ -7,6 +7,8 @@ module.exports = {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
       colors: {
+        // Secondary text stays readable on white/stone and hollow dark cards.
+        secondary: { DEFAULT: "#57534e", inverse: "#b9c8c0" },
         hollow: {
           50: "#f0f7f4",
           100: "#dcefe6",

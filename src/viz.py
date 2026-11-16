@@ -15,7 +15,8 @@ from plotly.subplots import make_subplots
 HOLLOW = ["#2e735c", "#5eab8d", "#8ec8b1", "#265d4b", "#bbdfd0", "#1d3d33"]
 ACCENT = "#c2703d"          # terracotta — highlights (county firsts, rarities)
 INK = "#1d3d33"             # hollow-900, primary text
-MUTED = "#6b7d74"           # secondary text
+MUTED = "#57685e"           # secondary text, including on pale chart fills
+ACCENT_TEXT = "#98552c"     # darker terracotta for small labels on light cards
 GRID = "rgba(29,61,51,0.08)"
 GREEN_SCALE = [[0.0, "#f0f7f4"], [0.5, "#5eab8d"], [1.0, "#1d3d33"]]
 
@@ -27,6 +28,7 @@ MONTH_STARTS = pd.date_range("2000-01-01", periods=12, freq="MS").day_of_year.to
 # Dark-mode equivalents for the moth view (charts sit on bg-hollow-950).
 DARK_INK = "#e8f0ec"
 DARK_MUTED = "#9bb3a8"
+DARK_ACCENT_TEXT = "#e5a575"
 DARK_GRID = "rgba(255,255,255,0.10)"
 # On dark, line/marker colors need to be light tints to read.
 DARK_LINE = "#8ec8b1"       # hollow-300
@@ -38,10 +40,12 @@ def _palette(dark):
     """Text / grid / line colors for the active theme."""
     if dark:
         return dict(ink=DARK_INK, muted=DARK_MUTED, grid=DARK_GRID,
+                    accent_text=DARK_ACCENT_TEXT,
                     line=DARK_LINE, line2=DARK_LINE2,
                     hover_bg="#214a3d", hover_fg="#f0f7f4", hover_border="#5eab8d",
                     green_scale=DARK_GREEN_SCALE)
     return dict(ink=INK, muted=MUTED, grid=GRID,
+                accent_text=ACCENT_TEXT,
                 line=HOLLOW[0], line2=HOLLOW[3],
                 hover_bg="white", hover_fg=INK, hover_border=GRID,
                 green_scale=GREEN_SCALE)
@@ -255,7 +259,7 @@ def uniqueness_scatter(stats):
     fig.add_vline(x=25, line=dict(color=ACCENT, width=1, dash="dot"))
     fig.add_annotation(x=25, y=ymax * 1.08, text="← rarer in New York",
                        showarrow=False, xanchor="left", yanchor="top",
-                       font=dict(size=11, color=ACCENT))
+                       font=dict(size=11, color=ACCENT_TEXT))
     standouts = (s[s["state_obs_count"] <= 25]
                  .sort_values("property_obs_count", ascending=False).head(4))
     if not standouts.empty:
@@ -350,7 +354,7 @@ def completeness_curve(effort, comp, dark=True):
     fig.add_annotation(
         x=xmax, y=high if high > low else est, xanchor="right", yanchor="bottom",
         text=f"Chao2 estimate ≈ <b>{est}</b>{band}", showarrow=False,
-        font=dict(size=12, color=ACCENT))
+        font=dict(size=12, color=c["accent_text"]))
     fig.update_xaxes(title=dict(text="Cumulative moth observations →",
                                 font=dict(size=11, color=c["muted"])))
     fig.update_yaxes(title=dict(text="Moth species",
@@ -407,7 +411,7 @@ def rank_abundance(counts, dark=True):
         fig.add_annotation(
             x=n, y=1, xanchor="right", yanchor="bottom",
             text=f"<b>{singletons}</b> recorded once · <b>{doubletons}</b> twice",
-            showarrow=False, font=dict(size=11, color=ACCENT))
+            showarrow=False, font=dict(size=11, color=c["accent_text"]))
     fig.update_yaxes(type="log", title=dict(text="Observations (log) →",
                      font=dict(size=11, color=c["muted"])))
     fig.update_xaxes(title=dict(text="Species rank (most → least recorded)",
