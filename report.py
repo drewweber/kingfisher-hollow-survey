@@ -930,7 +930,16 @@ def life_list_body(life, dark=False):
             <span class="ll-scientific-name">{sci}</span></td>
         <td class="ll-group-cell">{grp}</td>
         <td class="ll-records-cell">{records}</td>
-        <td class="ll-added-cell">{fdate(r['first_seen'])}{date_note}</td>
+        <td class="ll-added-cell">{fdate(r['first_seen'])}{date_note}
+          <details class="ll-mobile-details">
+            <summary aria-label="Details for {esc(name)}">Details</summary>
+            <dl>
+              <div><dt>Group</dt><dd>{grp}</dd></div>
+              <div class="ll-mobile-records"><dt>Records</dt><dd>{records if history_known else 'Unavailable'}</dd></div>
+              <div><dt>Last seen</dt><dd>{last_seen if history_known else 'Unavailable'}</dd></div>
+            </dl>
+          </details>
+        </td>
         <td class="ll-last-seen-cell">{last_seen}</td>
       </tr>""")
     return f"""
@@ -953,10 +962,12 @@ def life_list_body(life, dark=False):
           <button id="ll-clear" type="button" class="ll-control px-4 py-2 rounded-full border border-stone-200 text-stone-800 bg-white">Clear filters</button>
         </div>
       </search>
-      <div class="bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm max-h-[560px] overflow-y-auto">
-        <table class="w-full text-[0.95rem]"><thead class="text-secondary text-xs uppercase tracking-wider border-b-2 border-stone-100">
-          <tr><th class="text-right pb-2 pr-3 font-semibold">#</th><th class="text-left pb-2 font-semibold">Species</th><th class="text-left pb-2 font-semibold hidden md:table-cell">Group</th>
-          <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Record date</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
+      <div class="ll-table-region bg-white border border-stone-100 rounded-2xl shadow-sm" tabindex="0" role="region" aria-label="Life list records">
+        <table class="ll-table w-full text-[0.95rem]">
+          <caption class="sr-only">Species inventory and available record history</caption>
+          <thead class="text-secondary text-xs uppercase tracking-wider">
+          <tr><th scope="col" class="ll-number-heading text-right pb-2 pr-3 font-semibold">#</th><th scope="col" class="text-left pb-2 font-semibold">Species</th><th scope="col" class="ll-group-heading text-left pb-2 font-semibold">Group</th>
+          <th scope="col" class="ll-records-heading text-right pb-2 font-semibold">Records</th><th scope="col" class="ll-added-heading text-right pb-2 pr-3 font-semibold">Record date</th><th scope="col" class="ll-last-seen-heading text-right pb-2 font-semibold">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
       </div>
       <p id="ll-count" role="status" aria-live="polite" aria-atomic="true" class="text-center {outer_text} text-sm mt-4">{total:,} species shown</p>

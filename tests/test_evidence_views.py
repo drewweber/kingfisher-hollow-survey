@@ -16,6 +16,8 @@ class EvidenceViewsTests(unittest.TestCase):
         html = report.life_list_body(life)
         self.assertIn('https://ebird.org/checklist/S123', html)
         self.assertIn('Life-list date', html)
+        self.assertIn('<dt>Records</dt><dd>Unavailable</dd>', html)
+        self.assertIn('<dt>Last seen</dt><dd>Unavailable</dd>', html)
         self.assertNotIn('>NaT<', html)
         self.assertNotIn('>nan<', html)
 
@@ -27,6 +29,26 @@ class EvidenceViewsTests(unittest.TestCase):
         html = report.life_list_body(life)
         self.assertIn('Example bird', html)
         self.assertNotIn('&lt;NA&gt;', html)
+
+    def test_life_list_mobile_details_preserve_values_and_table_structure(self):
+        life = pd.DataFrame([dict(label='Example <moth>', taxon_name='Avis example',
+              group='Moths & relatives', family_name='Exampleidae', taxon_id=123,
+              observations=7, first_seen=pd.Timestamp('2026-08-01'),
+              first_observed_at=pd.NaT, last_seen=pd.Timestamp('2026-09-12'))])
+        html = report.life_list_body(life)
+        self.assertEqual(html.count('class="ll-row"'), 1)
+        self.assertEqual(html.count('<td '), 6)
+        self.assertEqual(html.count('scope="col"'), 6)
+        self.assertIn('<caption class="sr-only">Species inventory', html)
+        self.assertIn('tabindex="0" role="region" aria-label="Life list records"', html)
+        self.assertIn('<summary aria-label="Details for Example &lt;moth&gt;">Details</summary>', html)
+        self.assertIn('<dt>Group</dt><dd>Moths &amp; relatives</dd>', html)
+        self.assertIn('<dt>Records</dt><dd>7</dd>', html)
+        self.assertIn('<dt>Last seen</dt><dd>Sep 12, 2026</dd>', html)
+        # Search metadata reads the species cell: details belong to the date cell.
+        species_cell = html.split('class="ll-species-cell">')[1].split('</td>')[0]
+        self.assertNotIn('<details', species_cell)
+        self.assertIn('<span class="ll-scientific-name">Avis example</span>', species_cell)
 
     def test_fungi_dates_and_recent_counts_use_eligible_inventory(self):
         rows = pd.DataFrame([
