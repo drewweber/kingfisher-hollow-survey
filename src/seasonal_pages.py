@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 from urllib.parse import quote, urlsplit
 from zoneinfo import ZoneInfo
+from navigation import survey_destinations
 
 ROOT = Path(__file__).resolve().parents[1]
 SEASONS = {
@@ -56,7 +57,7 @@ def base_chapter(key):
 def nav(active, home_url):
     links=''.join(f'<a href="/seasons/{key}/"'+(' aria-current="page"' if key==active else '')+f'>{label}</a>' for key,(label,*_) in SEASONS.items())
     return f'''<a class="skip-link" href="#main">Skip to the story</a>
-<header class="site-header"><a class="wordmark" href="{esc(home_url)}">Kingfisher Hollow<span>A living record of one place</span></a><a class="survey-link" href="/">Biodiversity survey <span aria-hidden="true">↗</span></a></header>
+<header class="site-header"><a class="wordmark" href="{esc(home_url)}">Kingfisher Hollow<span>A living record of one place</span></a><nav class="survey-links" aria-label="Survey navigation"><a class="survey-link" href="/">Biodiversity survey <span aria-hidden="true">↗</span></a>{survey_destinations(context=f"/seasons/{active}/" if active else "")}</nav></header>
 <nav class="season-nav" aria-label="Seasons"><a class="all-seasons" href="/seasons/"{' aria-current="page"' if not active else ''}>The seasons</a><div>{links}</div></nav>'''
 
 
