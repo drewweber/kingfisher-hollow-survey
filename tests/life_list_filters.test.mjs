@@ -6,7 +6,7 @@ import vm from 'node:vm';
 const source = readFileSync(new URL('../report.py', import.meta.url), 'utf8');
 const script = source.split('LIFE_LIST_SCRIPT = """')[1].split('"""')[0].replaceAll('\\\\', '\\');
 
-function harness(href = 'https://survey.example/life-list/') {
+function harness(href = 'https://survey.example/life-list/', size = 3) {
   function element(extra = {}) {
     const listeners = {}, attrs = {}, classes = new Set();
     return { value: '', textContent: '', dataset: {}, style: {}, ...extra,
@@ -21,17 +21,21 @@ function harness(href = 'https://survey.example/life-list/') {
   }
   const rows = [['Luna Moth', 'Actias luna', 'Moths', 'Saturniidae'],
     ['Monarch', 'Danaus plexippus', 'Butterflies', 'Nymphalidae'],
-    ['Wood Duck', 'Aix sponsa', 'Birds', 'Anatidae']].map(([name, sci, group, family]) => {
+    ['Wood Duck', 'Aix sponsa', 'Birds', 'Anatidae'],
+    ...Array.from({length: size - 3}, (_, i) => ['Species ' + i, 'Scientific ' + i, 'Moths', 'Saturniidae'])].map(([name, sci, group, family]) => {
     const scientific = element({ textContent: sci });
     scientific.classList.toggle('ll-scientific-name', true);
-    return element({ dataset: { family }, cells: [{}, {
+    const number = element(), link = element();
+    return element({ number, link, dataset: { family }, cells: [{}, {
       lastElementChild: scientific, childNodes: [{ textContent: name }, scientific],
-    }, { textContent: group }], querySelector() { return null; } });
+    }, { textContent: group }], querySelector(selector) { return selector === '.ll-number' ? number : link; } });
   });
   const buttons = ['all', 'Moths', 'Butterflies'].map(group => element({ dataset: { group } }));
-  const ids = Object.fromEntries(['ll-search', 'll-count', 'll-select', 'll-taxon-select', 'll-clear']
+  const ids = Object.fromEntries(['ll-search', 'll-count', 'll-select', 'll-taxon-select', 'll-clear', 'll-body', 'll-pagination', 'll-previous', 'll-next', 'll-page-label', 'll-table-region']
     .map(id => [id, element()]));
-  ids['ll-count'].textContent = '3 species shown';
+  ids['ll-count'].textContent = size.toLocaleString() + ' species shown';
+  ids['ll-body'].children = [...rows];
+  ids['ll-body'].replaceChildren = function(...children) { this.children = children; };
   let nextTimer = 0;
   const timers = new Map();
   const listeners = {}, entries = [href];
@@ -69,7 +73,7 @@ test('typing filters immediately but announces only the settled result', () => {
   const h = harness();
   const search = h.ids['ll-search'], count = h.ids['ll-count'];
   search.value = 'luna'; search.dispatch('input');
-  assert.equal(h.rows.filter(row => row.style.display !== 'none').length, 1);
+  assert.equal(h.ids['ll-body'].children.length, 1);
   assert.equal(count.textContent, '3 species shown');
   search.value = 'does not exist'; search.dispatch('input');
   assert.equal(h.timers.size, 1);
@@ -87,7 +91,7 @@ test('clear filters resets query, group, family, pressed state and focus', () =>
   assert.equal(h.ids['ll-select'].value, '');
   assert.equal(h.ids['ll-taxon-select'].value, '');
   assert.equal(h.ids['ll-taxon-select'].disabled, true);
-  assert.equal(h.rows.filter(row => row.style.display !== 'none').length, 3);
+  assert.equal(h.ids['ll-body'].children.length, 3);
   assert.equal(h.buttons[0].getAttribute('aria-pressed'), 'true');
   assert.equal(h.buttons[1].getAttribute('aria-pressed'), 'false');
   assert.equal(h.ids['ll-search'].focused, true);
@@ -102,13 +106,12 @@ test('more groups and family filter continue to narrow scientific-name searches'
   h.ids['ll-search'].value = 'AIX'; h.ids['ll-search'].dispatch('input');
   h.flush();
   assert.equal(h.ids['ll-count'].textContent, '1 species shown');
-  assert.equal(h.rows[2].style.display, '');
-  assert.equal(h.rows[0].style.display, 'none');
+  assert.equal(visible(h)[0], h.rows[2]);
 });
 
 
 function visible(h) {
-  return h.rows.filter(row => row.style.display !== 'none');
+  return h.ids['ll-body'].children;
 }
 
 test('deep link and reload restore query, pinned group, family and result count', () => {
@@ -213,4 +216,82 @@ test('returning the more-groups dropdown to its placeholder clears group and fam
   assert.equal(h.buttons[0].getAttribute('aria-pressed'), 'true');
   assert.equal(h.ids['ll-taxon-select'].disabled, true);
   assert.equal(visible(h).length, 3);
+});
+
+
+test('pagination bounds mounted rows and searches across detached records', () => {
+  const h = harness(undefined, 10000);
+  assert.equal(visible(h).length, 100);
+  assert.equal(h.ids['ll-count'].textContent, 'Showing 1–100 of 10,000 species');
+  assert.equal(h.ids['ll-previous'].disabled, true);
+  assert.equal(h.ids['ll-next'].disabled, false);
+  assert.equal(h.ids['ll-pagination'].hidden, false);
+  h.ids['ll-next'].dispatch('click'); h.flush();
+  assert.equal(visible(h).length, 100);
+  assert.equal(visible(h)[0], h.rows[100]);
+  assert.equal(h.rows[100].number.textContent, '9,900');
+  assert.equal(h.rows[100].link.focused, true);
+  assert.equal(h.ids['ll-count'].textContent, 'Showing 101–200 of 10,000 species');
+  assert.equal(new URL(h.window.location.href).searchParams.get('page'), '2');
+  h.ids['ll-search'].value = 'Scientific 9996'; h.ids['ll-search'].dispatch('input'); h.flush();
+  assert.equal(visible(h).length, 1);
+  assert.equal(visible(h)[0], h.rows[9999]);
+  assert.equal(h.ids['ll-pagination'].hidden, true);
+  assert.equal(new URL(h.window.location.href).searchParams.has('page'), false);
+  assert.equal(h.ids['ll-count'].textContent, '1 species shown');
+  h.go(-1); h.flush();
+  assert.equal(visible(h)[0], h.rows[100]);
+  assert.equal(h.ids['ll-page-label'].textContent, 'Page 2 of 100');
+  h.go(-1);
+  assert.equal(visible(h)[0], h.rows[0]);
+  h.go(1);
+  assert.equal(visible(h)[0], h.rows[100]);
+});
+
+test('page deep links clamp bounds and initial no-match URL detaches every SSR row', () => {
+  for (const page of ['-1', '0', '1.5', 'nope', 'Infinity', '9007199254740992']) {
+    const h = harness('https://survey.example/life-list/?from=seasonal&page=' + page + '#life-list', 205);
+    assert.equal(visible(h)[0], h.rows[0]);
+    assert.equal(h.window.location.href, 'https://survey.example/life-list/?from=seasonal#life-list');
+  }
+  const h = harness('https://survey.example/life-list/?page=999', 205);
+  assert.equal(visible(h).length, 5);
+  assert.equal(visible(h)[0], h.rows[200]);
+  assert.equal(h.ids['ll-next'].disabled, true);
+  assert.equal(h.window.location.href, 'https://survey.example/life-list/?page=3');
+  assert.equal(h.ids['ll-count'].textContent, 'Showing 201–205 of 205 species');
+  h.ids['ll-next'].dispatch('click');
+  assert.equal(h.entries.length, 1);
+  const empty = harness('https://survey.example/life-list/?q=nothing&page=9', 205);
+  assert.equal(visible(empty).length, 0);
+  assert.equal(empty.ids['ll-pagination'].hidden, true);
+  assert.equal(empty.window.location.href, 'https://survey.example/life-list/?q=nothing');
+});
+
+test('group, family and Clear filters reset pagination while Back retains its subset', () => {
+  const h = harness('https://survey.example/life-list/?page=2', 305);
+  h.buttons[1].dispatch('click');
+  assert.equal(h.ids['ll-page-label'].textContent, 'Page 1 of 4');
+  assert.equal(visible(h)[0], h.rows[0]);
+  h.ids['ll-next'].dispatch('click');
+  h.ids['ll-taxon-select'].value = 'Saturniidae'; h.ids['ll-taxon-select'].dispatch('change');
+  assert.equal(h.ids['ll-page-label'].textContent, 'Page 1 of 4');
+  h.ids['ll-next'].dispatch('click');
+  h.ids['ll-clear'].dispatch('click');
+  assert.equal(visible(h)[0], h.rows[0]);
+  assert.equal(h.ids['ll-search'].focused, true);
+  h.go(-1);
+  assert.equal(h.ids['ll-page-label'].textContent, 'Page 2 of 4');
+  assert.equal(h.ids['ll-taxon-select'].value, 'Saturniidae');
+  assert.equal(visible(h)[0], h.rows[102]);
+});
+
+
+test('a last-page unlinked record moves keyboard focus to the table region', () => {
+  const h = harness(undefined, 101);
+  h.rows[100].querySelector = () => null;
+  h.ids['ll-next'].dispatch('click');
+  assert.equal(visible(h).length, 1);
+  assert.equal(h.ids['ll-next'].disabled, true);
+  assert.equal(h.ids['ll-table-region'].focused, true);
 });
