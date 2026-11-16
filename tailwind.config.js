@@ -1,5 +1,6 @@
 module.exports = {
-  content: ["./report.py", "./src/**/*.py"],
+  // Include classes added by the shared browser controllers at runtime.
+  content: ["./report.py", "./src/**/*.py", "./assets/**/*.js"],
   theme: {
     extend: {
       fontFamily: {
