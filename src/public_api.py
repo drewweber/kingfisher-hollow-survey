@@ -6,9 +6,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pandas as pd
+
 import analyze
 from config import PUBLIC_DIR, SPECIES_RANKS
 from db import connect
+from inventory import normalize_species
 
 
 API_DATASET = "kingfisher-hollow-moths"
@@ -28,7 +31,6 @@ SELECT
     p.rank,
     p.observed_at
 FROM property_obs AS p
-JOIN moth_taxa AS m ON m.taxon_id = p.taxon_id
 LEFT JOIN taxon_meta AS t ON t.taxon_id = p.taxon_id
 ORDER BY p.observed_at DESC, p.id DESC
 """
@@ -91,14 +93,15 @@ def summary_from_connection(conn, birds=None, updated_at=None):
     """Build the combined biodiversity summary using the report's inclusion rules."""
     birds = analyze.load_birds() if birds is None else birds
     rank_placeholders = ",".join("?" for _rank in SPECIES_RANKS)
-    property_rows = conn.execute(
-        "SELECT DISTINCT taxon_id FROM property_obs "
+    property_rows = pd.read_sql_query(
+        "SELECT * FROM property_obs "
         "WHERE taxon_id IS NOT NULL "
         "AND (iconic_taxon IS NULL OR iconic_taxon != 'Aves') "
         f"AND rank IN ({rank_placeholders})",
-        tuple(SPECIES_RANKS),
-    ).fetchall()
-    property_taxa = {int(row["taxon_id"]) for row in property_rows}
+        conn, params=tuple(SPECIES_RANKS),
+    )
+    property_rows = normalize_species(property_rows, conn)
+    property_taxa = set(property_rows["taxon_id"].dropna().astype(int))
     moth_taxa = _roster_taxa(conn, "moth_taxa")
     mammal_taxa = _roster_taxa(conn, "mammal_taxa")
     amphibian_taxa = _roster_taxa(conn, "amphibian_taxa")
@@ -159,7 +162,14 @@ def snapshot_from_connection(conn, generated_at=None):
     observations = []
     seen_ids = set()
 
-    for row in conn.execute(_MOTH_OBSERVATIONS_SQL):
+    rows = pd.read_sql_query(_MOTH_OBSERVATIONS_SQL, conn).rename(
+        columns={'scientific_name': 'taxon_name'}
+    )
+    rows = normalize_species(rows, conn)
+    rows = rows[rows['taxon_id'].isin(_roster_taxa(conn, 'moth_taxa'))]
+    rows = rows.rename(columns={'taxon_name': 'scientific_name'})
+    rows = rows.astype(object).where(pd.notna(rows), None)
+    for row in rows.to_dict('records'):
         observation_id = int(row["observation_id"])
         if observation_id in seen_ids:
             continue
