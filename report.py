@@ -3736,15 +3736,17 @@ def build():
     _timed("static-assets", _copy_static_assets)
     init_db()
     df = _timed("load-property", analyze.load_property)
+    evidence_df = _timed("load-property-evidence", analyze.load_property, canonical_species=False)
     stats = _timed("load-stats", analyze.load_stats)
     if df.empty:
         print("No property observations yet — run sync.py --property first.")
         return None
 
     # Keep uniqueness stats species-level too (they're cached per-taxon and may
-    # include coarser IDs cached before this filter existed).
+    # include coarser IDs cached before this filter existed). Keep these joins
+    # on original IDs: a child rarity estimate is not a parent-species estimate.
     if not stats.empty:
-        stats = stats[stats["taxon_id"].isin(set(df["taxon_id"].dropna()))]
+        stats = stats[stats["taxon_id"].isin(set(evidence_df["taxon_id"].dropna()))]
 
     birds_for_totals = _timed("load-birds", analyze.load_birds)
     last_data_sync = _timed("data-updated", data_updated_at)
@@ -3753,6 +3755,7 @@ def build():
     s = _timed("summary-property", analyze.summary, df)
     public_s = _timed("summary-overview", analyze.summary, overview_df)
     life = _timed("life-list", analyze.life_list, overview_df)
+    _timed("validate-inventory-membership", analyze.validate_inventory_counts, life)
     firsts = _timed("firsts-timeline", analyze.firsts_timeline, df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
@@ -3788,7 +3791,7 @@ def build():
                          seasonal_body(raw_df.to_dict("records"), odonate_ids, datetime.now(ZoneInfo("America/New_York")).date()),
                          intro="From the first woodland flowers to tracks in the snow, follow how life changes through the year."))
     latest_body = (
-        whats_new_body(analyze.whats_new(df, stats))
+        whats_new_body(analyze.whats_new(evidence_df, stats))
         + anchor_alias("gallery")
         + '<div class="mt-16 border-t border-stone-200 pt-12">'
           '<div class="mb-7 text-center">'
@@ -3823,7 +3826,7 @@ def build():
           '<h3 class="mt-2 font-serif text-3xl font-bold text-white">'
             'Earliest dates in the public county record</h3>'
         '</div>'
-        + showcase_body(analyze.county_first_showcase(df, stats))
+        + showcase_body(analyze.county_first_showcase(evidence_df, stats))
         + takeaway(
             f"{county_firsts:,} taxa have a property observation dated on or before the earliest Tioga County date in the cached iNaturalist comparison. "
             "Same-day ties are included. These are public-record contributions to investigate, not proof of biological rarity or an exclusive first discovery. "
@@ -3853,7 +3856,7 @@ def build():
           '<p class="mx-auto mb-6 max-w-2xl text-center text-sm leading-6 text-secondary">'
             'These have especially small New York iNaturalist footprints. They are review priorities, '
             'not automatic rarity claims.</p>'
-        + rarest_body(analyze.rarest_finds(df, stats))
+        + rarest_body(analyze.rarest_finds(evidence_df, stats))
         + '</div>'
     )
     parts.append(section(
@@ -3963,7 +3966,7 @@ def build():
 
     # ── Log view (light, journal) ────────────────────────────────────────────
     parts.append('<div id="view-log" data-view-label="Log">')
-    log_entries = _timed("activity-log", analyze.activity_log, df, stats)
+    log_entries = _timed("activity-log", analyze.activity_log, evidence_df, stats)
     weather_cache = _timed("load-weather", weather.load_weather)
     id_changes = _timed("id-changes", _load_id_changes)
     data_updated = _fmt_dt(last_data_sync) if last_data_sync else "—"
@@ -4000,6 +4003,8 @@ def build():
         chapter["community"] = community[key]
     _timed("seasonal-chapters", seasonal_pages.write_seasonal_pages, chapters, PUBLIC_DIR, home_url=SITE)
     _timed("public-api", public_api.build)
+    _timed("validate-public-counts", analyze.validate_inventory_counts, life,
+           json.loads(public_api.SUMMARY_PATH.read_text()))
     _timed("social-export", social_export.build)
     _timed("new-county-species", new_county_species.build)
     _timed("tiger-swallowtail-case-study", tiger_swallowtail.build)

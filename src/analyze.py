@@ -21,6 +21,7 @@ from config import (
     USER_AGENT,
 )
 from db import connect
+from inventory import normalize_species, species_taxonomy
 from target_policy import VETTED_REGIONAL_TARGET_NAMES
 
 
@@ -35,9 +36,8 @@ def _join_taxonomy(df):
     taxon_meta entry get empty strings so sort order is stable.
     """
     with connect() as conn:
-        meta = pd.read_sql_query(
-            "SELECT taxon_id, order_name, family_name, family_common FROM taxon_meta",
-            conn)
+        meta = species_taxonomy(conn)[[
+            "taxon_id", "order_name", "family_name", "family_common"]]
     df = df.merge(meta, on="taxon_id", how="left")
     for col in ("order_name", "family_name", "family_common"):
         df[col] = df[col].fillna("")
@@ -62,15 +62,20 @@ def _session_dates(sub, cutoff_hour=12):
     return adjusted.dt.date
 
 
-def load_property(species_only=True):
+def load_property(species_only=True, canonical_species=True):
     """Property observations as a DataFrame with parsed date columns.
 
     By default restricted to species-level records (rank 'species' or finer);
     coarser IDs like genus/family are observations not resolved to a species.
+    Finer IDs with an unambiguous cached species match use that species identity
+    for counting; canonical_species=False keeps eligible original IDs for
+    evidence/uniqueness joins, and species_only=False preserves all raw records.
     Birds (Aves) are excluded entirely — they're tracked on eBird instead.
     """
     with connect() as conn:
         df = pd.read_sql_query("SELECT * FROM property_obs", conn)
+        if species_only and canonical_species:
+            df = normalize_species(df, conn)
     df = df[df["iconic_taxon"] != "Aves"].copy()
     if species_only:
         df = df[df["rank"].isin(SPECIES_RANKS)].copy()
@@ -84,7 +89,7 @@ def load_property(species_only=True):
 def species_taxon_ids():
     """Set of species-level taxon_ids on the property — used to keep the
     uniqueness stats (which are cached per-taxon) species-level too."""
-    return set(load_property()["taxon_id"].dropna().astype(int))
+    return set(load_property(canonical_species=False)["taxon_id"].dropna().astype(int))
 
 
 def load_stats():
@@ -119,10 +124,8 @@ def group_labeler(moth_ids, butterfly_ids, order_common_by_taxon):
             return "Butterflies"
         if iconic in ("Insecta", "Arachnida"):
             oc = order_common_by_taxon.get(taxon_id)
-            # Lepidoptera not caught by the (verifiable) moth/butterfly rosters
-            # are stragglers — almost always moths; butterflies handled above.
-            if oc == "Butterflies and Moths":
-                return "Moths"
+            # An unmatched Lepidoptera ID may be a butterfly descendant.
+            # Keep its known order rather than inventing moth membership.
             if oc:
                 return oc
             return "Insects" if iconic == "Insecta" else "Arachnids"
@@ -135,7 +138,18 @@ def _group_inputs():
     moth_ids = set(_load_table("moth_taxa")["taxon_id"].dropna().astype(int))
     bf = _load_table("butterfly_taxa")
     butterfly_ids = set(bf["taxon_id"].dropna().astype(int)) if not bf.empty else set()
-    meta = _load_table("taxon_meta")
+    with connect() as conn:
+        meta = species_taxonomy(conn)
+        raw = pd.read_sql_query(
+            "SELECT DISTINCT taxon_id, taxon_name, common_name, rank FROM property_obs", conn)
+        resolved = normalize_species(raw, conn)
+    # Evidence views retain original IDs; their known descendants still belong
+    # to the same group as the resolved species used by inventory views.
+    for original, parent in zip(raw["taxon_id"], resolved["taxon_id"]):
+        if parent in moth_ids:
+            moth_ids.add(original)
+        if parent in butterfly_ids:
+            butterfly_ids.add(original)
     order_common = {}
     if not meta.empty:
         for _, r in meta.iterrows():
@@ -345,6 +359,34 @@ def life_list(df):
     g = add_group_column(g)
     g = _join_taxonomy(g)
     return g.sort_values(["group", "family_name", "label"])
+
+
+def validate_inventory_counts(life, api_summary=None):
+    """Fail a build on inconsistent Lepidoptera membership or API totals.
+
+    Plants intentionally have a broader all-record inventory than their wild
+    roster; they are not forced into this equality check. Compare IDs, not just
+    counts, so a missing species cannot hide an incorrectly assigned one.
+    """
+    expected_counts = {'totalSpecies': int(life['taxon_id'].nunique())}
+    for group, key, loader in (
+        ('Moths', 'moths', load_moths),
+        ('Butterflies', 'butterflies', load_butterflies),
+    ):
+        actual = set(life.loc[life['group'] == group, 'taxon_id'].dropna().astype(int))
+        expected = set(loader()['taxon_id'].dropna().astype(int))
+        if actual != expected:
+            raise ValueError(
+                f'{group} inventory mismatch: life-list-only={sorted(actual - expected)}, '
+                f'roster-only={sorted(expected - actual)}'
+            )
+        expected_counts[key] = len(expected)
+    if api_summary is not None:
+        for key, expected in expected_counts.items():
+            if api_summary.get(key) != expected:
+                raise ValueError(
+                    f'Public API {key}={api_summary.get(key)} differs from life list {expected}'
+                )
 
 
 # --- rarest finds (fewest NY records) --------------------------------------
