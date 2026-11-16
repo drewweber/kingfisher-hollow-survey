@@ -430,12 +430,19 @@ def county_first_showcase(df, stats, n=12):
 def firsts_timeline(df):
     """Earliest dated record per taxon in the supplied inventory.
 
-    For birds the available date belongs to the eBird life-list export.
+    For birds the available date belongs to the eBird life-list export, not
+    necessarily a first sighting. Undated taxa remain in the inventory; attrs
+    retain their count so the chart can explain its smaller dated total.
     """
+    inventory_species = int(df["taxon_id"].nunique())
     sub = _inventory_sources(df).dropna(subset=["taxon_id", "observed_on"])
     firsts = sub.sort_values("observed_on", kind="stable").drop_duplicates("taxon_id").copy()
     firsts["label"] = firsts["common_name"].fillna(firsts["taxon_name"])
     firsts["cumulative"] = range(1, len(firsts) + 1)
+    firsts.attrs.update(
+        inventory_species=inventory_species,
+        undated_species=inventory_species - len(firsts),
+    )
     return firsts
 
 

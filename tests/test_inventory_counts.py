@@ -110,6 +110,30 @@ class InventoryCountsTests(unittest.TestCase):
         self.assertEqual(life.loc[48662, 'family_name'], 'Nymphalidae')
         self.assertEqual(life.loc[48662, 'group'], 'Butterflies')
 
+    def test_combined_chronology_counts_overlapping_birds_once(self):
+        # iNaturalist birds are excluded by the canonical inventory loader,
+        # including a name that does not match eBird's current taxonomy.
+        self.add_observation(8, 200, 'Hylocichla mustelina', 'species')
+        self.add_observation(9, 201, 'Old bird synonym', 'species')
+        self.conn.execute("UPDATE property_obs SET iconic_taxon='Aves' WHERE id IN (8,9)")
+        birds = pd.DataFrame([
+            dict(taxon_order=200, common_name='Wood Thrush', taxon_name='Hylocichla mustelina', date='2026-05-01', sub_id='S1'),
+            dict(taxon_order=None, common_name='Unknown order', taxon_name='Unmatched name', date='2026-05-02', sub_id='S2'),
+            dict(taxon_order=None, common_name='Undated bird', taxon_name='Another name', date=None, sub_id='S3'),
+        ])
+        combined = analyze.overview_observations(analyze.load_property(), birds)
+        life = analyze.life_list(combined)
+        firsts = analyze.firsts_timeline(combined)
+        self.assertEqual(len(life), 6)
+        self.assertEqual(firsts.cumulative.tolist(), [1, 2, 3, 4, 5])
+        self.assertEqual(firsts.source.tolist()[:2], ['eBird', 'eBird'])
+        self.assertEqual(firsts.observed_on.iloc[0], pd.Timestamp('2026-05-01'))
+        self.assertEqual(set(firsts.taxon_id), set(life.loc[life.first_seen.notna(), 'taxon_id']))
+        self.assertNotIn(200, set(firsts.taxon_id))
+        self.assertNotIn(201, set(firsts.taxon_id))
+        self.assertEqual(firsts.attrs['inventory_species'], 6)
+        self.assertEqual(firsts.attrs['undated_species'], 1)
+
     def test_uniqueness_eligibility_preserves_original_identification_ids(self):
         self.assertEqual(analyze.species_taxon_ids(), {60607, 58585, 235550, 47916})
 
