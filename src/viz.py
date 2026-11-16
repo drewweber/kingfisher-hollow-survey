@@ -418,13 +418,37 @@ def leaderboard(board):
 
 
 # --- map --------------------------------------------------------------------
+# Map color roles: quiet Carto tiles provide neutral context; these botanical /
+# earth hues identify categories, not magnitude, rarity, or selection. Each pair
+# is (light basemap, dark basemap), keeping the same hue family in either theme.
+# Key by taxon so absent groups and input order cannot reassign a category.
+# Unknown groups are neutral; legend labels and species/taxon hover text remain
+# essential for distinguishing categories in grayscale or color-deficient views.
+MAP_TAXON_COLORS = {
+    "Plantae":        ("#39724b", "#80b88b"),  # leaf
+    "Insecta":        ("#b36b12", "#e7ac56"),  # ochre
+    "Fungi":          ("#98547c", "#d593b9"),  # heather
+    "Arachnida":      ("#7456a6", "#b49bdc"),  # violet
+    "Reptilia":       ("#817226", "#c4b45f"),  # olive
+    "Amphibia":       ("#187d83", "#66bfc4"),  # pond teal
+    "Mammalia":       ("#91604b", "#c99b82"),  # chestnut
+    "Animalia":       ("#566275", "#9daec5"),  # slate
+    "Actinopterygii": ("#316d9e", "#79b2df"),  # river blue
+    "Mollusca":       ("#b55341", "#e59079"),  # clay
+    "Aves":           ("#a74f68", "#df8fa4"),  # rose
+    "Chromista":      ("#58519a", "#a39cdb"),  # indigo
+    "Protozoa":       ("#557b22", "#a0be6a"),  # moss
+    "Other":          ("#737373", "#b0b0b0"),  # neutral fallback
+}
+
+
 def obs_map(df, dark=False):
     pts = df.dropna(subset=["latitude", "longitude"])
     if pts.empty:
         return "<p class='chart-empty'>No mappable (un-obscured) observations.</p>"
     groups = pts["iconic_taxon"].fillna("Other").unique()
-    palette = {g: (ACCENT if g == "Aves" else HOLLOW[i % len(HOLLOW)])
-               for i, g in enumerate(groups)}
+    palette = {g: MAP_TAXON_COLORS.get(g, MAP_TAXON_COLORS["Other"])[bool(dark)]
+               for g in groups}
     fig = go.Figure()
     for g in groups:
         sub = pts[pts["iconic_taxon"].fillna("Other") == g]
