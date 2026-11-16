@@ -246,6 +246,71 @@ def taxa_bar(life):
 
 
 # --- phenology heatmap ------------------------------------------------------
+def seasonal_guide(guide):
+    """Readable seasonal search ideas; all evidence survives without JavaScript."""
+    panels = []
+    for season in guide["seasons"]:
+        examples = []
+        for example in season["examples"]:
+            months = ", ".join(MONTHS[m - 1] for m in example["recorded_months"])
+            years = ", ".join(str(y) for y in example["years"])
+            examples.append(
+                '<li class="border-t border-stone-200 py-3">'
+                f'<p class="text-xs text-secondary">{escape(example["group"])}</p>'
+                f'<a class="inline-block py-1 font-medium text-hollow-800 underline decoration-hollow-300 underline-offset-4" '
+                f'href="https://www.inaturalist.org/observations/{int(example["sample_id"])}">'
+                f'{escape(example["label"])}</a>'
+                f'<p class="text-xs leading-5 text-secondary">Recorded in {months}<br>'
+                f'{example["recording_days"]} distinct days · {years}</p>'
+                f'<p class="mt-1 text-xs text-secondary">Linked record: {_date(example["sample_date"])}</p>'
+                '</li>'
+            )
+        sparse = ""
+        if len(examples) < 6:
+            sparse = (
+                '<p class="mt-4 text-sm leading-6 text-secondary">'
+                'This guide includes fewer examples for this season. '
+                'This is a gap in the guide, not evidence that other wildlife is absent.</p>'
+            )
+        content = ('<ul role="list" class="mt-4">' + "".join(examples) + '</ul>'
+                   if examples else '<p class="mt-4 text-sm">No examples selected under this guide’s criteria.</p>')
+        months = season["months"]
+        panels.append(
+            '<div class="min-w-0 rounded-2xl border border-stone-200 bg-white p-5">'
+            f'<h3 class="font-serif text-2xl font-bold text-hollow-900">{escape(season["name"])}</h3>'
+            f'<p class="mt-1 text-sm text-secondary">{MONTHS[months[0] - 1]}–{MONTHS[months[-1] - 1]}</p>'
+            f'{content}{sparse}</div>'
+        )
+    coverage = (f'Dated iNaturalist records: {_date(guide["first_date"])} to {_date(guide["last_date"])}.'
+                if guide["first_date"] is not None else 'No usable dated iNaturalist records yet.')
+    return (
+        '<div data-seasonal-guide>'
+        '<p class="mb-6 text-sm leading-6 text-secondary">'
+        'Use these local examples as ideas for a seasonal walk. Each was recorded on at least two '
+        'different days in that season. Names link to an example observation.</p>'
+        '<div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">'
+        + "".join(panels) + '</div>'
+        '<p class="mt-6 text-sm leading-6 text-secondary">'
+        'These are past records, not a forecast. Dates include all recorded life stages; '
+        'they do not establish flowering, adult flight, abundance, or absence. '
+        'Where and when people looked strongly shapes the examples.</p>'
+        '<details class="mt-4 border-t border-stone-200 text-sm text-secondary">'
+        '<summary class="cursor-pointer py-3 font-medium">How these examples are chosen</summary>'
+        '<p class="leading-6">Up to six examples per season, with one per group. '
+        'Plants, fungi, amphibians and reptiles, butterflies, dragonflies and damselflies, '
+        'and other invertebrates have first places; mammals and moths fill remaining places. '
+        'Within each group, the species '
+        'with the most distinct recording days in that season is chosen. Ties favor a larger '
+        'share of its recording days falling in that season, then a stable species order. '
+        'Two dates can come from the same year; they do not demonstrate annual recurrence. '
+        'A missing group or month means it is not represented here, not that it was surveyed and absent. '
+        'Bird life-list dates are excluded because they do not describe seasonal frequency.</p>'
+        f'<p class="mt-3 pb-3">{escape(coverage)} '
+        '<a class="underline underline-offset-4" href="/moths/#moth-calendar">Explore moth seasonal records</a>.</p>'
+        '</details></div>'
+    )
+
+
 def phenology(matrix, dark=False, normalize=False):
     """Species × month heatmap. With normalize=True each row is scaled to its own
     peak month, so a rare species' timing reads as clearly as a common one's

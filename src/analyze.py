@@ -240,6 +240,87 @@ def obs_per_day(df):
 
 
 # --- phenology --------------------------------------------------------------
+GUIDE_SEASONS = (
+    ("Spring", (3, 4, 5)), ("Summer", (6, 7, 8)),
+    ("Autumn", (9, 10, 11)), ("Winter", (12, 1, 2)),
+)
+GUIDE_GROUPS = (
+    "Plants", "Fungi", "Amphibians and reptiles", "Butterflies",
+    "Dragonflies and damselflies", "Other invertebrates", "Mammals", "Moths",
+)
+
+
+def seasonal_guide(df):
+    """Bounded cross-group search ideas, supported by repeated local dates.
+
+    One example per group per season; at most six examples per season, with
+    moths considered last. Counts are distinct calendar dates, not abundance,
+    visits, or years of seasonal recurrence. Never infer timing from bird
+    life-list dates. Species identity is supplied by load_property().
+    """
+    result = {"seasons": [{"name": name, "months": months, "examples": []}
+                          for name, months in GUIDE_SEASONS],
+              "first_date": None, "last_date": None}
+    if df.empty:
+        return result
+    sub = _observation_rows(df).copy()
+    sub = sub[sub["iconic_taxon"] != "Aves"]
+    if "rank" in sub:
+        sub = sub[sub["rank"].isin(SPECIES_RANKS)]
+    sub["observed_on"] = pd.to_datetime(sub["observed_on"], errors="coerce").dt.normalize()
+    sub = sub.dropna(subset=["observed_on", "taxon_id", "id"])
+    if sub.empty:
+        return result
+    sub = add_group_column(sub)
+
+    def guide_group(row):
+        group = row["group"]
+        if group in ("Amphibians", "Reptiles"):
+            return "Amphibians and reptiles"
+        if group == "Dragonflies and Damselflies":
+            return "Dragonflies and damselflies"
+        if group in GUIDE_GROUPS:
+            return group
+        if row["iconic_taxon"] in ("Insecta", "Arachnida", "Mollusca"):
+            # Unresolved Lepidoptera membership must not evade the moth cap.
+            if group in ("Butterflies and Moths", "Lepidoptera"):
+                return None
+            return "Other invertebrates"
+        return None
+
+    sub["guide_group"] = sub.apply(guide_group, axis=1)
+    result.update(first_date=sub["observed_on"].min(), last_date=sub["observed_on"].max())
+    total_days = sub.groupby("taxon_id")["observed_on"].nunique()
+    for season in result["seasons"]:
+        seasonal = sub[sub["observed_on"].dt.month.isin(season["months"])]
+        for group in GUIDE_GROUPS:
+            if len(season["examples"]) >= 6:
+                break
+            candidates = []
+            for taxon_id, records in seasonal[seasonal["guide_group"] == group].groupby("taxon_id"):
+                days = records["observed_on"].nunique()
+                if days < 2:
+                    continue
+                # Stable source example and label even if input order changes.
+                example = records.sort_values(["observed_on", "id"]).iloc[-1]
+                common = example.get("common_name")
+                label = common if pd.notna(common) and str(common).strip() else example["taxon_name"]
+                candidates.append({
+                    "taxon_id": int(taxon_id), "label": str(label), "group": group,
+                    "recording_days": int(days),
+                    "years": sorted(int(y) for y in records["observed_on"].dt.year.unique()),
+                    "recorded_months": [m for m in season["months"]
+                                        if m in set(records["observed_on"].dt.month)],
+                    "sample_id": int(example["id"]), "sample_date": example["observed_on"],
+                    "season_share": float(days / total_days.loc[taxon_id]),
+                })
+            if candidates:
+                chosen = sorted(candidates, key=lambda c: (
+                    -c["recording_days"], -c["season_share"], c["taxon_id"]))[0]
+                season["examples"].append(chosen)
+    return result
+
+
 def phenology(df, iconic_taxon=None, top=40):
     """Species x month observation-count matrix (optionally one taxon group)."""
     sub = _observation_rows(df).dropna(subset=["observed_on", "taxon_id"])

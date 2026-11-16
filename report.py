@@ -4089,15 +4089,10 @@ def build():
         intro="Daily iNaturalist reporting volume and the combined species inventory. A day without a submitted record does not establish whether anyone surveyed.",
         tint="bg-stone-100"))
     parts.append(section(
-        "phenology", "Phenology",
-        'When Things <em class="text-hollow-600">Appear</em>',
-        chart_card(viz.phenology(analyze.phenology(df, top=24), normalize=True),
-                   note="Each row is normalized to its own peak, so a species seen 5 times reads as vividly as one seen 500 times — rare species' patterns show up alongside common ones. Open the data table for raw counts.")
-        + takeaway(
-            "Read across a row for the months represented in that taxon’s records. Each row is scaled to its "
-            "own peak, so equal brightness does not mean equal numbers. Dates can span years and life stages; "
-            "the pattern reflects what was documented as well as when and how people looked."),
-        intro="The 24 most-recorded iNaturalist taxa by observation month, across all recorded life stages. Empty months can reflect survey coverage as well as seasonal timing."))
+        "phenology", "A seasonal field guide",
+        'Ideas for <em class="text-hollow-600">Each Season</em>',
+        viz.seasonal_guide(analyze.seasonal_guide(df)),
+        intro="Plants, fungi, and wildlife to look for, drawn from repeated local records across different groups."))
     parts.append(section(
         "observers", "Credit Where Due",
         'The <em class="text-hollow-600">Observers</em>',
