@@ -2685,9 +2685,11 @@ LIFE_LIST_SCRIPT = """
     const search=document.getElementById('ll-search'),count=document.getElementById('ll-count'),
           sel=document.getElementById('ll-select'),taxonSel=document.getElementById('ll-taxon-select'),
           clear=document.getElementById('ll-clear');
-    let group='all',family='',announcement;
+    const buttons=[...document.querySelectorAll('.ll-filter')];
+    const groups=new Set(rows.map(row=>row.group));
+    let group='all',family='',announcement,editingQuery=false;
     if(!search||!count||!taxonSel) return;
-    function updateTaxa(){
+    function updateTaxa(wanted=''){
       family='';taxonSel.value='';
       if(group==='all'){
         taxonSel.disabled=true;taxonSel.innerHTML='<option value="">Choose a taxon group first…</option>';return;
@@ -2697,6 +2699,32 @@ LIFE_LIST_SCRIPT = """
       taxonSel.innerHTML=families.length
         ? '<option value="">All '+group.toLowerCase()+' families</option>'+families.map(f=>'<option value="'+f.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+f.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</option>').join('')
         : '<option value="">No family filter available</option>';
+      family=families.includes(wanted)?wanted:'';taxonSel.value=family;
+    }
+    function syncControls(wantedFamily=''){
+      buttons.forEach(button=>{const on=button.dataset.group===group;
+        button.classList.toggle('ll-active',on);button.setAttribute('aria-pressed',on?'true':'false');});
+      if(sel)sel.value=buttons.some(button=>button.dataset.group===group)?'':group;
+      updateTaxa(wantedFamily);
+    }
+    function writeURL(method){
+      const url=new URL(window.location.href);
+      [['q',search.value],['group',group==='all'?'':group],['family',family]].forEach(([key,value])=>{
+        if(value)url.searchParams.set(key,value);else url.searchParams.delete(key);
+      });
+      if(url.href!==window.location.href){
+        window.history[method](window.history.state,'',url);return true;
+      }
+      return false;
+    }
+    function restoreURL(announce=false){
+      editingQuery=false;
+      const params=new URL(window.location.href).searchParams,wantedGroup=params.get('group');
+      search.value=params.get('q')||'';
+      group=groups.has(wantedGroup)?wantedGroup:'all';
+      syncControls(params.get('family')||'');
+      // Normalize stale/invalid filters without adding a navigation entry.
+      writeURL('replaceState');apply(announce);
     }
     function apply(announce=true){const q=(search.value||'').toLowerCase(),visible=[];
       rows.forEach(row=>{const okG=group==='all'||row.group===group,
@@ -2709,18 +2737,24 @@ LIFE_LIST_SCRIPT = """
       clearTimeout(announcement);
       if(announce)announcement=setTimeout(()=>{count.textContent=message;},250);
       else if(count.textContent!==message)count.textContent=message;}
-    function activate(g,fromSelect){group=g;
-      document.querySelectorAll('.ll-filter').forEach(x=>{const on=(x.dataset.group===g);
-        x.classList.toggle('ll-active',on);x.setAttribute('aria-pressed',on?'true':'false');});
-      if(sel&&!fromSelect)sel.value='';updateTaxa();apply();}
-    document.querySelectorAll('.ll-filter').forEach(b=>b.addEventListener('click',()=>activate(b.dataset.group)));
-    if(sel)sel.addEventListener('change',()=>{if(sel.value){
-      document.querySelectorAll('.ll-filter').forEach(x=>{x.classList.remove('ll-active');x.setAttribute('aria-pressed','false');});
-      activate(sel.value,true);}});
-    taxonSel.addEventListener('change',()=>{family=taxonSel.value;apply();});
-    search.addEventListener('input',()=>apply());
+    function activate(g){
+      editingQuery=false;group=groups.has(g)?g:'all';
+      syncControls();apply();writeURL('pushState');
+    }
+    buttons.forEach(button=>button.addEventListener('click',()=>activate(button.dataset.group)));
+    if(sel)sel.addEventListener('change',()=>activate(sel.value));
+    taxonSel.addEventListener('change',()=>{
+      editingQuery=false;family=taxonSel.value;apply();writeURL('pushState');
+    });
+    search.addEventListener('input',()=>{
+      apply();
+      // One Back step per editing session, with the shareable URL always current.
+      if(writeURL(editingQuery?'replaceState':'pushState'))editingQuery=true;
+    });
+    ['blur','change'].forEach(event=>search.addEventListener(event,()=>{editingQuery=false;}));
     if(clear)clear.addEventListener('click',()=>{search.value='';activate('all');search.focus();});
-    apply(false);
+    window.addEventListener('popstate',()=>restoreURL(true));
+    restoreURL();
   })();
 """
 

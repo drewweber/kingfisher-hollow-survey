@@ -6,7 +6,7 @@ import vm from 'node:vm';
 const source = readFileSync(new URL('../report.py', import.meta.url), 'utf8');
 const script = source.split('LIFE_LIST_SCRIPT = """')[1].split('"""')[0].replaceAll('\\\\', '\\');
 
-function harness() {
+function harness(href = 'https://survey.example/life-list/') {
   function element(extra = {}) {
     const listeners = {}, attrs = {}, classes = new Set();
     return { value: '', textContent: '', dataset: {}, style: {}, ...extra,
@@ -34,13 +34,35 @@ function harness() {
   ids['ll-count'].textContent = '3 species shown';
   let nextTimer = 0;
   const timers = new Map();
+  const listeners = {}, entries = [href];
+  let position = 0;
+  const window = {
+    location: { href },
+    addEventListener(type, callback) { listeners[type] = callback; },
+    history: {
+      state: { unrelated: 'preserved' },
+      pushState(state, title, url) {
+        assert.equal(state.unrelated, 'preserved');
+        entries.splice(++position); entries.push(String(url)); window.location.href = String(url);
+      },
+      replaceState(state, title, url) {
+        assert.equal(state.unrelated, 'preserved');
+        entries[position] = String(url); window.location.href = String(url);
+      },
+    },
+  };
+  function go(delta) {
+    position += delta; assert.ok(position >= 0 && position < entries.length);
+    window.location.href = entries[position]; listeners.popstate();
+  }
   vm.runInNewContext(script, {
+    URL, window,
     document: { getElementById: id => ids[id],
       querySelectorAll: selector => selector === '.ll-row' ? rows : buttons },
     setTimeout(callback, delay) { assert.equal(delay, 250); timers.set(++nextTimer, callback); return nextTimer; },
     clearTimeout(id) { timers.delete(id); },
   });
-  return { rows, buttons, ids, timers, flush() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); } };
+  return { rows, buttons, ids, timers, window, entries, go, flush() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); } };
 }
 
 test('typing filters immediately but announces only the settled result', () => {
@@ -82,4 +104,113 @@ test('more groups and family filter continue to narrow scientific-name searches'
   assert.equal(h.ids['ll-count'].textContent, '1 species shown');
   assert.equal(h.rows[2].style.display, '');
   assert.equal(h.rows[0].style.display, 'none');
+});
+
+
+function visible(h) {
+  return h.rows.filter(row => row.style.display !== 'none');
+}
+
+test('deep link and reload restore query, pinned group, family and result count', () => {
+  const href = 'https://survey.example/life-list/?from=seasonal&q=LUNA&group=Moths&family=Saturniidae#life-list';
+  for (const h of [harness(href), harness(harness(href).window.location.href)]) {
+    assert.equal(h.ids['ll-search'].value, 'LUNA');
+    assert.equal(h.buttons[1].getAttribute('aria-pressed'), 'true');
+    assert.equal(h.ids['ll-select'].value, '');
+    assert.equal(h.ids['ll-taxon-select'].value, 'Saturniidae');
+    assert.equal(h.ids['ll-taxon-select'].disabled, false);
+    assert.equal(visible(h).length, 1);
+    assert.equal(h.ids['ll-count'].textContent, '1 species shown');
+    assert.equal(h.entries.length, 1);
+    assert.equal(h.window.location.href, href);
+  }
+});
+
+test('more-group deep link restores dropdown rather than a pinned pressed button', () => {
+  const h = harness('https://survey.example/life-list/?group=Birds&family=Anatidae');
+  assert.equal(h.ids['ll-select'].value, 'Birds');
+  assert.ok(h.buttons.every(button => button.getAttribute('aria-pressed') === 'false'));
+  assert.equal(h.ids['ll-taxon-select'].value, 'Anatidae');
+  assert.equal(visible(h)[0], h.rows[2]);
+});
+
+test('unknown groups, unavailable families and duplicate filters normalize in place', () => {
+  for (const query of ['group=Unknown&family=Saturniidae', 'family=Saturniidae', 'group=all']) {
+    const h = harness('https://survey.example/life-list/?from=seasonal&tag=a&tag=b&' + query + '#life-list');
+    assert.equal(h.window.location.href, 'https://survey.example/life-list/?from=seasonal&tag=a&tag=b#life-list');
+    assert.equal(h.buttons[0].getAttribute('aria-pressed'), 'true');
+    assert.equal(h.ids['ll-taxon-select'].disabled, true);
+    assert.equal(visible(h).length, 3);
+    assert.equal(h.entries.length, 1);
+  }
+  const h = harness('https://survey.example/life-list/?group=Moths&group=Birds&family=Anatidae');
+  assert.equal(h.window.location.href, 'https://survey.example/life-list/?group=Moths');
+  assert.equal(h.ids['ll-taxon-select'].value, '');
+  assert.equal(visible(h)[0], h.rows[0]);
+});
+
+test('typing has one history entry per editing session; Back/Forward restores query', () => {
+  const h = harness();
+  for (const value of ['l', 'lu', 'lun', 'luna']) {
+    h.ids['ll-search'].value = value; h.ids['ll-search'].dispatch('input');
+  }
+  assert.equal(h.entries.length, 2);
+  assert.equal(new URL(h.window.location.href).searchParams.get('q'), 'luna');
+  h.go(-1); h.flush();
+  assert.equal(h.ids['ll-search'].value, '');
+  assert.equal(visible(h).length, 3);
+  h.go(1); h.flush();
+  assert.equal(h.ids['ll-search'].value, 'luna');
+  assert.equal(visible(h)[0], h.rows[0]);
+  h.ids['ll-search'].dispatch('blur');
+  h.ids['ll-search'].value = 'duck'; h.ids['ll-search'].dispatch('input');
+  assert.equal(h.entries.length, 3);
+  h.go(-1);
+  assert.equal(h.ids['ll-search'].value, 'luna');
+});
+
+test('discrete filters and clear are reversible while preserving unrelated URL state', () => {
+  const original = 'https://survey.example/life-list/?from=seasonal&tag=a&tag=b#life-list';
+  const h = harness(original);
+  h.buttons[1].dispatch('click');
+  h.ids['ll-taxon-select'].value = 'Saturniidae'; h.ids['ll-taxon-select'].dispatch('change');
+  h.ids['ll-search'].value = 'Actias & luna + ?'; h.ids['ll-search'].dispatch('input');
+  assert.equal(new URL(h.window.location.href).searchParams.get('q'), 'Actias & luna + ?');
+  h.ids['ll-clear'].dispatch('click');
+  assert.equal(h.window.location.href, original);
+  assert.equal(h.ids['ll-search'].focused, true);
+  h.go(-1); h.flush();
+  assert.equal(h.ids['ll-search'].value, 'Actias & luna + ?');
+  assert.equal(h.ids['ll-taxon-select'].value, 'Saturniidae');
+  assert.equal(h.buttons[1].getAttribute('aria-pressed'), 'true');
+  assert.equal(visible(h).length, 0);
+  h.go(-1); h.flush();
+  assert.equal(h.ids['ll-search'].value, '');
+  assert.equal(visible(h).length, 1);
+  h.go(-1);
+  assert.equal(h.ids['ll-taxon-select'].value, '');
+  h.go(-1);
+  assert.equal(h.buttons[0].getAttribute('aria-pressed'), 'true');
+  h.go(1); h.go(1);
+  assert.equal(h.ids['ll-taxon-select'].value, 'Saturniidae');
+  assert.equal(new URL(h.window.location.href).searchParams.get('from'), 'seasonal');
+  assert.equal(new URL(h.window.location.href).hash, '#life-list');
+});
+
+test('reselecting the current group or clearing empty filters adds no history entries', () => {
+  const h = harness();
+  h.ids['ll-clear'].dispatch('click'); h.buttons[0].dispatch('click');
+  assert.equal(h.entries.length, 1);
+  h.buttons[1].dispatch('click'); h.buttons[1].dispatch('click');
+  assert.equal(h.entries.length, 2);
+});
+
+
+test('returning the more-groups dropdown to its placeholder clears group and family', () => {
+  const h = harness('https://survey.example/life-list/?group=Birds&family=Anatidae');
+  h.ids['ll-select'].value = ''; h.ids['ll-select'].dispatch('change');
+  assert.equal(h.window.location.href, 'https://survey.example/life-list/');
+  assert.equal(h.buttons[0].getAttribute('aria-pressed'), 'true');
+  assert.equal(h.ids['ll-taxon-select'].disabled, true);
+  assert.equal(visible(h).length, 3);
 });
