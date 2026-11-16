@@ -300,6 +300,12 @@
   .photo-card .photo-img { transition: transform .65s cubic-bezier(.25, .46, .45, .94); }
   .photo-card:hover .photo-img { transform: scale(1.05); }
 
+  .chart-recovery { font-size: .875rem; }
+  .chart-recovery button { min-height: 48px; padding: .5rem 1rem; margin: .5rem .5rem .5rem 0; border: 1px solid currentColor; border-radius: .5rem; }
+  .chart-recovery button:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+  .chart-recovery button[aria-disabled="true"] { cursor: progress; }
+  .chart-recovery [hidden] { display: none; }
+
   .badge {
     display: inline-block;
     padding: .22rem .55rem;
