@@ -427,7 +427,7 @@ def _section_flow(id_, dark=False):
         previous = internal[index - 1] if index else None
         following = internal[index + 1] if index + 1 < len(internal) else internal[0]
         border = "border-white/10" if dark else "border-stone-200"
-        muted = "text-white/35" if dark else "text-stone-400"
+        muted = "text-secondary-inverse" if dark else "text-secondary"
         link = "text-white hover:text-hollow-300" if dark else "text-stone-700 hover:text-hollow-700"
         previous_html = (
             f'<a href="{previous[0]}" class="section-flow-link {link}">'
@@ -452,9 +452,9 @@ def _section_flow(id_, dark=False):
 
 def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
     bg = "bg-hollow-950" if dark else (tint or "")
-    eb = "text-hollow-400" if dark else "text-hollow-500"
+    eb = "text-hollow-400" if dark else "text-hollow-600"
     tc = "text-white" if dark else "text-stone-900"
-    ic = "text-white/55" if dark else "text-stone-500"
+    ic = "text-white/55" if dark else "text-secondary"
     intro_html = (f'<p class="{ic} text-[1.05rem] leading-relaxed max-w-2xl '
                   f'mx-auto mt-5">{intro}</p>') if intro else ""
     return f"""
@@ -476,13 +476,13 @@ def chart_card(html, note="", dark=False):
     # Dark-themed charts have light text/lines, so they must sit on a dark card.
     if dark:
         wrap = "bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7"
-        note_cls = "text-white/40"
+        note_cls = "text-secondary-inverse"
     else:
         wrap = "bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm"
-        note_cls = "text-stone-400"
+        note_cls = "text-secondary"
     note_html = (f'<p class="{note_cls} text-xs mt-4 italic">{note}</p>'
                  if note else "")
-    return f'<div class="{wrap}">{html}{note_html}</div>'
+    return f'<div class="{wrap} {note_cls}">{html}{note_html}</div>'
 
 
 def takeaway(text, dark=False):
@@ -773,7 +773,7 @@ def hero(s, county_firsts):
 # ── what's new ───────────────────────────────────────────────────────────────
 def whats_new_body(recent):
     if recent.empty:
-        return ('<p class="text-center text-stone-500">No new observations in '
+        return ('<p class="text-center text-secondary">No new observations in '
                 'the last couple of days.</p>')
     new_species = recent[recent["is_new_for_property"]]
     cards = []
@@ -797,15 +797,15 @@ def whats_new_body(recent):
           <div class="p-5">
             <div class="text-hollow-600 text-[0.65rem] font-semibold tracking-[0.15em] uppercase mb-1">New for the property</div>
             <div class="font-serif text-lg font-bold text-stone-900 leading-snug">{name}</div>
-            <div class="text-stone-400 text-sm italic">{sci}</div>
-            <div class="text-stone-500 text-xs mt-2">{fdate(r.get('observed_on'))} · {who}</div>
+            <div class="text-secondary text-sm italic">{sci}</div>
+            <div class="text-secondary text-xs mt-2">{fdate(r.get('observed_on'))} · {who}</div>
           </div>
         </a>""")
-    lead = (f'<p class="text-center text-stone-500 mb-10 -mt-6">'
+    lead = (f'<p class="text-center text-secondary mb-10 -mt-6">'
             f'<strong class="text-hollow-600">{len(new_species)}</strong> new species added to the Kingfisher Hollow list · '
             f'from <strong class="text-stone-700">{len(recent)}</strong> recent observations</p>')
     if not cards:
-        return lead + ('<p class="text-center text-stone-400">No brand-new '
+        return lead + ('<p class="text-center text-secondary">No brand-new '
                        'species in this batch — but the count keeps climbing.</p>')
     return lead + ('<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">'
                    + "".join(cards) + "</div>")
@@ -814,7 +814,7 @@ def whats_new_body(recent):
 # ── county-first showcase ────────────────────────────────────────────────────
 def showcase_body(show):
     if show.empty:
-        return ('<p class="text-center text-stone-500">County-first records will '
+        return ('<p class="text-center text-secondary">County-first records will '
                 'appear here once stats finish caching.</p>')
     cards = []
     for _, r in show.iterrows():
@@ -846,7 +846,7 @@ def showcase_body(show):
 # ── rarest finds ─────────────────────────────────────────────────────────────
 def rarest_body(rare):
     if rare.empty:
-        return '<p class="text-center text-stone-500">Stats still caching.</p>'
+        return '<p class="text-center text-secondary">Stats still caching.</p>'
     rmax = max(int(r["state_obs_count"]) for _, r in rare.iterrows()) or 1
     rows = []
     for i, (_, r) in enumerate(rare.iterrows(), 1):
@@ -860,12 +860,12 @@ def rarest_body(rare):
           <div class="font-serif text-2xl font-bold text-hollow-300 w-8 text-right">{i}</div>
           <div class="flex-1 min-w-0">
             <div class="truncate">{link}</div>
-            <div class="text-stone-400 text-sm italic truncate">{sci}</div>
+            <div class="text-secondary text-sm italic truncate">{sci}</div>
             <div class="mt-1.5 h-1 rounded-full bg-stone-100"><div class="h-1 rounded-full" style="width:{pct}%;background:#c2703d"></div></div>
           </div>
           <div class="text-right">
             <div class="font-serif text-xl font-bold text-hollow-600">{ny}</div>
-            <div class="text-stone-400 text-[0.7rem] uppercase tracking-wider">in NY</div>
+            <div class="text-secondary text-[0.7rem] uppercase tracking-wider">in NY</div>
           </div>
         </div>""")
     return (f'<div class="max-w-2xl mx-auto bg-white border border-stone-100 '
@@ -874,7 +874,7 @@ def rarest_body(rare):
 
 # ── life list (searchable / filterable) ──────────────────────────────────────
 def life_list_body(life, dark=False):
-    outer_text = "text-white/50" if dark else "text-stone-500"
+    outer_text = "text-secondary-inverse" if dark else "text-secondary"
     if life.empty:
         return f'<p class="text-center {outer_text}">No species yet.</p>'
     # A life list is a chronology, not a taxonomic inventory: the number is
@@ -919,7 +919,7 @@ def life_list_body(life, dark=False):
                     f'target="_blank" rel="noopener">{esc(name)}</a>')
         records = str(int(r['observations'])) if history_known else '—'
         last_seen = fdate(r['last_seen']) if history_known else '—'
-        date_note = ('<span class="block text-xs text-stone-500">Life-list date · eBird</span>'
+        date_note = ('<span class="block text-xs text-secondary">Life-list date · eBird</span>'
                      if not history_known else '')
         rows.append(f"""
       <tr class="ll-row" data-family="{family}">
@@ -943,7 +943,7 @@ def life_list_body(life, dark=False):
         </select>
       </div>
       <div class="bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm max-h-[560px] overflow-y-auto">
-        <table class="w-full text-[0.95rem]"><thead class="text-stone-400 text-xs uppercase tracking-wider border-b-2 border-stone-100">
+        <table class="w-full text-[0.95rem]"><thead class="text-secondary text-xs uppercase tracking-wider border-b-2 border-stone-100">
           <tr><th class="text-right pb-2 pr-3 font-semibold">#</th><th class="text-left pb-2 font-semibold">Species</th><th class="text-left pb-2 font-semibold hidden md:table-cell">Group</th>
           <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Record date</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
@@ -956,7 +956,7 @@ def life_list_body(life, dark=False):
 # ── photo gallery ────────────────────────────────────────────────────────────
 def gallery_body(photos):
     if photos.empty:
-        return ('<p class="text-center text-stone-500">Photos populate after the '
+        return ('<p class="text-center text-secondary">Photos populate after the '
                 'next sync.</p>')
     cells = []
     for _, r in photos.iterrows():
@@ -1024,7 +1024,7 @@ def moth_portrait_showcase(df, dark=False):
         return ""
     eyebrow = "text-hollow-300" if dark else "text-hollow-600"
     heading = "text-white" if dark else "text-stone-900"
-    copy = "text-white/60" if dark else "text-stone-500"
+    copy = "text-white/60" if dark else "text-secondary"
     return f'''<div class="max-w-5xl mx-auto mb-14">
       <div class="flex flex-col md:flex-row gap-3 md:items-end md:justify-between mb-5">
         <div>
@@ -1130,12 +1130,12 @@ def fungi_view(df):
 
 
 def _dark_stat(num, label, sub=""):
-    sub_html = (f'<div class="text-white/35 text-[0.62rem] mt-1 max-w-[9.5rem] '
+    sub_html = (f'<div class="text-secondary-inverse text-[0.62rem] mt-1 max-w-[9.5rem] '
                 f'mx-auto leading-tight normal-case tracking-normal">{sub}</div>'
                 if sub else "")
     return (f'<div class="text-center"><div class="font-serif text-4xl md:text-5xl '
             f'font-bold text-hollow-300">{num}</div>'
-            f'<div class="text-white/45 text-[0.7rem] mt-1 uppercase '
+            f'<div class="text-secondary-inverse text-[0.7rem] mt-1 uppercase '
             f'tracking-[0.18em]">{label}</div>{sub_html}</div>')
 
 
@@ -1249,7 +1249,7 @@ def _taxa_card(r, placeholder, gmax):
         f'  <div class="aspect-square overflow-hidden bg-white/5">{photo_html}</div>'
         f'  <div class="p-2.5">'
         f'    <div class="text-sm font-medium text-white leading-tight truncate">{esc(common)}</div>'
-        f'    <div class="text-[0.65rem] text-white/35 italic truncate mt-0.5">{esc(sci)}</div>'
+        f'    <div class="text-[0.65rem] text-secondary-inverse italic truncate mt-0.5">{esc(sci)}</div>'
         f'    {establishment_html}{evidence_html}'
         f'    <div class="mt-2 flex items-center justify-between gap-1">'
         f'      <div class="flex-1 h-1 rounded-full bg-white/10">'
@@ -1270,7 +1270,7 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
     the display name (falling back to family_name when unavailable).
     """
     if missing is None or missing.empty:
-        return '<p class="text-center text-white/50 py-8">No gap data yet.</p>'
+        return '<p class="text-center text-secondary-inverse py-8">No gap data yet.</p>'
     gmax = max(int(r["ref_count"]) for _, r in missing.iterrows()) or 1
 
     if not group_by or group_by not in missing.columns:
@@ -1293,7 +1293,7 @@ def _gap_photo_grid(missing, placeholder="?", group_by=None):
         for i, (_, r) in enumerate(group.iterrows()):
             if i == 0 and header_text:
                 label = (f'<div class="h-4 mb-1 text-[0.62rem] font-semibold '
-                         f'tracking-[0.1em] uppercase text-white/30 truncate">'
+                         f'tracking-[0.1em] uppercase text-secondary-inverse truncate">'
                          f'{esc(header_text)}</div>')
             else:
                 label = LABEL_SLOT
@@ -1318,7 +1318,7 @@ def moth_gap_body(gap):
 def mammal_gap_body(gap):
     """Regional mammals not yet documented — photo grid."""
     if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No gap data yet.</p>'
+        return '<p class="text-center text-secondary-inverse">No gap data yet.</p>'
     miles = round(gap.get("region_radius_km", 80) / 1.609)
     lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
@@ -1333,7 +1333,7 @@ def mammal_gap_body(gap):
 def amphibian_found_body(found, observations=None):
     """Amphibians recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
-        return ('<p class="text-center text-white/50 py-8">Amphibian roster not '
+        return ('<p class="text-center text-secondary-inverse py-8">Amphibian roster not '
                 'synced yet.</p>')
     if observations is None:
         return _gap_photo_grid(found, placeholder="🐸", group_by="family_name")
@@ -1352,7 +1352,7 @@ def amphibian_found_body(found, observations=None):
 def amphibian_gap_body(gap):
     """Regional amphibians not yet documented — photo grid."""
     if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No gap data yet.</p>'
+        return '<p class="text-center text-secondary-inverse">No gap data yet.</p>'
     miles = round(gap.get("region_radius_km", 80) / 1.609)
     lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
@@ -1367,7 +1367,7 @@ def amphibian_gap_body(gap):
 def butterfly_found_body(found):
     """Butterflies recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
-        return ('<p class="text-center text-white/50 py-8">Butterfly roster not '
+        return ('<p class="text-center text-secondary-inverse py-8">Butterfly roster not '
                 'synced yet.</p>')
     return _gap_photo_grid(found, placeholder="🦋", group_by="family_name")
 
@@ -1375,7 +1375,7 @@ def butterfly_found_body(found):
 def butterfly_gap_body(gap):
     """Regional butterflies not yet documented — photo grid."""
     if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No gap data yet.</p>'
+        return '<p class="text-center text-secondary-inverse">No gap data yet.</p>'
     miles = round(gap.get("region_radius_km", 80) / 1.609)
     lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
@@ -1389,7 +1389,7 @@ def butterfly_gap_body(gap):
 def odonate_found_body(found):
     """Dragonflies and damselflies recorded on the property, grouped by family."""
     if found is None or found.empty:
-        return ('<p class="text-center text-white/50 py-8">Dragonfly and damselfly '
+        return ('<p class="text-center text-secondary-inverse py-8">Dragonfly and damselfly '
                 'roster not synced yet.</p>')
     return _gap_photo_grid(found, placeholder="✦", group_by="family_name")
 
@@ -1397,7 +1397,7 @@ def odonate_found_body(found):
 def odonate_gap_body(gap):
     """Regional Odonata not yet documented, ranked by nearby frequency."""
     if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No gap data yet.</p>'
+        return '<p class="text-center text-secondary-inverse">No gap data yet.</p>'
     miles = round(gap.get("region_radius_km", 80) / 1.609)
     lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
@@ -1436,7 +1436,7 @@ def bird_source_body(summary):
 
 def bird_recent_body(recent):
     if recent is None or recent.empty:
-        return '<p class="text-center text-white/50 py-8">No eBird rows loaded yet.</p>'
+        return '<p class="text-center text-secondary-inverse py-8">No eBird rows loaded yet.</p>'
     cards = []
     for _, r in recent.iterrows():
         checklist = f'https://ebird.org/checklist/{esc(r.get("sub_id"))}' if r.get("sub_id") else EBIRD_BARCHART_URL
@@ -1444,7 +1444,7 @@ def bird_recent_body(recent):
             f'<a href="{checklist}" target="_blank" rel="noopener" '
             f'class="block rounded-xl border border-white/10 bg-white/[0.04] p-4 hover:border-hollow-400/60 transition-colors">'
             f'<div class="text-sm font-medium text-white leading-tight">{esc(r.get("common_name"))}</div>'
-            f'<div class="text-[0.75rem] text-white/40 italic mt-1">{esc(r.get("taxon_name"))}</div>'
+            f'<div class="text-[0.75rem] text-secondary-inverse italic mt-1">{esc(r.get("taxon_name"))}</div>'
             f'<div class="text-[0.7rem] text-hollow-300 mt-3 uppercase tracking-[0.12em]">'
             f'{esc(fdate(r.get("date")))}</div>'
             '</a>'
@@ -1454,7 +1454,7 @@ def bird_recent_body(recent):
 
 def bird_life_list_body(birds):
     if birds is None or birds.empty:
-        return '<p class="text-center text-white/50 py-8">No eBird life list loaded yet.</p>'
+        return '<p class="text-center text-secondary-inverse py-8">No eBird life list loaded yet.</p>'
     rows = []
     for _, r in birds.iterrows():
         checklist = f'https://ebird.org/checklist/{esc(r.get("sub_id"))}' if r.get("sub_id") else EBIRD_BARCHART_URL
@@ -1465,14 +1465,14 @@ def bird_life_list_body(birds):
             '<tr class="border-b border-white/10">'
             f'<td class="py-2.5 pr-4"><a href="{checklist}" target="_blank" rel="noopener" '
             f'class="font-medium text-white hover:text-hollow-300">{esc(r.get("common_name"))}</a>'
-            f'{exotic_html}<span class="block sm:inline sm:ml-2 text-white/35 italic text-sm">'
+            f'{exotic_html}<span class="block sm:inline sm:ml-2 text-secondary-inverse italic text-sm">'
             f'{esc(r.get("taxon_name"))}</span></td>'
-            f'<td class="py-2.5 text-white/40 text-sm whitespace-nowrap text-right">{esc(fdate(r.get("date"), "%b %Y"))}</td>'
+            f'<td class="py-2.5 text-secondary-inverse text-sm whitespace-nowrap text-right">{esc(fdate(r.get("date"), "%b %Y"))}</td>'
             '</tr>'
         )
     return (
         '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7 max-h-[620px] overflow-y-auto">'
-        '<table class="w-full text-[0.95rem]"><thead class="text-white/35 text-xs uppercase tracking-wider border-b-2 border-white/10">'
+        '<table class="w-full text-[0.95rem]"><thead class="text-secondary-inverse text-xs uppercase tracking-wider border-b-2 border-white/10">'
         '<tr><th class="text-left pb-2 font-semibold">Species</th>'
         '<th class="text-right pb-2 font-semibold">Listed date</th></tr>'
         '</thead><tbody>' + "".join(rows) + '</tbody></table></div>'
@@ -1505,7 +1505,7 @@ def bird_target_links_body(as_of=None):
         cards.append(
             '<div class="rounded-xl border border-white/10 bg-white/[0.04] p-5">'
             f'<h3 class="font-serif text-2xl text-white">{esc(title)}</h3>'
-            f'<p class="text-white/50 text-sm leading-relaxed mt-2">{esc(note)}</p>'
+            f'<p class="text-secondary-inverse text-sm leading-relaxed mt-2">{esc(note)}</p>'
             '<div class="flex flex-wrap gap-x-6 gap-y-3 mt-4">' + "".join(links) + '</div></div>'
         )
     return '<div class="grid md:grid-cols-2 gap-3 mb-10">' + "".join(cards) + '</div>'
@@ -1526,7 +1526,7 @@ def bird_gap_body(gap):
             f'<a href="{url}" target="_blank" rel="noopener" '
             f'class="block rounded-xl border border-white/10 bg-white/[0.04] p-5 hover:border-hollow-400/60 transition-colors">'
             f'<div class="text-sm font-semibold text-white">{esc(title)}</div>'
-            f'<p class="text-white/50 text-sm leading-relaxed mt-2">{esc(text)}</p>'
+            f'<p class="text-secondary-inverse text-sm leading-relaxed mt-2">{esc(text)}</p>'
             f'<div class="text-hollow-300 text-xs uppercase tracking-[0.14em] mt-4">Open barchart</div>'
             '</a>'
         )
@@ -1576,7 +1576,7 @@ def bird_gap_body(gap):
                 '<tr class="border-b border-white/10 align-top">'
                 f'<td class="py-3 pr-4"><a href="{href}" target="_blank" rel="noopener" '
                 f'class="font-medium text-white hover:text-hollow-300">{esc(common)}</a>'
-                f'<span class="block text-white/35 italic text-sm">{esc(sci)}</span></td>'
+                f'<span class="block text-secondary-inverse italic text-sm">{esc(sci)}</span></td>'
                 f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tioga_signal")))}</td>'
                 f'<td class="py-3 px-3 text-white/55 text-sm whitespace-nowrap">{esc(sval(r.get("tompkins_signal")))}</td>'
                 f'<td class="py-3 pl-4 w-32"><div class="h-1.5 rounded-full bg-white/10">'
@@ -1587,9 +1587,9 @@ def bird_gap_body(gap):
         tables.append(
             '<section class="max-w-5xl mx-auto mt-10 first:mt-0">'
             f'<div class="mb-4"><h3 class="font-serif text-2xl text-white">{esc(title)}</h3>'
-            f'<p class="text-white/50 text-sm leading-relaxed max-w-3xl mt-2">{esc(note)}</p></div>'
+            f'<p class="text-secondary-inverse text-sm leading-relaxed max-w-3xl mt-2">{esc(note)}</p></div>'
             '<div class="bg-white/[0.04] border border-white/10 rounded-2xl p-5 md:p-7 overflow-x-auto">'
-            '<table class="w-full text-[0.95rem]"><thead class="text-white/35 text-xs uppercase tracking-wider border-b-2 border-white/10">'
+            '<table class="w-full text-[0.95rem]"><thead class="text-secondary-inverse text-xs uppercase tracking-wider border-b-2 border-white/10">'
             '<tr><th class="text-left pb-2 font-semibold">Species</th>'
             '<th class="text-left pb-2 px-3 font-semibold">Tioga</th>'
             '<th class="text-left pb-2 px-3 font-semibold">Tompkins</th>'
@@ -1732,14 +1732,14 @@ def bird_playbook_body():
         '<h3 class="font-serif text-3xl text-white mt-2">Species-specific tricks</h3></div>' + cards(targets, "lg:grid-cols-3") + '</section>'
         '<section><div class="mb-7"><div class="text-hollow-300 text-xs uppercase tracking-[0.18em]">Breeding season</div>'
         '<h3 class="font-serif text-3xl text-white mt-2">Turn presence into evidence</h3></div>' + breeding + '</section>'
-        '<section class="border-t border-white/10 pt-6"><div class="text-white/40 text-xs uppercase tracking-[0.16em] mb-4">Field references</div>' + references + '</section>'
+        '<section class="border-t border-white/10 pt-6"><div class="text-secondary-inverse text-xs uppercase tracking-[0.16em] mb-4">Field references</div>' + references + '</section>'
         '</div>')
 
 
 def mammal_found_body(found):
     """Mammals recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
-        return ('<p class="text-center text-white/50 py-8">Mammal roster not '
+        return ('<p class="text-center text-secondary-inverse py-8">Mammal roster not '
                 'synced yet.</p>')
     return _gap_photo_grid(found, placeholder="🦊", group_by="family_name")
 
@@ -1747,7 +1747,7 @@ def mammal_found_body(found):
 def plant_found_body(found):
     """Plants recorded on the property — four major group sections, each family-grouped."""
     if found is None or found.empty:
-        return ('<p class="text-center text-white/50 py-8">Plant roster not '
+        return ('<p class="text-center text-secondary-inverse py-8">Plant roster not '
                 'synced yet.</p>')
 
     GROUP_META = [
@@ -1767,8 +1767,8 @@ def plant_found_body(found):
         header = (
             f'<div class="mt-10 mb-4 border-t border-white/10 pt-6">'
             f'<h3 class="text-hollow-300 text-xs font-semibold tracking-[0.18em] '
-            f'uppercase mb-1">{esc(label)} <span class="text-white/30">· {count} species</span></h3>'
-            f'<p class="text-white/45 text-xs max-w-2xl leading-relaxed">{esc(desc)}</p>'
+            f'uppercase mb-1">{esc(label)} <span class="text-secondary-inverse">· {count} species</span></h3>'
+            f'<p class="text-secondary-inverse text-xs max-w-2xl leading-relaxed">{esc(desc)}</p>'
             f'</div>'
         )
         parts.append(header + _gap_photo_grid(grp, placeholder="🌿", group_by="family_name"))
@@ -1778,7 +1778,7 @@ def plant_found_body(found):
 def reptile_found_body(found):
     """Reptiles recorded on the property — photo grid, grouped by family."""
     if found is None or found.empty:
-        return ('<p class="text-center text-white/50 py-8">Reptile roster not '
+        return ('<p class="text-center text-secondary-inverse py-8">Reptile roster not '
                 'synced yet.</p>')
     return _gap_photo_grid(found, placeholder="🐍", group_by="family_name")
 
@@ -1786,7 +1786,7 @@ def reptile_found_body(found):
 def reptile_gap_body(gap):
     """Regional reptiles not yet documented — photo grid."""
     if not gap or gap.get("missing_count", 0) == 0:
-        return '<p class="text-center text-white/50">No gap data yet.</p>'
+        return '<p class="text-center text-secondary-inverse">No gap data yet.</p>'
     miles = round(gap.get("region_radius_km", 80) / 1.609)
     lead = (f'<p class="text-center text-white/60 max-w-2xl mx-auto mb-8">'
             f'<strong class="text-hollow-300">{gap["have"]}</strong> of '
@@ -2064,7 +2064,7 @@ def log_taxa_stats_panel(totals, recent=None, as_of=None):
         '<nav class="mx-auto mb-8 max-w-3xl rounded-2xl border border-stone-200 '
         'bg-white p-1 shadow-sm" aria-label="Species totals by survey group">'
         '<p class="border-b border-stone-100 px-2 pb-1.5 pt-0.5 text-center text-xs '
-        'text-stone-500">'
+        'text-secondary">'
         + caption
         + '</p><ul class="flex flex-wrap justify-center pt-0.5" role="list">'
         + "".join(items)
@@ -2075,7 +2075,7 @@ def log_taxa_stats_panel(totals, recent=None, as_of=None):
 def id_changes_body(changes):
     """Render recent improving/maverick identifications on the property observations."""
     if not changes:
-        return '<p class="text-stone-400 text-sm text-center py-4">No recent identification changes.</p>'
+        return '<p class="text-secondary text-sm text-center py-4">No recent identification changes.</p>'
 
     rows = []
     for c in changes:
@@ -2092,7 +2092,7 @@ def id_changes_body(changes):
             'title="View observation on iNaturalist">'
             f'<span class="text-stone-600 italic">{esc(prev_name)}</span> → '
             f'<span class="font-medium text-stone-800 italic">{esc(new_name)}</span> '
-            '<span class="text-stone-400 text-xs ml-1" aria-hidden="true">↗</span>'
+            '<span class="text-secondary text-xs ml-1" aria-hidden="true">↗</span>'
             '</a>'
         )
 
@@ -2104,21 +2104,21 @@ def id_changes_body(changes):
         identifier_url = f"https://www.inaturalist.org/people/{c['identifier_login']}"
         identifier_html = (
             f'<a href="{identifier_url}" target="_blank" rel="noopener" '
-            f'class="text-stone-500 hover:text-stone-700">{esc(c["identifier_login"])}</a>'
+            f'class="text-secondary hover:text-stone-700">{esc(c["identifier_login"])}</a>'
         )
 
         rows.append(
             f'<div class="flex items-start gap-3 py-2.5 border-b border-stone-100 last:border-0">'
-            f'  <div class="w-20 shrink-0 text-xs text-stone-400 pt-0.5">'
+            f'  <div class="w-20 shrink-0 text-xs text-secondary pt-0.5">'
             f'    <div>{esc(id_date)}</div>'
-            f'    <div class="text-stone-300">obs {esc(date_str)}</div>'
+            f'    <div class="text-secondary">obs {esc(date_str)}</div>'
             f'  </div>'
             f'  <div class="flex-1 min-w-0 text-sm">'
             f'    {change_link}'
             f'  </div>'
             f'  <div class="flex items-center gap-2 shrink-0">'
             f'    {badge}'
-            f'    <span class="text-xs text-stone-400">by {identifier_html}</span>'
+            f'    <span class="text-xs text-secondary">by {identifier_html}</span>'
             f'  </div>'
             f'</div>'
         )
@@ -2126,7 +2126,7 @@ def id_changes_body(changes):
     return (
         '<div class="max-w-3xl mx-auto mt-12">'
         '<h3 class="font-serif text-2xl font-bold text-stone-900 mb-1">ID Updates</h3>'
-        '<p class="text-sm text-stone-400 mb-4">Identifications on your observations refined or disputed by other users — not shown in iNat notifications.</p>'
+        '<p class="text-sm text-secondary mb-4">Identifications on your observations refined or disputed by other users — not shown in iNat notifications.</p>'
         '<div class="rounded-lg border border-stone-200 bg-white px-4 divide-y divide-stone-100">'
         + "".join(rows)
         + '</div></div>'
@@ -2160,7 +2160,7 @@ def log_resource_links():
             <span class="flex items-start justify-between gap-4">
               <span>
                 <span class="block font-serif text-xl font-bold text-stone-900">{title}</span>
-                <span class="mt-2 block text-sm leading-6 text-stone-500">{description}</span>
+                <span class="mt-2 block text-sm leading-6 text-secondary">{description}</span>
               </span>
               <span class="mt-1 shrink-0 text-hollow-600 transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
             </span>
@@ -2219,11 +2219,11 @@ def _weather_line(w):
 
 def log_update_control(updated_at):
     if os.environ.get("KH_REVIEW_PREVIEW") == "1":
-        return '<p class="text-sm text-stone-500">Review preview · observation refresh is available on the live survey.</p>'
+        return '<p class="text-sm text-secondary">Review preview · observation refresh is available on the live survey.</p>'
     """Render the latest sync time beside the Log's private refresh action."""
     if updated_at is None:
         timestamp_html = (
-            '<span class="whitespace-nowrap font-medium text-stone-500">'
+            '<span class="whitespace-nowrap font-medium text-secondary">'
             'Time unavailable</span>'
         )
     else:
@@ -2243,7 +2243,7 @@ def log_update_control(updated_at):
     return (
         '<div class="self-center flex min-h-11 flex-wrap items-center justify-center gap-2 text-xs">'
         '<span class="flex flex-col items-center leading-4 sm:items-end">'
-        '<span class="text-stone-400">Last updated</span>'
+        '<span class="text-secondary">Last updated</span>'
         f'{timestamp_html}'
         '</span>'
         '<button id="trigger-update" type="button" '
@@ -2255,7 +2255,7 @@ def log_update_control(updated_at):
         'Check now'
         '</button>'
         '</div>'
-        '<span id="trigger-update-status" class="text-xs text-stone-400" '
+        '<span id="trigger-update-status" class="text-xs text-secondary" '
         'role="status" aria-live="polite"></span>'
     )
 
@@ -2266,7 +2266,7 @@ def activity_log_body(log_entries, weather_cache, updated_at):
         return (
             '<div class="mx-auto flex max-w-3xl flex-col items-center gap-3">'
             f'{log_update_control(updated_at)}'
-            '<p class="text-center text-stone-500">No entries yet.</p>'
+            '<p class="text-center text-secondary">No entries yet.</p>'
             '</div>'
         )
 
@@ -2300,13 +2300,13 @@ def activity_log_body(log_entries, weather_cache, updated_at):
         w = weather_cache.get(str(d))
         weather_str = _weather_line(w)
         weather_html = (
-            f'<p class="text-stone-400 text-sm mt-1">{esc(weather_str)}</p>'
+            f'<p class="text-secondary text-sm mt-1">{esc(weather_str)}</p>'
             if weather_str else ""
         )
 
         observers = entry.get("observers", [])
         observers_html = (
-            f'<p class="text-stone-400 text-xs mt-1">{esc(", ".join(observers))}</p>'
+            f'<p class="text-secondary text-xs mt-1">{esc(", ".join(observers))}</p>'
             if observers else ""
         )
 
@@ -2368,7 +2368,7 @@ def activity_log_body(log_entries, weather_cache, updated_at):
             )
 
         section_label_cls = (
-            'text-stone-400 text-[0.68rem] font-semibold tracking-[0.15em] uppercase mb-1'
+            'text-secondary text-[0.68rem] font-semibold tracking-[0.15em] uppercase mb-1'
         )
 
         if has_morning:
@@ -2560,7 +2560,7 @@ def nav(active_mode="all"):
           <p class="survey-menu-label">On this view</p>
           <p id="survey-menu-view-name" class="font-serif text-2xl text-white mt-1">{config["label"]}</p>
         </div>
-        <span id="survey-menu-section-count" class="text-white/35 text-xs tabular-nums">{section_count} section{"" if section_count == 1 else "s"}</span>
+        <span id="survey-menu-section-count" class="text-secondary-inverse text-xs tabular-nums">{section_count} section{"" if section_count == 1 else "s"}</span>
       </div>
       {mobile_links}
       <a href="{SITE}" class="inline-flex sm:hidden mt-6 text-hollow-300 text-sm">Main site ↗</a>
@@ -2807,7 +2807,7 @@ LOG_UPDATE_SCRIPT = """
     if(!btn||!status) return;
     function setStatus(msg,kind){
       status.textContent=msg;
-      status.className='text-xs '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-stone-400');
+      status.className='text-xs '+(kind==='error'?'text-red-700':kind==='ok'?'text-hollow-700':'text-secondary');
     }
     btn.addEventListener('click',async()=>{
       let key=localStorage.getItem('khUpdateKey')||'';
@@ -3370,9 +3370,9 @@ def amphibians_view(df, stats):
     out.append(section(
         "amphibian-gap", "Yet to Find",
         'Herp <em class="text-hollow-300">Gap List</em>',
-        '<h3 class="text-sm font-semibold tracking-widest uppercase text-white/40 mb-3">Amphibians</h3>'
+        '<h3 class="text-sm font-semibold tracking-widest uppercase text-secondary-inverse mb-3">Amphibians</h3>'
         + amphibian_gap_body(amp_gap)
-        + '<h3 class="text-sm font-semibold tracking-widest uppercase text-white/40 mt-8 mb-3">Reptiles</h3>'
+        + '<h3 class="text-sm font-semibold tracking-widest uppercase text-secondary-inverse mt-8 mb-3">Reptiles</h3>'
         + reptile_gap_body(rep_gap),
         intro="Species recorded within ~50 miles but not yet documented here. For herps, regional frequency matters less than timing: rainy migration nights, spring chorus windows, cover objects, basking logs, and stream-rock checks decide what appears.",
         dark=True))
@@ -3795,7 +3795,7 @@ def build():
               'Recent evidence</p>'
             '<h3 class="font-serif text-3xl md:text-4xl font-bold text-stone-900">'
               'More from the latest survey work</h3>'
-            '<p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-stone-500">'
+            '<p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-secondary">'
               'Recent photographs from iNaturalist—the visual record '
               'behind both new additions and return sightings.</p>'
           '</div>'
@@ -3835,7 +3835,7 @@ def build():
               'Evidence 2 · Rarity test</p>'
             '<h3 class="mt-2 font-serif text-3xl font-bold md:text-4xl">'
               'Then test the signal</h3>'
-            '<p class="mt-3 text-sm leading-6 text-stone-500">'
+            '<p class="mt-3 text-sm leading-6 text-secondary">'
               'Statewide scarcity and repeated local presence separate records that merely fill '
               'a county data gap from patterns that deserve closer ecological or identification review.</p>'
           '</div>'
@@ -3849,7 +3849,7 @@ def build():
             "before turning a low iNaturalist count into a rarity claim.")
         + '<h3 class="mt-14 mb-2 text-center font-serif text-2xl font-bold text-stone-900">'
             'Records that deserve a closer look</h3>'
-          '<p class="mx-auto mb-6 max-w-2xl text-center text-sm leading-6 text-stone-500">'
+          '<p class="mx-auto mb-6 max-w-2xl text-center text-sm leading-6 text-secondary">'
             'These have especially small New York iNaturalist footprints. They are review priorities, '
             'not automatic rarity claims.</p>'
         + rarest_body(analyze.rarest_finds(df, stats))

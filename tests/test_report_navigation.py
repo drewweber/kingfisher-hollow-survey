@@ -728,12 +728,12 @@ class ReportNavigationTests(unittest.TestCase):
         self.assertIn("life_list_body(life, dark=True)", life_list_section)
         self.assertIn("dark=True", life_list_section)
         self.assertIn('heading = "text-white" if dark else "text-stone-900"', source)
-        self.assertIn('copy = "text-white/60" if dark else "text-stone-500"', source)
+        self.assertIn('copy = "text-white/60" if dark else "text-secondary"', source)
 
         empty_life = mock.Mock()
         empty_life.empty = True
         empty = report.life_list_body(empty_life, dark=True)
-        self.assertIn("text-white/50", empty)
+        self.assertIn("text-secondary-inverse", empty)
 
 
 if __name__ == "__main__":
