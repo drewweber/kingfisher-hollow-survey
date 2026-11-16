@@ -6,6 +6,8 @@ assigned to a different group). Resolve only unambiguous scientific-name matches
 against known species; unresolved identities and hybrids remain unchanged.
 """
 
+from collections import Counter
+
 import pandas as pd
 import curated_observations
 
@@ -67,9 +69,22 @@ def property_roster(conn, table):
     # A changed/deleted reviewed source must not survive in an older roster.
     eligible = {row['id']: row['taxon_id'] for row in curated}
     if 'obs_count' in rows:
-        for oid, old_tid in project_records.items():
-            if oid in reviewed and eligible.get(oid) != old_tid:
-                rows.loc[rows['taxon_id'] == old_tid, 'obs_count'] -= 1
+        withdrawn_counts = Counter(
+            old_tid for oid, old_tid in project_records.items()
+            if oid in reviewed and eligible.get(oid) != old_tid
+        )
+        independent = project_rows[
+            ~project_rows['id'].isin(reviewed) & project_rows['captive'].ne(1)
+        ]
+        independent_counts = independent['taxon_id'].value_counts()
+        for old_tid, withdrawn_count in withdrawn_counts.items():
+            match = rows['taxon_id'] == old_tid
+            counts = rows.loc[match, 'obs_count']
+            # A fresh roster may already omit a stale project observation.
+            # Preserve the portion corroborated by independent wild records.
+            floor = independent_counts.get(old_tid, 0)
+            removable = (counts - floor).clip(lower=0, upper=withdrawn_count)
+            rows.loc[match, 'obs_count'] = counts - removable
         rows = rows[rows['obs_count'].isna() | rows['obs_count'].gt(0)].copy()
     for tid in {r['taxon_id'] for r in curated}:
         observations = [r for r in curated if r['taxon_id'] == tid]

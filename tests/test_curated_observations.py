@@ -112,6 +112,22 @@ class CuratedInventoryTests(unittest.TestCase):
         self.assertTrue(analyze.load_reptiles().empty)
         self.assertEqual(analyze.reptile_gap(analyze.load_reptiles())['missing']['taxon_id'].tolist(), [39865])
 
+    def test_curated_deletion_preserves_fresh_roster_with_independent_record(self):
+        # Incremental project sync can retain the deleted ID after the live
+        # species-count roster has already stopped including it.
+        self.add_project_record()
+        independent_id = 999
+        self.add_project_record(independent_id)
+        self.conn.execute(
+            "INSERT INTO reptile_taxa (taxon_id,taxon_name,obs_count) "
+            "VALUES (39865,'Glyptemys insculpta',1)")
+        self.cache_path.write_text(json.dumps({'371959757': {'snapshot': None}}))
+
+        self.assertEqual(analyze.load_property()['id'].tolist(), [independent_id])
+        reptiles = analyze.load_reptiles()
+        self.assertEqual(reptiles['obs_count'].tolist(), [1])
+        self.assertTrue(analyze.reptile_gap(reptiles)['missing'].empty)
+
     def test_latest_coarse_identification_cannot_resurrect_species(self):
         old = dict(curated.manifest()[0]['snapshot'])
         old.update(taxon_id=39863, taxon_name='Glyptemys', common_name=None, rank='genus')
