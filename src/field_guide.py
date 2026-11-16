@@ -8,6 +8,7 @@ import json
 import math
 import shutil
 import struct
+import sys
 import zlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
@@ -943,12 +944,37 @@ def _copy_seasonal_return(output_dir):
     return filename, script
 
 
-def build(effective_date=None, output_dir=None):
+def _browser_navigation_html():
+    # Lazy import: report owns the survey routes and also invokes this builder.
+    # The direct `python src/field_guide.py` entrypoint only adds src/ to sys.path.
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from report import nav
+    return nav("field", include_skip=False)
+
+
+def _copy_browser_navigation(output_dir, navigation_html=None):
+    """Render the shared survey routes and bundle their controller for offline use."""
+    if navigation_html is None:
+        navigation_html = _browser_navigation_html()
+    script = (ROOT / "assets" / "survey-navigation.js").read_bytes()
+    filename = f"survey-navigation.{hashlib.sha256(script).hexdigest()[:12]}.js"
+    (output_dir / filename).write_bytes(script)
+    page = output_dir / "index.html"
+    page.write_text(page.read_text().replace("__BROWSER_NAVIGATION__", navigation_html)
+                    .replace("__SURVEY_NAV_SCRIPT__", f"./{filename}"))
+    return filename, script + navigation_html.encode()
+
+
+def build(effective_date=None, output_dir=None, *, navigation_html=None):
     """Generate `/field/` without modifying the survey's root document."""
     effective_date = effective_date or date.today()
     output_dir = Path(output_dir or OUTPUT_DIR)
     if not APP_SOURCE.is_dir() or not SW_TEMPLATE.is_file():
         raise FileNotFoundError("Field guide app sources are incomplete")
+
+    if navigation_html is None:
+        navigation_html = _browser_navigation_html()
 
     targets, _pre_enrichment_counts, moth_months = collect_targets(effective_date)
     photo_requirements = {target["id"]: TARGET_IMAGE_COUNT for target in targets}
@@ -966,6 +992,7 @@ def build(effective_date=None, output_dir=None):
         shutil.rmtree(output_dir)
     shutil.copytree(APP_SOURCE, output_dir)
     seasonal_return_file, seasonal_return_bytes = _copy_seasonal_return(output_dir)
+    navigation_file, navigation_bytes = _copy_browser_navigation(output_dir, navigation_html)
     images_dir = output_dir / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1033,7 +1060,7 @@ def build(effective_date=None, output_dir=None):
         if source.is_file():
             version_seed += source.relative_to(APP_SOURCE).as_posix().encode() + source.read_bytes()
     version_seed += SW_TEMPLATE.read_bytes()
-    version_seed += seasonal_return_bytes
+    version_seed += seasonal_return_bytes + navigation_bytes
     version = hashlib.sha256(version_seed).hexdigest()[:16]
     payload = {"version": version, **base_payload}
     _json_write(output_dir / "targets.json", payload)
@@ -1045,7 +1072,7 @@ def build(effective_date=None, output_dir=None):
 
     asset_paths = [
         "./", "./index.html", "./styles.css", "./app.js",
-        f"./{seasonal_return_file}",
+        f"./{seasonal_return_file}", f"./{navigation_file}", "./browser-navigation.js",
         "./manifest.webmanifest", "./targets.json",
         "./icons/icon-192.png", "./icons/apple-touch-icon.png", "./icons/icon-512.png",
         "./icons/icon-maskable-512.png",
