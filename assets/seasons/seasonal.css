@@ -16,8 +16,10 @@
 @media(max-width:800px){.community-section{grid-template-columns:1fr;padding:32px;gap:30px}.coverage-tables{grid-template-columns:1fr}.community-breadth ul{display:grid;grid-template-columns:1fr 1fr;column-gap:30px}.voucher-appendix{padding-inline:32px}}
 @media(max-width:640px){.community-section{margin:42px 0 0;padding:35px 22px}.community-intro h2{font-size:2.15rem}.community-breadth ul{grid-template-columns:1fr}.community-breadth li{font-size:.83rem}.assemblage h3{font-size:1.8rem}.voucher-appendix{margin:20px 22px 0;padding:0}.coverage-tables table{min-width:0}.community-methods{font-size:.76rem}}
 
-/* The same primary survey destinations are available in every season. */
-.survey-links,.survey-destinations{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-.survey-links a{display:inline-flex;align-items:center;min-height:44px}
-.survey-destinations a{font-size:.78rem;font-weight:600}
-@media(max-width:640px){.site-header{flex-wrap:wrap;gap:16px}.survey-links{width:100%;gap:14px;justify-content:space-between}.survey-links .survey-link{max-width:none;text-align:left}.survey-destinations{gap:14px}}
+/* Shared survey navigation stays in flow above the season switcher. */
+body[data-mode="seasons"] #navbar.survey-nav-enhanced { position: sticky; top: 0; }
+body[data-mode="seasons"] #navbar { line-height: 1.5; }
+body[data-mode="seasons"] .skip-link { position: fixed; z-index: 70; }
+html { scroll-padding-top: calc(var(--survey-nav-bottom, 7rem) + 1rem); }
+body[data-mode="seasons"] .mode-active { text-decoration: underline; text-underline-offset: .25em; }
+@media print { #navbar { display: none; } }

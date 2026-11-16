@@ -56,6 +56,32 @@ class NavigationAccessTests(unittest.TestCase):
                 expected = {'from': [f'/seasons/{season}/']} if season else {}
                 self.assertEqual(parse_qs(urlsplit(hrefs[0]).query), expected)
 
+    def test_explore_order_is_shared_by_survey_field_and_seasons(self):
+        pages = [report.nav(mode) for mode in [*report.VIEW_CONFIG, 'field']]
+        pages.extend(seasonal_pages.nav(season, '/') for season in ['', *seasonal_pages.SEASONS])
+        for html in pages:
+            links = [link for link in Navigation(html).links
+                     if 'mode-btn' in link.get('class', '').split()]
+            self.assertEqual([link['href'] for link in links[:2]], ['/', '/seasons/'])
+            self.assertEqual(len(links), len(report.VIEW_CONFIG))
+
+    def test_seasons_use_shared_header_and_distinguish_current_chapter(self):
+        for season in ['', *seasonal_pages.SEASONS]:
+            with self.subTest(season=season):
+                html = seasonal_pages.nav(season, '/')
+                nav = Navigation(html)
+                self.assertIn('navbar', nav.elements)
+                self.assertIn('survey-menu-button', nav.elements)
+                self.assertIn('survey-menu', nav.elements)
+                self.assertEqual(html.count('aria-label="Survey navigation"'), 1)
+                modes = [link for link in nav.links if 'mode-btn' in link.get('class', '').split()]
+                current = [link for link in modes if link.get('aria-current')]
+                self.assertEqual([(link['href'], link['aria-current']) for link in current],
+                                 [('/seasons/', 'true' if season else 'page')])
+                self.assertNotIn('hidden', nav.elements['survey-menu'])
+                if season:
+                    self.assertIn(f'href="/seasons/{season}/" aria-current="page"', html)
+
     def test_nonmodal_index_does_not_lock_page_scrolling(self):
         styles = (Path(report.__file__).parent / 'src/styles.css').read_text()
         self.assertNotIn('body.survey-menu-open', styles)
