@@ -1,0 +1,93 @@
+{
+  "recorded_utc": "2026-11-16",
+  "implementation_commit": "1ef5f0a8b523f6946f52f81772682e6616fb8b40",
+  "baseline_controller_commit": "555b1a327bd3556be7e4339cc80f076174469cb1",
+  "final_mobile_base_commit": "4498e85c1bfc4275108203f4c871094955ac4163",
+  "environment": {
+    "browser": "Desktop Chrome 157 on macOS",
+    "viewport_css_pixels": [1728, 873],
+    "cpu_throttling": "Unavailable in the advertised CUA capabilities; no throttling applied",
+    "server": "Local Python HTTP server, no external data requests",
+    "data": "1,825 records from the local cached canonical iNaturalist/eBird inventory; 10,000-row fixture repeats those records"
+  },
+  "method": {
+    "generator": "scripts/prepare_inventory_benchmark.py",
+    "comparison": "Same cached inventory, compact table markup and CSS; baseline uses the previous controller via --controller-ref. Candidate includes the final mobile select max-width wrapper classes, which do not change the desktop table layout.",
+    "samples_per_fixture": 40,
+    "queries_repeated_five_times": ["moth", "", "luna", "", "zzzz-no-match", "", "a", ""],
+    "handler_ms": "performance.now around synchronous input-event dispatch",
+    "paint_opportunity_ms": "Elapsed time from input dispatch through two requestAnimationFrame callbacks; permits an intervening paint, but is not a direct paint timestamp or field INP",
+    "initialization_ms": "One observation around the controller script, excluding HTML parsing",
+    "dom_content_loaded_ms": "One navigation timing observation; includes local loading and parsing and is not a statistically controlled load metric",
+    "live_dom": "Attached .ll-row and element counts after the final cleared query; detached rows remain retained in memory"
+  },
+  "results": [
+    {
+      "fixture_rows": 1825,
+      "before": {
+        "handler_ms": {"median": 18.6, "p95": 68.2, "max": 73.6},
+        "paint_opportunity_ms": {"median": 121.3, "p95": 273.5, "max": 341.9},
+        "initialization_ms": 22.9,
+        "dom_content_loaded_ms": 291.2,
+        "live_rows": 1825,
+        "live_elements": 20324
+      },
+      "after": {
+        "handler_ms": {"median": 8.5, "p95": 15.3, "max": 18.8},
+        "paint_opportunity_ms": {"median": 32.3, "p95": 69.3, "max": 89.2},
+        "initialization_ms": 16.1,
+        "dom_content_loaded_ms": 219.9,
+        "live_rows": 100,
+        "live_elements": 1197
+      }
+    },
+    {
+      "fixture_rows": 10000,
+      "before": {
+        "handler_ms": {"median": 98.8, "p95": 397.8, "max": 536.0},
+        "paint_opportunity_ms": {"median": 698.6, "p95": 1219.5, "max": 1363.6},
+        "initialization_ms": 115.5,
+        "dom_content_loaded_ms": 845.5,
+        "live_rows": 10000,
+        "live_elements": 111049
+      },
+      "after": {
+        "handler_ms": {"median": 8.4, "p95": 16.4, "max": 20.4},
+        "paint_opportunity_ms": {"median": 32.4, "p95": 70.8, "max": 82.2},
+        "initialization_ms": 146.6,
+        "dom_content_loaded_ms": 1146.5,
+        "live_rows": 100,
+        "live_elements": 1237
+      }
+    }
+  ],
+  "limits": [
+    "Desktop surrogate only, not a physical or emulated slow-phone performance result.",
+    "Synthetic input dispatch excludes real input queueing delay; these numbers are not INP scores.",
+    "A single paired run per size, with shared-machine load and frame cadence affecting timing; no confidence intervals claimed.",
+    "All inventory rows still arrive as HTML and are parsed and retained. Pagination bounds attached DOM/layout and interaction work, not initial transfer, parsing, or total retained memory.",
+    "The 10,000-row candidate had slower initialization and DOMContentLoaded than baseline; no initial-load speedup is claimed.",
+    "Native browser Find searches the attached page with JavaScript enabled; the labeled species search covers all records. Full SSR remains available without JavaScript, and a complete fingerprinted CSV is linked.",
+    "The cached 1,825-record snapshot is older than the live site; the scaling fixture is not a claim of 10,000 property species."
+  ],
+  "verification": {
+    "python_tests": 219,
+    "javascript_tests": 103,
+    "browser_checks": [
+      "320px viewport: no document horizontal overflow, native mobile Details remains keyboard-operable",
+      "Keyboard Next page focuses the first species link; page URL, Back, Forward and reload restore the subset",
+      "Search finds Northern Cardinal at the end of the complete dataset and resets page to one",
+      "Clear filters restores all matches and search focus while retaining seasonal from parameter and fragment",
+      "Out-of-range page clamps to page 19 with 25 rows and disabled Next page",
+      "No-JavaScript fixture includes all 1,825 records; pagination stays hidden",
+      "Downloaded CSV parsed as 1,825 records with 12 fields"
+    ]
+  },
+  "reproduce": [
+    "Build CSS using npm run build:css with installed dependencies.",
+    "python scripts/prepare_inventory_benchmark.py /tmp/inventory-benchmark/before --controller-ref 4498e85c1bfc4275108203f4c871094955ac4163",
+    "python scripts/prepare_inventory_benchmark.py /tmp/inventory-benchmark/after",
+    "python -m http.server 8877 --bind 127.0.0.1 --directory /tmp/inventory-benchmark",
+    "Open each before/after generated HTML fixture in the same foreground browser viewport and activate Run benchmark. Read the displayed JSON after completion."
+  ]
+}
