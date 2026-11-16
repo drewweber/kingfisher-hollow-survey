@@ -3865,7 +3865,8 @@ def build():
     life_list_section = section(
         "life-list", "The Full Roll",
         'The <em class="text-hollow-300">Life List</em>',
-        moth_portrait_showcase(df, dark=True) + life_list_body(life, dark=True),
+        life_list_body(life, dark=True)
+        + '<div class="mt-16">' + moth_portrait_showcase(df, dark=True) + '</div>',
         intro="The combined iNaturalist and eBird inventory, ordered by available record date. Search by name, then filter by group and family. eBird life-list dates do not establish first arrival or repeat frequency.",
         dark=True)
     two_up = (
