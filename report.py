@@ -2862,6 +2862,7 @@ PLOTLY_SCRIPT = """
     charts.forEach((chart,index)=>{
       const figure=chart.closest('[data-chart-figure]');
       const table=figure?.querySelector('[data-chart-table]');
+      const inventoryLink=figure?.querySelector('[data-chart-link]');
       const title=figure?.dataset.chartTitle||'Chart '+(index+1);
       const panel=document.createElement('div');panel.className='chart-recovery';
       const progress=document.createElement('span');
@@ -2871,7 +2872,7 @@ PLOTLY_SCRIPT = """
       retry.setAttribute('aria-label','Retry chart: '+title);
       retry.setAttribute('aria-describedby',status.id);retry.hidden=true;
       panel.append(progress,status,retry);chart.before(panel);
-      const state={chart,progress,status,retry,active:false,phase:'waiting',failure:'',payload:'idle'};
+      const state={chart,progress,status,retry,inventoryLink,active:false,phase:'waiting',failure:'',payload:'idle'};
       if(table){
         const data=document.createElement('button');data.type='button';data.textContent='View chart data';
         data.setAttribute('aria-label','View chart data: '+title);data.hidden=true;
@@ -2898,7 +2899,8 @@ PLOTLY_SCRIPT = """
       if(state.phase==='rendered') return;
       state.phase='failed';state.failure=kind;
       state.chart.setAttribute('aria-busy','false');state.progress.textContent='';
-      state.status.textContent=message+(state.data?' The summary and data table are still available.':' Please try again.');
+      state.status.textContent=message+(state.data?' The summary and data table are still available.':
+        state.inventoryLink?' The summary and Life List are still available.':' Please try again.');
       state.retry.hidden=false;state.retry.setAttribute('aria-disabled','false');
       if(state.data)state.data.hidden=false;
     }
