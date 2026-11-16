@@ -116,14 +116,14 @@ class ChartAlternativeTests(unittest.TestCase):
         table = self.table(viz.uniqueness_scatter(stats))
         self.assertEqual(table.rows[1:], [['Actias luna', '25', '3', 'Yes'], ['Moth B', '100', '4', 'No']])
 
-    def test_observer_limit_and_extra_metrics_match_chart(self):
+    def test_all_observers_and_extra_metrics_match_chart(self):
         board = pd.DataFrame([dict(display_name=None, user_login=f'user{i}', observations=20-i, species=i+1, unique_species=i) for i in range(16)])
         html = viz.leaderboard(board)
         table = self.table(html)
-        self.assertEqual(len(table.rows), 16)
+        self.assertEqual(len(table.rows), 17)
         self.assertEqual(table.rows[1], ['user0', '20', '1', '0'])
-        self.assertEqual(table.rows[-1], ['user14', '6', '15', '14'])
-        self.assertIn('15 of 16 observers', html)
+        self.assertEqual(table.rows[-1], ['user9', '11', '10', '9'])
+        self.assertIn('All 16 observers', html)
 
     def test_monthly_counts_are_not_summed_as_unique_species(self):
         summary = [dict(month_name='May', species_count=8, new_species_count=3, nights_surveyed=4, survey_season=True), dict(month_name='June', species_count=8, new_species_count=2, nights_surveyed=5, survey_season=True)]
