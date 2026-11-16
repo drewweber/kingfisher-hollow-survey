@@ -2,6 +2,7 @@
 from html.parser import HTMLParser
 import re
 import unittest
+from unittest import mock
 
 import pandas as pd
 
@@ -61,10 +62,30 @@ class ChartAlternativeTests(unittest.TestCase):
         self.assertRegex(html, r'data-plotly-chart[^>]*></div>\s*<script')
         return table
 
-    def test_discovery_preserves_each_step(self):
-        html = viz.discovery_curve(pd.DataFrame({'observed_on': pd.to_datetime(['2025-01-01', '2025-01-01', '2025-02-02']), 'cumulative': [1, 2, 3]}))
-        self.assertEqual(self.table(html).rows[1:], [['2025-01-01', 'Not available', 'Not available', '1'], ['2025-01-01', 'Not available', 'Not available', '2'], ['2025-02-02', 'Not available', 'Not available', '3']])
-        self.assertIn('3 species', html)
+    def test_discovery_links_to_inventory_without_publishing_duplicate_tables(self):
+        import tempfile
+        from pathlib import Path
+        from src import chart_data
+        firsts = pd.DataFrame({
+            'observed_on': pd.to_datetime(['2025-01-01'] * 14 + ['2025-02-02']),
+            'cumulative': range(1, 16),
+        })
+        html = viz.discovery_curve(firsts)
+        self.assertIn('data-chart-figure', html)
+        self.assertRegex(html, r'<a[^>]*href="/life-list/"[^>]*>[^<]*Life List</a>')
+        self.assertNotIn('<details', html)
+        self.assertNotIn('<table', html)
+        self.assertIn('15 species with dated records by 2025-02-02', html)
+        self.assertRegex(html, r'data-plotly-chart[^>]*></div>\s*<script')
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(chart_data.publish_tables(html, Path(tmp), '/'), html)
+            self.assertFalse(list(Path(tmp).rglob('*.html')))
+        # The chart still includes every discovery step, including same-day ties.
+        with mock.patch.object(viz, '_html', return_value='') as render:
+            viz.discovery_curve(firsts)
+        figure = render.call_args.args[0]
+        self.assertEqual(list(figure.data[0].y), list(range(1, 16)))
+        self.assertEqual(list(figure.data[0].x), list(firsts['observed_on']))
 
     def test_combined_discovery_explains_sources_and_undated_species(self):
         firsts = pd.DataFrame({
@@ -74,15 +95,11 @@ class ChartAlternativeTests(unittest.TestCase):
         })
         firsts.attrs.update(inventory_species=3, undated_species=1)
         html = viz.discovery_curve(firsts)
-        table = self.table(html)
-        self.assertEqual(table.rows[0], ['Available record date', 'Species', 'Source', 'Cumulative species'])
-        self.assertEqual(table.rows[1:], [
-            ['2025-01-01', 'Wood Thrush', 'eBird', '1'],
-            ['2025-02-02', 'Luna Moth', 'iNaturalist', '2'],
-        ])
         self.assertIn('1 species without a usable date', html)
         self.assertIn('3 species in the combined inventory', html)
         self.assertIn('arrival or repeat frequency', html)
+        self.assertIn('eBird life-list dates for birds and iNaturalist dates for other groups', html)
+        self.assertIn('identification revisions', html)
 
     def test_discovery_with_only_undated_inventory_has_an_explanation(self):
         firsts = pd.DataFrame(columns=['observed_on', 'cumulative', 'label', 'source'])
@@ -90,6 +107,7 @@ class ChartAlternativeTests(unittest.TestCase):
         html = viz.discovery_curve(firsts)
         self.assertIn('2 species without a usable date', html)
         self.assertIn('No dated records', html)
+        self.assertIn('href="/life-list/"', html)
 
     def test_phenology_table_uses_raw_counts_even_when_normalized(self):
         matrix = pd.DataFrame([[0, 8] + [0] * 10, [2, 4] + [0] * 10], index=['Moth <one>', 'Moth two'], columns=range(1, 13))

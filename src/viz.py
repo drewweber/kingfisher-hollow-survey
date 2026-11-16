@@ -156,8 +156,13 @@ def discovery_curve(firsts):
         f"{inventory_total:,} species in the combined inventory; "
         f"{undated:,} species without a usable date remain in the inventory but are not plotted. "
     )
+    inventory_link = (
+        '<p class="mt-4 border-t border-stone-200 text-sm">'
+        '<a data-chart-link href="/life-list/" class="inline-block py-3 underline">'
+        'Browse the Life List</a> for species names and available record dates.</p>'
+    )
     if firsts.empty:
-        return f"<p class='chart-empty'>No dated records to plot. {coverage}</p>"
+        return f"<p class='chart-empty'>No dated records to plot. {coverage}</p>" + inventory_link
     fig = go.Figure()
     fig.add_scatter(
         x=firsts["observed_on"], y=firsts["cumulative"],
@@ -182,16 +187,22 @@ def discovery_curve(firsts):
         showarrow=False, xanchor="right", yanchor="bottom",
         font=dict(size=14, color=HOLLOW[0]),
     )
-    return _with_data(
-        _html(_style(fig, height=440)), "Cumulative species records · iNaturalist + eBird",
+    summary = (
         f"The curve reaches {total:,} species with dated records by {_date(last['observed_on'])}. "
         + coverage
         + "Each species is counted once, using its earliest available inventory record: "
         "eBird life-list dates for birds and iNaturalist dates for other groups. "
-        "These dates do not establish arrival or repeat frequency; identification revisions can change this history.",
-        ["Available record date", "Species", "Source", "Cumulative species"],
-        ((_date(r.observed_on), getattr(r, "label", None), getattr(r, "source", None), int(r.cumulative))
-         for r in firsts.itertuples()),
+        "These dates do not establish arrival or repeat frequency; identification revisions can change this history."
+    )
+    summary_id = "discovery-" + hashlib.sha256(summary.encode()).hexdigest()[:16]
+    # The Life List is the full inventory alternative; do not publish a second
+    # species table here. Keep this link and summary outside the Plotly host.
+    return (
+        '<div data-chart-figure data-chart-title="Cumulative species records · iNaturalist + eBird" '
+        'class="min-w-0 text-secondary">'
+        f'<figure aria-labelledby="{summary_id}">'
+        f'<figcaption id="{summary_id}" class="mb-4 text-sm leading-relaxed text-pretty">{escape(summary)}</figcaption>'
+        f'{_html(_style(fig, height=440))}</figure>{inventory_link}</div>'
     )
 
 

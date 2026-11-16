@@ -4,7 +4,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 const source=readFileSync(new URL('../report.py',import.meta.url),'utf8');
 const script=source.split('PLOTLY_SCRIPT = """')[1].split('"""')[0];
-function harness({plot=()=>Promise.resolve(),tables=false,lazy=false}={}) {
+function harness({plot=()=>Promise.resolve(),tables=false,inventoryLink=false,lazy=false}={}) {
   const elements=[],scripts=[],listeners={},timers=new Map();let timer=0;
   const document={activeElement:null};
   function element(tag='div') {
@@ -21,7 +21,12 @@ function harness({plot=()=>Promise.resolve(),tables=false,lazy=false}={}) {
   if(tables)charts.forEach(chart=>{
     const summary=element('summary'),table=element('details');table.querySelector=()=>summary;
     chart.table=table;chart.summary=summary;
-    chart.closest=()=>({dataset:{chartTitle:chart.id},querySelector:selector=>selector.endsWith(' summary')?summary:table});
+    chart.closest=()=>({dataset:{chartTitle:chart.id},querySelector:selector=>selector==='[data-chart-table] summary'?summary:selector==='[data-chart-table]'?table:null});
+  });
+  if(inventoryLink)charts.forEach(chart=>{
+    const link=element('a');link.href='/life-list/';link.textContent='Browse the Life List';
+    chart.link=link;
+    chart.closest=()=>({dataset:{chartTitle:chart.id},querySelector:selector=>selector==='[data-chart-link]'?link:null});
   });
   Object.assign(document,{querySelectorAll:()=>charts,getElementById:id=>charts.find(c=>c.id===id),
     createElement:element,head:{appendChild:s=>scripts.push(s)}});
@@ -110,4 +115,19 @@ test('finishing a retry preserves focus if the user tabs onto the data action',a
  const data=h.charts[0].panel.children.find(e=>e.textContent==='View chart data');
  data.focus();resolve();await settle();
  assert.equal(h.document.activeElement,h.charts[0].summary);
+});
+
+
+test('inventory link stays available through chart failure and successful retry',async()=>{
+ const h=harness({inventoryLink:true});h.payload('a');h.scripts[0].onerror();
+ const chart=h.charts[0];
+ assert.match(h.status(chart).textContent,/summary and Life List are still available/);
+ assert.doesNotMatch(h.status(chart).textContent,/data table/);
+ assert.equal(chart.link.hidden,false);
+ assert.equal(chart.link.href,'/life-list/');
+ assert.equal(chart.panel.children.some(e=>e.textContent==='View chart data'),false);
+ h.retry(chart).click();chart.link.focus();h.ready();await settle();
+ assert.equal(chart.dataset.plotlyRendered,'true');
+ assert.equal(h.document.activeElement,chart.link);
+ assert.equal(chart.link.hidden,false);
 });
