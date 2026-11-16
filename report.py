@@ -895,16 +895,17 @@ def life_list_body(life, dark=False):
     def short(label):
         return label if len(label) <= 22 else label[:20].rstrip(" ,&") + "…"
 
-    btns = [f'<button class="ll-filter ll-active" data-group="all">All <span class="ll-n">{total}</span></button>']
-    btns += [f'<button class="ll-filter" data-group="{esc(g)}">{esc(short(g))} '
+    btns = [f'<button type="button" class="ll-filter ll-active" data-group="all" aria-pressed="true">All <span class="ll-n">{total}</span></button>']
+    btns += [f'<button type="button" class="ll-filter" data-group="{esc(g)}" aria-pressed="false">{esc(short(g))} '
              f'<span class="ll-n">{int(counts[g])}</span></button>' for g in pinned]
     select = ""
     if rest:
         opts = "".join(f'<option value="{esc(g)}">{esc(g)} ({int(counts[g])})</option>'
                        for g in rest)
-        select = (f'<select id="ll-select" aria-label="More taxon groups" class="ll-select px-3 py-1.5 rounded-full '
-                  f'border border-stone-200 text-sm text-stone-600 bg-white">'
-                  f'<option value="">More groups…</option>{opts}</select>')
+        select = (f'<div class="flex flex-col gap-1 items-center"><label for="ll-select" class="{outer_text}">More groups</label>'
+                  f'<select id="ll-select" class="ll-select ll-control px-3 py-1.5 rounded-full '
+                  f'border border-stone-200 text-stone-600 bg-white">'
+                  f'<option value="">Choose a group…</option>{opts}</select></div>')
     rows = []
     for _, r in life.iterrows():
         name = r["label"]
@@ -933,22 +934,31 @@ def life_list_body(life, dark=False):
       </tr>""")
     return f"""
     <div class="max-w-4xl mx-auto">
-      <div class="flex flex-col gap-4 mb-6 items-center">
-        <input id="ll-search" type="search" aria-label="Search species" placeholder="Search species…"
-          class="w-full sm:w-80 px-4 py-2.5 rounded-full border border-stone-200 focus:border-hollow-400 focus:ring-2 focus:ring-hollow-100 outline-none text-sm">
-        <div class="flex flex-wrap gap-2 justify-center items-center" role="group" aria-label="Filter by group">{''.join(btns)}{select}</div>
-        <label class="sr-only" for="ll-taxon-select">Filter selected group by family</label>
-        <select id="ll-taxon-select" aria-label="Family within selected group" class="ll-select px-3 py-2 rounded-full border border-stone-200 text-sm text-stone-600 bg-white disabled:opacity-50" disabled>
-          <option value="">Choose a taxon group first…</option>
-        </select>
-      </div>
+      <search aria-label="Filter the life list" class="ll-controls flex flex-col gap-4 mb-6 items-center">
+        <div class="flex flex-col gap-1 w-full sm:w-80">
+          <label for="ll-search" class="{outer_text}">Search species</label>
+          <input id="ll-search" type="search" placeholder="Common or scientific name"
+            class="ll-control w-full px-4 py-2.5 rounded-full border border-stone-200 text-stone-800 bg-white">
+        </div>
+        <div class="flex flex-wrap gap-2 justify-center items-center" role="group" aria-label="Filter by group">{''.join(btns)}</div>
+        <div class="flex flex-wrap gap-4 justify-center items-end w-full">
+          {select}
+          <div class="flex flex-col gap-1 items-center max-w-full">
+            <label for="ll-taxon-select" class="{outer_text}">Family within selected group</label>
+            <select id="ll-taxon-select" class="ll-select ll-control max-w-full px-3 py-2 rounded-full border border-stone-200 text-stone-600 bg-white disabled:opacity-50" disabled>
+              <option value="">Choose a taxon group first…</option>
+            </select>
+          </div>
+          <button id="ll-clear" type="button" class="ll-control px-4 py-2 rounded-full border border-stone-200 text-stone-800 bg-white">Clear filters</button>
+        </div>
+      </search>
       <div class="bg-white border border-stone-100 rounded-2xl p-5 md:p-7 shadow-sm max-h-[560px] overflow-y-auto">
         <table class="w-full text-[0.95rem]"><thead class="text-secondary text-xs uppercase tracking-wider border-b-2 border-stone-100">
           <tr><th class="text-right pb-2 pr-3 font-semibold">#</th><th class="text-left pb-2 font-semibold">Species</th><th class="text-left pb-2 font-semibold hidden md:table-cell">Group</th>
           <th class="text-right pb-2 font-semibold hidden sm:table-cell">Records</th><th class="text-right pb-2 pr-3 font-semibold">Record date</th><th class="text-right pb-2 font-semibold hidden md:table-cell">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
       </div>
-      <p id="ll-count" class="text-center {outer_text} text-sm mt-4">{total:,} species shown</p>
+      <p id="ll-count" role="status" aria-live="polite" aria-atomic="true" class="text-center {outer_text} text-sm mt-4">{total:,} species shown</p>
       <p class="text-center {outer_text} text-sm mt-3">Bird dates come from the eBird life list; repeat detections and last-seen dates are unavailable here. Other dates mark the earliest and latest iNaturalist records in this survey. Names link to supporting records where available.</p>
     </div>"""
 
@@ -2691,8 +2701,9 @@ LIFE_LIST_SCRIPT = """
       family:element.dataset.family||''
     }));
     const search=document.getElementById('ll-search'),count=document.getElementById('ll-count'),
-          sel=document.getElementById('ll-select'),taxonSel=document.getElementById('ll-taxon-select');
-    let group='all',family='';
+          sel=document.getElementById('ll-select'),taxonSel=document.getElementById('ll-taxon-select'),
+          clear=document.getElementById('ll-clear');
+    let group='all',family='',announcement;
     if(!search||!count||!taxonSel) return;
     function updateTaxa(){
       family='';taxonSel.value='';
@@ -2705,13 +2716,17 @@ LIFE_LIST_SCRIPT = """
         ? '<option value="">All '+group.toLowerCase()+' families</option>'+families.map(f=>'<option value="'+f.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+f.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</option>').join('')
         : '<option value="">No family filter available</option>';
     }
-    function apply(){const q=(search.value||'').toLowerCase(),visible=[];
+    function apply(announce=true){const q=(search.value||'').toLowerCase(),visible=[];
       rows.forEach(row=>{const okG=group==='all'||row.group===group,
         okF=!family||row.family===family,okQ=!q||row.name.includes(q);const show=okG&&okF&&okQ;
         row.element.style.display=show?'':'none';if(show)visible.push(row.element);});
       visible.forEach((row,index)=>{const number=row.querySelector('.ll-number');
         if(number)number.textContent=(visible.length-index).toLocaleString();});
-      count.textContent=visible.length+' species shown';}
+      const message=visible.length ? visible.length.toLocaleString()+' species shown'
+        : 'No species match these filters. Clear filters to show all species.';
+      clearTimeout(announcement);
+      if(announce)announcement=setTimeout(()=>{count.textContent=message;},250);
+      else if(count.textContent!==message)count.textContent=message;}
     function activate(g,fromSelect){group=g;
       document.querySelectorAll('.ll-filter').forEach(x=>{const on=(x.dataset.group===g);
         x.classList.toggle('ll-active',on);x.setAttribute('aria-pressed',on?'true':'false');});
@@ -2721,7 +2736,9 @@ LIFE_LIST_SCRIPT = """
       document.querySelectorAll('.ll-filter').forEach(x=>{x.classList.remove('ll-active');x.setAttribute('aria-pressed','false');});
       activate(sel.value,true);}});
     taxonSel.addEventListener('change',()=>{family=taxonSel.value;apply();});
-    search.addEventListener('input',apply);apply();
+    search.addEventListener('input',()=>apply());
+    if(clear)clear.addEventListener('click',()=>{search.value='';activate('all');search.focus();});
+    apply(false);
   })();
 """
 
