@@ -7,6 +7,10 @@ rather than in legends. plotly.js loads once from the page, so every fragment
 uses include_plotlyjs=False.
 """
 
+from html import escape
+import hashlib
+import json
+
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -86,6 +90,63 @@ def _html(fig, **cfg):
             .replace("Plotly.newPlot(", "window.__plotlyRender("))
 
 
+def _with_data(plot_html, title, summary, headers, rows, dark=False):
+    """Pair a plot with source-derived HTML that needs no chart runtime.
+
+    Keep alternatives outside the Plotly host: rendering or replacing that host
+    must never remove the summary or table. Native details supports touch and
+    keyboard activation even when scripts are unavailable.
+    """
+    rows = list(rows)
+    fingerprint = hashlib.sha256(json.dumps([title, summary, headers, rows], default=str).encode()).hexdigest()[:16]
+    caption_id = f"chart-data-{fingerprint}"
+    summary_id = f"{caption_id}-summary"
+    text = "text-secondary-inverse" if dark else "text-secondary"
+    surface = "bg-hollow-950" if dark else "bg-white"
+    border = "border-white/10" if dark else "border-stone-200"
+
+    def cell(value):
+        return escape("Not available" if pd.isna(value) else str(value))
+
+    table_rows = []
+    for row in rows:
+        cells = [
+            f'<th scope="row" class="sticky left-0 {surface} py-2 pr-4 text-left font-normal">{cell(row[0])}</th>'
+        ]
+        cells.extend(f'<td class="px-3 py-2 text-right tabular-nums">{cell(value)}</td>'
+                     for value in row[1:])
+        table_rows.append(f'<tr class="border-t {border}">{"".join(cells)}</tr>')
+    columns = "".join(
+        f'<th scope="col" class="px-3 py-2 text-left font-medium">{escape(header)}</th>'
+        for header in headers
+    )
+    return (
+        f'<div data-chart-figure data-chart-title="{escape(title, quote=True)}" class="min-w-0 {text}">'
+        f'<figure aria-labelledby="{summary_id}">'
+        f'<figcaption id="{summary_id}" class="mb-4 text-sm leading-relaxed text-pretty">{escape(summary)}</figcaption>'
+        f'{plot_html}</figure>'
+        f'<details data-chart-table data-chart-description="{escape(summary, quote=True)}" class="mt-4 border-t {border}">'
+        '<summary class="cursor-pointer py-3 text-sm font-medium">'
+        f'View {escape(title.lower())} data ({len(rows):,} rows)</summary>'
+        '<p class="mb-2 text-xs">Scroll the table to read all columns and rows.</p>'
+        f'<div tabindex="0" role="region" aria-labelledby="{caption_id}" '
+        'class="max-h-80 max-w-full overflow-auto">'
+        '<table class="w-full text-sm border-separate border-spacing-0">'
+        f'<caption id="{caption_id}" class="pb-3 text-left font-medium">{escape(title)}</caption>'
+        f'<thead class="sticky top-0 z-10 {surface}"><tr>{columns}</tr></thead>'
+        f'<tbody>{"".join(table_rows)}</tbody></table></div></details></div>'
+    )
+
+
+def _date(value):
+    return pd.Timestamp(value).strftime("%Y-%m-%d") if pd.notna(value) else None
+
+
+def _number(value):
+    """Keep integer counts compact without rounding fractional source values."""
+    return f"{value:g}" if pd.notna(value) else None
+
+
 # --- cumulative discovery (species accumulation, annotated) -----------------
 def discovery_curve(firsts):
     """Cumulative species over time as a filled area, with milestone callouts —
@@ -116,7 +177,13 @@ def discovery_curve(firsts):
         showarrow=False, xanchor="right", yanchor="bottom",
         font=dict(size=14, color=HOLLOW[0]),
     )
-    return _html(_style(fig, height=440))
+    return _with_data(
+        _html(_style(fig, height=440)), "Cumulative species discovery",
+        f"The discovery curve reaches {total:,} species by {_date(last['observed_on'])}. "
+        "Each step uses the earliest available record for a named taxon; identification revisions can change this history.",
+        ["First-record date", "Cumulative species"],
+        ((_date(r.observed_on), int(r.cumulative)) for r in firsts.itertuples()),
+    )
 
 
 # --- observations per day ---------------------------------------------------
@@ -132,7 +199,15 @@ def per_day(daily):
                     mode="lines", line=dict(color=HOLLOW[3], width=2.5),
                     hovertemplate="%{x|%b %e, %Y}<br>%{y:.1f} observations per day<extra></extra>",
                     name="Trailing 30-day reporting average")
-    return _html(_style(fig, height=340))
+    return _with_data(
+        _html(_style(fig, height=340)), "Daily observation reports",
+        f"{int(daily['observations'].sum()):,} observations across {len(daily):,} calendar days. "
+        "Bars show submitted records; the line is the trailing average over up to 30 calendar days. "
+        "Zero reports do not establish absence or survey effort.",
+        ["Date", "Observations", "Trailing daily average (up to 30 days)"],
+        ((_date(r.observed_on), int(r.observations), f"{r.rolling_30d:.1f}")
+         for r in daily.itertuples()),
+    )
 
 
 # --- species by taxonomic group (clean horizontal bars) ---------------------
@@ -153,7 +228,12 @@ def taxa_bar(life):
     ))
     fig.update_xaxes(showticklabels=False)
     fig.update_yaxes(showgrid=False)
-    return _html(_style(fig, height=max(260, 30 * len(counts))))
+    return _with_data(
+        _html(_style(fig, height=max(260, 30 * len(counts)))), "Species by taxonomic group",
+        f"{int(counts.sum()):,} species across {len(counts)} taxonomic groups. "
+        "Each bar counts distinct species recorded in that group.",
+        ["Taxonomic group", "Species"], ((label, int(count)) for label, count in counts.items()),
+    )
 
 
 # --- phenology heatmap ------------------------------------------------------
@@ -183,7 +263,15 @@ def phenology(matrix, dark=False, normalize=False):
     ))
     fig.update_yaxes(autorange="reversed", showgrid=False)
     fig.update_xaxes(side="top")
-    return _html(_style(fig, height=max(420, 19 * len(matrix)), dark=dark))
+    return _with_data(
+        _html(_style(fig, height=max(420, 19 * len(matrix)), dark=dark)), "Monthly species reports",
+        f"{int(matrix.fillna(0).to_numpy().sum()):,} observations for the {len(matrix)} species shown, grouped by calendar month across years. "
+        + ("Colors are scaled to each species' peak reporting month; the table gives raw observation counts. " if normalize else "The table gives raw observation counts. ")
+        + "A zero means no submitted record in that month, not confirmed absence.",
+        ["Species", *MONTHS],
+        ((label, *(int(value) if pd.notna(value) else None for value in row))
+         for label, row in matrix.iterrows()), dark=dark,
+    )
 
 
 # --- seasonal cascade (when each species appears) ---------------------------
@@ -226,7 +314,15 @@ def seasonal_cascade(agg, group_label="Birds", dark=False):
     fig.update_xaxes(tickvals=MONTH_STARTS, ticktext=MONTHS,
                      range=[1, 366], showgrid=True, gridcolor=c["grid"])
     fig.update_yaxes(showgrid=False, autorange="reversed")
-    return _html(_style(fig, height=max(360, 22 * len(agg)), dark=dark))
+    return _with_data(
+        _html(_style(fig, height=max(360, 22 * len(agg)), dark=dark)), "Seasonal reporting ranges",
+        f"Reporting dates for {len(agg)} species: earliest to latest record, middle half of records, and median. "
+        "Days use a shared leap-year calendar and describe submitted records, not the full flight or activity season.",
+        ["Species", "First day of year", "25th percentile day", "Median day", "75th percentile day", "Last day of year", "Dated records"],
+        ((r.label, *(_number(getattr(r, name)) for name in
+                    ("first_doy", "q1", "median_doy", "q3", "last_doy", "n")))
+         for r in agg.itertuples()), dark=dark,
+    )
 
 
 # --- uniqueness scatter -----------------------------------------------------
@@ -271,7 +367,16 @@ def uniqueness_scatter(stats):
         text="Observations in New York (log scale) →", font=dict(size=11, color=MUTED)))
     fig.update_yaxes(title=dict(
         text="Your observations here", font=dict(size=11, color=MUTED)))
-    return _html(_style(fig, height=460, showlegend=True))
+    return _with_data(
+        _html(_style(fig, height=460, showlegend=True)), "Property and New York records",
+        f"Record counts for {len(s)} species compare this property with New York. "
+        f"{int((s['state_obs_count'] <= 25).sum())} have at most 25 New York records in the available comparison. "
+        "The horizontal axis is logarithmic. These are reporting counts, not population estimates.",
+        ["Species", "New York observations", "Property observations", "County-first flag"],
+        ((r.label, _number(r.state_obs_count), _number(r.property_obs_count),
+          "Yes" if r.is_county_first == 1 else ("No" if r.is_county_first == 0 else None))
+         for r in s.itertuples()),
+    )
 
 
 # --- observer leaderboard ---------------------------------------------------
@@ -291,7 +396,16 @@ def leaderboard(board):
     ))
     fig.update_xaxes(showticklabels=False)
     fig.update_yaxes(showgrid=False)
-    return _html(_style(fig, height=max(320, 26 * len(b))))
+    shown = board.head(15)
+    return _with_data(
+        _html(_style(fig, height=max(320, 26 * len(b)))), "Observer contributions",
+        f"Showing {len(shown)} of {len(board)} observers, ranked by submitted observations. "
+        "Species recorded only by an observer are counted within this dataset; species totals overlap between observers.",
+        ["Observer", "Observations", "Species", "Species recorded only by this observer"],
+        ((r.display_name if pd.notna(r.display_name) else r.user_login,
+          int(r.observations), int(r.species), int(r.unique_species))
+         for r in shown.itertuples()),
+    )
 
 
 # --- map --------------------------------------------------------------------
@@ -359,7 +473,14 @@ def completeness_curve(effort, comp, dark=True):
                                 font=dict(size=11, color=c["muted"])))
     fig.update_yaxes(title=dict(text="Moth species",
                                 font=dict(size=11, color=c["muted"])))
-    return _html(_style(fig, height=400, dark=dark))
+    return _with_data(
+        _html(_style(fig, height=400, dark=dark)), "Moth inventory accumulation",
+        f"The recorded curve reaches {int(effort['cum_species'].max()):,} species over {int(xmax):,} observations. "
+        f"The Chao2 estimate is {est}" + (f", with a plotted 95% interval of {low}–{high}. " if high > low else ". ")
+        + "The table gives the recorded curve; the estimate is a model result, not an observed total.",
+        ["Cumulative observations", "Cumulative species"],
+        ((int(r.cum_obs), int(r.cum_species)) for r in effort.itertuples()), dark=dark,
+    )
 
 
 def family_breakdown(fam, dark=True):
@@ -382,7 +503,13 @@ def family_breakdown(fam, dark=True):
     fig.update_layout(barmode="overlay", bargap=0.35)
     fig.update_xaxes(title=dict(text="Species →", font=dict(size=11, color=c["muted"])))
     fig.update_yaxes(showgrid=False, tickfont=dict(size=11, color=c["ink"]))
-    return _html(_style(fig, height=max(380, 32 * len(f)), showlegend=True, dark=dark))
+    return _with_data(
+        _html(_style(fig, height=max(380, 32 * len(f)), showlegend=True, dark=dark)), "Moth family comparison",
+        f"{len(fam)} moth families compared: species recorded here and species known within 50 miles. "
+        "Regional records do not establish that every species occurs on this property.",
+        ["Family", "Species recorded here", "Species known within 50 miles"],
+        ((r.label, int(r.recorded), int(r.region_total)) for r in fam.itertuples()), dark=dark,
+    )
 
 
 def rank_abundance(counts, dark=True):
@@ -416,7 +543,12 @@ def rank_abundance(counts, dark=True):
                      font=dict(size=11, color=c["muted"])))
     fig.update_xaxes(title=dict(text="Species rank (most → least recorded)",
                      font=dict(size=11, color=c["muted"])))
-    return _html(_style(fig, height=360, dark=dark))
+    return _with_data(
+        _html(_style(fig, height=360, dark=dark)), "Species observation ranks",
+        f"{n} species ranked by observation count; {singletons} have one record and {doubletons} have two. "
+        "The vertical axis is logarithmic. Ranks describe reporting frequency, not population abundance.",
+        ["Species rank", "Observations"], enumerate(counts, start=1), dark=dark,
+    )
 
 
 def monthly_survey_bar(summary, dark=True):
@@ -485,7 +617,14 @@ def monthly_survey_bar(summary, dark=True):
         title=dict(text="Species →", font=dict(size=11, color=c["muted"]))
     )
     fig.update_yaxes(showgrid=False, tickfont=dict(size=12, color=c["ink"]))
-    return _html(_style(fig, height=420, showlegend=True, dark=dark))
+    return _with_data(
+        _html(_style(fig, height=420, showlegend=True, dark=dark)), "Monthly moth reports",
+        f"{sum(new_counts):,} first records across the {len(summary)} months shown. "
+        "Each row gives species recorded, species first recorded here, and dates with reports. "
+        "Species can appear in multiple months; dates use the overnight session date.",
+        ["Month", "Species recorded", "Species first recorded here", "Dates with moth reports"],
+        zip(labels, species_counts, new_counts, nights), dark=dark,
+    )
 
 
 def nightly_species_calendar(nightly, dark=True):

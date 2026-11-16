@@ -27,6 +27,7 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import analyze  # noqa: E402
+import chart_data  # noqa: E402
 import field_guide  # noqa: E402
 import inat_api  # noqa: E402
 import new_county_species  # noqa: E402
@@ -2990,10 +2991,16 @@ def _write_survey_pages(view_markup, public_summary, county_firsts, moth_species
     """Write one static document per configured route and return their digests."""
     digests = {}
     legacy_routes = _legacy_hash_routes(view_markup)
+    # This directory contains only generated chart table pages.
+    shutil.rmtree(PUBLIC_DIR / "chart-data", ignore_errors=True)
     for mode in VIEW_CONFIG:
         out = _view_output_path(mode)
         out.parent.mkdir(parents=True, exist_ok=True)
-        fragment = _view_fragment(view_markup, mode)
+        fragment = chart_data.publish_tables(
+            _view_fragment(view_markup, mode), PUBLIC_DIR, VIEW_CONFIG[mode]["route"],
+            "Overview" if mode == "all" else VIEW_CONFIG[mode]["label"],
+            stylesheet=f'/assets/survey.css?v={_asset_version("public/assets/survey.css")}',
+        )
         if mode != "all":
             fragment = re.sub(r'<h2([^>]*)>(.*?)</h2>', r'<h1\1>\2</h1>', fragment, count=1, flags=re.S)
         html = "".join((
@@ -3192,7 +3199,7 @@ def moth_view(df, stats):
             "survey protocol rather than weather acting alone.", dark=True)
         + chart_card(viz.monthly_survey_bar(msum_monthly),
                    note='Green: taxa recorded in that session month. Terracotta: first records. '
-                        'Faded months fall outside May–September. Hover for dates with moth records; these are not complete effort logs.',
+                        'Faded months fall outside May–September. Open the data table for dates with moth records; these are not complete effort logs.',
                    dark=True)
         + takeaway(best_roi_text, dark=True)
         + chart_card(viz.seasonal_cascade(seasonal, dark=True),
@@ -3200,7 +3207,7 @@ def moth_view(df, stats):
                      dark=True)
         + takeaway(season_shape_text, dark=True)
         + chart_card(viz.phenology(analyze.phenology(moth_sub), dark=True, normalize=True),
-                     note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Hover any cell for raw observation counts.",
+                     note="Each row is normalized to its own peak, so a species seen 4 times reads as vividly as one seen 400 times. Open the data table for raw observation counts.",
                      dark=True)
         + takeaway(
             "Read a row to compare the months represented in a taxon’s records. Read a column to see which "
@@ -3892,7 +3899,7 @@ def build():
         "phenology", "Phenology",
         'When Things <em class="text-hollow-600">Appear</em>',
         chart_card(viz.phenology(analyze.phenology(df, top=24), normalize=True),
-                   note="Each row is normalized to its own peak, so a species seen 5 times reads as vividly as one seen 500 times — rare species' patterns show up alongside common ones. Hover for raw counts.")
+                   note="Each row is normalized to its own peak, so a species seen 5 times reads as vividly as one seen 500 times — rare species' patterns show up alongside common ones. Open the data table for raw counts.")
         + takeaway(
             "Read across a row for the months represented in that taxon’s records. Each row is scaled to its "
             "own peak, so equal brightness does not mean equal numbers. Dates can span years and life stages; "
@@ -3903,10 +3910,10 @@ def build():
         'The <em class="text-hollow-600">Observers</em>',
         chart_card(viz.leaderboard(analyze.observer_leaderboard(df)))
         + takeaway(
-            "Every record is attributed. Hover any bar to see how many observations a person submitted — and "
+            "Every record is attributed. Open the data table to compare how many observations each person submitted and "
             "how many species only they have found here. Some of those species wouldn't be on the list without "
             "that one person."),
-        intro="The survey exists because people showed up and submitted what they found. Each bar is one person's contribution; hover to see how many species only they have found here.",
+        intro="The survey exists because people showed up and submitted what they found. Each bar is one person's contribution; the data table also shows species recorded only by each observer in this dataset.",
         tint="bg-stone-100"))
     parts.append(section(
         "map", "Where", 'On the <em class="text-hollow-600">Land</em>',
