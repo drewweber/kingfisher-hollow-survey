@@ -903,8 +903,8 @@ def life_list_body(life, dark=False):
     if rest:
         opts = "".join(f'<option value="{esc(g)}">{esc(g)} ({int(counts[g])})</option>'
                        for g in rest)
-        select = (f'<div class="flex flex-col gap-1 items-center"><label for="ll-select" class="{outer_text}">More groups</label>'
-                  f'<select id="ll-select" class="ll-select ll-control px-3 py-1.5 rounded-full '
+        select = (f'<div class="flex flex-col gap-1 items-center min-w-0 max-w-full"><label for="ll-select" class="{outer_text}">More groups</label>'
+                  f'<select id="ll-select" class="ll-select ll-control max-w-full px-3 py-1.5 rounded-full '
                   f'border border-stone-200 text-stone-600 bg-white">'
                   f'<option value="">Choose a group…</option>{opts}</select></div>')
     rows = []
