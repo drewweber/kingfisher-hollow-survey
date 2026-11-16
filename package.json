@@ -5,7 +5,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "build:css": "tailwindcss -i ./src/styles.css -o ./public/assets/survey.css --minify"
+    "build:css": "tailwindcss -i ./src/styles.css -o ./public/assets/survey.css --minify && node tests/verify_survey_styles.mjs"
   },
   "devDependencies": {
     "tailwindcss": "3.4.19"
