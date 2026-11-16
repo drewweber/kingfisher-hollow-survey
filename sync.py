@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import fetch  # noqa: E402
+import curated_observations  # noqa: E402
 import stats  # noqa: E402
 import weather  # noqa: E402
 from db import init_db  # noqa: E402
@@ -34,6 +35,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--property", action="store_true", help="sync property project")
+    ap.add_argument("--curated", action="store_true", help="refresh only confirmed property observation IDs")
     ap.add_argument("--county", action="store_true", help="sync Tioga County")
     ap.add_argument("--moths", action="store_true",
                     help="refresh moth roster")
@@ -66,7 +68,7 @@ def main():
                     help="daily refresh + slower regional/county reference pools")
     args = ap.parse_args()
 
-    flags = [args.property, args.county, args.moths, args.butterflies, args.odonates, args.mammals,
+    flags = [args.curated, args.property, args.county, args.moths, args.butterflies, args.odonates, args.mammals,
              args.plants, args.amphibians, args.reptiles, args.taxonomy, args.stats,
              args.weather, args.daily, args.reference, args.all]
     if not any(flags):
@@ -79,6 +81,8 @@ def main():
 
     if daily or args.property:
         timed("property", fetch.sync_property, incremental=args.daily and not args.all)
+    if daily or args.curated:
+        timed("confirmed-property", curated_observations.refresh)
     if daily or args.county:
         timed("county", fetch.sync_county)
     if reference or args.county:

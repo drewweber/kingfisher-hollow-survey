@@ -10,12 +10,16 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 import analyze
+import curated_observations
 import db
 import public_api
 
 
 class InventoryCountsTests(unittest.TestCase):
     def setUp(self):
+        curated_patch = patch.object(curated_observations, "records", return_value={})
+        curated_patch.start()
+        self.addCleanup(curated_patch.stop)
         self.conn = sqlite3.connect(':memory:')
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(db.SCHEMA)

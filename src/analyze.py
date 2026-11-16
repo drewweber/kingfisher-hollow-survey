@@ -10,6 +10,7 @@ from html.parser import HTMLParser
 import numpy as np
 import pandas as pd
 import requests
+import curated_observations
 
 from config import (
     DATA_DIR,
@@ -21,7 +22,8 @@ from config import (
     USER_AGENT,
 )
 from db import connect
-from inventory import normalize_species, species_taxonomy
+from inventory import (normalize_species, species_taxonomy, property_observations,
+                       property_roster)
 from target_policy import VETTED_REGIONAL_TARGET_NAMES
 
 
@@ -73,7 +75,7 @@ def load_property(species_only=True, canonical_species=True):
     Birds (Aves) are excluded entirely — they're tracked on eBird instead.
     """
     with connect() as conn:
-        df = pd.read_sql_query("SELECT * FROM property_obs", conn)
+        df = property_observations(conn)
         if species_only and canonical_species:
             df = normalize_species(df, conn)
     df = df[df["iconic_taxon"] != "Aves"].copy()
@@ -94,12 +96,16 @@ def species_taxon_ids():
 
 def load_stats():
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM species_stats", conn)
+        stats = pd.read_sql_query("SELECT * FROM species_stats", conn)
+        project_ids = {r[0] for r in conn.execute('SELECT DISTINCT taxon_id FROM property_obs')}
+    supplemental_only = {r['taxon_id'] for r in curated_observations.records().values()
+                         if r is not None} - project_ids
+    return stats[~stats['taxon_id'].isin(supplemental_only)]
 
 
 def _load_table(name):
     with connect() as conn:
-        return pd.read_sql_query(f"SELECT * FROM {name}", conn)
+        return property_roster(conn, name)
 
 
 # --- group labels (readable higher taxon) -----------------------------------
@@ -140,8 +146,7 @@ def _group_inputs():
     butterfly_ids = set(bf["taxon_id"].dropna().astype(int)) if not bf.empty else set()
     with connect() as conn:
         meta = species_taxonomy(conn)
-        raw = pd.read_sql_query(
-            "SELECT DISTINCT taxon_id, taxon_name, common_name, rank FROM property_obs", conn)
+        raw = property_observations(conn)[['taxon_id', 'taxon_name', 'common_name', 'rank']].drop_duplicates()
         resolved = normalize_species(raw, conn)
     # Evidence views retain original IDs; their known descendants still belong
     # to the same group as the resolved species used by inventory views.
@@ -319,6 +324,8 @@ def _label(row):
 # --- life list --------------------------------------------------------------
 def _inventory_sources(df):
     """Attach the source of a raw property frame, or keep combined provenance."""
+    if 'property_provenance' not in df:
+        df = df.assign(property_provenance='')
     if "source" in df:
         return df
     return df.assign(
@@ -346,7 +353,7 @@ def life_list(df):
     ).reset_index()
     source_rows = sub.sort_values("observed_on", kind="stable").drop_duplicates("taxon_id")
     g = g.merge(
-        source_rows[["taxon_id", "source", "source_url", "repeat_history_known"]],
+        source_rows[["taxon_id", "source", "source_url", "repeat_history_known", "property_provenance"]],
         on="taxon_id",
         how="left",
     )
@@ -563,7 +570,7 @@ def _region_gap(taxa, region_table, n=30, target_months=None,
 # --- mammals -----------------------------------------------------------------
 def load_mammals():
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM mammal_taxa", conn)
+        return property_roster(conn, "mammal_taxa")
 
 
 def mammal_summary(df, mammals):
@@ -622,7 +629,7 @@ _MICROSCOPY_GENERA = frozenset({
 
 def load_plants():
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM plant_taxa", conn)
+        return property_roster(conn, "plant_taxa")
 
 
 def plant_summary(df, plants):
@@ -669,7 +676,7 @@ def plant_gap(plants, n=50, target_months=None):
 # --- amphibians --------------------------------------------------------------
 def load_amphibians():
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM amphibian_taxa", conn)
+        return property_roster(conn, "amphibian_taxa")
 
 
 def amphibian_summary(df, amphibians):
@@ -716,7 +723,7 @@ def amphibian_gap(amphibians, n=30):
 # --- butterflies -------------------------------------------------------------
 def load_butterflies():
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM butterfly_taxa", conn)
+        return property_roster(conn, "butterfly_taxa")
 
 
 def butterfly_summary(df, butterflies):
@@ -755,7 +762,7 @@ def butterfly_gap(butterflies, n=30):
 # --- dragonflies and damselflies --------------------------------------------
 def load_odonates():
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM odonate_taxa", conn)
+        return property_roster(conn, "odonate_taxa")
 
 
 def odonate_summary(df, odonates):
@@ -1194,7 +1201,7 @@ def bird_gap_from_inat(birds, n=40):
 # --- reptiles ----------------------------------------------------------------
 def load_reptiles():
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM reptile_taxa", conn)
+        return property_roster(conn, "reptile_taxa")
 
 
 def reptile_summary(df, reptiles):
@@ -1242,7 +1249,7 @@ def reptile_gap(reptiles, n=30):
 def load_moths():
     """Moth roster (Lepidoptera minus butterflies) with representative photos."""
     with connect() as conn:
-        return pd.read_sql_query("SELECT * FROM moth_taxa", conn)
+        return property_roster(conn, "moth_taxa")
 
 
 def moth_summary(df, moths):

@@ -7,6 +7,7 @@ against known species; unresolved identities and hybrids remain unchanged.
 """
 
 import pandas as pd
+import curated_observations
 
 
 INFRASPECIFIC_RANKS = frozenset({
@@ -16,6 +17,72 @@ PROPERTY_ROSTERS = (
     'moth_taxa', 'butterfly_taxa', 'odonate_taxa', 'mammal_taxa',
     'plant_taxa', 'amphibian_taxa', 'reptile_taxa',
 )
+
+ROSTER_ANCESTORS = {
+    'moth_taxa': 47157, 'butterfly_taxa': 47224, 'odonate_taxa': 47792,
+    'mammal_taxa': 40151, 'plant_taxa': 47126,
+    'amphibian_taxa': 20978, 'reptile_taxa': 26036,
+}
+
+
+def property_observations(conn):
+    """One row per source observation, with explicit property provenance.
+
+    The curated snapshot takes precedence for approved IDs, even if a later
+    project refresh starts returning them. This strips coordinates from those
+    rows and respects a newer missing/coarser source status without duplication.
+    """
+    rows = pd.read_sql_query('SELECT * FROM property_obs', conn)
+    rows = rows.assign(source='iNaturalist', source_url=rows.get('url', pd.NA),
+                       repeat_history_known=True, property_provenance='Project search')
+    curated = curated_observations.records()
+    if 'id' in rows:
+        rows = rows[~rows['id'].isin(curated)]
+    # Confirmation is evidence of wild property occurrence. Keep a captive
+    # correction in the source cache, but withdraw it from all inventory views.
+    additions = [row for row in curated.values() if row is not None and not row.get('captive')]
+    if additions:
+        extra = pd.DataFrame(additions)
+        rows = pd.concat([rows, extra], ignore_index=True, sort=False)
+    return rows
+
+
+def property_roster(conn, table):
+    """Add confirmed species to a property roster, retaining regional pools."""
+    rows = pd.read_sql_query(f'SELECT * FROM {table}', conn)
+    if table not in ROSTER_ANCESTORS:
+        return rows
+    reviewed = curated_observations.records()
+    if not reviewed:
+        return rows
+    source_rows = [row for row in reviewed.values() if row is not None]
+    canonical = normalize_species(pd.DataFrame(source_rows), conn)
+    curated = [row for row in canonical.to_dict('records')
+               if row['rank'] == 'species'
+               and not row.get('captive')
+               and ROSTER_ANCESTORS[table] in (row.get('ancestor_ids') or [])
+               and not (table == 'moth_taxa' and 47224 in (row.get('ancestor_ids') or []))]
+    project_rows = normalize_species(pd.read_sql_query('SELECT * FROM property_obs', conn), conn)
+    project_records = dict(zip(project_rows['id'], project_rows['taxon_id']))
+    # A changed/deleted reviewed source must not survive in an older roster.
+    eligible = {row['id']: row['taxon_id'] for row in curated}
+    if 'obs_count' in rows:
+        for oid, old_tid in project_records.items():
+            if oid in reviewed and eligible.get(oid) != old_tid:
+                rows.loc[rows['taxon_id'] == old_tid, 'obs_count'] -= 1
+        rows = rows[rows['obs_count'].isna() | rows['obs_count'].gt(0)].copy()
+    for tid in {r['taxon_id'] for r in curated}:
+        observations = [r for r in curated if r['taxon_id'] == tid]
+        source = observations[0]
+        match = rows['taxon_id'] == tid
+        if match.any():
+            if 'obs_count' in rows:
+                rows.loc[match, 'obs_count'] += sum(project_records.get(r['id']) != tid for r in observations)
+        else:
+            row = {key: source.get(key) for key in rows.columns}
+            row['obs_count'] = len(observations)
+            rows = pd.concat([rows, pd.DataFrame([row])], ignore_index=True)
+    return rows
 
 
 def normalize_species(observations, conn):
@@ -35,6 +102,14 @@ def normalize_species(observations, conn):
 
     columns = ['taxon_id', 'taxon_name', 'common_name']
     known = [out.loc[out['rank'] == 'species'].reindex(columns=columns)]
+    # A supplemental infraspecies may have no parent in the project roster.
+    # Use only the species ancestor supplied by its public taxon record.
+    parents = [{'taxon_id': row.get('species_taxon_id'),
+                'taxon_name': row.get('species_taxon_name'),
+                'common_name': row.get('species_common_name')}
+               for row in curated_observations.records().values() if row is not None]
+    if parents:
+        known.append(pd.DataFrame(parents))
     tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     for table in PROPERTY_ROSTERS:
         if table in tables:
@@ -71,8 +146,18 @@ def species_taxonomy(conn):
     a cached parent or invent a value if child cache entries disagree.
     """
     meta = pd.read_sql_query('SELECT * FROM taxon_meta', conn)
-    raw = pd.read_sql_query(
-        'SELECT DISTINCT taxon_id, taxon_name, common_name, rank FROM property_obs', conn)
+    for row in curated_observations.records().values():
+        if row is None:
+            continue
+        match = meta['taxon_id'] == row['taxon_id']
+        if match.any():
+            for column in meta.columns:
+                if row.get(column) is not None:
+                    meta.loc[match, column] = row[column]
+        else:
+            meta = pd.concat([meta, pd.DataFrame([
+                {key: row.get(key) for key in meta.columns}])], ignore_index=True)
+    raw = property_observations(conn)[['taxon_id', 'taxon_name', 'common_name', 'rank']].drop_duplicates()
     resolved = normalize_species(raw, conn)
     aliases = pd.DataFrame({'original': raw['taxon_id'], 'parent': resolved['taxon_id']})
     aliases = aliases[aliases.original != aliases.parent].dropna().drop_duplicates()

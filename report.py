@@ -886,7 +886,7 @@ def life_list_csv(life):
     writer = csv.writer(output)
     writer.writerow(["List number", "Name", "Scientific name", "Group", "Family",
                      "Records", "Record date", "Last seen", "Source", "Source URL",
-                     "Repeat history known", "Taxon ID"])
+                     "Repeat history known", "Taxon ID", "Property evidence"])
     ordered = life.sort_values(["first_seen", "first_observed_at", "taxon_id"],
                                ascending=[False, False, False], kind="stable")
 
@@ -910,7 +910,8 @@ def life_list_csv(life):
                          text(row.get("group")), text(row.get("family_name")),
                          int(row["observations"]) if known else "",
                          date_value(row["first_seen"]), date_value(row["last_seen"]) if known else "",
-                         text(row.get("source", "iNaturalist")), source_url, known, taxon_id])
+                         text(row.get("source", "iNaturalist")), source_url, known, taxon_id,
+                         text(row.get("property_provenance", ""))])
     return output.getvalue()
 
 

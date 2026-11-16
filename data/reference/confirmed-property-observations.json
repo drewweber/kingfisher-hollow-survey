@@ -1,0 +1,50 @@
+{
+  "observations": [
+    {
+      "observation_id": 371959757,
+      "confirmed_by": "drewweber",
+      "confirmed_on": "2026-11-15",
+      "basis": "Property owner explicitly confirmed this record belongs to Kingfisher Hollow. Public project search omits this taxon-obscured observation.",
+      "source_checked_at": "2026-11-16T03:35:12.898036+00:00",
+      "snapshot": {
+        "id": 371959757,
+        "observed_on": "2026-06-15",
+        "observed_at": "2026-06-15T08:24:55-04:00",
+        "created_at": "2026-06-15T10:13:32-04:00",
+        "source_updated_at": "2026-11-15T22:31:51-05:00",
+        "taxon_id": 39865,
+        "taxon_name": "Glyptemys insculpta",
+        "common_name": "Wood Turtle",
+        "iconic_taxon": "Reptilia",
+        "rank": "species",
+        "quality_grade": "research",
+        "user_login": "drewweber",
+        "captive": false,
+        "taxon_native": true,
+        "taxon_introduced": false,
+        "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/679646308/medium.jpg",
+        "photo_attribution": "(c) Drew Weber, some rights reserved (CC BY-NC)",
+        "photo_license": "cc-by-nc",
+        "ancestor_ids": [
+          48460,
+          1,
+          2,
+          355675,
+          26036,
+          39532,
+          39760,
+          797516,
+          39863,
+          39865
+        ],
+        "order_name": "Testudines",
+        "order_common": "Turtles and Tortoises",
+        "family_name": "Emydidae",
+        "family_common": "Pond and Box Turtles",
+        "species_taxon_id": 39865,
+        "species_taxon_name": "Glyptemys insculpta",
+        "species_common_name": "Wood Turtle"
+      }
+    }
+  ]
+}

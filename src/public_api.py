@@ -11,7 +11,7 @@ import pandas as pd
 import analyze
 from config import PUBLIC_DIR, SPECIES_RANKS
 from db import connect
-from inventory import normalize_species
+from inventory import normalize_species, property_observations, property_roster, species_taxonomy
 
 
 API_DATASET = "kingfisher-hollow-moths"
@@ -19,22 +19,6 @@ API_SCHEMA_VERSION = 1
 LOCAL_TIMEZONE = "America/New_York"
 SNAPSHOT_PATH = PUBLIC_DIR / "_api-data" / "moths.json"
 SUMMARY_PATH = PUBLIC_DIR / "_api-data" / "summary.json"
-
-_MOTH_OBSERVATIONS_SQL = """
-SELECT
-    p.id AS observation_id,
-    p.taxon_id,
-    p.taxon_name AS scientific_name,
-    p.common_name,
-    COALESCE(t.order_name, 'Lepidoptera') AS order_name,
-    t.family_name AS family,
-    p.rank,
-    p.observed_at
-FROM property_obs AS p
-LEFT JOIN taxon_meta AS t ON t.taxon_id = p.taxon_id
-ORDER BY p.observed_at DESC, p.id DESC
-"""
-
 
 def _timestamp(value=None):
     if value is not None:
@@ -83,23 +67,19 @@ def _bird_species_keys(birds):
 
 def _roster_taxa(conn, table_name):
     """Return the distinct taxon IDs in one curated property roster."""
-    rows = conn.execute(
-        f"SELECT DISTINCT taxon_id FROM {table_name} WHERE taxon_id IS NOT NULL"
-    ).fetchall()
-    return {int(row["taxon_id"]) for row in rows}
+    rows = property_roster(conn, table_name)
+    return set(rows['taxon_id'].dropna().astype(int))
 
 
 def summary_from_connection(conn, birds=None, updated_at=None):
     """Build the combined biodiversity summary using the report's inclusion rules."""
     birds = analyze.load_birds() if birds is None else birds
-    rank_placeholders = ",".join("?" for _rank in SPECIES_RANKS)
-    property_rows = pd.read_sql_query(
-        "SELECT * FROM property_obs "
-        "WHERE taxon_id IS NOT NULL "
-        "AND (iconic_taxon IS NULL OR iconic_taxon != 'Aves') "
-        f"AND rank IN ({rank_placeholders})",
-        conn, params=tuple(SPECIES_RANKS),
-    )
+    property_rows = property_observations(conn)
+    property_rows = property_rows[
+        property_rows['taxon_id'].notna()
+        & property_rows['iconic_taxon'].ne('Aves')
+        & property_rows['rank'].isin(SPECIES_RANKS)
+    ]
     property_rows = normalize_species(property_rows, conn)
     property_taxa = set(property_rows["taxon_id"].dropna().astype(int))
     moth_taxa = _roster_taxa(conn, "moth_taxa")
@@ -162,9 +142,13 @@ def snapshot_from_connection(conn, generated_at=None):
     observations = []
     seen_ids = set()
 
-    rows = pd.read_sql_query(_MOTH_OBSERVATIONS_SQL, conn).rename(
-        columns={'scientific_name': 'taxon_name'}
-    )
+    rows = property_observations(conn)
+    # The API uses exactly the same observations and family metadata as inventory.
+    meta = species_taxonomy(conn).reindex(columns=['taxon_id', 'order_name', 'family_name'])
+    rows = rows.drop(columns=['order_name', 'family_name'], errors='ignore').merge(meta, on='taxon_id', how='left')
+    rows = rows.rename(columns={'id': 'observation_id', 'family_name': 'family'})
+    rows['order_name'] = rows['order_name'].fillna('Lepidoptera')
+    rows = rows.sort_values(['observed_at', 'observation_id'], ascending=False)
     rows = normalize_species(rows, conn)
     rows = rows[rows['taxon_id'].isin(_roster_taxa(conn, 'moth_taxa'))]
     rows = rows.rename(columns={'taxon_name': 'scientific_name'})

@@ -2,6 +2,7 @@ import sqlite3
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import pandas as pd
@@ -11,10 +12,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 import public_api  # noqa: E402
+import curated_observations
 
 
 class PublicApiSnapshotTests(unittest.TestCase):
     def setUp(self):
+        curated_patch = patch.object(curated_observations, "records", return_value={})
+        curated_patch.start()
+        self.addCleanup(curated_patch.stop)
         self.conn = sqlite3.connect(":memory:")
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(
@@ -156,6 +161,9 @@ class PublicApiSnapshotTests(unittest.TestCase):
 
 class PublicApiSummaryTests(unittest.TestCase):
     def setUp(self):
+        curated_patch = patch.object(curated_observations, "records", return_value={})
+        curated_patch.start()
+        self.addCleanup(curated_patch.stop)
         self.conn = sqlite3.connect(":memory:")
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(
