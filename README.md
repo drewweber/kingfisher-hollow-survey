@@ -55,6 +55,43 @@ that were newly added to the project or changed below the current max ID.
 
 Granular commands: `sync.py --property`, `--county`, `--stats`.
 
+### Confirmed property observations omitted by iNaturalist project searches
+
+Small-place searches can omit taxon-obscured observations. The reviewed allowlist
+in `data/reference/confirmed-property-observations.json` starts with the
+owner-confirmed Wood Turtle observation 371959757. It supplements the inventory
+without changing iNaturalist privacy settings, geographic boundaries, or the
+project observation database. Each observation is counted once even if the
+project later returns it. Its species appears in the recorded roster and is
+removed from that group's gap list. CSV exports identify the property evidence;
+the original iNaturalist observation remains the source link.
+
+To add another record, first obtain explicit property confirmation; add its
+observation ID, confirmer, local confirmation date, and reason to the allowlist.
+Fetch that public observation and its taxon through `inat_api.fetch_observations`
+and `inat_api.fetch_taxa`, then use `curated_observations.sanitize(observation,
+taxon)` for the checked-in `snapshot` and record `source_checked_at` in UTC.
+Review the diff and run `python -m unittest discover -s tests`. Never paste an
+entire API response: the snapshot deliberately omits coordinates, descriptions,
+place names, comments, and all private fields. Only independently confirmed
+wild property occurrences belong in this list; birds remain eBird-sourced.
+
+`python sync.py --curated` refreshes only the listed IDs, sequentially using the
+existing paced API client. Daily sync includes this step. It writes sanitized
+snapshots under `data/cache`; report builds need no network to load them and can
+fall back to the checked-in reviewed snapshot. A newer explicit missing-record
+status or corrected identity takes precedence over the older snapshot; captive
+corrections withdraw the supplemental record. A newer checked-in source review
+takes precedence over an older restored cache. Network errors stop the refresh
+without replacing the last known status.
+
+Removing an allowlist entry removes its supplement. Independently sourced
+project observations and rosters remain authoritative: withdrawing one confirmed
+observation does not delete another observation of the same species. Project
+rosters may have their own refresh age. Supplemental records do not create
+county-first or rarity estimates; those still require the separate comparison
+pipeline. Obscured records never contribute map coordinates through this path.
+
 The Dragonflies & Damselflies view uses a dedicated Odonata property roster and
 an 80 km regional comparison pool. Refresh both directly with
 `sync.py --odonates`. The compact regional roster is also refreshed during the
