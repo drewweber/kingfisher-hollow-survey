@@ -4085,10 +4085,10 @@ def build():
         'Activity &amp; <em class="text-hollow-600">Taxa</em>',
         two_up
         + takeaway(
-            "A tall bar means more records carry that observation date; they may have been uploaded later. Lighting, field walks, cameras, "
+            "A higher line means more records per day in the trailing 30-day window; they may have been uploaded later. Lighting, field walks, cameras, "
             "and identification effort each shape this record. Comparing seasons or groups fairly will need "
             "visit duration, method, and visits with no detections as well as the observations shown here.",),
-        intro="Daily iNaturalist reporting volume and the combined species inventory. A day without a submitted record does not establish whether anyone surveyed.",
+        intro="Compare iNaturalist reporting seasons on a fixed January–December calendar, alongside the combined species inventory. A day without a submitted record does not establish whether anyone surveyed.",
         tint="bg-stone-100"))
     parts.append(section(
         "phenology", "Phenology",

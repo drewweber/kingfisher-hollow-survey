@@ -208,22 +208,52 @@ def discovery_curve(firsts):
 
 # --- observations per day ---------------------------------------------------
 def per_day(daily):
+    """Compare reporting seasons on a fixed calendar, retaining real dates.
+
+    Rolling averages are calculated on the continuous record in analyze, before
+    splitting into years. A leap reference year aligns month/day across years
+    without shifting March onward or inventing a February 29 in non-leap years.
+    """
     if daily.empty:
         return "<p class='chart-empty'>No data yet.</p>"
+    daily = daily.sort_values("observed_on")
     fig = go.Figure()
-    fig.add_bar(x=daily["observed_on"], y=daily["observations"],
-                marker_color="rgba(94,171,141,0.45)",
-                hovertemplate="%{x|%b %e, %Y}<br>%{y} observations recorded<extra></extra>",
-                name="Observations")
-    fig.add_scatter(x=daily["observed_on"], y=daily["rolling_30d"],
-                    mode="lines", line=dict(color=HOLLOW[3], width=2.5),
-                    hovertemplate="%{x|%b %e, %Y}<br>%{y:.1f} observations per day<extra></extra>",
-                    name="Trailing 30-day reporting average")
+    spans = []
+    styles = [(HOLLOW[0], "solid"), (ACCENT_TEXT, "dash"),
+              (MUTED, "dot"), (HOLLOW[3], "dashdot")]
+    years = list(daily.groupby(daily["observed_on"].dt.year))
+    for index, (year, records) in enumerate(years):
+        start, end = records["observed_on"].iloc[[0, -1]]
+        partial = start > pd.Timestamp(year=year, month=1, day=1) or end < pd.Timestamp(year=year, month=12, day=31)
+        label = f"{year}" + (" (partial)" if partial else "")
+        spans.append(f"{label}: {start:%b %d}–{end:%b %d}")
+        color, dash = styles[(len(years) - 1 - index) % len(styles)]
+        fig.add_scatter(
+            x=[date.replace(year=2000).day_of_year for date in records["observed_on"]],
+            y=records["rolling_30d"],
+            mode="lines" if len(records) > 1 else "markers",
+            line=dict(color=color, width=2.5, dash=dash),
+            marker=dict(color=color, size=7),
+            connectgaps=False,
+            customdata=[[_date(r.observed_on), int(r.observations)]
+                        for r in records.itertuples()],
+            hovertemplate=("%{customdata[0]}<br>%{customdata[1]} records that day"
+                           "<br>%{y:.1f} records/day, trailing average<extra>%{fullData.name}</extra>"),
+            name=label,
+        )
+    _style(fig, height=360, showlegend=True)
+    fig.update_xaxes(range=[1, 366], fixedrange=True, tickmode="array",
+                     tickvals=MONTH_STARTS, ticktext=MONTHS)
+    fig.update_yaxes(title_text="Records / day", rangemode="tozero", fixedrange=True)
+    fig.update_layout(dragmode=False, legend=dict(itemclick=False, itemdoubleclick=False))
     return _with_data(
-        _html(_style(fig, height=340)), "Daily observation reports",
+        _html(fig), "Daily observation reports by year",
         f"{int(daily['observations'].sum()):,} observations across {len(daily):,} calendar days. "
-        "Bars show submitted records; the line is the trailing average over up to 30 calendar days. "
-        "Zero reports do not establish absence or survey effort.",
+        "Lines compare the trailing 30-day average of submitted records by observation date on a January–December calendar. "
+        + "; ".join(spans) + ". "
+        "Dates outside the available record span are left blank. Within that span, zero means no submitted records, "
+        "not confirmed absence or survey effort. Averages include preceding December days when available; "
+        "the first 29 days of the record use the available days only. Daily counts are in the data table.",
         ["Date", "Observations", "Trailing daily average (up to 30 days)"],
         ((_date(r.observed_on), int(r.observations), f"{r.rolling_30d:.1f}")
          for r in daily.itertuples()),
