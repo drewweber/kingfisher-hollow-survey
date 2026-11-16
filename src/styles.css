@@ -330,6 +330,7 @@
   .ll-select { cursor: pointer; }
   .ll-control { min-height: 48px; font-size: 1rem; }
   .ll-controls :is(input, select, button):focus-visible,
+  #ll-pagination button:focus-visible,
   .ll-table-region:focus-visible,
   .ll-mobile-details summary:focus-visible {
     outline: 3px solid #265d4b;

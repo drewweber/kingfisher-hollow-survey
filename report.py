@@ -11,6 +11,8 @@ Deploy: changes to this file pushed to main trigger .github/workflows/update.yml
 (sync + build + Cloudflare Pages deploy). Generated public/ output is
 gitignored and built by CI — never deploy it by hand."""
 
+import csv
+import io
 import subprocess
 import sys
 import hashlib
@@ -873,11 +875,50 @@ def rarest_body(rare):
             f'rounded-2xl p-6 md:p-8 shadow-sm">{"".join(rows)}</div>')
 
 
+def inventory_csv_filename(content):
+    return "inventory-" + hashlib.sha256(content.encode("utf-8")).hexdigest()[:12] + ".csv"
+
+
+def life_list_csv(life):
+    """Complete inventory, independent of client-side filters and pagination."""
+    output = io.StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(["List number", "Name", "Scientific name", "Group", "Family",
+                     "Records", "Record date", "Last seen", "Source", "Source URL",
+                     "Repeat history known", "Taxon ID"])
+    ordered = life.sort_values(["first_seen", "first_observed_at", "taxon_id"],
+                               ascending=[False, False, False], kind="stable")
+
+    def text(value):
+        value = str(sval(value))
+        # CSV quoting protects delimiters; an apostrophe also prevents spreadsheet
+        # formula execution for externally supplied names beginning with =,+,-,@.
+        return "'" + value if value.lstrip().startswith(("=", "+", "-", "@")) or value.startswith(("\t", "\r")) else value
+
+    def date_value(value):
+        return fdate(value, "%Y-%m-%d")
+
+    for index, (_, row) in enumerate(ordered.iterrows()):
+        known = bool(row.get("repeat_history_known", True))
+        taxon_id = int(row["taxon_id"]) if sval(row["taxon_id"]) != "" else ""
+        source_url = sval(row.get("source_url"))
+        if not isinstance(source_url, str) or not source_url.startswith("https://"):
+            source_url = (f"https://www.inaturalist.org/taxa/{taxon_id}"
+                          if taxon_id and taxon_id > 0 and row.get("source", "iNaturalist") == "iNaturalist" else "")
+        writer.writerow([len(ordered) - index, text(row["label"]), text(row.get("taxon_name")),
+                         text(row.get("group")), text(row.get("family_name")),
+                         int(row["observations"]) if known else "",
+                         date_value(row["first_seen"]), date_value(row["last_seen"]) if known else "",
+                         text(row.get("source", "iNaturalist")), source_url, known, taxon_id])
+    return output.getvalue()
+
+
 # ── life list (searchable / filterable) ──────────────────────────────────────
 def life_list_body(life, dark=False):
     outer_text = "text-secondary-inverse" if dark else "text-secondary"
     if life.empty:
         return f'<p class="text-center {outer_text}">No species yet.</p>'
+    csv_filename = inventory_csv_filename(life_list_csv(life))
     # A life list is a chronology, not a taxonomic inventory: the number is
     # fixed for a species even when the visible table is narrowed by a filter.
     life = life.sort_values(
@@ -960,7 +1001,8 @@ def life_list_body(life, dark=False):
           <button id="ll-clear" type="button" class="ll-control px-4 py-2 rounded-full border border-stone-200 text-stone-800 bg-white">Clear filters</button>
         </div>
       </search>
-      <div class="ll-table-region bg-white border border-stone-100 rounded-2xl shadow-sm" tabindex="0" role="region" aria-label="Life list records">
+      <p class="text-center {outer_text} text-sm mb-3">Search covers the complete inventory. <a href="/life-list/{csv_filename}" download class="underline">Download complete inventory (CSV)</a>.</p>
+      <div id="ll-table-region" class="ll-table-region bg-white border border-stone-100 rounded-2xl shadow-sm" tabindex="0" role="region" aria-label="Life list records">
         <table class="ll-table w-full text-[0.95rem]">
           <caption class="sr-only">Species inventory and available record history</caption>
           <thead class="text-secondary text-xs uppercase tracking-wider">
@@ -968,6 +1010,13 @@ def life_list_body(life, dark=False):
           <th scope="col" class="ll-records-heading text-right pb-2 font-semibold">Records</th><th scope="col" class="ll-added-heading text-right pb-2 pr-3 font-semibold">Record date</th><th scope="col" class="ll-last-seen-heading text-right pb-2 font-semibold">Last seen</th></tr>
         </thead><tbody id="ll-body">{''.join(rows)}</tbody></table>
       </div>
+      <nav id="ll-pagination" aria-label="Inventory pages" hidden>
+        <div class="flex flex-wrap gap-3 justify-center items-center mt-4">
+          <button id="ll-previous" type="button" class="ll-control px-4 py-2 rounded-full border border-stone-200 text-stone-800 bg-white" aria-controls="ll-body">Previous page</button>
+          <span id="ll-page-label" class="{outer_text}"></span>
+          <button id="ll-next" type="button" class="ll-control px-4 py-2 rounded-full border border-stone-200 text-stone-800 bg-white" aria-controls="ll-body">Next page</button>
+        </div>
+      </nav>
       <p id="ll-count" role="status" aria-live="polite" aria-atomic="true" class="text-center {outer_text} text-sm mt-4">{total:,} species shown</p>
       <p class="text-center {outer_text} text-sm mt-3">Bird dates come from the eBird life list; repeat detections and last-seen dates are unavailable here. Other dates mark the earliest and latest iNaturalist records in this survey. Names link to supporting records where available.</p>
     </div>"""
@@ -2687,17 +2736,22 @@ LIFE_LIST_SCRIPT = """
     }
     const rows=[...document.querySelectorAll('.ll-row')].map(element=>({
       element,
+      number:element.querySelector('.ll-number'),
       name:searchName(element),
       group:(element.cells[2]?.textContent||'').trim(),
       family:element.dataset.family||''
     }));
     const search=document.getElementById('ll-search'),count=document.getElementById('ll-count'),
           sel=document.getElementById('ll-select'),taxonSel=document.getElementById('ll-taxon-select'),
-          clear=document.getElementById('ll-clear');
+          clear=document.getElementById('ll-clear'),body=document.getElementById('ll-body'),
+          pagination=document.getElementById('ll-pagination'),previous=document.getElementById('ll-previous'),
+          next=document.getElementById('ll-next'),pageLabel=document.getElementById('ll-page-label'),
+          region=document.getElementById('ll-table-region');
     const buttons=[...document.querySelectorAll('.ll-filter')];
     const groups=new Set(rows.map(row=>row.group));
-    let group='all',family='',announcement,editingQuery=false;
-    if(!search||!count||!taxonSel) return;
+    const pageSize=100;
+    let group='all',family='',announcement,editingQuery=false,page=1,mounted=rows;
+    if(!search||!count||!taxonSel||!body||!pagination||!previous||!next||!pageLabel) return;
     function updateTaxa(wanted=''){
       family='';taxonSel.value='';
       if(group==='all'){
@@ -2718,7 +2772,7 @@ LIFE_LIST_SCRIPT = """
     }
     function writeURL(method){
       const url=new URL(window.location.href);
-      [['q',search.value],['group',group==='all'?'':group],['family',family]].forEach(([key,value])=>{
+      [['q',search.value],['group',group==='all'?'':group],['family',family],['page',page>1?String(page):'']].forEach(([key,value])=>{
         if(value)url.searchParams.set(key,value);else url.searchParams.delete(key);
       });
       if(url.href!==window.location.href){
@@ -2732,31 +2786,58 @@ LIFE_LIST_SCRIPT = """
       search.value=params.get('q')||'';
       group=groups.has(wantedGroup)?wantedGroup:'all';
       syncControls(params.get('family')||'');
+      const wantedPage=Number(params.get('page'));
+      page=Number.isSafeInteger(wantedPage)&&wantedPage>0?wantedPage:1;
+      apply(announce);
       // Normalize stale/invalid filters without adding a navigation entry.
-      writeURL('replaceState');apply(announce);
+      writeURL('replaceState');
     }
-    function apply(announce=true){const q=(search.value||'').toLowerCase(),visible=[];
-      rows.forEach(row=>{const okG=group==='all'||row.group===group,
-        okF=!family||row.family===family,okQ=!q||row.name.includes(q);const show=okG&&okF&&okQ;
-        row.element.style.display=show?'':'none';if(show)visible.push(row.element);});
-      visible.forEach((row,index)=>{const number=row.querySelector('.ll-number');
-        if(number)number.textContent=(visible.length-index).toLocaleString();});
-      const message=visible.length ? visible.length.toLocaleString()+' species shown'
-        : 'No species match these filters. Clear filters to show all species.';
+    function apply(announce=true){
+      const q=(search.value||'').toLowerCase();
+      const matches=rows.filter(row=>(group==='all'||row.group===group)&&
+        (!family||row.family===family)&&(!q||row.name.includes(q)));
+      const pages=Math.max(1,Math.ceil(matches.length/pageSize));
+      page=Math.min(page,pages);
+      const start=(page-1)*pageSize,visible=matches.slice(start,start+pageSize);
+      // Retain complete SSR rows in memory, but attach only the current page.
+      // Searching scans cached strings, never thousands of DOM/style writes.
+      if(visible.length!==mounted.length||visible.some((row,i)=>row!==mounted[i])){
+        body.replaceChildren(...visible.map(row=>row.element));mounted=visible;
+      }
+      visible.forEach((row,index)=>{
+        const number=(matches.length-start-index).toLocaleString();
+        if(row.number&&row.number.textContent!==number)row.number.textContent=number;
+      });
+      pagination.hidden=matches.length<=pageSize;
+      previous.disabled=page===1;next.disabled=page===pages;
+      pageLabel.textContent='Page '+page+' of '+pages;
+      const message=!matches.length?'No species match these filters. Clear filters to show all species.'
+        : matches.length<=pageSize?matches.length.toLocaleString()+' species shown'
+        : 'Showing '+(start+1).toLocaleString()+'–'+(start+visible.length).toLocaleString()+' of '+matches.length.toLocaleString()+' species';
       clearTimeout(announcement);
       if(announce)announcement=setTimeout(()=>{count.textContent=message;},250);
-      else if(count.textContent!==message)count.textContent=message;}
+      else if(count.textContent!==message)count.textContent=message;
+    }
+    function turnPage(delta){
+      if(delta<0?previous.disabled:next.disabled)return;
+      editingQuery=false;page+=delta;apply();writeURL('pushState');
+      if(region)region.scrollTop=0;
+      const firstLink=mounted[0]?.element.querySelector('a.ll-species-link');
+      (firstLink||region)?.focus();
+    }
+    previous.addEventListener('click',()=>turnPage(-1));
+    next.addEventListener('click',()=>turnPage(1));
     function activate(g){
-      editingQuery=false;group=groups.has(g)?g:'all';
+      editingQuery=false;page=1;group=groups.has(g)?g:'all';
       syncControls();apply();writeURL('pushState');
     }
     buttons.forEach(button=>button.addEventListener('click',()=>activate(button.dataset.group)));
     if(sel)sel.addEventListener('change',()=>activate(sel.value));
     taxonSel.addEventListener('change',()=>{
-      editingQuery=false;family=taxonSel.value;apply();writeURL('pushState');
+      editingQuery=false;page=1;family=taxonSel.value;apply();writeURL('pushState');
     });
     search.addEventListener('input',()=>{
-      apply();
+      page=1;apply();
       // One Back step per editing session, with the shareable URL always current.
       if(writeURL(editingQuery?'replaceState':'pushState'))editingQuery=true;
     });
@@ -3798,6 +3879,10 @@ def build():
     s = _timed("summary-property", analyze.summary, df)
     public_s = _timed("summary-overview", analyze.summary, overview_df)
     life = _timed("life-list", analyze.life_list, overview_df)
+    inventory_dir = PUBLIC_DIR / "life-list"
+    inventory_dir.mkdir(parents=True, exist_ok=True)
+    inventory_csv = life_list_csv(life)
+    (inventory_dir / inventory_csv_filename(inventory_csv)).write_text(inventory_csv, encoding="utf-8")
     _timed("validate-inventory-membership", analyze.validate_inventory_counts, life)
     firsts = _timed("firsts-timeline", analyze.firsts_timeline, df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
