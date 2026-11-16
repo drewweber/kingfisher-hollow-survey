@@ -63,8 +63,33 @@ class ChartAlternativeTests(unittest.TestCase):
 
     def test_discovery_preserves_each_step(self):
         html = viz.discovery_curve(pd.DataFrame({'observed_on': pd.to_datetime(['2025-01-01', '2025-01-01', '2025-02-02']), 'cumulative': [1, 2, 3]}))
-        self.assertEqual(self.table(html).rows[1:], [['2025-01-01', '1'], ['2025-01-01', '2'], ['2025-02-02', '3']])
+        self.assertEqual(self.table(html).rows[1:], [['2025-01-01', 'Not available', 'Not available', '1'], ['2025-01-01', 'Not available', 'Not available', '2'], ['2025-02-02', 'Not available', 'Not available', '3']])
         self.assertIn('3 species', html)
+
+    def test_combined_discovery_explains_sources_and_undated_species(self):
+        firsts = pd.DataFrame({
+            'observed_on': pd.to_datetime(['2025-01-01', '2025-02-02']),
+            'cumulative': [1, 2], 'label': ['Wood Thrush', 'Luna Moth'],
+            'source': ['eBird', 'iNaturalist'],
+        })
+        firsts.attrs.update(inventory_species=3, undated_species=1)
+        html = viz.discovery_curve(firsts)
+        table = self.table(html)
+        self.assertEqual(table.rows[0], ['Available record date', 'Species', 'Source', 'Cumulative species'])
+        self.assertEqual(table.rows[1:], [
+            ['2025-01-01', 'Wood Thrush', 'eBird', '1'],
+            ['2025-02-02', 'Luna Moth', 'iNaturalist', '2'],
+        ])
+        self.assertIn('1 species without a usable date', html)
+        self.assertIn('3 species in the combined inventory', html)
+        self.assertIn('arrival or repeat frequency', html)
+
+    def test_discovery_with_only_undated_inventory_has_an_explanation(self):
+        firsts = pd.DataFrame(columns=['observed_on', 'cumulative', 'label', 'source'])
+        firsts.attrs.update(inventory_species=2, undated_species=2)
+        html = viz.discovery_curve(firsts)
+        self.assertIn('2 species without a usable date', html)
+        self.assertIn('No dated records', html)
 
     def test_phenology_table_uses_raw_counts_even_when_normalized(self):
         matrix = pd.DataFrame([[0, 8] + [0] * 10, [2, 4] + [0] * 10], index=['Moth <one>', 'Moth two'], columns=range(1, 13))

@@ -3957,7 +3957,7 @@ def build():
     inventory_csv = life_list_csv(life)
     (inventory_dir / inventory_csv_filename(inventory_csv)).write_text(inventory_csv, encoding="utf-8")
     _timed("validate-inventory-membership", analyze.validate_inventory_counts, life)
-    firsts = _timed("firsts-timeline", analyze.firsts_timeline, df)
+    firsts = _timed("firsts-timeline", analyze.firsts_timeline, overview_df)
     county_firsts = int((stats["is_county_first"] == 1).sum()) if not stats.empty else 0
 
     moths_for_header = _timed("load-moths-header", analyze.load_moths)
@@ -4015,9 +4015,9 @@ def build():
     parts.append(section("habitats", "One place, many ways to look", 'From Water to <em class="text-hollow-600">Woodland</em>', habitats_body(), tint="bg-stone-100"))
     parts.append(section(
         "discovery", "The Story So Far", 'A Growing <em class="text-hollow-600">Record</em>',
-        chart_card(viz.discovery_curve(firsts), note="Each step marks the earliest available iNaturalist record for a named taxon. Identification revisions can change this history.")
-        + takeaway("Different seasons and methods reveal different parts of the inventory. Return visits can strengthen an identification as well as add a name. Bird life-list dates come from a separate eBird export and are listed in the combined inventory, outside this curve."),
-        intro=f"{s['species']:,} named taxa in the iNaturalist record. The curve describes documentation, not the arrival of species on the property."))
+        chart_card(viz.discovery_curve(firsts), note="Sources: iNaturalist records for non-bird groups and the eBird bird life list. Each species contributes one step at its earliest available inventory date.")
+        + takeaway("Different seasons and methods reveal different parts of the inventory. Return visits can strengthen an identification as well as add a name. Bird life-list dates are included from the available eBird export; they do not establish first arrival or repeat frequency."),
+        intro=f"{public_s['species']:,} species in the combined iNaturalist and eBird inventory, including birds. The curve describes documentation, not the arrival of species on the property."))
 
     # ── Distinctiveness arc: public county contribution → rarity test ─────────
     distinctiveness_body = (

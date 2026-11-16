@@ -149,10 +149,15 @@ def _number(value):
 
 # --- cumulative discovery (species accumulation, annotated) -----------------
 def discovery_curve(firsts):
-    """Cumulative species over time as a filled area, with milestone callouts —
-    the property's discovery story. `firsts` has observed_on + cumulative."""
+    """Combined inventory chronology, with source evidence and dated coverage."""
+    undated = int(firsts.attrs.get("undated_species", 0))
+    inventory_total = int(firsts.attrs.get("inventory_species", len(firsts)))
+    coverage = (
+        f"{inventory_total:,} species in the combined inventory; "
+        f"{undated:,} species without a usable date remain in the inventory but are not plotted. "
+    )
     if firsts.empty:
-        return "<p class='chart-empty'>No data yet.</p>"
+        return f"<p class='chart-empty'>No dated records to plot. {coverage}</p>"
     fig = go.Figure()
     fig.add_scatter(
         x=firsts["observed_on"], y=firsts["cumulative"],
@@ -178,11 +183,15 @@ def discovery_curve(firsts):
         font=dict(size=14, color=HOLLOW[0]),
     )
     return _with_data(
-        _html(_style(fig, height=440)), "Cumulative species discovery",
-        f"The discovery curve reaches {total:,} species by {_date(last['observed_on'])}. "
-        "Each step uses the earliest available record for a named taxon; identification revisions can change this history.",
-        ["First-record date", "Cumulative species"],
-        ((_date(r.observed_on), int(r.cumulative)) for r in firsts.itertuples()),
+        _html(_style(fig, height=440)), "Cumulative species records · iNaturalist + eBird",
+        f"The curve reaches {total:,} species with dated records by {_date(last['observed_on'])}. "
+        + coverage
+        + "Each species is counted once, using its earliest available inventory record: "
+        "eBird life-list dates for birds and iNaturalist dates for other groups. "
+        "These dates do not establish arrival or repeat frequency; identification revisions can change this history.",
+        ["Available record date", "Species", "Source", "Cumulative species"],
+        ((_date(r.observed_on), getattr(r, "label", None), getattr(r, "source", None), int(r.cumulative))
+         for r in firsts.itertuples()),
     )
 
 
