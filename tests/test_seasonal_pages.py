@@ -41,6 +41,15 @@ class SeasonalPagesTests(unittest.TestCase):
             self.assertIn(f'<link rel="canonical" href="https://survey.kingfisher-hollow.com/seasons/{s}/">',page)
             self.assertIn('aria-current="page"',page)
             for other in ['spring','summer','autumn','winter']: self.assertIn(f'href="/seasons/{other}/"',page)
+    def test_all_seasonal_pages_load_shared_navigation_assets(self):
+        for page in self.render({}).values():
+            self.assertIn('data-mode="seasons"', page)
+            self.assertRegex(page, r'/assets/survey\.css\?v=[a-f0-9]{12}')
+            self.assertRegex(page, r'/assets/survey-navigation\.js\?v=[a-f0-9]{12}')
+            self.assertEqual(page.count('id="navbar"'), 1)
+            self.assertEqual(page.count('Skip to the story'), 1)
+            self.assertNotIn('Skip to survey content', page)
+
     def test_escape_safe_sources_and_fingerprint(self):
         c=chapter(); c['intro']='<script>alert(1)</script>'; c['sources'].append(dict(label='bad',url='javascript:bad()'))
         page=self.render({'winter':c})['seasons/winter/index.html']

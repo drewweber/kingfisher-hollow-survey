@@ -2511,18 +2511,37 @@ def head(s, county_firsts, moth_species=None, mode="all", legacy_routes=None):
 <body class="font-sans text-stone-800 antialiased" data-mode="{mode}">"""
 
 
-def nav(active_mode="all", *, include_skip=True):
+def nav(active_mode="all", *, include_skip=True, season=None):
     """Render page navigation with ordinary links between static survey routes."""
-    config = ({"route": "/field/", "label": "Field Targets",
-               "links": [("#results-heading", "Targets")]}
-              if active_mode == "field" else VIEW_CONFIG[active_mode])
+    context = ""
+    if active_mode == "field":
+        config = {"route": "/field/", "label": "Field Targets",
+                  "links": [("#results-heading", "Targets")]}
+    elif active_mode == "seasons":
+        label = seasonal_pages.SEASONS[season][0] if season else "Seasons"
+        context = f"/seasons/{season}/" if season else ""
+        config = {"route": context or "/seasons/", "label": label,
+                  "links": [("#main", "Story"), ("#evidence", "Dated records"),
+                            ("#next-observation", "Next visit")] if season
+                           else [("#main", "The seasons")]}
+    else:
+        config = VIEW_CONFIG[active_mode]
 
     def mode_links():
-        return '<a class="mode-btn no-underline" href="/seasons/">Seasons</a>' + "".join(
-            f'<a class="mode-btn no-underline{" mode-active" if mode == active_mode else ""}" '
-            f'href="{view_config["route"]}"'
-            f'{" aria-current=\"page\"" if mode == active_mode else ""}>{view_config["label"]}</a>'
-            for mode, view_config in VIEW_CONFIG.items() if mode != "life-list")
+        views = [("all", VIEW_CONFIG["all"]),
+                 ("seasons", {"route": "/seasons/", "label": "Seasons"})]
+        views.extend((mode, view) for mode, view in VIEW_CONFIG.items()
+                     if mode not in {"all", "life-list"})
+        links = []
+        for mode, view in views:
+            current = mode == active_mode
+            # A chapter belongs to Seasons; its exact page is in the season switcher.
+            current_value = "true" if mode == "seasons" and season else "page"
+            marker = f' aria-current="{current_value}"' if current else ""
+            links.append(
+                f'<a class="mode-btn no-underline{" mode-active" if current else ""}" '
+                f'href="{view["route"]}"{marker}>{view["label"]}</a>')
+        return "".join(links)
 
     def section_links():
         items = []
@@ -2559,7 +2578,7 @@ def nav(active_mode="all", *, include_skip=True):
       <span class="brand-divider hidden sm:block" aria-hidden="true"></span>
       <span class="brand-context hidden sm:block">Survey</span></a>
     <div class="survey-actions">
-      {survey_destinations(config["route"])}
+      {survey_destinations(config["route"], context=context)}
       <button id="survey-menu-button" type="button" class="survey-menu-button" hidden aria-expanded="false" aria-controls="survey-menu" popovertarget="survey-menu">Explore</button>
       <div id="survey-menu" class="survey-menu">
         <div class="max-w-4xl mx-auto px-6 py-6">
@@ -4124,7 +4143,7 @@ def build():
     )
     for key, chapter in chapters.items():
         chapter["community"] = community[key]
-    _timed("seasonal-chapters", seasonal_pages.write_seasonal_pages, chapters, PUBLIC_DIR, home_url=SITE)
+    _timed("seasonal-chapters", seasonal_pages.write_seasonal_pages, chapters, PUBLIC_DIR, home_url=SITE, navigation_renderer=nav)
     _timed("public-api", public_api.build)
     _timed("validate-public-counts", analyze.validate_inventory_counts, life,
            json.loads(public_api.SUMMARY_PATH.read_text()))

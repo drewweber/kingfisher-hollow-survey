@@ -56,25 +56,27 @@
   }
 
   body[data-mode="all"] #navbar.nav-solid,
-  body[data-mode="log"] #navbar {
+  body[data-mode="log"] #navbar,
+  body[data-mode="seasons"] #navbar {
     --nav-text: #292524;
     --nav-muted: rgba(68, 64, 60, .68);
     --nav-faint: rgba(68, 64, 60, .42);
     --nav-line: rgba(0, 0, 0, .08);
   }
 
-  body[data-mode="log"] #navbar {
+  body[data-mode="log"] #navbar,
+  body[data-mode="seasons"] #navbar {
     background: rgba(255, 255, 255, .96);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--nav-line);
   }
 
-  body:not([data-mode="all"]):not([data-mode="log"]) {
+  body:not([data-mode="all"]):not([data-mode="log"]):not([data-mode="seasons"]) {
     background: #0d221c;
   }
 
-  body:not([data-mode="all"]):not([data-mode="log"]) #navbar.nav-solid {
+  body:not([data-mode="all"]):not([data-mode="log"]):not([data-mode="seasons"]) #navbar.nav-solid {
     background: rgba(13, 34, 28, .96);
     border-bottom-color: var(--nav-line);
   }
@@ -122,7 +124,8 @@
   }
 
   body[data-mode="all"] #navbar.nav-solid .survey-menu-button,
-  body[data-mode="log"] #navbar .survey-menu-button {
+  body[data-mode="log"] #navbar .survey-menu-button,
+  body[data-mode="seasons"] #navbar .survey-menu-button {
     background: rgba(13, 34, 28, .04);
   }
 

@@ -5,9 +5,9 @@ from hashlib import sha256
 from html import escape
 from pathlib import Path
 import re
+import sys
 from urllib.parse import quote, urlsplit
 from zoneinfo import ZoneInfo
-from navigation import survey_destinations
 
 ROOT = Path(__file__).resolve().parents[1]
 SEASONS = {
@@ -54,14 +54,27 @@ def base_chapter(key):
     return dict(key=key, label=label, months=f'{month_name[months[0]]}–{month_name[months[-1]]}', month_numbers=months, route=f'/seasons/{key}/', title=f'{label} at the Hollow', intro='A season of one place, read through its landscape and dated observations.', framing='This chapter is awaiting supporting seasonal records. Gaps in reporting do not establish absence.', passages=[], rows=[], coverage=[], source_years=[], as_of='', next_observation='Keep a dated photograph and a note of what you observed. Repeated visits help build the seasonal picture.', sources=[], bird_examples=[])
 
 
-def nav(active, home_url):
+def shared_asset(name):
+    # Fingerprint the built CSS, not its Tailwind input.
+    path = ROOT / ('public/assets' if name == 'survey.css' else 'assets') / name
+    digest = sha256(path.read_bytes() if path.exists() else name.encode()).hexdigest()[:12]
+    return f'/assets/{name}?v={digest}'
+
+
+def nav(active, home_url, *, navigation_renderer=None):
+    if navigation_renderer is None:
+        # Keep standalone chapter rendering available without an eager report cycle.
+        if str(ROOT) not in sys.path:
+            sys.path.insert(0, str(ROOT))
+        from report import nav as navigation_renderer
+    shared = navigation_renderer('seasons', include_skip=False, season=active or None)
     links=''.join(f'<a href="/seasons/{key}/"'+(' aria-current="page"' if key==active else '')+f'>{label}</a>' for key,(label,*_) in SEASONS.items())
     return f'''<a class="skip-link" href="#main">Skip to the story</a>
-<header class="site-header"><a class="wordmark" href="{esc(home_url)}">Kingfisher Hollow<span>A living record of one place</span></a><nav class="survey-links" aria-label="Survey navigation"><a class="survey-link" href="/">Biodiversity survey <span aria-hidden="true">↗</span></a>{survey_destinations(context=f"/seasons/{active}/" if active else "")}</nav></header>
+{shared}
 <nav class="season-nav" aria-label="Seasons"><a class="all-seasons" href="/seasons/"{' aria-current="page"' if not active else ''}>The seasons</a><div>{links}</div></nav>'''
 
 
-def document(title, description, route, body, *, active, home_url, survey_url):
+def document(title, description, route, body, *, active, home_url, survey_url, navigation_renderer=None):
     canonical=survey_url.rstrip('/')+route
     image_name=SEASONS[active or 'autumn'][2]
     return f'''<!doctype html>
@@ -69,8 +82,8 @@ def document(title, description, route, body, *, active, home_url, survey_url):
 <title>{esc(title)} · Kingfisher Hollow</title><meta name="description" content="{esc(description)}">
 <link rel="canonical" href="{esc(canonical)}"><meta property="og:type" content="website"><meta property="og:title" content="{esc(title)} · Kingfisher Hollow"><meta property="og:description" content="{esc(description)}"><meta property="og:url" content="{esc(canonical)}"><meta property="og:image" content="{esc(survey_url.rstrip('/')+asset(image_name))}">
 <meta name="theme-color" content="#f3f5f2"><link rel="preload" href="/assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="{asset('seasonal.css')}"><script defer src="{asset('seasonal.js')}"></script></head>
-<body class="season-{esc(active or 'hub')}">{nav(active,home_url)}<main id="main">{body}</main>
+<link rel="stylesheet" href="{shared_asset('survey.css')}"><link rel="stylesheet" href="{asset('seasonal.css')}"><script defer src="{shared_asset('survey-navigation.js')}"></script><script defer src="{asset('seasonal.js')}"></script></head>
+<body data-mode="seasons" class="season-{esc(active or 'hub')}">{nav(active,home_url,navigation_renderer=navigation_renderer)}<main id="main" tabindex="-1">{body}</main>
 <footer class="site-footer"><a class="wordmark" href="{esc(home_url)}">Kingfisher Hollow</a><p>Look closely. Keep a record. Return through the seasons.</p><a href="/seasons/">All four seasons</a><a href="/life-list/">Complete life list</a></footer></body></html>'''
 
 
@@ -240,7 +253,7 @@ def hub_body(chapters):
     return f'''<section class="hub-opening"><p class="eyebrow">Kingfisher Hollow · Seasonal field stories</p><h1>One place.<br>A changing year.</h1><p>Light, water, leaves, and shelter connect the Hollow’s woodland, creek, pond, and edges. Follow the communities that grow, feed, reproduce, and find refuge as those conditions change through the year.</p></section><div class="season-features">{''.join(features)}</div><aside class="hub-note"><h2>A living, uneven record</h2><p>These chapters bring together dated encounters across the available years. Some parts of the season are better documented than others. Each story keeps its sources close, and leaves room for what we have yet to notice.</p><a href="/">Explore the full biodiversity survey ↗</a></aside>'''
 
 
-def write_seasonal_pages(chapters, output_dir, *, home_url='https://www.kingfisher-hollow.com', survey_url='https://survey.kingfisher-hollow.com'):
+def write_seasonal_pages(chapters, output_dir, *, home_url='https://www.kingfisher-hollow.com', survey_url='https://survey.kingfisher-hollow.com', navigation_renderer=None):
     """Write hub and four canonical chapters without mutating their source data."""
     complete={key:{**base_chapter(key),**chapters.get(key,{}),'key':key,'route':f'/seasons/{key}/'} for key in SEASONS}
     pages=[('/seasons/', 'The seasons', 'Four seasonal stories from Kingfisher Hollow, with dated observations across the years.',hub_body(complete),None)]
@@ -248,5 +261,5 @@ def write_seasonal_pages(chapters, output_dir, *, home_url='https://www.kingfish
     written=[]
     for route,title,description,body,key in pages:
         target=Path(output_dir)/route.strip('/')/'index.html'; target.parent.mkdir(parents=True,exist_ok=True)
-        target.write_text(document(title,description,route,body,active=key,home_url=home_url,survey_url=survey_url),encoding='utf-8'); written.append(target)
+        target.write_text(document(title,description,route,body,active=key,home_url=home_url,survey_url=survey_url,navigation_renderer=navigation_renderer),encoding='utf-8'); written.append(target)
     return written
