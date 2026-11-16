@@ -16,8 +16,8 @@ class EvidenceViewsTests(unittest.TestCase):
         html = report.life_list_body(life)
         self.assertIn('https://ebird.org/checklist/S123', html)
         self.assertIn('Life-list date', html)
-        self.assertIn('<dt>Records</dt><dd>Unavailable</dd>', html)
-        self.assertIn('<dt>Last seen</dt><dd>Unavailable</dd>', html)
+        self.assertIn('Records: Unavailable\n', html)
+        self.assertIn('Last seen: Unavailable', html)
         self.assertNotIn('>NaT<', html)
         self.assertNotIn('>nan<', html)
 
@@ -42,13 +42,35 @@ class EvidenceViewsTests(unittest.TestCase):
         self.assertIn('<caption class="sr-only">Species inventory', html)
         self.assertIn('tabindex="0" role="region" aria-label="Life list records"', html)
         self.assertIn('<summary aria-label="Details for Example &lt;moth&gt;">Details</summary>', html)
-        self.assertIn('<dt>Group</dt><dd>Moths &amp; relatives</dd>', html)
-        self.assertIn('<dt>Records</dt><dd>7</dd>', html)
-        self.assertIn('<dt>Last seen</dt><dd>Sep 12, 2026</dd>', html)
+        self.assertIn('Group: Moths &amp; relatives\n', html)
+        self.assertIn('Records: 7\n', html)
+        self.assertIn('Last seen: Sep 12, 2026', html)
         # Search metadata reads the species cell: details belong to the date cell.
         species_cell = html.split('class="ll-species-cell">')[1].split('</td>')[0]
         self.assertNotIn('<details', species_cell)
         self.assertIn('<span class="ll-scientific-name">Avis example</span>', species_cell)
+
+    def test_mobile_inventory_markup_stays_bounded_at_two_thousand_species(self):
+        from html.parser import HTMLParser
+        class TagCounter(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.count = 0
+            def handle_starttag(self, tag, attrs):
+                self.count += 1
+        life = pd.DataFrame([dict(label='Black-and-gold Bumble Bee',
+              taxon_name='Bombus auricomus', group='Bees, wasps, ants and sawflies',
+              family_name='Apidae', taxon_id=i + 1, observations=7,
+              first_seen=pd.Timestamp('2026-08-01'), first_observed_at=pd.NaT,
+              last_seen=pd.Timestamp('2026-09-12')) for i in range(2000)])
+        html = report.life_list_body(life)
+        tags = TagCounter()
+        tags.feed(html)
+        # Leave room for the shared page shell below the existing route limits.
+        self.assertLess(len(html.encode()), 1_375_000)
+        self.assertLess(tags.count, 24_000)
+        self.assertEqual(html.count('class="ll-row"'), 2000)
+        self.assertEqual(html.count('Last seen: Sep 12, 2026'), 2000)
 
     def test_fungi_dates_and_recent_counts_use_eligible_inventory(self):
         rows = pd.DataFrame([

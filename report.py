@@ -923,25 +923,23 @@ def life_list_body(life, dark=False):
         last_seen = fdate(r['last_seen']) if history_known else '—'
         date_note = ('<span class="block text-xs text-secondary">Life-list date · eBird</span>'
                      if not history_known else '')
-        rows.append(f"""
-      <tr class="ll-row" data-family="{family}">
-        <td class="ll-number">{int(r['list_number']):,}</td>
-        <td class="ll-species-cell">{link}
-            <span class="ll-scientific-name">{sci}</span></td>
-        <td class="ll-group-cell">{grp}</td>
-        <td class="ll-records-cell">{records}</td>
-        <td class="ll-added-cell">{fdate(r['first_seen'])}{date_note}
-          <details class="ll-mobile-details">
-            <summary aria-label="Details for {esc(name)}">Details</summary>
-            <dl>
-              <div><dt>Group</dt><dd>{grp}</dd></div>
-              <div class="ll-mobile-records"><dt>Records</dt><dd>{records if history_known else 'Unavailable'}</dd></div>
-              <div><dt>Last seen</dt><dd>{last_seen if history_known else 'Unavailable'}</dd></div>
-            </dl>
-          </details>
-        </td>
-        <td class="ll-last-seen-cell">{last_seen}</td>
-      </tr>""")
+        # Keep repeated rows compact: the inventory can contain 2,000+ taxa.
+        rows.append(
+            f'<tr class="ll-row" data-family="{family}">'
+            f'<td class="ll-number">{int(r["list_number"]):,}</td>'
+            f'<td class="ll-species-cell">{link} '
+            f'<span class="ll-scientific-name">{sci}</span></td>'
+            f'<td class="ll-group-cell">{grp}</td>'
+            f'<td class="ll-records-cell">{records}</td>'
+            f'<td class="ll-added-cell">{fdate(r["first_seen"])}{date_note}'
+            '<details class="ll-mobile-details">'
+            f'<summary aria-label="Details for {esc(name)}">Details</summary>'
+            f'Group: {grp}\n'
+            f'Records: {records if history_known else "Unavailable"}\n'
+            f'Last seen: {last_seen if history_known else "Unavailable"}'
+            '</details></td>'
+            f'<td class="ll-last-seen-cell">{last_seen}</td></tr>'
+        )
     return f"""
     <div class="max-w-4xl mx-auto">
       <search aria-label="Filter the life list" class="ll-controls flex flex-col gap-4 mb-6 items-center">

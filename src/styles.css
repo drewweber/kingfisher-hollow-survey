@@ -355,7 +355,13 @@
     padding-block: .75rem;
     border-bottom: 2px solid #f5f5f4;
   }
-  .ll-mobile-details { display: none; white-space: normal; }
+  .ll-mobile-details {
+    display: none;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    font-size: .8125rem;
+    line-height: 1.5;
+  }
   .ll-mobile-details summary {
     min-height: 48px;
     padding-block: .75rem;
@@ -363,11 +369,6 @@
     cursor: pointer;
     font-size: .875rem;
   }
-  .ll-mobile-details dl { font-size: .8125rem; line-height: 1.4; }
-  .ll-mobile-details dl > div + div { margin-top: .625rem; }
-  .ll-mobile-details dt { font-weight: 600; }
-  .ll-mobile-details dd { overflow-wrap: anywhere; }
-  .ll-mobile-records { display: none; }
   .ll-row > td { @apply border-b border-stone-100; }
   .ll-number { @apply py-2.5 pr-3 text-right text-sm text-secondary whitespace-nowrap; }
   .ll-species-cell { @apply py-2.5 pr-4; }
@@ -380,14 +381,13 @@
 
   @container life-list (width < 44rem) {
     .ll-group-cell, .ll-group-heading,
+    .ll-records-cell, .ll-records-heading,
     .ll-last-seen-cell, .ll-last-seen-heading { display: none; }
     .ll-mobile-details { display: block; }
     .ll-table td { vertical-align: top; }
     .ll-species-cell { overflow-wrap: anywhere; }
   }
   @container life-list (width < 34rem) {
-    .ll-records-cell, .ll-records-heading { display: none; }
-    .ll-mobile-records { display: block; }
     .ll-table { table-layout: fixed; }
     .ll-number-heading { width: 3rem; }
     .ll-added-heading { width: 6.75rem; }
