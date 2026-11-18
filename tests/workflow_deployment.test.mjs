@@ -13,18 +13,21 @@ assert.ok(filter, "The production binding gate must contain an executable jq fil
 
 const sentinel = "test-secret-value-must-never-appear";
 const secret = { type: "secret_text", value: sentinel };
-const complete = { UPDATE_TRIGGER_KEY: secret, GITHUB_DISPATCH_TOKEN: secret };
+const complete = { UPDATE_TRIGGER_KEY: secret, GITHUB_DISPATCH_TOKEN: secret, YARDMIC_API_KEY: secret };
+const storage = { YARDMIC_DB: { id: "test-yardmic-database" } };
 
 for (const [name, response, accepted] of [
   ["missing result", { success: true }, false],
-  ["empty bindings", { success: true, result: { deployment_configs: { production: { env_vars: {} } } } }, false],
-  ["missing trigger key", { success: true, result: { deployment_configs: { production: { env_vars: { GITHUB_DISPATCH_TOKEN: secret } } } } }, false],
-  ["missing dispatch token", { success: true, result: { deployment_configs: { production: { env_vars: { UPDATE_TRIGGER_KEY: secret } } } } }, false],
-  ["plaintext binding", { success: true, result: { deployment_configs: { production: { env_vars: { ...complete, UPDATE_TRIGGER_KEY: { type: "plain_text", value: sentinel } } } } } }, false],
-  ["API failure", { success: false, result: { deployment_configs: { production: { env_vars: complete } } } }, false],
-  ["both encrypted bindings", { success: true, result: { deployment_configs: { production: { env_vars: complete } } } }, true],
+  ["empty bindings", { success: true, result: { deployment_configs: { production: { d1_databases: storage, env_vars: {} } } } }, false],
+  ["missing trigger key", { success: true, result: { deployment_configs: { production: { d1_databases: storage, env_vars: { GITHUB_DISPATCH_TOKEN: secret } } } } }, false],
+  ["missing dispatch token", { success: true, result: { deployment_configs: { production: { d1_databases: storage, env_vars: { UPDATE_TRIGGER_KEY: secret } } } } }, false],
+  ["plaintext binding", { success: true, result: { deployment_configs: { production: { d1_databases: storage, env_vars: { ...complete, UPDATE_TRIGGER_KEY: { type: "plain_text", value: sentinel } } } } } }, false],
+  ["API failure", { success: false, result: { deployment_configs: { production: { d1_databases: storage, env_vars: complete } } } }, false],
+  ["all required bindings", { success: true, result: { deployment_configs: { production: { d1_databases: storage, env_vars: complete } } } }, true],
+  ["missing snapshot database", { success: true, result: { deployment_configs: { production: { env_vars: complete } } } }, false],
+  ["missing YardMic key", { success: true, result: { deployment_configs: { production: { d1_databases: storage, env_vars: { UPDATE_TRIGGER_KEY: secret, GITHUB_DISPATCH_TOKEN: secret } } } } }, false],
   // Cloudflare does not return stored secret values: metadata is not runtime proof.
-  ["encrypted metadata without values", { success: true, result: { deployment_configs: { production: { env_vars: { UPDATE_TRIGGER_KEY: { type: "secret_text" }, GITHUB_DISPATCH_TOKEN: { type: "secret_text" } } } } } }, true],
+  ["encrypted metadata without values", { success: true, result: { deployment_configs: { production: { d1_databases: storage, env_vars: { UPDATE_TRIGGER_KEY: { type: "secret_text" }, GITHUB_DISPATCH_TOKEN: { type: "secret_text" }, YARDMIC_API_KEY: { type: "secret_text" } } } } } }, true],
 ]) {
   test(`Pages binding gate ${accepted ? "accepts" : "rejects"} ${name} without revealing values`, () => {
     const result = spawnSync("jq", ["-er", filter], { input: JSON.stringify(response), encoding: "utf8" });

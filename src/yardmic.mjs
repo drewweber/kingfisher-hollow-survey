@@ -278,12 +278,20 @@ function summarizeRecentHour(days, snapshot) {
 }
 
 /** Summarize UTC instants and Eastern calendar dates. The fixture wrapper is local-only. */
-export function summarizeYardmic(payload, { now = Date.now(), freshness, recentSnapshotDays } = {}) {
+export function summarizeYardmic(payload, { now = Date.now(), freshness, recentSnapshotDays, historyAnchorDate, companionDay } = {}) {
   const nowMs = new Date(now).valueOf();
   const windows = yardmicRanges(nowMs);
   const requested = { start: windows.history.start, end: windows.recent.end };
-  const days = normalizeYardmicDays(payload?.data ?? payload ?? { days: [] })
-    .filter(({ date }) => inRange(date, requested));
+  let allDays = normalizeYardmicDays(payload?.data ?? payload ?? { days: [] });
+  if (companionDay) {
+    const [day] = normalizeYardmicDays({ days: [companionDay] });
+    allDays = [...allDays.filter((entry) => entry.date !== day.date), day].sort((a, b) => a.date.localeCompare(b.date));
+  }
+  const days = allDays.filter(({ date }) => inRange(date, requested));
+  const anchor = Temporal.PlainDate.from(historyAnchorDate ?? windows.recent.end);
+  const patternsRange = { start: anchor.subtract({ days: 7 }).toString(), end: anchor.subtract({ days: 1 }).toString() };
+  const displayed = { start: anchor.subtract({ days: 30 }).toString(), end: anchor.toString() };
+  const historicalDays = allDays.filter(({ date }) => inRange(date, displayed));
   const retrievedAt = (typeof payload?.fetched_at === "string" && Number.isFinite(Date.parse(payload.fetched_at)))
     ? iso(Date.parse(payload.fetched_at)) : null;
   const freshnessByRange = freshness ?? {
@@ -292,16 +300,20 @@ export function summarizeYardmic(payload, { now = Date.now(), freshness, recentS
   };
   const snapshot = recentSnapshot(freshnessByRange.recent, retrievedAt, nowMs);
   const snapshotDays = recentSnapshotDays === undefined ? days
-    : normalizeYardmicDays({ days: recentSnapshotDays }).filter(({ date }) => inRange(date, requested));
+    : normalizeYardmicDays({ days: recentSnapshotDays });
   const returnedDates = days.map(({ date }) => date);
   const historyMinutes = new Map();
   let kingfisherAmbiguous = null;
   let latestDetectionAt = null;
   let latestKingfisher = null;
 
-  for (const day of days) {
+  for (const day of allDays) {
+    const current = inRange(day.date, requested);
+    const inHistoricalView = inRange(day.date, displayed);
+    const kingfisherEligible = current || (freshnessByRange.history.state === "stale" && inHistoricalView);
+    const isPatternDate = inHistoricalView && day.date < displayed.end;
+    if (!kingfisherEligible && !isPatternDate) continue;
     const resolve = minuteResolver(day.date);
-    const isPatternDate = day.date < windows.recent.end;
     const patternSpecies = [];
     for (const { code, name, confirmed: status, minutes } of day.species) {
       if (status === false) continue;
@@ -311,7 +323,7 @@ export function summarizeYardmic(payload, { now = Date.now(), freshness, recentS
         const epoch = resolve(minute);
         if (epoch === null) continue;
         if (typeof epoch === "object") {
-          if (epoch.earlier <= nowMs) {
+          if (kingfisherEligible && epoch.earlier <= nowMs) {
             if (code === KINGFISHER) {
               const local = `${day.date}T${minute}`;
               if (kingfisherAmbiguous === null || local > kingfisherAmbiguous) kingfisherAmbiguous = local;
@@ -321,8 +333,8 @@ export function summarizeYardmic(payload, { now = Date.now(), freshness, recentS
         }
         if (epoch > nowMs) continue;
 
-        if (latestDetectionAt === null || epoch > latestDetectionAt) latestDetectionAt = epoch;
-        if (code === KINGFISHER && (!latestKingfisher || epoch > latestKingfisher.epoch)) {
+        if (current && (latestDetectionAt === null || epoch > latestDetectionAt)) latestDetectionAt = epoch;
+        if (kingfisherEligible && code === KINGFISHER && (!latestKingfisher || epoch > latestKingfisher.epoch)) {
           latestKingfisher = { epoch, local: `${day.date}T${minute}`, status };
         }
         if (!isPatternDate) break;
@@ -338,6 +350,11 @@ export function summarizeYardmic(payload, { now = Date.now(), freshness, recentS
   if (ambiguousLatest) latestKingfisher = null;
 
   const allDatesReturned = days.length === 31;
+  const patternsDays = historicalDays.filter(({ date }) => inRange(date, patternsRange));
+  const patterns = countHistoryPatterns(patternsDays, patternsRange, historyMinutes);
+  if (historyAnchorDate) {
+    patterns.dailyEffort = patternsDays.map(({ date, listening_minutes }) => ({ date, listeningMinutes: listening_minutes }));
+  }
 
   return {
     state: days.length ? (allDatesReturned ? "available" : "partial") : "unavailable",
@@ -346,6 +363,7 @@ export function summarizeYardmic(payload, { now = Date.now(), freshness, recentS
     latestDetectionAt: iso(latestDetectionAt),
     range: {
       requested,
+      ...(historyAnchorDate && { displayed, historyAnchorDate }),
       returned: days.length ? { start: returnedDates[0], end: returnedDates.at(-1) } : null,
       returnedDates,
     },
@@ -360,9 +378,7 @@ export function summarizeYardmic(payload, { now = Date.now(), freshness, recentS
         && freshnessByRange.recent.state === "fresh" && freshnessByRange.history.state === "fresh",
       ambiguous: ambiguousLatest,
     },
-    patterns: countHistoryPatterns(
-      days.filter(({ date }) => inRange(date, windows.patterns)), windows.patterns, historyMinutes,
-    ),
-    insights: summarizeYardmicInsights(days, historyMinutes, windows.recent.end),
+    patterns,
+    insights: summarizeYardmicInsights(historicalDays, historyMinutes, displayed.end),
   };
 }

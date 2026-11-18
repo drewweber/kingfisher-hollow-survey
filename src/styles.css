@@ -462,6 +462,9 @@
 }
 
 /* The microphone is an instrument panel within the Birds field journal. */
+#bird-microphone [hidden], #bird-microphone-patterns[hidden], [href="#bird-microphone-patterns"][hidden] { display: none; }
+.mic-controls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; text-align: left; }
+.mic-layout > :only-child, .mic-layout > :not([hidden]):has(+ [hidden]), .mic-layout > [hidden] + :last-child { grid-column: 1 / -1; }
 .mic-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 2.5rem; text-align: left; }
 .mic-heading-row { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
 .mic-heading-row h2, .mic-kingfisher h2 { font-family: "Playfair Display", Georgia, serif; font-size: 1.65rem; line-height: 1.25; color: #fff; }

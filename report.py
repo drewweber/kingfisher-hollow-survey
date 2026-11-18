@@ -420,7 +420,7 @@ def anchor_alias(*ids):
     )
 
 
-def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
+def section(id_, eyebrow, title_html, body, intro="", dark=False, tint="", hidden=False):
     bg = "bg-hollow-950" if dark else (tint or "")
     eb = "text-hollow-400" if dark else "text-hollow-600"
     tc = "text-white" if dark else "text-stone-900"
@@ -428,7 +428,7 @@ def section(id_, eyebrow, title_html, body, intro="", dark=False, tint=""):
     intro_html = (f'<p class="{ic} text-[1.05rem] leading-relaxed max-w-2xl '
                   f'mx-auto mt-5">{intro}</p>') if intro else ""
     return f"""
-<section id="{id_}" class="reveal py-24 px-6 {bg}" aria-labelledby="{id_}-title">
+<section id="{id_}" class="reveal py-24 px-6 {bg}"{' hidden' if hidden else ''} aria-labelledby="{id_}-title">
   <div class="max-w-6xl mx-auto">
     <div class="text-center mb-14">
       <p class="{eb} font-medium tracking-[0.25em] uppercase text-xs mb-4">{eyebrow}</p>
@@ -2555,6 +2555,8 @@ def nav(active_mode="all", *, include_skip=True, season=None):
             if not external:
                 sequence += 1
             target = ' target="_blank" rel="noopener"' if external else ""
+            if href == "#bird-microphone-patterns":
+                target += " hidden"
             item_class = "survey-index-link"
             marker = "↗" if external else f"{sequence:02d}"
             items.append(
@@ -3699,30 +3701,32 @@ def bird_route_use_body(routes):
 def bird_microphone_body():
     """Stable, accessible shell; recent microphone evidence arrives separately."""
     mark = LOGO.replace('class="w-9 h-9 flex-shrink-0"', 'class="mic-kingfisher-mark" aria-hidden="true"')
-    return f'''<div id="bird-microphone" class="mic-layout">
-      <div class="mic-recent">
-        <div class="mic-heading-row"><h2 id="mic-recent-title">Recently heard</h2>
-          <button type="button" class="mic-refresh" data-yardmic-refresh>Refresh</button></div>
+    return f'''<div id="bird-microphone">
+      <div class="mic-controls"><p id="mic-update-status" class="mic-caption" role="status" aria-live="polite">Checking microphone records…</p>
+        <button type="button" class="mic-refresh" data-yardmic-refresh>Refresh</button></div>
+      <div class="mic-layout">
+      <div class="mic-recent" id="mic-recent-panel" hidden>
+        <div class="mic-heading-row"><h2 id="mic-recent-title">Recently heard</h2></div>
         <p class="mic-caption" id="mic-window">Times at Kingfisher Hollow · Eastern time</p>
-        <div id="mic-recent-content" class="mic-recent-content"><p class="mic-empty">Fetching the latest microphone records…</p></div>
-        <p id="mic-update-status" class="mic-caption mic-update-status" role="status" aria-live="polite">Checking the feed…</p>
+        <div id="mic-recent-content" class="mic-recent-content"></div>
       </div>
-      <aside class="mic-kingfisher" aria-labelledby="mic-kingfisher-title">
+      <aside id="mic-kingfisher-panel" hidden class="mic-kingfisher" aria-labelledby="mic-kingfisher-title">
         <div class="mic-kingfisher-heading">{mark}<p class="mic-eyebrow">The hollow’s namesake</p></div>
         <h2 id="mic-kingfisher-title">Last Belted Kingfisher detected</h2>
-        <div id="mic-kingfisher-content"><p class="mic-counter-placeholder">Checking…</p></div>
-      </aside>
+        <div id="mic-kingfisher-content"></div>
+      </aside></div>
     </div>
     <noscript><p class="mic-notice">Current microphone records need JavaScript. The eBird inventory below is available without it.</p></noscript>
     <details class="mic-methods"><summary>What these detections mean</summary>
       <p>YardMic groups sound identifications into detected minutes. One detected minute can contain several calls or birds; these are not bird counts or a measure of continuous song.</p>
       <p>The list includes every species with a reviewed or automatically accepted detection in the displayed hour, newest detection first. Its endpoint estimates the available source response, so time waiting for a cache refresh is not added as empty minutes. The API does not supply a verified recording endpoint. A daily species status does not verify every minute. Detections marked false are excluded.</p>
+      <p id="mic-source-detail"></p>
       <p>Fetch time tells you when we retrieved the records, not when the microphone last uploaded audio. Daily listening totals cannot locate recording gaps. No detection does not establish absence. These records do not change the eBird inventory below.</p>
     </details>'''
 
 
 def bird_microphone_patterns_body():
-    return '''<div id="mic-pattern-content"><p class="mic-empty">Gathering recent listening patterns…</p></div>
+    return '''<div id="mic-pattern-content"></div>
     <p id="mic-pattern-coverage" class="mic-caption"></p>
     <p class="mic-caption mic-pattern-caveat">Weekly comparisons use the previous 28 completed calendar dates; daypart, hourly and overnight patterns use the previous seven. They use available records and describe this microphone’s detections, without adjusting for listening effort or recording gaps.</p>'''
 
@@ -3750,7 +3754,7 @@ def birds_view():
         'Patterns at the <em class="text-hollow-300">microphone</em>',
         bird_microphone_patterns_body(),
         intro="A few things the recent recordings can tell us. These change as new evidence arrives.",
-        dark=True))
+        dark=True, hidden=True))
     out.append(section(
         "bird-inventory", "The Recorded Inventory",
         'Birds on <em class="text-hollow-300">eBird</em>',

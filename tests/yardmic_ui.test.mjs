@@ -46,13 +46,15 @@ const assertWidths = (actual, expected) => {
 };
 
 async function page(data = sample()) {
-  const ids = ['bird-microphone', 'mic-recent-title', 'mic-window', 'mic-recent-content', 'mic-update-status', 'mic-kingfisher-title', 'mic-kingfisher-content', 'mic-pattern-content', 'mic-pattern-coverage'];
+  const ids = ['bird-microphone', 'mic-recent-panel', 'mic-kingfisher-panel', 'bird-microphone-patterns', 'mic-source-detail', 'mic-recent-title', 'mic-window', 'mic-recent-content', 'mic-update-status', 'mic-kingfisher-title', 'mic-kingfisher-content', 'mic-pattern-content', 'mic-pattern-coverage'];
   const nodes = Object.fromEntries(ids.map(id => { const node = new Element('div'); node.id = id; return [id, node]; }));
+  nodes['mic-recent-title'].textContent = 'Recently heard';
   const refresh = new Element('button');
   nodes['bird-microphone'].querySelector = () => refresh;
   let failed = false;
   let now = Date.parse('2026-11-18T17:47:57.203Z');
   const intervals = new Map();
+  const patternLink = new Element('a');
   const document = {
     activeElement: null,
     getElementById: id => Object.values(nodes).flatMap(descendants).find(node => node.id === id),
@@ -61,8 +63,10 @@ async function page(data = sample()) {
       node.focus = () => { document.activeElement = node; };
       return node;
     },
+    querySelectorAll() { return [patternLink]; },
     addEventListener() {},
   };
+  refresh.focus = () => { document.activeElement = refresh; };
   const context = {
     Intl, Date: class extends Date { static now() { return now; } }, AbortController, performance: { now: () => 0 },
     document,
@@ -72,11 +76,12 @@ async function page(data = sample()) {
   vm.runInNewContext(script, context);
   await new Promise(resolve => setImmediate(resolve));
   return {
-    nodes, refresh, document,
+    nodes, refresh, document, patternLink,
     fail: () => { failed = true; },
     recover: () => { failed = false; },
     respondWith: payload => { data = payload; },
     advanceWallClock: milliseconds => { now += milliseconds; },
+    poll: async () => { intervals.get(120000)(); await new Promise(resolve => setImmediate(resolve)); },
     tickCounter: () => intervals.get(30000)(),
     find: name => Object.values(nodes).flatMap(descendants).filter(node => hasClass(node, name)),
   };
@@ -137,6 +142,7 @@ test('elapsed hours include sleep after a failed refresh and rebase on the next 
   assert.equal(ui.nodes['mic-window'].textContent, window);
   assert.deepEqual(ui.find('mic-timeline').map(node => node.attributes['aria-label']), strips);
   ui.recover();
+  data.generatedAt = '2026-11-18T18:47:57.203Z';
   data.kingfisher.elapsedMinutes = 30;
   await ui.refresh.listeners.click();
   assert.equal(hours(), '0.5');
@@ -188,13 +194,13 @@ test('source cache time stays distinct from fetch time and survives failed refre
   const data = sample();
   data.freshness.recent.sourceCache = { ageSecondsAtRetrieval: 300, cachedAt: '2026-11-18T17:42:57.203Z', maxAgeSeconds: 900 };
   const ui = await page(data);
-  const note = ui.nodes['mic-update-status'].textContent;
+  const note = ui.nodes['mic-source-detail'].textContent;
   assert.match(note, /Data fetched.*12:47 PM EST/);
   assert.match(note, /Estimated YardMic response time:.*12:42 PM EST/);
   assert.match(note, /cached responses as fresh for 15 minutes/);
   ui.fail();
   await ui.refresh.listeners.click();
-  assert.match(ui.nodes['mic-update-status'].textContent, /Estimated YardMic response time:.*12:42 PM EST/);
+  assert.match(ui.nodes['mic-source-detail'].textContent, /Estimated YardMic response time:.*12:42 PM EST/);
 });
 
 test('composition table exposes every species and hour with detection-day values', async () => {
@@ -234,7 +240,7 @@ test('composition replaces the recurring-hour card and preserves After dark evid
   ui.fail();
   await ui.refresh.listeners.click();
   assert.equal(ui.find('mic-composition-table').length, 1);
-  assert.match(ui.nodes['mic-pattern-coverage'].textContent, /out of date/);
+  assert.match(ui.nodes['mic-update-status'].textContent, /Updates delayed/);
 });
 
 test('empty or unavailable composition stays explicit without implying silence', async () => {
@@ -245,7 +251,7 @@ test('empty or unavailable composition stays explicit without implying silence',
   assert.equal(ui.find('mic-composition-table').length, 0);
   delete data.patterns.speciesHours;
   ui = await page(data);
-  assert.match(ui.nodes['mic-pattern-content'].textContent, /Hourly composition is unavailable/);
+  assert.equal(ui.find('mic-composition').length, 0);
   assert.match(ui.nodes['mic-pattern-content'].textContent, /After dark, before dawn/);
 });
 
@@ -259,7 +265,7 @@ test('unchanged pattern refresh preserves the table being read or scrolled', asy
   ui.fail();
   await ui.refresh.listeners.click();
   assert.equal(ui.find('mic-composition-table')[0], table);
-  assert.match(ui.nodes['mic-pattern-coverage'].textContent, /out of date/);
+  assert.match(ui.nodes['mic-update-status'].textContent, /Updates delayed/);
 });
 
 function insightSample() {
@@ -489,7 +495,7 @@ test('recent timeline labels its fixed snapshot window rather than the current h
   const ui=await page(data);
   assert.equal(ui.nodes['mic-recent-title'].textContent,'Recently heard');
   assert.match(ui.nodes['mic-window'].textContent,/estimated time window/);
-  assert.match(ui.nodes['mic-update-status'].textContent,/recording coverage is not verified/);
+  assert.match(ui.nodes['mic-source-detail'].textContent,/recording coverage is not verified/);
 });
 
 test('unavailable recent records are identified while history remains visible', async () => {
@@ -505,8 +511,8 @@ test('unavailable recent records are identified while history remains visible', 
   };
 
   const ui = await page(data);
-  assert.match(ui.nodes['mic-recent-content'].textContent, /Recent microphone records are unavailable/);
-  assert.match(ui.nodes['mic-window'].textContent, /Time range unavailable/);
+  assert.equal(ui.nodes['mic-recent-panel'].hidden, true);
+  assert.match(ui.nodes['mic-update-status'].textContent, /Updates delayed/);
   assert.equal(ui.find('mic-timeline').length, 0);
   assert.equal(ui.find('mic-composition-table').length, 1);
 });
@@ -516,8 +522,8 @@ test('unknown snapshot time does not invent a window or empty minute bins', asyn
   data.recentHour.windowBasis='unknown';data.recentHour.start=null;data.recentHour.end=null;data.recentHour.species=[];
   const ui=await page(data);
   assert.equal(ui.find('mic-timeline').length,0);
-  assert.match(ui.nodes['mic-window'].textContent,/Time range unavailable/);
-  assert.match(ui.nodes['mic-recent-content'].textContent,/cannot place these records in a reliable one-hour window/);
+  assert.equal(ui.nodes['mic-recent-panel'].hidden, true);
+  assert.equal(ui.nodes['mic-recent-content'].textContent, '');
   assert.doesNotMatch(ui.nodes['mic-window'].textContent,/1969|1970/);
 });
 
@@ -525,5 +531,159 @@ test('retrieval-based window acknowledges source timing uncertainty', async () =
   const data=sample();data.recentHour.windowBasis='retrieval-estimate';
   const ui=await page(data);
   assert.match(ui.nodes['mic-window'].textContent,/estimated from first retrieval/);
-  assert.match(ui.nodes['mic-update-status'].textContent,/Source timing is unavailable/);
+  assert.match(ui.nodes['mic-source-detail'].textContent,/Source timing is unavailable/);
+});
+
+test('cold failure hides all evidence panels and polling recovers without reloading', async () => {
+  const ui = await page({ state: 'unavailable' });
+  for (const id of ['mic-recent-panel', 'mic-kingfisher-panel', 'bird-microphone-patterns']) assert.equal(ui.nodes[id].hidden, true);
+  assert.match(ui.nodes['mic-update-status'].textContent, /unavailable/);
+  assert.equal(ui.refresh.getAttribute('aria-disabled'), 'false');
+  ui.respondWith(sample());
+  await ui.poll();
+  for (const id of ['mic-recent-panel', 'mic-kingfisher-panel', 'bird-microphone-patterns']) assert.equal(ui.nodes[id].hidden, false);
+});
+
+test('partial refresh retains recent, kingfisher and history independently until expiry', async () => {
+  const ui = await page();
+  const window = ui.nodes['mic-window'].textContent;
+  const comparison = ui.find('mic-composition-table')[0];
+  const partial = sample();
+  partial.state = 'partial';
+  partial.freshness.recent.state = 'unavailable';
+  partial.recentHour = { state: 'unavailable' };
+  partial.kingfisher = { state: 'no-match', complete: false };
+  ui.respondWith(partial);
+  await ui.refresh.listeners.click();
+  assert.equal(ui.nodes['mic-window'].textContent, window);
+  assert.equal(ui.nodes['mic-kingfisher-panel'].hidden, false);
+  assert.equal(ui.find('mic-composition-table')[0], comparison);
+  const recentOnly = sample();
+  recentOnly.recentHour.species = [];
+  recentOnly.freshness.history.state = 'unavailable';
+  ui.respondWith(recentOnly);
+  await ui.refresh.listeners.click();
+  assert.match(ui.nodes['mic-recent-content'].textContent, /No accepted detections/);
+  assert.equal(ui.find('mic-composition-table')[0], comparison);
+  ui.advanceWallClock(31 * 86400000);
+  ui.fail();
+  await ui.refresh.listeners.click();
+  for (const id of ['mic-recent-panel', 'mic-kingfisher-panel', 'bird-microphone-patterns']) assert.equal(ui.nodes[id].hidden, true);
+});
+
+test('malformed pattern rendering leaves earlier panels and open comparisons intact', async () => {
+  const ui = await page();
+  const window = ui.nodes['mic-window'].textContent;
+  const malformed = sample();
+  malformed.recentHour.species = [];
+  malformed.patterns.speciesHours = [null];
+  const chart = ui.find('mic-composition-table')[0];
+  ui.respondWith(malformed);
+  await ui.refresh.listeners.click();
+  assert.equal(ui.nodes['mic-window'].textContent, window);
+  assert.ok(ui.find('mic-timeline').length);
+  assert.equal(ui.find('mic-composition-table')[0], chart);
+});
+
+test('evidence age controls expiry and hiding a focused navigation link restores focus to Refresh', async () => {
+  const data = sample();
+  data.freshness.history.snapshot = { estimatedAt: '2026-10-20T17:47:57.203Z' };
+  const ui = await page(data);
+  assert.equal(ui.patternLink.hidden, false);
+  ui.document.activeElement = ui.patternLink;
+  ui.advanceWallClock(2 * 86400000);
+  ui.fail();
+  await ui.poll();
+  assert.equal(ui.patternLink.hidden, true);
+  assert.equal(ui.document.activeElement, ui.refresh);
+  assert.equal(ui.nodes['bird-microphone-patterns'].hidden, true);
+  assert.equal(ui.nodes['mic-recent-panel'].hidden, false);
+  assert.equal(ui.find('mic-composition-table').length, 0);
+});
+
+test('returned dates without listening or detections do not generate empty charts', async () => {
+  const data = sample();
+  data.insights = null;
+  const effort = data.patterns.dailyEffort ?? data.dailyEffort;
+  effort.forEach(day => { day.listeningMinutes = 0; });
+  data.patterns.speciesHours = [];
+  data.patterns.overnight = [];
+  const ui = await page(data);
+  assert.equal(ui.nodes['bird-microphone-patterns'].hidden, true);
+  assert.equal(ui.patternLink.hidden, true);
+  effort[0].listeningMinutes = 12;
+  await ui.poll();
+  assert.equal(ui.nodes['bird-microphone-patterns'].hidden, false);
+  assert.match(ui.nodes['mic-pattern-content'].textContent, /No accepted detections/);
+  assert.doesNotMatch(ui.nodes['mic-pattern-content'].textContent, /After dark/);
+});
+
+test('a repeated response never rewinds elapsed hours to its generation time', async () => {
+  const data = sample();
+  data.kingfisher.elapsedMinutes = 120;
+  const ui = await page(data);
+  const hours = () => Number(ui.document.getElementById('mic-hours').textContent);
+  const initial = hours();
+  ui.advanceWallClock(3 * 3600000);
+  await ui.poll();
+  assert.equal(hours(), initial + 3);
+});
+
+test('dated corrections replace a retracted bird while an unrelated fresh date cannot erase it', async () => {
+  const data = sample();
+  data.freshness.recent.range = { start: '2026-11-17', end: '2026-11-18' };
+  data.freshness.history.range = { start: '2026-10-19', end: '2026-11-16' };
+  const ui = await page(data);
+  data.kingfisher = { state: 'no-match', complete: false };
+  data.range.dateEvidence = [{ date: '2026-11-17', estimatedAt: data.generatedAt, retained: false }];
+  await ui.poll();
+  assert.equal(ui.nodes['mic-kingfisher-panel'].hidden, false);
+  data.range.dateEvidence.push({ date: '2026-11-18', estimatedAt: data.generatedAt, retained: false });
+  await ui.poll();
+  assert.equal(ui.nodes['mic-kingfisher-panel'].hidden, true);
+});
+
+test('invalid response time cannot replace the saved counter', async () => {
+  const data = sample();
+  const ui = await page(data);
+  const counter = ui.document.getElementById('mic-hours');
+  data.generatedAt = 'unknown';
+  await ui.poll();
+  assert.equal(ui.document.getElementById('mic-hours'), counter);
+  assert.match(counter.textContent, /^\d+(\.\d)?$/);
+});
+
+test('fresh history with no matching date cannot renew expired kingfisher evidence', async () => {
+  const data = sample();
+  data.freshness.recent.snapshot = { estimatedAt: '2026-10-18T10:00:00Z' };
+  data.freshness.history.dateEvidence = [{ date: '2026-11-17', estimatedAt: data.generatedAt, retained: false }];
+  const ui = await page(data);
+  assert.equal(ui.nodes['mic-kingfisher-panel'].hidden, true);
+  assert.equal(ui.nodes['bird-microphone-patterns'].hidden, false);
+});
+
+test('a mixed-age history panel expires with its oldest displayed date on a failed refresh', async () => {
+  const data = sample();
+  const older = '2026-10-29T17:47:57.203Z';
+  const date = data.patterns.dates[0];
+  data.freshness.history.dateEvidence = [
+    { date, estimatedAt: older, retained: true },
+    ...data.patterns.dates.slice(1).map(day => ({ date: day, estimatedAt: data.generatedAt, retained: false })),
+  ];
+  const ui = await page(data);
+  assert.equal(ui.nodes['bird-microphone-patterns'].hidden, false);
+  const chart = ui.find('mic-composition-table')[0];
+  ui.advanceWallClock(9 * 86400000);
+  ui.fail();
+  await ui.poll();
+  assert.equal(ui.find('mic-composition-table')[0], chart);
+  ui.advanceWallClock(2 * 86400000);
+  await ui.poll();
+  assert.equal(ui.nodes['bird-microphone-patterns'].hidden, true);
+  assert.equal(ui.patternLink.hidden, true);
+  assert.equal(ui.find('mic-composition-table').length, 0);
+  assert.equal(ui.nodes['mic-recent-panel'].hidden, false);
+  ui.recover();
+  await ui.poll();
+  assert.equal(ui.nodes['bird-microphone-patterns'].hidden, true);
 });
