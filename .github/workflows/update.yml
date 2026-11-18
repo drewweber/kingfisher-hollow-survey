@@ -29,6 +29,7 @@ on:
       - "sync.py"
       - "src/**"
       - "data/reference/**"
+      - "data/bird-route-use-5m.json"
       - "assets/**"
       - "field-guide/**"
       - "functions/**"
