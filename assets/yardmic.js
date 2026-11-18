@@ -91,10 +91,10 @@
       : 'Time range unavailable';
     const target = byId('mic-recent-content');
     target.replaceChildren();
-    if (!knownWindow) {
-      target.append(el('p', 'mic-empty', 'The source timing is unavailable, so we cannot place these records in a reliable one-hour window. Try refreshing for updated records.'));
-    } else if (recent.state === 'unavailable') {
+    if (data.freshness.recent.state === 'unavailable' || (knownWindow && recent.state === 'unavailable')) {
       target.append(el('p', 'mic-empty', 'Recent microphone records are unavailable. Try refreshing in a moment.'));
+    } else if (!knownWindow) {
+      target.append(el('p', 'mic-empty', 'The source timing is unavailable, so we cannot place these records in a reliable one-hour window. Try refreshing for updated records.'));
     } else if (!recent.species.length) {
       target.append(el('p', 'mic-empty', recent.state === 'partial'
         ? 'No accepted detections in the available portion of this hour. Some records are missing.'
