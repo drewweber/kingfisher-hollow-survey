@@ -492,6 +492,25 @@ test('recent timeline labels its fixed snapshot window rather than the current h
   assert.match(ui.nodes['mic-update-status'].textContent,/recording coverage is not verified/);
 });
 
+test('unavailable recent records are identified while history remains visible', async () => {
+  const data = sample();
+  data.state = 'partial';
+  data.freshness.recent = {
+    state: 'unavailable', retrievedAt: null, sourceCache: null,
+    snapshot: { estimatedAt: null, basis: 'unknown' },
+  };
+  data.recentHour = {
+    state: 'unavailable', start: null, end: null, windowBasis: 'unknown',
+    snapshotEstimatedAt: null, recordingEndAt: null, ambiguous: false, species: [],
+  };
+
+  const ui = await page(data);
+  assert.match(ui.nodes['mic-recent-content'].textContent, /Recent microphone records are unavailable/);
+  assert.match(ui.nodes['mic-window'].textContent, /Time range unavailable/);
+  assert.equal(ui.find('mic-timeline').length, 0);
+  assert.equal(ui.find('mic-composition-table').length, 1);
+});
+
 test('unknown snapshot time does not invent a window or empty minute bins', async () => {
   const data=sample();
   data.recentHour.windowBasis='unknown';data.recentHour.start=null;data.recentHour.end=null;data.recentHour.species=[];
