@@ -29,6 +29,7 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import analyze  # noqa: E402
+import bird_routes  # noqa: E402
 import chart_data  # noqa: E402
 import field_guide  # noqa: E402
 import inat_api  # noqa: E402
@@ -303,6 +304,7 @@ VIEW_CONFIG = {
         "plotly": False,
         "links": [
             ("#birds", "Overview"),
+            ("#bird-route-use", "Route use"),
             ("#bird-recent", "Recent"),
             ("#bird-gap", "Seasonal targets"),
             ("#bird-methods", "Field guide"),
@@ -3078,7 +3080,9 @@ __PLOTLY_SCRIPT__
   })();
 
 __LOG_UPDATE_SCRIPT__
-</script></body></html>"""
+</script>
+__BIRD_ROUTE_SCRIPT__
+</body></html>"""
 
 
 def scripts(mode):
@@ -3094,6 +3098,9 @@ def scripts(mode):
                      PLOTLY_SCRIPT if VIEW_CONFIG[mode]["plotly"] else "")
             .replace("__LOG_UPDATE_SCRIPT__",
                      LOG_UPDATE_SCRIPT if mode == "log" else "")
+            .replace("__BIRD_ROUTE_SCRIPT__",
+                     f'<script src="/assets/bird-route-map.js?v={_asset_version("public/assets/bird-route-map.js")}" defer></script>'
+                     if mode == "birds" else "")
             .replace("__PLOTLY_CDN__", PLOTLY_CDN))
 
 
@@ -3642,6 +3649,50 @@ def odonates_view(df, stats):
     return "".join(out)
 
 
+def bird_route_use_body(routes):
+    """Explain aggregated route coverage alongside its map, without route IDs."""
+    meta = routes["metadata"]
+    total = meta["inventory_count"]
+    mapped = meta["route_count"]
+    coverage = 100 * mapped / total if total else 0
+    width = meta["cell_size_m"]
+    summary = (
+        f'{mapped:,} of {total:,} checklists have mapped routes ({coverage:.1f}%). '
+        f'Checklist dates: {fdate(meta["date_start"])}–{fdate(meta["date_end"])}. '
+        f'The {meta["cell_count"]:,} colored cells show recorded route coverage; '
+        f'the highest cell count is {meta["max_count"]:,} checklists.'
+    )
+    return (
+        '<figure class="m-0">'
+        + chart_card(bird_routes.map_html(routes), dark=True)
+        + f'<figcaption class="mt-4 text-sm leading-relaxed text-secondary-inverse">{summary}</figcaption>'
+        '</figure>'
+        + takeaway(
+            f'Each {width} m cell counts a checklist once when its recorded route touches that cell, '
+            'even if the route passes through repeatedly. This shows where checklist routes overlap; '
+            'it does not measure time spent, bird abundance, or where individual birds were seen. '
+            'Blank cells mean no acquired route crossed them, not that nobody visited.',
+            dark=True)
+        + '<details class="border-t border-white/10 pt-5">'
+        '<summary class="cursor-pointer py-2 text-sm font-medium text-hollow-300">'
+        'Coverage and method</summary>'
+        f'<p class="mt-3 text-sm leading-relaxed text-secondary-inverse">'
+        f'{meta["unresolved_count"]:,} unresolved checklists are outside the mapped coverage: '
+        f'{meta["missing_unresolved_count"]:,} without an acquired track and '
+        f'{meta["flagged_unresolved_count"]:,} flagged for review. '
+        'A missing track is unknown coverage, not evidence of no visit. '
+        f'Route snapshot: {fdate(meta["snapshot_date"])}.</p>'
+        f'<p class="mt-3 text-sm leading-relaxed text-secondary-inverse">'
+        f'GPS error can exceed the {width} m cell width, so fine differences are approximate. '
+        'Touching a cell edge or corner counts. Separate track segments are never joined; '
+        f'{meta["suppressed_edge_count"]:,} recorded edges longer than 100 m were omitted '
+        'to avoid bridging possible GPS gaps, while their recorded endpoints remain included. '
+        'Some omitted edges may represent real straight travel. '
+        'Separate checklists can also describe the same outing.</p>'
+        '</details>'
+    )
+
+
 def birds_view():
     """Dark bird view driven by the eBird location life-list snapshot."""
     birds = analyze.load_birds()
@@ -3670,6 +3721,12 @@ def birds_view():
                "It includes habitat visitors and open-sky flyovers; a location record alone does not establish "
                "breeding or sustained use of a particular habitat patch." if not birds.empty else
                "Bird records are unavailable in the local export. Follow the eBird source for the current list."),
+        dark=True))
+    out.append(section(
+        "bird-route-use", "Survey Coverage",
+        'Where We <em class="text-hollow-300">Bird</em>',
+        bird_route_use_body(bird_routes.load()),
+        intro="Recorded eBird checklist routes, combined into a grid. Brighter cells have been touched by more checklist routes.",
         dark=True))
     out.append(section(
         "bird-recent", "Dated Records",
