@@ -157,9 +157,11 @@ jobs:
                 (.result.deployment_configs.production.env_vars // {}) as $bindings
                 | if (.success == true
                     and $bindings.UPDATE_TRIGGER_KEY.type == "secret_text"
-                    and $bindings.GITHUB_DISPATCH_TOKEN.type == "secret_text")
+                    and $bindings.GITHUB_DISPATCH_TOKEN.type == "secret_text"
+                    and $bindings.YARDMIC_API_KEY.type == "secret_text"
+                    and ((.result.deployment_configs.production.d1_databases.YARDMIC_DB.id // "") | length > 0))
                   then "Pages update binding metadata is configured; runtime verification is still required."
-                  else error("Cloudflare Pages production is missing an encrypted UPDATE_TRIGGER_KEY or GITHUB_DISPATCH_TOKEN.")
+                  else error("Cloudflare Pages production is missing an encrypted update/YardMic key or the YARDMIC_DB snapshot database.")
                   end
               '
 

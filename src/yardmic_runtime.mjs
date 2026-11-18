@@ -1,5 +1,7 @@
 import { normalizeYardmicDays, shiftYardmicRange, summarizeYardmic, yardmicRanges } from "./yardmic.mjs";
 
+import { yardmicStore } from "./yardmic_store.mjs";
+
 const UPSTREAM = "https://yardmic.aviandavies.workers.dev/api/v1/minutes";
 const TIMEOUT_MS = 5000;
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -208,21 +210,220 @@ async function loadSegment(context, { range, policy, apiKey, fetcher, cache, clo
   const retrievedAt = new Date(receivedMs).toISOString();
   const sourceCache = describeSourceCache(receivedMs, sourceAge, sourceMaxAge);
   const snapshot = retainSnapshot(describeSnapshot(retrievedAt, sourceCache), days, cached);
-  if (cache) {
-    const headers = new Headers({
-      "Cache-Control": `max-age=${policy.retainedSeconds}`,
-      "X-YardMic-Retrieved-At": retrievedAt,
-      [SNAPSHOT_AT_HEADER]: snapshot.estimatedAt,
-      [SNAPSHOT_BASIS_HEADER]: snapshot.basis,
-    });
-    if (sourceAge !== null) headers.set(SOURCE_AGE_HEADER, String(sourceAge));
-    if (sourceMaxAge !== null) headers.set(SOURCE_MAX_AGE_HEADER, String(sourceMaxAge));
-    const pending = Promise.resolve().then(() => (
-      cache.put(cacheRequest(context.request, range), Response.json({ days }, { headers }))
-    )).catch(() => {});
-    context.waitUntil(pending);
+  const value = segment(days, "fresh", retrievedAt, sourceCache, snapshot);
+  cacheSegment(context, cache, range, policy, value);
+  return value;
+}
+
+function cacheSegment(context, cache, range, policy, value) {
+  if (!cache || value.freshness.state !== "fresh") return;
+  const { retrievedAt, sourceCache, snapshot } = value.freshness;
+  const headers = new Headers({
+    "Cache-Control": `max-age=${policy.retainedSeconds}`,
+    "X-YardMic-Retrieved-At": retrievedAt,
+    [SNAPSHOT_AT_HEADER]: snapshot.estimatedAt,
+    [SNAPSHOT_BASIS_HEADER]: snapshot.basis,
+  });
+  if (sourceCache?.ageSecondsAtRetrieval != null) headers.set(SOURCE_AGE_HEADER, String(sourceCache.ageSecondsAtRetrieval));
+  if (sourceCache?.maxAgeSeconds != null) headers.set(SOURCE_MAX_AGE_HEADER, String(sourceCache.maxAgeSeconds));
+  const pending = Promise.resolve().then(() => (
+    cache.put(cacheRequest(context.request, range), Response.json({ days: value.days }, { headers }))
+  )).catch(() => {});
+  context.waitUntil(pending);
+}
+
+const RETENTION_MS = 30 * DAY_SECONDS * 1000;
+const unavailableSegment = () => segment([], "unavailable");
+
+function usableEvidence(stamp, now) {
+  const age = now - Date.parse(stamp);
+  return age >= 0 && age < RETENTION_MS;
+}
+
+function markStale(value) {
+  if (!value.days.length) return value;
+  const { freshness } = value;
+  return { ...value, freshness: { ...freshness, state: "stale",
+    ...(freshness.dateEvidence && { dateEvidence: freshness.dateEvidence.map((entry) => ({ ...entry, retained: true })) }) } };
+}
+
+function durableView(saved, name, now, range, apiKey, failed = false) {
+  if (!saved || !usableEvidence(saved.freshness?.snapshot?.estimatedAt, now)) return unavailableSegment();
+  const { freshness } = saved;
+  let days = normalizeYardmicDays({ days: saved.days }, { range: freshness.range, apiKey });
+  let evidence;
+  if (name === "history") {
+    evidence = freshness.dateEvidence.filter((entry) => usableEvidence(entry.estimatedAt, now));
+    const dates = new Set(evidence.map(({ date }) => date));
+    days = days.filter(({ date }) => dates.has(date));
   }
-  return segment(days, "fresh", retrievedAt, sourceCache, snapshot);
+  if (!days.length) return unavailableSegment();
+  const result = { days, freshness: { ...freshness, ...(evidence && { dateEvidence: evidence }) } };
+  if (name === "history" && saved.companion && usableEvidence(saved.companion.estimatedAt, now)) {
+    const priorDate = shiftYardmicRange(freshness.range, 1).end;
+    const [day] = normalizeYardmicDays({ days: [saved.companion.day] }, { range: { start: priorDate, end: priorDate }, apiKey });
+    result.companion = { day, estimatedAt: saved.companion.estimatedAt };
+  }
+  return failed || freshness.range.end !== range.end || now - Date.parse(freshness.retrievedAt) >= POLICIES[name].freshSeconds * 1000
+    ? markStale(result) : result;
+}
+
+function reconcileHistory(current, previous) {
+  const { range, snapshot } = current.freshness;
+  const records = new Map(current.days.map((day) => [day.date, {
+    day, evidence: { date: day.date, estimatedAt: snapshot.estimatedAt, retained: false },
+  }]));
+  // Bound reconciled history as well as each incoming request. Prefer current
+  // validated records and the most recently observed missing dates.
+  let bytes = new TextEncoder().encode(JSON.stringify(current.days)).length;
+  const prior = new Map(previous.days.map((day) => [day.date, day]));
+  const priorEvidence = [...(previous.freshness.dateEvidence ?? [])];
+  if (previous.companion) {
+    const { day, estimatedAt } = previous.companion;
+    prior.set(day.date, day);
+    priorEvidence.push({ date: day.date, estimatedAt, retained: true });
+  }
+  for (const evidence of priorEvidence.sort((a, b) => b.estimatedAt.localeCompare(a.estimatedAt))) {
+    if (evidence.date < range.start || evidence.date > range.end) continue;
+    const incoming = records.get(evidence.date);
+    if (incoming && incoming.evidence.estimatedAt >= evidence.estimatedAt) continue;
+    const day = prior.get(evidence.date);
+    if (!day) continue;
+    const delta = new TextEncoder().encode(JSON.stringify(day)).length
+      - (incoming ? new TextEncoder().encode(JSON.stringify(incoming.day)).length : 0);
+    if (bytes + delta > MAX_BYTES && !incoming) continue;
+    bytes += delta;
+    records.set(day.date, { day, evidence: { ...evidence, retained: true } });
+  }
+  const sorted = [...records.values()].sort((a, b) => a.day.date.localeCompare(b.day.date));
+  const dateEvidence = sorted.map(({ evidence }) => evidence);
+  return { days: sorted.map(({ day }) => day), freshness: { ...current.freshness,
+    state: dateEvidence.some(({ retained }) => retained) ? "stale" : "fresh", dateEvidence } };
+}
+
+// During rollout, a populated edge can seed a new database even when the
+// upstream is already offline. Preserve the original source and receipt clocks.
+async function existingEdgeSnapshot(context, options, name) {
+  const { cache, range, apiKey, requestTime, policy } = options;
+  if (!cache) return unavailableSegment();
+  for (let offset = 0; offset <= policy.lookbackDays; offset++) {
+    const savedRange = shiftYardmicRange(range, -offset);
+    const old = await getCached(cache, context.request, savedRange, apiKey, requestTime, policy.retainedSeconds);
+    if (!old?.days.length || !usableEvidence(old.snapshot.estimatedAt, requestTime)) continue;
+    const value = segment(old.days, "stale", old.retrievedAt, old.sourceCache, old.snapshot);
+    value.freshness.range = savedRange;
+    if (name === "history") {
+      value.freshness.dateEvidence = value.days.map(({ date }) => ({ date, estimatedAt: old.snapshot.estimatedAt, retained: true }));
+    } else {
+      const anchorDate = yardmicRanges(Date.parse(old.snapshot.estimatedAt)).recent.end;
+      if (!value.days.some(({ date }) => date === anchorDate)) continue;
+    }
+    return value;
+  }
+  return unavailableSegment();
+}
+
+// History refreshes less frequently than recent. A later review or detection
+// from recent must still win after midnight moves that date out of its window.
+async function latestCompletedDate(db, date, prior, now, apiKey) {
+  try {
+    const saved = await yardmicStore(db, "recent").completedDate(date, new Date(now - RETENTION_MS).toISOString());
+    if (!saved || !usableEvidence(saved.estimatedAt, now) || (prior && saved.estimatedAt <= prior.estimatedAt)) return prior;
+    const [day] = normalizeYardmicDays({ days: [saved.day] }, { range: { start: date, end: date }, apiKey });
+    return { day, estimatedAt: saved.estimatedAt };
+  } catch {
+    return prior;
+  }
+}
+
+async function loadDurable(context, options, name, recentResult) {
+  const { apiKey, range, requestTime, clock, fetcher, timeoutMs, policy } = options;
+  const store = yardmicStore(context.env.YARDMIC_DB, name);
+  let previous = unavailableSegment();
+  let token;
+  try {
+    // Read after acquiring the lease so a newly claimed writer observes the
+    // commit of the writer it follows.
+    if (apiKey) token = await store.claim(requestTime, range.end);
+    try {
+      previous = durableView(await store.read(), name, requestTime, range, apiKey, !apiKey);
+    } catch (error) {
+      // A lease holder can repair unreadable saved data with a validated refresh.
+      if (!token) throw error;
+    }
+    if (!token) {
+      return (await store.status())?.failures ? markStale(previous) : previous;
+    }
+  } catch {
+    if (!apiKey) return previous;
+    return loadSegment(context, options);
+  }
+
+  let candidate;
+  try {
+    const { days, sourceAge, sourceMaxAge } = await fetchSegment(fetcher, range, apiKey, timeoutMs);
+    if (!days.length) throw new Error("No returned dates");
+    const receivedMs = clock();
+    const retrievedAt = new Date(receivedMs).toISOString();
+    const sourceCache = describeSourceCache(receivedMs, sourceAge, sourceMaxAge);
+    const snapshot = retainSnapshot(describeSnapshot(retrievedAt, sourceCache), days, previous.days.length
+      ? { days: previous.days, snapshot: previous.freshness.snapshot } : null);
+    if (!usableEvidence(snapshot.estimatedAt, receivedMs)
+      || snapshot.estimatedAt < (previous.freshness.snapshot?.estimatedAt ?? "")) throw new Error("Older evidence");
+    candidate = segment(days, "fresh", retrievedAt, sourceCache, snapshot);
+    candidate.freshness.range = { ...range };
+    if (name === "recent") {
+      const anchorDate = yardmicRanges(Date.parse(snapshot.estimatedAt)).recent.end;
+      if (!days.some(({ date }) => date === anchorDate)) throw new Error("Missing snapshot date");
+    }
+    if (name === "history") {
+      // The final completed date for patterns comes from the recent query.
+      // Preserve that day with this fenced history write. The recent-hour
+      // calculation continues to use its own original snapshot exclusively.
+      const recent = await recentResult;
+      if (previous.freshness.range) {
+        const priorDate = shiftYardmicRange(previous.freshness.range, 1).end;
+        previous.companion = await latestCompletedDate(context.env.YARDMIC_DB, priorDate, previous.companion, clock(), apiKey);
+        if (previous.companion && recent.days.some((day) => day.date === priorDate)
+          && recent.freshness.snapshot.estimatedAt >= previous.companion.estimatedAt) {
+          previous.companion = { day: recent.days.find((day) => day.date === priorDate), estimatedAt: recent.freshness.snapshot.estimatedAt };
+        }
+      }
+      candidate = reconcileHistory(candidate, previous);
+      const lastCompleteDate = shiftYardmicRange(range, 1).end;
+      const prior = previous.companion?.day.date === lastCompleteDate ? previous.companion : null;
+      const day = recent.days.find((entry) => entry.date === lastCompleteDate);
+      if (day && (!prior || recent.freshness.snapshot.estimatedAt >= prior.estimatedAt)) {
+        candidate.companion = { day, estimatedAt: recent.freshness.snapshot.estimatedAt };
+      } else if (prior) {
+        candidate.companion = prior;
+      }
+    }
+  } catch {
+    if (!previous.days.length) {
+      const edge = await existingEdgeSnapshot(context, options, name);
+      if (edge.days.length) {
+        const won = await store.save(token, edge, clock() + 120000).catch(() => null);
+        if (won === false) return durableView(await store.read(), name, clock(), range, apiKey);
+        return edge;
+      }
+    }
+    await store.fail(token, clock()).catch(() => {});
+    return markStale(previous);
+  }
+
+  try {
+    const returned = new Set(candidate.days.map(({ date }) => date));
+    const completed = name === "recent" ? previous.days.filter(({ date }) => !returned.has(date))
+      .map((day) => ({ day, estimatedAt: previous.freshness.snapshot.estimatedAt })) : [];
+    const saved = await store.save(token, candidate, clock() + policy.freshSeconds * 1000, completed,
+      new Date(clock() - RETENTION_MS).toISOString());
+    if (!saved) return durableView(await store.read(), name, clock(), range, apiKey);
+  } catch {
+    // A valid live response remains usable if persistence is temporarily down.
+  }
+  cacheSegment(context, options.cache, range, policy, candidate);
+  return candidate;
 }
 
 function json(summary, status, headers = {}) {
@@ -230,10 +431,6 @@ function json(summary, status, headers = {}) {
     status,
     headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...headers },
   });
-}
-
-function mergeDays(segments) {
-  return [...new Map(segments.flatMap(({ days }) => days.map((day) => [day.date, day]))).values()];
 }
 
 function segmentEstimatedAt({ freshness }) {
@@ -251,26 +448,59 @@ export async function handleYardmic(context, {
   if (context.request.method !== "GET") return json(unavailable(), 405, { Allow: "GET" });
   if (new URL(context.request.url).search) return json(unavailable(), 400);
 
-  const apiKey = context.env?.YARDMIC_API_KEY;
+  let apiKey = context.env?.YARDMIC_API_KEY;
   if (typeof apiKey !== "string" || !apiKey.trim() || apiKey.trim() !== apiKey || /[\r\n]/.test(apiKey)) {
-    return json(unavailable(), 503);
+    apiKey = null;
+    if (!context.env?.YARDMIC_DB) return json(unavailable(), 503);
   }
 
   const ranges = yardmicRanges(requestTime);
   const shared = { apiKey, fetcher, cache, clock: now, requestTime, timeoutMs };
-  const [recent, history] = await Promise.all([
-    loadSegment(context, { ...shared, range: ranges.recent, policy: POLICIES.recent }),
-    loadSegment(context, { ...shared, range: ranges.history, policy: POLICIES.history }),
-  ]);
-  // A retained midnight snapshot may overlap the history query. Current history
-  // and kingfisher results use the newest evidence for that date, while the
-  // recent-hour rows stay attached to the retained recent source snapshot,
-  // including any dates it was missing. Later history cannot fill those gaps.
-  const mergedDays = mergeDays([history, recent].sort((left, right) => segmentEstimatedAt(left) - segmentEstimatedAt(right)));
+  const load = (name, recentResult) => {
+    const options = { ...shared, range: ranges[name], policy: POLICIES[name] };
+    return context.env?.YARDMIC_DB ? loadDurable(context, options, name, recentResult) : loadSegment(context, options);
+  };
+  const recentResult = load("recent");
+  const [recent, history] = await Promise.all([recentResult, load("history", recentResult)]);
+  const byDate = new Map(history.days.map((day) => [day.date, day]));
+  const dateEvidence = new Map(history.days.map(({ date }) => [date, {
+    date, estimatedAt: history.freshness.snapshot.estimatedAt, retained: history.freshness.state === "stale",
+  }]));
+  for (const entry of history.freshness.dateEvidence ?? []) dateEvidence.set(entry.date, entry);
+  for (const day of recent.days) {
+    const prior = dateEvidence.get(day.date);
+    if (!prior || segmentEstimatedAt(recent) >= Date.parse(prior.estimatedAt)) {
+      byDate.set(day.date, day);
+      dateEvidence.set(day.date, { date: day.date, estimatedAt: recent.freshness.snapshot.estimatedAt,
+        retained: recent.freshness.state === "stale" });
+    }
+  }
+  const mergedDays = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  let companionDay;
+  if (context.env?.YARDMIC_DB && history.freshness.range) {
+    const comparisonDate = shiftYardmicRange(history.freshness.range, 1).end;
+    if (!recent.days.some((day) => day.date === comparisonDate)) {
+      history.companion = await latestCompletedDate(context.env.YARDMIC_DB, comparisonDate, history.companion, requestTime, apiKey);
+    }
+  }
+  if (history.companion) {
+    const { day, estimatedAt } = history.companion;
+    const existing = dateEvidence.get(day.date);
+    if (!existing || estimatedAt > existing.estimatedAt) {
+      companionDay = day;
+      dateEvidence.set(day.date, { date: day.date, estimatedAt, retained: true });
+    }
+  }
   const summary = summarizeYardmic({ days: mergedDays }, {
     now: now(),
     freshness: { recent: recent.freshness, history: history.freshness },
     recentSnapshotDays: recent.days,
+    companionDay,
+    historyAnchorDate: history.freshness.range && shiftYardmicRange(history.freshness.range, 2).end,
   });
+  summary.range.dateEvidence = summary.range.returnedDates.map((date) => dateEvidence.get(date));
+  const detectionDate = summary.kingfisher.latestLocal?.slice(0, 10);
+  summary.kingfisher.evidenceEstimatedAt = dateEvidence.get(detectionDate)?.estimatedAt ?? null;
+  if (summary.state === "unavailable" && (recent.days.length || history.days.length)) summary.state = "partial";
   return json(summary, summary.state === "unavailable" ? 503 : 200);
 }

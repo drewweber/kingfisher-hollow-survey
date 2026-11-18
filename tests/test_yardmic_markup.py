@@ -18,6 +18,12 @@ class YardMicMarkupTests(unittest.TestCase):
             html = report.birds_view()
         nodes = Elements(html).elements
         ids = [attrs['id'] for _, attrs in nodes if 'id' in attrs]
+        by_id = {attrs['id']: attrs for _, attrs in nodes if 'id' in attrs}
+        for panel in ('mic-recent-panel', 'mic-kingfisher-panel', 'bird-microphone-patterns'):
+            self.assertIn('hidden', by_id[panel])
+        self.assertNotIn('hidden', by_id['bird-microphone'])
+        self.assertNotIn('hidden', by_id['bird-inventory'])
+        self.assertEqual(by_id['mic-update-status']['role'], 'status')
         self.assertIn('bird-microphone', ids)
         self.assertLess(ids.index('bird-microphone'), ids.index('bird-inventory'))
         self.assertIn('Recently heard', html)
