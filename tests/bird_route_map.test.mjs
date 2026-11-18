@@ -2,11 +2,127 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 
 const require = createRequire(import.meta.url);
 const api = () => require('../assets/bird-route-map.js');
 const data = () => JSON.parse(readFileSync(new URL('../data/bird-route-use-5m.json', import.meta.url)));
 const close = (actual, expected, tolerance = 1e-12) => assert.ok(Math.abs(actual - expected) < tolerance, `${actual} differs from ${expected}`);
+const script = readFileSync(new URL('../assets/bird-route-map.js', import.meta.url), 'utf8');
+
+function openMap({ hash = '', hasObserver = true } = {}) {
+  const status = { textContent: 'Loading route map…' };
+  const dataScript = { get textContent() {
+    reads += 1;
+    return JSON.stringify({
+      metadata: { cell_size_m: 5, cell_count: 1, route_count: 2, max_count: 2 },
+      geojson: { type: 'FeatureCollection', features: [{
+        type: 'Feature', properties: { route_count: 2 },
+        geometry: { type: 'Polygon', coordinates: [[[0, 0], [0.001, 0], [0.001, 0.001], [0, 0.001], [0, 0]]] },
+      }] },
+    });
+  } };
+  const cells = { style: {}, replaceChildren(fragment) { this.children = fragment.children; }, addEventListener() {} };
+  const svg = { style: {}, addEventListener() {}, setAttribute() {}, getBoundingClientRect: () => ({ width: 800 }) };
+  const tiles = { children: [], setAttribute() {}, appendChild(image) { this.children.push(image); } };
+  const controls = {
+    '[data-map-status]': status, '[data-route-map-svg]': svg, '[data-map-tiles]': tiles,
+    '[data-map-cells]': cells, '[data-route-cells]': dataScript,
+  };
+  const container = Object.assign(new EventTarget(), {
+    dataset: {},
+    closest: () => section,
+    contains: element => element === svg || element === help || element === container,
+    querySelector: selector => controls[selector],
+    querySelectorAll: () => [],
+  });
+  const help = {};
+  const section = { contains: element => element === section || container.contains(element) };
+  const targets = { 'bird-route-use': section, 'bird-route-help': help };
+  const frames = [];
+  const window = Object.assign(new EventTarget(), { location: { hash } });
+  let reads = 0;
+  let intersect = () => {};
+  let disconnected = false;
+  let rootMargin;
+  const makeElement = name => ({
+    name, children: [],
+    appendChild(child) { this.children.push(child); },
+    setAttribute() {}, addEventListener() {},
+  });
+  class Observer {
+    constructor(callback, options) {
+      rootMargin = options.rootMargin;
+      intersect = isIntersecting => callback([{ target: container, isIntersecting }]);
+    }
+    observe(target) { assert.equal(target, container); }
+    disconnect() { disconnected = true; }
+  }
+  runInNewContext(script, {
+    window,
+    document: {
+      readyState: 'interactive',
+      querySelectorAll: () => [container],
+      getElementById: id => targets[id] ?? null,
+      createElementNS: (_namespace, name) => makeElement(name),
+      createDocumentFragment: () => makeElement('#fragment'),
+    },
+    IntersectionObserver: hasObserver ? Observer : undefined,
+    requestAnimationFrame: callback => frames.push(callback),
+  });
+  return {
+    window, container, svg, status, cells, tiles, rootMargin,
+    reads: () => reads,
+    disconnected: () => disconnected,
+    intersect: isIntersecting => intersect(isIntersecting),
+    paint: () => frames.splice(0).forEach(callback => callback()),
+  };
+}
+
+test('offscreen maps defer data parsing, SVG creation, and tile requests until near the viewport', () => {
+  const map = openMap();
+  map.intersect(false);
+  map.paint();
+  assert.equal(map.reads(), 0);
+  assert.equal(map.cells.children, undefined);
+  assert.equal(map.tiles.children.length, 0);
+  assert.ok(Number.parseInt(map.rootMargin, 10) > 0);
+  map.intersect(true);
+  map.paint();
+  assert.equal(map.cells.children[0].name, 'polygon');
+  assert.ok(map.tiles.children.length > 0);
+  assert.ok(map.disconnected());
+  map.intersect(true);
+  assert.equal(map.reads(), 1);
+});
+
+test('focus initializes the map before an offscreen control is used', () => {
+  const map = openMap();
+  assert.equal(map.reads(), 0);
+  map.container.dispatchEvent(new Event('focusin', { bubbles: true }));
+  assert.equal(map.cells.children[0].name, 'polygon');
+  assert.ok(map.disconnected());
+});
+
+test('the route-use section and its nested help text can be opened by fragment', () => {
+  for (const hash of ['#bird-route-use', '#bird-route%2Dhelp']) {
+    const map = openMap({ hash });
+    assert.equal(map.cells.children[0].name, 'polygon');
+  }
+  const map = openMap({ hash: '#elsewhere' });
+  assert.equal(map.reads(), 0);
+  map.window.location.hash = '#bird-route-help';
+  map.window.dispatchEvent(new Event('hashchange'));
+  assert.equal(map.cells.children[0].name, 'polygon');
+  assert.ok(map.disconnected());
+});
+
+test('the map still renders when IntersectionObserver is unavailable', () => {
+  const map = openMap({ hasObserver: false });
+  map.paint();
+  assert.equal(map.cells.children[0].name, 'polygon');
+  assert.ok(map.tiles.children.length > 0);
+});
 
 test('Mercator axes and world edges agree with standard raster tiles', () => {
   const { project } = api();

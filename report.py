@@ -303,7 +303,9 @@ VIEW_CONFIG = {
         "description": "Kingfisher Hollow bird records, recent sightings, seasonal targets, and field guidance.",
         "plotly": False,
         "links": [
-            ("#birds", "Overview"),
+            ("#birds", "At the microphone"),
+            ("#bird-microphone-patterns", "Listening patterns"),
+            ("#bird-inventory", "eBird inventory"),
             ("#bird-route-use", "Route use"),
             ("#bird-recent", "Recent"),
             ("#bird-gap", "Seasonal targets"),
@@ -3099,7 +3101,8 @@ def scripts(mode):
             .replace("__LOG_UPDATE_SCRIPT__",
                      LOG_UPDATE_SCRIPT if mode == "log" else "")
             .replace("__BIRD_ROUTE_SCRIPT__",
-                     f'<script src="/assets/bird-route-map.js?v={_asset_version("public/assets/bird-route-map.js")}" defer></script>'
+                     (f'<script src="/assets/bird-route-map.js?v={_asset_version("public/assets/bird-route-map.js")}" defer></script>'
+                      f'<script src="/assets/yardmic.js?v={_asset_version("public/assets/yardmic.js")}" defer></script>')
                      if mode == "birds" else "")
             .replace("__PLOTLY_CDN__", PLOTLY_CDN))
 
@@ -3693,8 +3696,39 @@ def bird_route_use_body(routes):
     )
 
 
+def bird_microphone_body():
+    """Stable, accessible shell; recent microphone evidence arrives separately."""
+    mark = LOGO.replace('class="w-9 h-9 flex-shrink-0"', 'class="mic-kingfisher-mark" aria-hidden="true"')
+    return f'''<div id="bird-microphone" class="mic-layout">
+      <div class="mic-recent">
+        <div class="mic-heading-row"><h2 id="mic-recent-title">Recently heard</h2>
+          <button type="button" class="mic-refresh" data-yardmic-refresh>Refresh</button></div>
+        <p class="mic-caption" id="mic-window">Times at Kingfisher Hollow · Eastern time</p>
+        <div id="mic-recent-content" class="mic-recent-content"><p class="mic-empty">Fetching the latest microphone records…</p></div>
+        <p id="mic-update-status" class="mic-caption mic-update-status" role="status" aria-live="polite">Checking the feed…</p>
+      </div>
+      <aside class="mic-kingfisher" aria-labelledby="mic-kingfisher-title">
+        <div class="mic-kingfisher-heading">{mark}<p class="mic-eyebrow">The hollow’s namesake</p></div>
+        <h2 id="mic-kingfisher-title">Last Belted Kingfisher detected</h2>
+        <div id="mic-kingfisher-content"><p class="mic-counter-placeholder">Checking…</p></div>
+      </aside>
+    </div>
+    <noscript><p class="mic-notice">Current microphone records need JavaScript. The eBird inventory below is available without it.</p></noscript>
+    <details class="mic-methods"><summary>What these detections mean</summary>
+      <p>YardMic groups sound identifications into detected minutes. One detected minute can contain several calls or birds; these are not bird counts or a measure of continuous song.</p>
+      <p>The list includes every species with a reviewed or automatically accepted detection in the displayed hour, newest detection first. Its endpoint estimates the available source response, so time waiting for a cache refresh is not added as empty minutes. The API does not supply a verified recording endpoint. A daily species status does not verify every minute. Detections marked false are excluded.</p>
+      <p>Fetch time tells you when we retrieved the records, not when the microphone last uploaded audio. Daily listening totals cannot locate recording gaps. No detection does not establish absence. These records do not change the eBird inventory below.</p>
+    </details>'''
+
+
+def bird_microphone_patterns_body():
+    return '''<div id="mic-pattern-content"><p class="mic-empty">Gathering recent listening patterns…</p></div>
+    <p id="mic-pattern-coverage" class="mic-caption"></p>
+    <p class="mic-caption mic-pattern-caveat">Weekly comparisons use the previous 28 completed calendar dates; daypart, hourly and overnight patterns use the previous seven. They use available records and describe this microphone’s detections, without adjusting for listening effort or recording gaps.</p>'''
+
+
 def birds_view():
-    """Dark bird view driven by the eBird location life-list snapshot."""
+    """Microphone evidence followed by the independent eBird inventory."""
     birds = analyze.load_birds()
     bsum = analyze.bird_summary(birds)
     recent = analyze.bird_recent(birds, n=12)
@@ -3708,6 +3742,18 @@ def birds_view():
     out.append(section(
         "birds", "Creek, Forest & Sky",
         'The <em class="text-hollow-300">Birds</em>',
+        bird_microphone_body(),
+        intro="A small window into the sounds of Kingfisher Hollow: recent detections, familiar rhythms, and the next kingfisher rattle.",
+        dark=True))
+    out.append(section(
+        "bird-microphone-patterns", "Across the Day",
+        'Patterns at the <em class="text-hollow-300">microphone</em>',
+        bird_microphone_patterns_body(),
+        intro="A few things the recent recordings can tell us. These change as new evidence arrives.",
+        dark=True))
+    out.append(section(
+        "bird-inventory", "The Recorded Inventory",
+        'Birds on <em class="text-hollow-300">eBird</em>',
         stats_band
         + takeaway(
             "Listen through the year: spring arrivals and song, summer territorial activity, autumn passage, "

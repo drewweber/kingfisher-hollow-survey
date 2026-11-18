@@ -282,11 +282,45 @@
     say(summary);
   }
 
+  function initializeWhenNeeded(container) {
+    if (typeof IntersectionObserver !== 'function') {
+      initialize(container);
+      return;
+    }
+
+    const section = container.closest('section') || container;
+    const load = () => {
+      if (container.dataset.mapInitialized) return;
+      observer.disconnect();
+      container.removeEventListener('focusin', load);
+      window.removeEventListener('hashchange', loadIfTargeted);
+      initialize(container);
+    };
+    const loadIfTargeted = () => {
+      let id = window.location.hash.slice(1);
+      if (!id) return;
+      try {
+        id = decodeURIComponent(id);
+      } catch (_error) {
+        // A literal percent in a fragment can still be part of a valid id.
+      }
+      if (section.contains(document.getElementById(id))) load();
+    };
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) load();
+    }, { rootMargin: '400px 0px' });
+
+    container.addEventListener('focusin', load);
+    window.addEventListener('hashchange', loadIfTargeted);
+    observer.observe(container);
+    loadIfTargeted();
+  }
+
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = { project, fitBounds, zoomView, panView, tileRequests, cellColor, readCells, initialize };
   }
   if (typeof document !== 'undefined') {
-    const start = () => document.querySelectorAll('[data-bird-route-map]').forEach(initialize);
+    const start = () => document.querySelectorAll('[data-bird-route-map]').forEach(initializeWhenNeeded);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
     else start();
   }
