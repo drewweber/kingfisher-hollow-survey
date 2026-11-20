@@ -9,6 +9,7 @@
   const clock = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', minute: '2-digit' });
   const stamp = new Intl.DateTimeFormat('en-US', { timeZone: zone, month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
   const statusStamp = new Intl.DateTimeFormat('en-US', { timeZone: zone, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+  const calendarDay = new Intl.DateTimeFormat('en-US', { timeZone: zone, year: 'numeric', month: 'numeric', day: 'numeric' });
   const shortDate = new Intl.DateTimeFormat('en-US', { timeZone: zone, month: 'short', day: 'numeric' });
   const retentionMs = 30 * 86400000;
   const saved = { recent: null, history: null, kingfisher: null };
@@ -49,12 +50,20 @@
     return strip;
   }
 
+  function renderRelativeTimes() {
+    for (const time of document.querySelectorAll('[data-mic-relative]')) {
+      const age = Math.max(0, Math.floor((Date.now() - Date.parse(time.dateTime)) / 60000));
+      time.textContent = `${plural(age, 'minute')} ago`;
+    }
+  }
+
   function renderCounter() {
     const hours = byId('mic-hours');
     if (!hours || !saved.kingfisher) return;
     const { elapsedMinutes, receivedAt } = saved.kingfisher;
     const minutes = Math.max(0, elapsedMinutes + (Date.now() - receivedAt) / 60000);
-    hours.textContent = (minutes / 60).toFixed(1);
+    const total = Math.floor(minutes);
+    hours.textContent = `${plural(Math.floor(total / 1440), 'day')}, ${plural(Math.floor(total % 1440 / 60), 'hour')}, ${plural(total % 60, 'minute')}`;
   }
 
   function kingfisherContent(data) {
@@ -62,7 +71,7 @@
     const bird = data.kingfisher;
     const number = el('p', 'mic-counter');
     number.id = 'mic-hours';
-    target.append(number, el('p', 'mic-counter-label', 'hours since this detection'));
+    target.append(number, el('p', 'mic-counter-label', 'since this detection'));
     const when = el('time', 'mic-caption', stamp.format(new Date(bird.latestAt)));
     when.dateTime = bird.latestAt;
     target.append(when);
@@ -74,14 +83,17 @@
 
   function recentContent(data) {
     const recent = data.recentHour;
-    const windowLabel = `${stamp.format(new Date(recent.start))} – ${stamp.format(new Date(recent.end))} · ${recent.windowBasis === 'retrieval-estimate' ? 'estimated from first retrieval' : 'estimated time window'}`;
+    const startDate = new Date(recent.start);
+    const endDate = new Date(recent.end);
+    const sameDay = calendarDay.format(startDate) === calendarDay.format(endDate);
+    const windowLabel = `${sameDay ? `${shortDate.format(startDate)} · ${clock.format(startDate)} – ${clock.format(endDate)} Eastern` : `${stamp.format(startDate)} – ${stamp.format(endDate)}`} · ${recent.windowBasis === 'retrieval-estimate' ? 'estimated from first retrieval' : 'estimated time window'}`;
     const target = el('div');
     if (!recent.species.length) {
       target.append(el('p', 'mic-empty', recent.state === 'partial'
         ? 'No accepted detections in the available portion of this hour. Some records are missing.'
         : 'No accepted detections in the returned records for this hour. This does not establish silence or absence.'));
     } else {
-      const legend = el('p', 'mic-caption mic-timeline-legend', 'Each tall mark is one minute with a detection. Blank spaces do not establish silence or recording coverage.');
+      const legend = el('p', 'mic-caption mic-timeline-legend', 'Each tall mark is one minute with a detection.');
       legend.id = 'mic-timeline-legend';
       const axis = el('div', 'mic-timeline-header');
       axis.setAttribute('aria-hidden', 'true');
@@ -98,8 +110,10 @@
         const reviewBadge = badge(bird.status);
         if (reviewBadge) detail.append(reviewBadge);
         const last = el('div', 'mic-bird-time');
-        const time = el('time', '', clock.format(new Date(bird.latestAt)));
+        const age = Math.max(0, Math.floor((Date.now() - Date.parse(bird.latestAt)) / 60000));
+        const time = el('time', '', `${plural(age, 'minute')} ago`);
         time.dateTime = bird.latestAt;
+        time.setAttribute('data-mic-relative', '');
         last.append(el('span', 'sr-only', 'Latest detection: '), time);
         row.append(detail, minuteTimeline(bird, recent), last);
         list.append(row);
@@ -606,6 +620,6 @@
   refresh.addEventListener('click', load);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
   setInterval(() => { if (!document.hidden) load(); }, 120000);
-  setInterval(renderCounter, 30000);
+  setInterval(() => { renderCounter(); renderRelativeTimes(); }, 30000);
   load();
 })();

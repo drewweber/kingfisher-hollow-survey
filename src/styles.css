@@ -494,7 +494,7 @@
 .mic-kingfisher-mark { width: 72px; height: 72px; flex-shrink: 0; }
 .mic-eyebrow { color: #b3cbd2; text-transform: uppercase; font-size: .65rem; line-height: 1.7; letter-spacing: .15em; }
 .mic-kingfisher h2 { font-size: 1.35rem; }
-.mic-counter { font-family: "Playfair Display", Georgia, serif; font-size: clamp(3.6rem, 7vw, 5.8rem); line-height: 1.1; font-variant-numeric: tabular-nums; color: #e4eff2; margin-top: 1.1rem; overflow-wrap: anywhere; }
+.mic-counter { font-family: "Playfair Display", Georgia, serif; font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.25; font-variant-numeric: tabular-nums; color: #e4eff2; margin-top: 1.1rem; overflow-wrap: anywhere; }
 .mic-counter-label { color: #c2d5dc; font-size: .85rem; margin: .35rem 0 1.5rem; }
 .mic-counter-placeholder { font-family: "Playfair Display", Georgia, serif; color: #dbe7e8; font-size: 1.6rem; padding: 1.5rem 0; }
 .mic-kingfisher .mic-caption { color: #c2d5dc; }
@@ -618,7 +618,7 @@
 @media (max-width: 767px) {
   .mic-layout, .mic-pattern-grid { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
   .mic-kingfisher { padding: 1.4rem; }
-  .mic-counter { font-size: 4.5rem; }
+  .mic-counter { font-size: 2.6rem; }
   .mic-heading-row h2 { font-size: 1.45rem; }
   .mic-bird, .mic-timeline-header { grid-template-columns: minmax(0, 1fr) auto; gap: .35rem .7rem; }
   .mic-bird { padding: .5rem 0; }

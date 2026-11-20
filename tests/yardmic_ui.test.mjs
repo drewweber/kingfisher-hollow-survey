@@ -102,7 +102,8 @@ test('recent rows share 60 minute positions and expose the count and times acces
     const first = Math.floor(Date.parse(data.recentHour.end) / 60000) * 60000 - 59 * 60000;
     assert.deepEqual(detected, bird.minuteStarts.map(time => (Date.parse(time) - first) / 60000));
   }
-  assert.match(ui.nodes['mic-recent-content'].textContent, /Blank spaces.*silence/);
+  assert.doesNotMatch(ui.nodes['mic-recent-content'].textContent, /Blank spaces/);
+  assert.match(ui.nodes['mic-recent-content'].textContent, /minute[s]? ago/);
 });
 
 test('reviewed and auto records have no badge; only another displayed status is Unreviewed', async () => {
@@ -134,21 +135,21 @@ test('elapsed hours include sleep after a failed refresh and rebase on the next 
   const hours = () => ui.document.getElementById('mic-hours').textContent;
   const window = ui.nodes['mic-window'].textContent;
   const strips = ui.find('mic-timeline').map(node => node.attributes['aria-label']);
-  assert.equal(hours(), '2.0');
+  assert.equal(hours(), '0 days, 2 hours, 0 minutes');
   ui.advanceWallClock(3600000);
   ui.fail();
   await ui.refresh.listeners.click();
-  assert.equal(hours(), '3.0');
+  assert.equal(hours(), '0 days, 3 hours, 0 minutes');
   assert.equal(ui.nodes['mic-window'].textContent, window);
   assert.deepEqual(ui.find('mic-timeline').map(node => node.attributes['aria-label']), strips);
   ui.recover();
   data.generatedAt = '2026-11-18T18:47:57.203Z';
   data.kingfisher.elapsedMinutes = 30;
   await ui.refresh.listeners.click();
-  assert.equal(hours(), '0.5');
+  assert.equal(hours(), '0 days, 0 hours, 30 minutes');
   ui.advanceWallClock(3600000);
   ui.tickCounter();
-  assert.equal(hours(), '1.5');
+  assert.equal(hours(), '0 days, 1 hour, 30 minutes');
 });
 
 test('an incomplete successful HTTP response preserves the last elapsed-time baseline', async () => {
@@ -159,7 +160,7 @@ test('an incomplete successful HTTP response preserves the last elapsed-time bas
   ui.advanceWallClock(3600000);
   ui.respondWith({ state: 'available' });
   await ui.refresh.listeners.click();
-  assert.equal(ui.document.getElementById('mic-hours').textContent, '3.0');
+  assert.equal(ui.document.getElementById('mic-hours').textContent, '0 days, 3 hours, 0 minutes');
   assert.equal(ui.nodes['mic-window'].textContent, window);
   assert.match(ui.nodes['mic-update-status'].textContent, /Updates delayed/);
 });
@@ -622,7 +623,7 @@ test('a repeated response never rewinds elapsed hours to its generation time', a
   const data = sample();
   data.kingfisher.elapsedMinutes = 120;
   const ui = await page(data);
-  const hours = () => Number(ui.document.getElementById('mic-hours').textContent);
+  const hours = () => { const [d, h] = ui.document.getElementById('mic-hours').textContent.match(/\d+/g).map(Number); return d * 24 + h; };
   const initial = hours();
   ui.advanceWallClock(3 * 3600000);
   await ui.poll();
@@ -650,7 +651,7 @@ test('invalid response time cannot replace the saved counter', async () => {
   data.generatedAt = 'unknown';
   await ui.poll();
   assert.equal(ui.document.getElementById('mic-hours'), counter);
-  assert.match(counter.textContent, /^\d+(\.\d)?$/);
+  assert.match(counter.textContent, /^\d+ days?, \d+ hours?, \d+ minutes?$/);
 });
 
 test('fresh history with no matching date cannot renew expired kingfisher evidence', async () => {
